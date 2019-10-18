@@ -1,0 +1,13 @@
+diff --git a/internal/pkg/remote/remote.go b/internal/pkg/remote/remote.go
+index fbd379792..20dfb7101 100644
+--- a/internal/pkg/remote/remote.go
++++ b/internal/pkg/remote/remote.go
+@@ -234,7 +234,7 @@ func getCloudConfig(uri string) ([]byte, error) {
+ 		Timeout: (30 * time.Second),
+ 	}
+ 
+-	url := "https://" + uri + "/assets/config/config.prod.json"
++	url := "http://" + uri + "/assets/config/config.prod.json"
+ 
+ 	req, err := http.NewRequest(http.MethodGet, url, nil)
+ 	if err != nil {

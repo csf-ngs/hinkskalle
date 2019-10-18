@@ -1,5 +1,8 @@
 # Reverse Engineering
 
+Patch singularity with `share/singularity-plain-http.patch` for testing
+
+
 Mostly from:
 
 [https://github.com/sylabs/scs-library-client.git](https://github.com/sylabs/scs-library-client.git)

@@ -16,3 +16,6 @@ services:
       - mongodb
   mongodb:
     image: mongo:4-bionic
+    volumes:
+      - 'data/db:/data/db'
+      - 'data/configdb:/data/configdb'

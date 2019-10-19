@@ -1,0 +1,5 @@
+from flask_rebar import SwaggerV2Generator
+from fsk_authenticator.swagger import register_fsk_authenticator
+
+generator = SwaggerV2Generator()
+register_fsk_authenticator(generator)

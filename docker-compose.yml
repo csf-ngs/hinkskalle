@@ -4,12 +4,14 @@ services:
     image: docker.ngs.vbcf.ac.at/flask-base
     volumes:
       - '.:/srv/'
+      - '~/.fsk_api.yml:/root/.fsk_api.yml'
     command: '/srv/script/start.sh'
     environment:
       PORT: 5000
       MONGODB_HOST: 'mongodb://mongodb/hinktest'
       LC_ALL: 'en_US.utf8'
       FLASK_APP: 'Hinkskalle'
+      HINKSKALLE_SETTINGS: '../../conf/config.json'
     ports:
       - '7660:5000'
     links:
@@ -17,5 +19,5 @@ services:
   mongodb:
     image: mongo:4-bionic
     volumes:
-      - 'data/db:/data/db'
-      - 'data/configdb:/data/configdb'
+      - './data/db:/data/db'
+      - './data/configdb:/data/configdb'

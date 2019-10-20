@@ -1,5 +1,58 @@
-from Hinkskalle import app
-from flask import jsonify, make_response
+from Hinkskalle import app, registry
+from flask import jsonify, make_response, request
+from flask_rebar import RequestSchema, ResponseSchema
+from marshmallow import fields, Schema
+from werkzeug import EnvironHeaders
+import os
+
+class VersionResponseSchema(ResponseSchema):
+  version = fields.String()
+  apiVersion = fields.String()
+
+class ConfigResponseSchema(ResponseSchema):
+  libraryAPI = fields.Dict()
+  keystoreAPI = fields.Dict()
+  tokenAPI = fields.Dict()
+
+@registry.handles(
+  rule='/version',
+  method='GET',
+  response_body_schema=VersionResponseSchema()
+)
+def version():
+  return {
+    'version': '2.0.0',
+    'apiVersion': '2.0.0',
+  }
+
+@registry.handles(
+  rule='/assets/config/config.prod.json',
+  method='GET',
+  response_body_schema=ConfigResponseSchema()
+)
+def config():
+  return {
+    'libraryAPI': {
+      'uri': 'http://172.28.128.1:7660'
+    },
+    'keystoreAPI': {
+      'uri': 'http://172.28.128.1:7660'
+    },
+    'tokenAPI': {
+      'uri': 'http://172.28.128.1:7660'
+    }
+  }
+
+
+# super hacky fake content type (singularity does not set it)
+# header props are read-only (go figure) 
+# change original WSGI environ dict (which is accessible)
+# and reset headers (this field is not immutable, go figure some more)
+@app.before_request
+def before_request_func():
+  if request.path.startswith('/v1') and request.method=='POST':
+    request.headers.environ['CONTENT_TYPE']='application/json'
+    request.headers = EnvironHeaders(request.headers.environ)
 
 def create_error_object(code, msg):
   return [

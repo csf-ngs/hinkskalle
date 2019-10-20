@@ -24,6 +24,9 @@ dictConfig({
 
 app = Flask(__name__)
 app.config.from_json(os.environ['HINKSKALLE_SETTINGS'])
+app.config['MONGODB_SETTINGS'] = {
+  'host': os.environ['MONGODB_HOST']
+}
 
 from Hinkskalle.models import db
 db.init_app(app)
@@ -37,7 +40,10 @@ from Hinkskalle.util.swagger import generator
 
 rebar = Rebar()
 registry = rebar.create_handler_registry(prefix="/", swagger_generator=generator)
-registry.set_default_authenticator(FskAdminAuthenticator())
+registry.set_default_authenticator(None)
+
+fsk_auth = FskAuthenticator(key_header='Authorization')
+fsk_admin_auth = FskAdminAuthenticator(key_header='Authorization')
 
 import Hinkskalle.routes
 

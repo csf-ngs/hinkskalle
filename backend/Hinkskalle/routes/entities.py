@@ -2,6 +2,7 @@ from Hinkskalle import app, registry, rebar, fsk_admin_auth
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from mongoengine import NotUniqueError, DoesNotExist
+from flask import request
 
 from Hinkskalle.models import EntitySchema, Entity
 
@@ -15,15 +16,15 @@ class EntityCreateSchema(EntitySchema, RequestSchema):
 
 
 @registry.handles(
-  rule='/v1/entities/<string:id>',
+  rule='/v1/entities/<string:entity_id>',
   method='GET',
   response_body_schema=EntityResponseSchema(),
 )
-def get_entity(id):
+def get_entity(entity_id):
   try:
-    entity = Entity.objects.get(id=id)
+    entity = Entity.objects.get(name=entity_id)
   except DoesNotExist:
-    raise errors.NotFound(f"entity {id} not found")
+    raise errors.NotFound(f"entity {entity_id} not found")
   return { 'data': entity }
 
 @registry.handles(
@@ -35,6 +36,8 @@ def get_entity(id):
 )
 def create_entity():
   body = rebar.validated_body
+  app.logger.debug(body)
+  body.pop('id', None)
   new_entity = Entity(**body)
 
   try:

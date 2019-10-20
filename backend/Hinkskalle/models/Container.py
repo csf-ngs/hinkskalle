@@ -1,4 +1,4 @@
-from mongoengine import Document, StringField, ListField, ReferenceField, BooleanField, DateTimeField
+from mongoengine import Document, StringField, ListField, ReferenceField, BooleanField, DateTimeField, IntField
 from datetime import datetime
 
 from Hinkskalle.models import Collection, Image, Tag
@@ -6,34 +6,50 @@ from Hinkskalle.models import Collection, Image, Tag
 from marshmallow import fields, Schema
 
 class ContainerSchema(Schema):
-  id = fields.String(required=True)
+  id = fields.String(dump_only=True, required=True)
   name = fields.String(required=True)
   description = fields.String(allow_none=True)
+  fullDescription = fields.String(allow_none=True)
   private = fields.Boolean()
   readOnly = fields.Boolean()
+  size = fields.Integer(dump_only=True)
+  downloadCount = fields.Integer(dump_only=True)
+  stars = fields.Integer(dump_only=True)
+  customData = fields.String()
   createdAt = fields.DateTime(dump_unly=True)
+  createdBy = fields.String(dump_only=True, allow_none=True)
   updatedAt = fields.DateTime(dump_unly=True, allow_none=True)
   deletedAt = fields.DateTime(dump_unly=True, allow_none=True)
   deleted = fields.Boolean(dump_only=True)
 
-  collection = fields.String(dump_only=True)
+  collection = fields.String(required=True)
   collectionName = fields.String(dump_only=True)
   entity = fields.String(dump_only=True)
   entityName = fields.String(dump_only=True)
-  imageTags = fields.Dict(dump_only=True)
+  imageTags = fields.Dict(dump_only=True, allow_none=True)
+  archTags = fields.Dict(dump_only=True, allow_none=True)
+
+  images = fields.String(dump_only=True, many=True, attribute='image_names')
 
 class Container(Document):
-  id = StringField(required=True, primary_key=True)
-  name = StringField(required=True)
+  name = StringField(required=True, unique=True)
   description = StringField()
+  fullDescription = StringField()
   private = BooleanField(default=False)
   readOnly = BooleanField(default=False)
-  collection_ref = ReferenceField(Collection)
+  downloadCount = IntField(default=0)
+  stars = IntField(default=0)
+  customData = StringField()
+  collection_ref = ReferenceField(Collection, required=True)
 
   createdAt = DateTimeField(default=datetime.utcnow)
+  createdBy = StringField()
   updatedAt = DateTimeField()
   deletedAt = DateTimeField()
   deleted = BooleanField(required=True, default=False)
+
+  def size(self):
+    return 0
   
   def collection(self):
     return self.collection_ref.id
@@ -44,6 +60,13 @@ class Container(Document):
     return self.collection_ref.entity_ref.id
   def entityName(self):
     return self.collection_ref.entity_ref.name
+
+  def image_names(self):
+    imgs = list(self.images())
+    if len(imgs) == 0:
+      return None
+    else:
+      return [ img.name for img in imgs ]
 
   def images(self):
     return Image.objects(container_ref=self)
@@ -68,3 +91,6 @@ class Container(Document):
           raise Exception(f"Tag {tag} for image {image.id} is already set on {tags[tag]}")
         tags[tag]=image.id
     return tags
+
+  def archTags(self):
+    return {}

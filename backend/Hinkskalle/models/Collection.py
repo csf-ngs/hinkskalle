@@ -5,27 +5,40 @@ from datetime import datetime
 from Hinkskalle.models import Entity
 
 class CollectionSchema(Schema):
-  id = fields.String(required=True)
+  id = fields.String(required=True, dump_only=True)
   name = fields.String(required=True)
   description = fields.String(allow_none=True)
   createdAt = fields.DateTime(dump_unly=True)
+  createdBy = fields.String(dump_unly=True, allow_none=True)
   updatedAt = fields.DateTime(dump_unly=True, allow_none=True)
   deletedAt = fields.DateTime(dump_unly=True, allow_none=True)
   deleted = fields.Boolean(dump_only=True)
-  entity = fields.String(dump_only=True)
+  size = fields.Integer(dump_only=True)
+  private = fields.Boolean()
+  customData = fields.String()
+
+  entity = fields.String(required=True)
   entityName = fields.String(dump_only=True)
+
+  containers = fields.String(dump_only=True, many=True)
 
 
 class Collection(Document):
-  id = StringField(required=True, primary_key=True)
-  name = StringField(required=True)
+  name = StringField(required=True, unique=True)
   description = StringField()
-  entity_ref = ReferenceField(Entity)
+  customData = StringField()
+  private = BooleanField(default=False)
+
+  entity_ref = ReferenceField(Entity, required=True)
 
   createdAt = DateTimeField(default=datetime.utcnow)
+  createdBy = StringField()
   updatedAt = DateTimeField()
   deletedAt = DateTimeField()
   deleted = BooleanField(required=True, default=False)
+
+  def size(self):
+    return 0
 
   def entity(self):
     return self.entity_ref.id

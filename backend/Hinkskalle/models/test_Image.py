@@ -14,66 +14,54 @@ class TestImage(unittest.TestCase):
   def tearDownClass(cls):
     disconnect()
 
-  def test_image(self):
-    image = Image(id='test-image')
-    image.save()
+  def tearDown(self):
+    Entity.objects.delete()
+    Collection.objects.delete()
+    Container.objects.delete()
+    Image.objects.delete()
+    Tag.objects.delete()
 
-    read_image = Image.objects.get(id='test-image')
-    self.assertEqual(read_image.id, image.id)
-    self.assertTrue(abs(read_image.createdAt - datetime.utcnow()) < timedelta(seconds=1))
-
-  def test_container_ref(self):
-    container = Container(id='test-container', name='Test Container')
-    container.save()
-
-    image = Image(id='test-image', container_ref=container)
-    image.save()
-
-    self.assertEqual(image.container(), container.id)
-    self.assertEqual(image.containerName(), container.name)
-
-    unlinked_image = Image(id='bad-image')
-    unlinked_image.save()
-
-    images = Image.objects(container_ref=container)
-    self.assertEqual(len(images), 1)
-    self.assertEqual(images.first(), image)
-
-
-  
-  def test_collection_ref(self):
-    coll = Collection(id='test-collection', name='Test Collection')
-    coll.save()
-
-    container = Container(id='test-container', name='Test Container', collection_ref=coll)
-    container.save()
-
-    image = Image(id='test-image', container_ref=container)
-    image.save()
-
-    self.assertEqual(image.collection(), coll.id)
-    self.assertEqual(image.collectionName(), coll.name)
-
-  
-  def test_entity_ref(self):
-    entity = Entity(id='test-hase', name='Test Hase')
+  def _create_image(self):
+    entity = Entity(name='test-hase')
     entity.save()
 
-    coll = Collection(id='test-collection', name='Test Collection', entity_ref=entity)
+    coll = Collection(name='test-collection', entity_ref=entity)
     coll.save()
 
-    container = Container(id='test-container', name='Test Container', collection_ref=coll)
+    container = Container(name='test-container',collection_ref=coll)
     container.save()
 
-    image = Image(id='test-image', container_ref=container)
+    image = Image(container_ref=container)
+    image.save()
+    return image
+
+  def test_image(self):
+    entity = Entity(name='test-hase')
+    entity.save()
+
+    coll = Collection(name='test-collection', entity_ref=entity)
+    coll.save()
+
+    container = Container(name='test-container',collection_ref=coll)
+    container.save()
+
+    image = Image(description='test-image', container_ref=container)
     image.save()
 
-    self.assertEqual(image.entity(), entity.id)
-    self.assertEqual(image.entityName(), entity.name)
+    read_image = Image.objects.get(id=image.id)
+    self.assertTrue(abs(read_image.createdAt - datetime.utcnow()) < timedelta(seconds=1))
+
+    self.assertEqual(read_image.container(), container.id)
+    self.assertEqual(read_image.containerName(), container.name)
+
+    self.assertEqual(read_image.collection(), coll.id)
+    self.assertEqual(read_image.collectionName(), coll.name)
+
+    self.assertEqual(read_image.entity(), entity.id)
+    self.assertEqual(read_image.entityName(), entity.name)
 
   def test_tags(self):
-    image = Image(id='test-image')
-    image.save()
+    image = self._create_image()
 
     tag1 = Tag(name='v1', image_ref=image)
     tag1.save()
@@ -86,36 +74,35 @@ class TestImage(unittest.TestCase):
   def test_schema(self):
     schema = ImageSchema()
 
-    image = Image(id='test-image')
-    image.save()
+    image = self._create_image()
 
     serialized = schema.dump(image)
-    self.assertEqual(serialized.data['id'], image.id)
+    self.assertEqual(serialized.data['id'], str(image.id))
 
-    entity = Entity(id='test-hase', name='Test Hase')
+    entity = Entity(name='Test Hase')
     entity.save()
 
-    coll = Collection(id='test-collection', name='Test Collection', entity_ref=entity)
+    coll = Collection(name='Test Collection', entity_ref=entity)
     coll.save()
 
-    container = Container(id='test-container', name='Test Container', collection_ref=coll)
+    container = Container(name='Test Container', collection_ref=coll)
     container.save()
 
     image.container_ref=container 
     image.save()
 
     serialized = schema.dump(image)
-    self.assertEqual(serialized.data['container'], container.id)
+    self.assertDictEqual(serialized.errors, {})
+    self.assertEqual(serialized.data['container'], str(container.id))
     self.assertEqual(serialized.data['containerName'], container.name)
-    self.assertEqual(serialized.data['collection'], coll.id)
+    self.assertEqual(serialized.data['collection'], str(coll.id))
     self.assertEqual(serialized.data['collectionName'], coll.name)
-    self.assertEqual(serialized.data['entity'], entity.id)
+    self.assertEqual(serialized.data['entity'], str(entity.id))
     self.assertEqual(serialized.data['entityName'], entity.name)
 
   def test_schema_tags(self):
     schema = ImageSchema()
-    image = Image(id='test-image')
-    image.save()
+    image = self._create_image()
 
     tag1 = Tag(name='v1', image_ref=image)
     tag1.save()
@@ -123,5 +110,6 @@ class TestImage(unittest.TestCase):
     tag2.save()
 
     serialized = schema.dump(image)
+    self.assertDictEqual(serialized.errors, {})
     self.assertListEqual(serialized.data['tags'], ['v1', 'v2'])
     Tag.objects.delete()

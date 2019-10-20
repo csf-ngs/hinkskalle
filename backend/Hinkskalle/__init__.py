@@ -24,9 +24,10 @@ dictConfig({
 
 app = Flask(__name__)
 app.config.from_json(os.environ['HINKSKALLE_SETTINGS'])
-app.config['MONGODB_SETTINGS'] = {
-  'host': os.environ['MONGODB_HOST']
-}
+if 'MONGODB_HOST' in os.environ:
+  app.config['MONGODB_SETTINGS'] = {
+    'host': os.environ['MONGODB_HOST']
+  }
 
 from Hinkskalle.models import db
 db.init_app(app)

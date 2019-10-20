@@ -1,5 +1,6 @@
 import unittest
 from mongoengine import connect, disconnect
+from datetime import datetime, timedelta
 
 from Hinkskalle.models import Entity, Collection, Container, Image, ImageSchema, Tag
 
@@ -19,6 +20,7 @@ class TestImage(unittest.TestCase):
 
     read_image = Image.objects.get(id='test-image')
     self.assertEqual(read_image.id, image.id)
+    self.assertTrue(abs(read_image.createdAt - datetime.utcnow()) < timedelta(seconds=1))
 
   def test_container_ref(self):
     container = Container(id='test-container', name='Test Container')

@@ -1,5 +1,6 @@
 import unittest
 from mongoengine import connect, disconnect
+from datetime import datetime, timedelta
 
 from Hinkskalle.models import Entity, Collection, Container, ContainerSchema, Image, Tag
 
@@ -19,6 +20,7 @@ class TestContainer(unittest.TestCase):
 
     read_container = Container.objects.get(id='test-container')
     self.assertEqual(read_container.id, container.id)
+    self.assertTrue(abs(read_container.createdAt - datetime.utcnow()) < timedelta(seconds=1))
   
   def test_collection_ref(self):
     coll = Collection(id='test-collection', name='Test Collection')
@@ -62,6 +64,8 @@ class TestContainer(unittest.TestCase):
 
     new_tag = container.tag_image('v1', image1.id)
     self.assertEqual(new_tag.image_ref.id, image1.id)
+    self.assertTrue(abs(new_tag.createdAt - datetime.utcnow()) < timedelta(seconds=1))
+    self.assertIsNone(new_tag.updatedAt)
     tags = Tag.objects(image_ref__in=container.images())
     self.assertListEqual(
       [f"{tag.name}:{tag.image_ref.id}" for tag in tags ],
@@ -70,6 +74,7 @@ class TestContainer(unittest.TestCase):
 
     new_tag = container.tag_image('v1', image1.id)
     self.assertEqual(new_tag.image_ref.id, image1.id)
+    self.assertTrue(abs(new_tag.updatedAt - datetime.utcnow()) < timedelta(seconds=1))
     tags = Tag.objects(image_ref__in=container.images())
     self.assertListEqual(
       [f"{tag.name}:{tag.image_ref.id}" for tag in tags ],
@@ -78,6 +83,8 @@ class TestContainer(unittest.TestCase):
 
     new_tag = container.tag_image('v1.1', image1.id)
     self.assertEqual(new_tag.image_ref.id, image1.id)
+    self.assertTrue(abs(new_tag.createdAt - datetime.utcnow()) < timedelta(seconds=1))
+    self.assertIsNone(new_tag.updatedAt)
     tags = Tag.objects(image_ref__in=container.images())
     self.assertListEqual(
       [f"{tag.name}:{tag.image_ref.id}" for tag in tags ],
@@ -89,6 +96,8 @@ class TestContainer(unittest.TestCase):
 
     new_tag = container.tag_image('v2', image2.id)
     self.assertEqual(new_tag.image_ref.id, image2.id)
+    self.assertTrue(abs(new_tag.createdAt - datetime.utcnow()) < timedelta(seconds=1))
+    self.assertIsNone(new_tag.updatedAt)
     tags = Tag.objects(image_ref__in=container.images())
     self.assertListEqual(
       [f"{tag.name}:{tag.image_ref.id}" for tag in tags ],
@@ -97,6 +106,7 @@ class TestContainer(unittest.TestCase):
 
     new_tag = container.tag_image('v1.1', image2.id)
     self.assertEqual(new_tag.image_ref.id, image2.id)
+    self.assertTrue(abs(new_tag.updatedAt - datetime.utcnow()) < timedelta(seconds=1))
     tags = Tag.objects(image_ref__in=container.images())
     self.assertListEqual(
       [f"{tag.name}:{tag.image_ref.id}" for tag in tags ],

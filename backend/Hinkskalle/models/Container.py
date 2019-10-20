@@ -1,4 +1,5 @@
-from mongoengine import Document, StringField, ListField, ReferenceField, BooleanField
+from mongoengine import Document, StringField, ListField, ReferenceField, BooleanField, DateTimeField
+from datetime import datetime
 
 from Hinkskalle.models import Collection, Image, Tag
 
@@ -10,7 +11,11 @@ class ContainerSchema(Schema):
   description = fields.String(allow_none=True)
   private = fields.Boolean()
   readOnly = fields.Boolean()
+  createdAt = fields.DateTime(dump_unly=True)
+  updatedAt = fields.DateTime(dump_unly=True, allow_none=True)
+  deletedAt = fields.DateTime(dump_unly=True, allow_none=True)
   deleted = fields.Boolean(dump_only=True)
+
   collection = fields.String(dump_only=True)
   collectionName = fields.String(dump_only=True)
   entity = fields.String(dump_only=True)
@@ -25,6 +30,9 @@ class Container(Document):
   readOnly = BooleanField(default=False)
   collection_ref = ReferenceField(Collection)
 
+  createdAt = DateTimeField(default=datetime.utcnow)
+  updatedAt = DateTimeField()
+  deletedAt = DateTimeField()
   deleted = BooleanField(required=True, default=False)
   
   def collection(self):
@@ -45,6 +53,7 @@ class Container(Document):
     cur_tag = Tag.objects(name=tag, image_ref__in=self.images()).first()
     if cur_tag:
       cur_tag.image_ref=image
+      cur_tag.updatedAt=datetime.utcnow()
       cur_tag.save()
     else:
       cur_tag = Tag(name=tag, image_ref=image)

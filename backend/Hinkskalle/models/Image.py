@@ -1,5 +1,6 @@
-from mongoengine import Document, StringField, IntField, BooleanField, ReferenceField
+from mongoengine import Document, StringField, IntField, BooleanField, ReferenceField, DateTimeField
 from marshmallow import Schema, fields
+from datetime import datetime
 
 from Hinkskalle.models import Tag
 
@@ -10,6 +11,11 @@ class ImageSchema(Schema):
   blob = fields.String()
   size = fields.Int()
   uploaded = fields.Boolean(dump_only=True)
+  createdAt = fields.DateTime(dump_unly=True)
+  updatedAt = fields.DateTime(dump_unly=True, allow_none=True)
+  deletedAt = fields.DateTime(dump_unly=True, allow_none=True)
+  deleted = fields.Boolean(dump_only=True)
+
   container = fields.String(dump_only=True)
   containerName = fields.String(dump_only=True)
   collection = fields.String(dump_only=True)
@@ -27,6 +33,9 @@ class Image(Document):
   uploaded = BooleanField()
   container_ref = ReferenceField('Container')
 
+  createdAt = DateTimeField(default=datetime.utcnow)
+  updatedAt = DateTimeField()
+  deletedAt = DateTimeField()
   deleted = BooleanField(required=True, default=False)
 
   def container(self):

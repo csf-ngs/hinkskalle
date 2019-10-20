@@ -1,5 +1,6 @@
 import unittest
 from mongoengine import connect, disconnect
+from datetime import datetime, timedelta
 
 from Hinkskalle.models import Entity, Collection, CollectionSchema
 
@@ -19,6 +20,7 @@ class TestCollection(unittest.TestCase):
 
     read_coll = Collection.objects.get(id='test-collection')
     self.assertEqual(read_coll.id, coll.id)
+    self.assertTrue(abs(read_coll.createdAt - datetime.utcnow()) < timedelta(seconds=1))
   
   def test_entity_ref(self):
     entity = Entity(id='test-hase', name='Test Hase')

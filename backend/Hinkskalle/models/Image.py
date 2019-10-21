@@ -69,6 +69,8 @@ class Image(Document):
   def tags(self):
     return [ tag.name for tag in Tag.objects(image_ref=self) ]
   
+  def make_prettyname(self, tag):
+    return os.path.join(self.entityName(), self.collectionName(), f"{self.containerName}_{tag}.sif")
   def make_filename(self):
-    return os.path.join(self.collectionName(), f"{self.hash}.sif")
+    return f"{self.hash}.sif"
    

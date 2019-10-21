@@ -2,7 +2,7 @@ from Hinkskalle import registry
 from flask import current_app, jsonify, make_response, request
 from flask_rebar import RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
-from werkzeug import EnvironHeaders
+from werkzeug.datastructures import EnvironHeaders
 import os
 
 class VersionResponseSchema(ResponseSchema):

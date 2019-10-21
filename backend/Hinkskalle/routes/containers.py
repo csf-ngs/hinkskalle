@@ -22,17 +22,29 @@ def get_container(entity_id, collection_id, container_id):
   try:
     entity = Entity.objects.get(name=entity_id)
   except DoesNotExist:
+    current_app.logger.debug(f"entity {entity_id} not found")
     raise errors.NotFound(f"entity {entity_id} not found")
   try:
     collection = Collection.objects.get(name=collection_id, entity_ref=entity)
   except DoesNotExist:
-    raise errors.NotFound(f"collection {entity.id}/{collection_id} not found")
+    current_app.logger.debug(f"collection {entity.name}/{collection_id} not found")
+    raise errors.NotFound(f"collection {entity.name}/{collection_id} not found")
   try:
     container = Container.objects.get(name=container_id, collection_ref=collection)
   except DoesNotExist:
-    raise errors.NotFound(f"container {entity.id}/{collection.id}/{container_id} not found")
+    current_app.logger.debug(f"container {entity.name}/{collection.name}/{container_id} not found")
+    raise errors.NotFound(f"container {entity.name}/{collection.name}/{container_id} not found")
 
   return { 'data': container }
+
+@registry.handles(
+  rule='/v1/containers//<string:collection_id>/<string:container_id>',
+  method='GET',
+  response_body_schema=ContainerResponseSchema(),
+)
+def get_default_container(collection_id, container_id):
+  return get_container(entity_id='', collection_id=collection_id, container_id=container_id)
+
 
 @registry.handles(
   rule='/v1/containers',

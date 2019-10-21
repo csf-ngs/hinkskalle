@@ -30,14 +30,17 @@ def _get_image(entity_id, collection_id, tagged_container_id):
   try:
     entity = Entity.objects.get(name=entity_id)
   except DoesNotExist:
+    current_app.logger.debug(f"entity {entity_id} not found")
     raise errors.NotFound(f"entity {entity_id} not found")
   try:
     collection = Collection.objects.get(name=collection_id, entity_ref=entity)
   except DoesNotExist:
+    current_app.logger.debug(f"collection {entity.name}/{collection_id} not found")
     raise errors.NotFound(f"collection {entity.name}/{collection_id} not found")
   try:
     container = Container.objects.get(name=container_id, collection_ref=collection)
   except DoesNotExist:
+    current_app.logger.debug(f"container {entity.name}/{collection.name}/{container_id} not found")
     raise errors.NotFound(f"container {entity.name}/{collection.name}/{container_id} not found")
 
   if tag.startswith('sha256.'):
@@ -45,10 +48,12 @@ def _get_image(entity_id, collection_id, tagged_container_id):
     try:
       image = Image.objects.get(hash=shahash, container_ref=container)
     except DoesNotExist:
+      current_app.logger.debug(f"image with hash {shahash} not found in container {container.name}")
       raise errors.NotFound(f"image with hash {shahash} not found in container {container.name}")
   else:
     image_tags = container.imageTags()
     if not tag in image_tags:
+      current_app.logger.debug(f"tag {tag} on container {entity.name}/{collection.name}/{container.name} not found")
       raise errors.NotFound(f"tag {tag} on container {entity.name}/{collection.name}/{container.name} not found")
 
     image = Image.objects.get(id=image_tags[tag])
@@ -62,7 +67,6 @@ def _get_image(entity_id, collection_id, tagged_container_id):
 )
 def get_image(entity_id, collection_id, tagged_container_id):
   image = _get_image(entity_id, collection_id, tagged_container_id)
-  current_app.logger.debug(f"{image.location}")
   if image.uploaded and (not image.location or not os.path.exists(image.location)):
     current_app.logger.debug(f"{image.location} does not exist, resetting uploaded flag.")
     image.uploaded = False
@@ -115,6 +119,13 @@ def pull_image(entity_id, collection_id, tagged_container_id):
 )
 def pull_image_double_slash_annoy(*args, **kwargs):
   return pull_image(**kwargs)
+
+@registry.handles(
+  rule='/v1/imagefile//<string:collection_id>/<string:tagged_container_id>',
+  method='GET',
+)
+def pull_image_default(collection_id, tagged_container_id):
+  return pull_image(entity_id='', collection_id=collection_id, tagged_container_id=tagged_container_id)
   
 
 @registry.handles(

@@ -63,7 +63,7 @@ class TestContainer(unittest.TestCase):
   def test_tag_image(self):
     container = self._create_container()
 
-    image1 = Image(description='test-image-1', container_ref=container)
+    image1 = Image(hash='eins', description='test-image-1', container_ref=container)
     image1.save()
 
     new_tag = container.tag_image('v1', image1.id)
@@ -95,7 +95,7 @@ class TestContainer(unittest.TestCase):
       [f"v1:{image1.id}", f"v1.1:{image1.id}"]
     )
 
-    image2 = Image(description='test-image-2', container_ref=container)
+    image2 = Image(hash='zwei', description='test-image-2', container_ref=container)
     image2.save()
 
     new_tag = container.tag_image('v2', image2.id)
@@ -122,17 +122,17 @@ class TestContainer(unittest.TestCase):
   def test_get_tags(self):
     container = self._create_container()
 
-    image1 = Image(description='test-image-1', container_ref=container)
+    image1 = Image(hash='test-image-1', container_ref=container)
     image1.save()
     image1tag1 = Tag(name='v1', image_ref=image1)
     image1tag1.save()
-    self.assertDictEqual(container.imageTags(), { 'v1': image1.id })
+    self.assertDictEqual(container.imageTags(), { 'v1': str(image1.id) })
 
-    image2 = Image(description='test-image-2', container_ref=container)
+    image2 = Image(hash='test-image-2', container_ref=container)
     image2.save()
     image2tag1 = Tag(name='v2', image_ref=image2)
     image2tag1.save()
-    self.assertDictEqual(container.imageTags(), { 'v1': image1.id, 'v2': image2.id })
+    self.assertDictEqual(container.imageTags(), { 'v1': str(image1.id), 'v2': str(image2.id) })
 
     invalidTag = Tag(name='v2', image_ref=image1)
     invalidTag.save()
@@ -167,15 +167,15 @@ class TestContainer(unittest.TestCase):
   def test_schema_tags(self):
     container = self._create_container()
 
-    image1 = Image(description='test-image-1', container_ref=container)
+    image1 = Image(hash='eins', description='test-image-1', container_ref=container)
     image1.save()
     image1tag1 = Tag(name='v1', image_ref=image1)
     image1tag1.save()
-    image2 = Image(description='test-image-2', container_ref=container)
+    image2 = Image(hash='zwei', description='test-image-2', container_ref=container)
     image2.save()
     image2tag1 = Tag(name='v2', image_ref=image2)
     image2tag1.save()
 
     schema = ContainerSchema()
     serialized = schema.dump(container)
-    self.assertDictEqual(serialized.data['imageTags'], { 'v1': image1.id, 'v2': image2.id })
+    self.assertDictEqual(serialized.data['imageTags'], { 'v1': str(image1.id), 'v2': str(image2.id) })

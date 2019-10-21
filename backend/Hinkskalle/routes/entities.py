@@ -28,6 +28,14 @@ def get_entity(entity_id):
   return { 'data': entity }
 
 @registry.handles(
+  rule='/v1/entities/',
+  method='GET',
+  response_body_schema=EntityResponseSchema(),
+)
+def get_default_entity():
+  return get_entity(entity_id='')
+
+@registry.handles(
   rule='/v1/entities',
   method='POST',
   request_body_schema=EntityCreateSchema(),

@@ -32,6 +32,14 @@ def get_collection(entity_id, collection_id):
   return { 'data': collection }
 
 @registry.handles(
+  rule='/v1/collections//<string:collection_id>',
+  method='GET',
+  response_body_schema=CollectionResponseSchema(),
+)
+def get_default_collection(collection_id):
+  return get_collection(entity_id='', collection_id=collection_id)
+
+@registry.handles(
   rule='/v1/collections',
   method='POST',
   request_body_schema=CollectionCreateSchema(),
@@ -49,6 +57,7 @@ def create_collection():
   try:
     new_collection.save()
   except NotUniqueError as err:
+    current_app.logger.debug(err)
     raise errors.PreconditionFailed(f"Collection {new_collection.id} already exists")
 
   return { 'data': new_collection }

@@ -15,11 +15,14 @@ class TestEntities(unittest.TestCase):
   def setUp(self):
     self.app = create_app()
     self.client = self.app.test_client()
+  def tearDown(self):
+    Entity.objects.delete()
 
   def test_get(self):
     entity = Entity(name='grunz')
     entity.save()
     ret = self.client.get('/v1/entities/grunz')
+    self.assertEqual(ret.status_code, 200)
     json = ret.get_json()
     json['data'].pop('createdAt')
     self.assertDictEqual(json['data'], {
@@ -37,6 +40,15 @@ class TestEntities(unittest.TestCase):
       'deleted': entity.deleted,
     })
   
+  def test_get_default(self):
+    entity = Entity(name='')
+    entity.save()
+
+    ret = self.client.get('/v1/entities/')
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['id'], str(entity.id))
+
   def __test_create(self):
     # figure out mock token
     ret = self.client.post('/v1/entities', json={

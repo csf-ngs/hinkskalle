@@ -15,7 +15,7 @@ class CollectionSchema(Schema):
   deleted = fields.Boolean(dump_only=True)
   size = fields.Integer(dump_only=True)
   private = fields.Boolean()
-  customData = fields.String()
+  customData = fields.String(allow_none=True)
 
   entity = fields.String(required=True)
   entityName = fields.String(dump_only=True)
@@ -24,7 +24,7 @@ class CollectionSchema(Schema):
 
 
 class Collection(Document):
-  name = StringField(required=True, unique=True)
+  name = StringField(required=True, unique_with='entity_ref')
   description = StringField()
   customData = StringField()
   private = BooleanField(default=False)

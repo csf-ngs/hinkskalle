@@ -4,18 +4,14 @@ from datetime import datetime, timedelta
 
 from Hinkskalle.models import Entity, Collection, Container, Image, ImageSchema, Tag
 
+from Hinkskalle.tests.models.test_Collection import _create_collection
+
 def _create_image(hash='sha256.oink'):
   try:
-    entity = Entity.objects.get(name='test-hase')
+    coll = Collection.objects.get(name='test-coll-cont')
+    entity = coll.entity_ref
   except:
-    entity = Entity(name='test-hase')
-    entity.save()
-
-  try:
-    coll = Collection.objects.get(name='test-collection')
-  except:
-    coll = Collection(name='test-collection', entity_ref=entity)
-    coll.save()
+    coll, entity = _create_collection('test-coll-cont')
 
   try:
     container = Container.objects.get(name='test-container')
@@ -25,7 +21,7 @@ def _create_image(hash='sha256.oink'):
 
   image = Image(container_ref=container, hash=hash)
   image.save()
-  return image
+  return image, container, coll, entity
 
 class TestImage(unittest.TestCase):
   @classmethod
@@ -71,7 +67,7 @@ class TestImage(unittest.TestCase):
     self.assertEqual(read_image.entityName(), entity.name)
 
   def test_tags(self):
-    image = _create_image()
+    image = _create_image()[0]
 
     tag1 = Tag(name='v1', image_ref=image)
     tag1.save()
@@ -84,10 +80,10 @@ class TestImage(unittest.TestCase):
   def test_schema(self):
     schema = ImageSchema()
 
-    image = _create_image()
+    image = _create_image()[0]
 
     serialized = schema.dump(image)
-    self.assertEqual(serialized.data['id'], str(image.id))
+    self.assertEqual(serialized.data['hash'], image.hash)
 
     entity = Entity(name='Test Hase')
     entity.save()
@@ -112,7 +108,7 @@ class TestImage(unittest.TestCase):
 
   def test_schema_tags(self):
     schema = ImageSchema()
-    image = _create_image()
+    image = _create_image()[0]
 
     tag1 = Tag(name='v1', image_ref=image)
     tag1.save()

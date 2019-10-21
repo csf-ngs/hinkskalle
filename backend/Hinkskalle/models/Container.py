@@ -32,7 +32,7 @@ class ContainerSchema(Schema):
   images = fields.String(dump_only=True, many=True, attribute='image_names')
 
 class Container(Document):
-  name = StringField(required=True, unique=True)
+  name = StringField(required=True, unique_with='collection_ref')
   description = StringField()
   fullDescription = StringField()
   private = BooleanField(default=False)

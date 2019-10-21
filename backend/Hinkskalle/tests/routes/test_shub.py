@@ -28,15 +28,18 @@ class TestEntities(unittest.TestCase):
     Tag.objects.delete()
   
   def test_manifest(self):
-    image = _create_image()
+    image, _, _, entity = _create_image()
     latest_tag = Tag(name='latest', image_ref=image)
     latest_tag.save()
+
+    entity.name=''
+    entity.save()
 
     ret = self.client.get(f"/api/container/{image.collectionName()}/{image.containerName()}:latest")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json()
     self.assertDictEqual(data, {
-      'image': '',
+      'image': f"http://localhost/v1/imagefile//{image.collectionName()}/{image.containerName()}:latest",
       'name': image.containerName(),
       'tag': latest_tag.name,
       #'version': None,
@@ -44,7 +47,7 @@ class TestEntities(unittest.TestCase):
     })
   
   def test_pull(self):
-    image = _create_image() 
+    image = _create_image()[0]
     latest_tag = Tag(name='latest', image_ref=image)
     latest_tag.save()
 

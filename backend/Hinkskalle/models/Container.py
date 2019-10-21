@@ -16,10 +16,10 @@ class ContainerSchema(Schema):
   downloadCount = fields.Integer(dump_only=True)
   stars = fields.Integer(dump_only=True)
   customData = fields.String(allow_none=True)
-  createdAt = fields.DateTime(dump_unly=True)
+  createdAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(dump_only=True, allow_none=True)
-  updatedAt = fields.DateTime(dump_unly=True, allow_none=True)
-  deletedAt = fields.DateTime(dump_unly=True, allow_none=True)
+  updatedAt = fields.DateTime(dump_only=True, allow_none=True)
+  deletedAt = fields.DateTime(dump_only=True, allow_none=True)
   deleted = fields.Boolean(dump_only=True)
 
   collection = fields.String(required=True)

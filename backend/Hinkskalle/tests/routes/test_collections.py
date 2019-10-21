@@ -2,25 +2,10 @@
 import unittest
 import os
 import json
-from Hinkskalle import create_app
-
-from Hinkskalle.models import Entity, Collection
-
+from Hinkskalle.tests.route_base import RouteBase
 from Hinkskalle.tests.models.test_Collection import _create_collection
 
-class TestCollections(unittest.TestCase):
-  app = None
-  client = None
-  @classmethod
-  def setUpClass(cls):
-    os.environ['MONGODB_HOST']='mongomock://localhost'
-  
-  def setUp(self):
-    self.app = create_app()
-    self.client = self.app.test_client()
-  def tearDown(self):
-    Entity.objects.delete()
-    Collection.objects.delete()
+class TestCollections(RouteBase):
   
   def test_get(self):
     coll, entity = _create_collection()

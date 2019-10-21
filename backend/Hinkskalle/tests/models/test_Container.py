@@ -3,6 +3,15 @@ from mongoengine import connect, disconnect
 from datetime import datetime, timedelta
 
 from Hinkskalle.models import Entity, Collection, Container, ContainerSchema, Image, Tag
+from Hinkskalle.tests.models.test_Collection import _create_collection
+
+def _create_container(postfix='container'):
+  coll, entity = _create_collection(f"test-collection-f{postfix}")
+
+  container = Container(name=f"test-f{postfix}", collection_ref=coll)
+  container.save()
+  return container, coll, entity
+
 
 class TestContainer(unittest.TestCase):
   @classmethod
@@ -21,28 +30,10 @@ class TestContainer(unittest.TestCase):
     Image.objects.delete()
     Tag.objects.delete()
 
-  def _create_container(self):
-    entity = Entity(name='test-hase')
-    entity.save()
-
-    coll = Collection(name='test-collection', entity_ref=entity)
-    coll.save()
-
-    container = Container(name='test-container', collection_ref=coll)
-    container.save()
-    return container
-
   def test_container(self):
-    entity = Entity(name='test-hase')
-    entity.save()
+    container, coll, entity = _create_container()
 
-    coll = Collection(name='test-collection', entity_ref=entity)
-    coll.save()
-
-    container = Container(name='test-container', collection_ref=coll)
-    container.save()
-
-    read_container = Container.objects.get(name='test-container')
+    read_container = Container.objects.get(name=container.name)
     self.assertEqual(read_container.id, container.id)
     self.assertTrue(abs(read_container.createdAt - datetime.utcnow()) < timedelta(seconds=1))
 
@@ -53,7 +44,7 @@ class TestContainer(unittest.TestCase):
     self.assertEqual(read_container.entityName(), entity.name)
 
   def test_images(self):
-    container = self._create_container()
+    container = _create_container()[0]
 
     image1 = Image(description='test-image-1', container_ref=container)
     image1.save()
@@ -61,7 +52,7 @@ class TestContainer(unittest.TestCase):
     self.assertEqual(container.images().first().id, image1.id)
 
   def test_tag_image(self):
-    container = self._create_container()
+    container = _create_container()[0]
 
     image1 = Image(hash='eins', description='test-image-1', container_ref=container)
     image1.save()
@@ -120,7 +111,7 @@ class TestContainer(unittest.TestCase):
 
 
   def test_get_tags(self):
-    container = self._create_container()
+    container = _create_container()[0]
 
     image1 = Image(hash='test-image-1', container_ref=container)
     image1.save()
@@ -165,7 +156,7 @@ class TestContainer(unittest.TestCase):
     self.assertEqual(serialized.data['entityName'], entity.name)
   
   def test_schema_tags(self):
-    container = self._create_container()
+    container = _create_container()[0]
 
     image1 = Image(hash='eins', description='test-image-1', container_ref=container)
     image1.save()

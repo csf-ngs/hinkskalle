@@ -6,17 +6,17 @@ from Hinkskalle.models import Entity, Collection, Container, Image, ImageSchema,
 
 from Hinkskalle.tests.models.test_Collection import _create_collection
 
-def _create_image(hash='sha256.oink'):
+def _create_image(hash='sha256.oink', postfix='container'):
   try:
-    coll = Collection.objects.get(name='test-coll-cont')
+    coll = Collection.objects.get(name=f"test-coll-{postfix}")
     entity = coll.entity_ref
   except:
-    coll, entity = _create_collection('test-coll-cont')
+    coll, entity = _create_collection(f"test-coll-{postfix}")
 
   try:
-    container = Container.objects.get(name='test-container')
+    container = Container.objects.get(name=f"test-{postfix}")
   except:
-    container = Container(name='test-container',collection_ref=coll)
+    container = Container(name=f"test-{postfix}", collection_ref=coll)
     container.save()
 
   image = Image(container_ref=container, hash=hash)

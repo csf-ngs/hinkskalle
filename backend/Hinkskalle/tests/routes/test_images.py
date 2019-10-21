@@ -2,39 +2,37 @@ import unittest
 import os
 import json
 import tempfile
-from Hinkskalle import create_app
+from Hinkskalle.tests.route_base import RouteBase
 
-from Hinkskalle.models import Entity, Collection, Container, Image, Tag
+from Hinkskalle.models import Image, Tag
 from Hinkskalle.tests.models.test_Image import _create_image
+from Hinkskalle.tests.models.test_Container import _create_container
 
-class TestEntities(unittest.TestCase):
-  app = None
-  client = None
-  @classmethod
-  def setUpClass(cls):
-    os.environ['MONGODB_HOST']='mongomock://localhost'
-  
-  def setUp(self):
-    self.app = create_app()
-    self.app.config['TESTING'] = True
-    self.client = self.app.test_client()
-
-  def tearDown(self):
-    Entity.objects.delete()
-    Collection.objects.delete()
-    Container.objects.delete()
-    Image.objects.delete()
-    Tag.objects.delete()
-
+class TestImages(RouteBase):
   def test_get_latest(self):
     image = _create_image()[0]
     latest_tag = Tag(name='latest', image_ref=image)
     latest_tag.save()
 
     ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}")
+    self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(image.id))
     self.assertListEqual(data['tags'], ['latest'])
+  
+  def test_get_default(self):
+    image, _, _, entity = _create_image()
+    entity.name=''
+    entity.save()
+
+    latest_tag = Tag(name='latest', image_ref=image)
+    latest_tag.save()
+
+    ret = self.client.get(f"/v1/images//{image.collectionName()}/{image.containerName()}")
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['id'], str(image.id))
+
 
   def test_get_with_tag(self):
     v1_image = _create_image()[0]
@@ -46,6 +44,7 @@ class TestEntities(unittest.TestCase):
     latest_tag.save()
 
     ret = self.client.get(f"/v1/images/{v1_image.entityName()}/{v1_image.collectionName()}/{v1_image.containerName()}:{v1_tag.name}")
+    self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(v1_image.id))
     self.assertListEqual(data['tags'], ['v1'])
@@ -58,9 +57,10 @@ class TestEntities(unittest.TestCase):
     second_image.save()
 
     ret = self.client.get(f"/v1/images/{first_image.entityName()}/{first_image.collectionName()}/{first_image.containerName()}:{first_image.hash}")
+    self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(first_image.id))
-  
+
   def test_reset_uploaded(self):
     image = _create_image()[0]
     image.location = '/some/where'
@@ -70,6 +70,7 @@ class TestEntities(unittest.TestCase):
     latest_tag.save()
 
     ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+    self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertFalse(data['uploaded'])
     read_image = Image.objects.get(id=image.id)
@@ -79,6 +80,7 @@ class TestEntities(unittest.TestCase):
     image.uploaded = True
     image.save()
     ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+    self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertFalse(data['uploaded'])
     
@@ -96,11 +98,13 @@ class TestEntities(unittest.TestCase):
 
     ret = self.client.get(f"/v1/imagefile/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello Dorian!")
     ret.close() # avoid unclosed filehandle warning
 
     # singularity requests with double slash
     ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello Dorian!")
     ret.close() # avoid unclosed filehandle warning
@@ -123,6 +127,7 @@ class TestEntities(unittest.TestCase):
     image.save()
 
     ret = self.client.get(f"/v1/imagefile//{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello default Entity!")
     ret.close()

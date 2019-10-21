@@ -3,30 +3,10 @@ import unittest
 import os
 import json
 import tempfile
-from Hinkskalle import create_app
-
-from Hinkskalle.models import Entity, Collection, Container, Image, Tag
+from Hinkskalle.tests.route_base import RouteBase
 from Hinkskalle.tests.models.test_Container import _create_container
 
-class TestContainers(unittest.TestCase):
-  app = None
-  client = None
-  @classmethod
-  def setUpClass(cls):
-    os.environ['MONGODB_HOST']='mongomock://localhost'
-  
-  def setUp(self):
-    self.app = create_app()
-    self.app.config['TESTING'] = True
-    self.client = self.app.test_client()
-
-  def tearDown(self):
-    Entity.objects.delete()
-    Collection.objects.delete()
-    Container.objects.delete()
-    Image.objects.delete()
-    Tag.objects.delete()
-  
+class TestContainers(RouteBase):
   def test_get(self):
     container, coll, entity = _create_container()
 

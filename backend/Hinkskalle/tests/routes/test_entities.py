@@ -1,23 +1,11 @@
 import unittest
 import os
 import json
-from Hinkskalle import create_app
+from Hinkskalle.tests.route_base import RouteBase, fake_admin_auth
 
 from Hinkskalle.models import Entity
 
-class TestEntities(unittest.TestCase):
-  app = None
-  client = None
-  @classmethod
-  def setUpClass(cls):
-    os.environ['MONGODB_HOST']='mongomock://localhost'
-  
-  def setUp(self):
-    self.app = create_app()
-    self.client = self.app.test_client()
-  def tearDown(self):
-    Entity.objects.delete()
-
+class TestEntities(RouteBase):
   def test_get(self):
     entity = Entity(name='grunz')
     entity.save()
@@ -49,10 +37,15 @@ class TestEntities(unittest.TestCase):
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(entity.id))
 
-  def __test_create(self):
+  def test_create(self):
     # figure out mock token
+    with fake_admin_auth(self.app):
+      ret = self.client.post('/v1/entities', json={
+        'name': 'grunz',
+      })
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['name'], 'grunz')
     ret = self.client.post('/v1/entities', json={
       'name': 'grunz',
     })
-    data = ret.get_json().get('data')
-    self.assertEquals(data['name'], 'grunz')

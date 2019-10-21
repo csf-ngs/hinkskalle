@@ -75,6 +75,14 @@ def get_image(entity_id, collection_id, tagged_container_id):
   return { 'data': image }
 
 @registry.handles(
+  rule='/v1/images//<string:collection_id>/<string:tagged_container_id>',
+  method='GET',
+  response_body_schema=ImageResponseSchema(),
+)
+def get_default_image(collection_id, tagged_container_id):
+  return get_image(entity_id='', collection_id=collection_id, tagged_container_id=tagged_container_id)
+
+@registry.handles(
   rule='/v1/images',
   method='POST',
   request_body_schema=ImageCreateSchema(),
@@ -90,12 +98,20 @@ def create_image():
   new_image = Image(**body)
   new_image.container_ref=container
 
+  existing_images = [ img for img in Image.objects.filter(hash=new_image.hash) if img.container_ref != container ]
+  if len(existing_images) > 0:
+    current_app.logger.debug(f"hash already found, re-using image location {existing_images[0].location}")
+    new_image.uploaded=True
+    new_image.size=existing_images[0].size
+    new_image.location=existing_images[0].location
+
   try:
     new_image.save()
   except NotUniqueError as err:
-    raise errors.PreconditionFailed(f"Image {new_image.id} already exists")
+    raise errors.PreconditionFailed(f"Image {new_image.id}/{new_image.hash} already exists")
 
-  container.tag_image('latest', new_image.id)
+  if new_image.uploaded:
+    container.tag_image('latest', new_image.id)
 
   return { 'data': new_image }
 
@@ -139,7 +155,7 @@ def push_image(image_id):
   except DoesNotExist:
     raise errors.NotFound(f"Image {image_id} not found")
 
-  outfn = safe_join(current_app.config.get('IMAGE_PATH'), image.make_filename())
+  outfn = safe_join(current_app.config.get('IMAGE_PATH'), '_imgs', image.make_filename())
 
   m = hashlib.sha256()
   tmpf = tempfile.NamedTemporaryFile(delete=False)
@@ -163,4 +179,7 @@ def push_image(image_id):
   image.size=read
   image.uploaded=True
   image.save()
+
+  image.container_ref.tag_image('latest', new_image.id)
+
   return 'Danke!'

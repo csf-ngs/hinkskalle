@@ -38,14 +38,23 @@ class TestEntities(RouteBase):
     self.assertEqual(data['id'], str(entity.id))
 
   def test_create(self):
-    # figure out mock token
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/entities', json={
         'name': 'grunz',
+        'createdAt': '0001-01-01T00:00:00Z',
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['name'], 'grunz')
-    ret = self.client.post('/v1/entities', json={
-      'name': 'grunz',
-    })
+    self.assertNotEqual(data['createdAt'], '0001-01-01T00:00:00+00:00')
+    self.assertEqual(data['createdBy'], 'test.hase')
+
+  def test_create_not_unique(self):
+    entity = Entity(name='grunz')
+    entity.save()
+
+    with fake_admin_auth(self.app):
+      ret = self.client.post('/v1/entities', json={
+        'name': 'grunz',
+      })
+    self.assertEqual(ret.status_code, 412)

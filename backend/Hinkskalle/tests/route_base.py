@@ -14,10 +14,8 @@ def fake_admin_auth(app):
   fsk_admin_auth_mock.start()
   with app.app_context():
     g.fsk_user=FskUser('test.hase', True)
-  yield
+    yield
   fsk_admin_auth_mock.stop()
-  with app.app_context():
-    g.fsk_user=None
 
 class RouteBase(unittest.TestCase):
   app = None
@@ -29,6 +27,7 @@ class RouteBase(unittest.TestCase):
   
   def setUp(self):
     self.app = create_app()
+    self.app.config['TESTING'] = True
     self.client = self.app.test_client()
 
   def tearDown(self):

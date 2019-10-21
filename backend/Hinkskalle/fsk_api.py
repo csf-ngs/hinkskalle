@@ -10,5 +10,4 @@ class FskUser():
 class HinkskalleFskApi(FskApi):
   @staticmethod
   def sync_scientist(fsk_user_json):
-    is_admin = any([ group['name']=="Admin" for group in fsk_user_json['groups'] ])
-    return FskUser(fsk_user_json['username'], is_admin)
+    return FskUser(fsk_user_json['username'], fsk_user_json.get('is_admin', False))

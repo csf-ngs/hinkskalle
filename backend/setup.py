@@ -8,7 +8,6 @@ setup(
     install_requires=[
         'flask',
         'SimpleJSON',
-        'Flask-Session',
         'pymongo',
         'flask-mongoengine',
         'mongomock',

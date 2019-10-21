@@ -1,5 +1,4 @@
 from flask import Flask
-from flask_session import Session
 from flask_rebar import Rebar
 from flask_mongoengine import MongoEngineSessionInterface
 from logging.config import dictConfig

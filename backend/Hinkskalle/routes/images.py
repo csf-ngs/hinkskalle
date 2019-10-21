@@ -2,7 +2,7 @@ from Hinkskalle import registry, rebar, fsk_admin_auth
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from mongoengine import NotUniqueError, DoesNotExist
-from flask import request, current_app, safe_join, send_file
+from flask import request, current_app, safe_join, send_file, g
 
 import os
 import os.path
@@ -97,8 +97,9 @@ def create_image():
 
   new_image = Image(**body)
   new_image.container_ref=container
+  new_image.createdBy = g.fsk_user.username
 
-  existing_images = [ img for img in Image.objects.filter(hash=new_image.hash) if img.container_ref != container ]
+  existing_images = [ img for img in Image.objects.filter(hash=new_image.hash) if img.container_ref != container and img.uploaded ]
   if len(existing_images) > 0:
     current_app.logger.debug(f"hash already found, re-using image location {existing_images[0].location}")
     new_image.uploaded=True
@@ -180,6 +181,6 @@ def push_image(image_id):
   image.uploaded=True
   image.save()
 
-  image.container_ref.tag_image('latest', new_image.id)
+  image.container_ref.tag_image('latest', image.id)
 
   return 'Danke!'

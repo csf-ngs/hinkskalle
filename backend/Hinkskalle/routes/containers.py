@@ -1,8 +1,8 @@
 from Hinkskalle import registry, rebar, fsk_admin_auth
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from mongoengine import NotUniqueError, DoesNotExist
-from flask import request, current_app
+from mongoengine import NotUniqueError, DoesNotExist, ValidationError
+from flask import request, current_app, g
 
 from Hinkskalle.models import ContainerSchema, Container, Entity, Collection
 
@@ -55,10 +55,16 @@ def get_default_container(collection_id, container_id):
 )
 def create_container():
   body = rebar.validated_body
-  collection = Collection.objects.get(id=body['collection'])
+  try:
+    collection = Collection.objects.get(id=body['collection'])
+  except ValidationError as err:
+    raise errors.InternalError(str(err))
+  except DoesNotExist:
+    raise errors.NotFound(f"collection {body['collection']} not found")
   body.pop('collection')
   new_container = Container(**body)
   new_container.collection_ref=collection
+  new_container.createdBy=g.fsk_user.username
 
   try:
     new_container.save()

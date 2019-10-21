@@ -2,7 +2,7 @@ from Hinkskalle import registry, rebar, fsk_admin_auth
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from mongoengine import NotUniqueError, DoesNotExist
-from flask import request, current_app
+from flask import request, current_app, g
 
 from Hinkskalle.models import CollectionSchema, Collection, Entity
 
@@ -53,6 +53,7 @@ def create_collection():
   body.pop('entity')
   new_collection = Collection(**body)
   new_collection.entity_ref=entity
+  new_collection.createdBy=g.fsk_user.username
 
   try:
     new_collection.save()

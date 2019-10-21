@@ -2,7 +2,7 @@ from Hinkskalle import registry, rebar, fsk_admin_auth
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from mongoengine import NotUniqueError, DoesNotExist
-from flask import request, current_app
+from flask import request, current_app, g
 
 from Hinkskalle.models import EntitySchema, Entity
 
@@ -47,6 +47,7 @@ def create_entity():
   current_app.logger.debug(body)
   body.pop('id', None)
   new_entity = Entity(**body)
+  new_entity.createdBy = g.fsk_user.username
 
   try:
     new_entity.save()

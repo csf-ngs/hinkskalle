@@ -15,7 +15,7 @@ class ContainerSchema(Schema):
   size = fields.Integer(dump_only=True)
   downloadCount = fields.Integer(dump_only=True)
   stars = fields.Integer(dump_only=True)
-  customData = fields.String()
+  customData = fields.String(allow_none=True)
   createdAt = fields.DateTime(dump_unly=True)
   createdBy = fields.String(dump_only=True, allow_none=True)
   updatedAt = fields.DateTime(dump_unly=True, allow_none=True)

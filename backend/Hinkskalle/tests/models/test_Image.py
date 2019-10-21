@@ -4,6 +4,29 @@ from datetime import datetime, timedelta
 
 from Hinkskalle.models import Entity, Collection, Container, Image, ImageSchema, Tag
 
+def _create_image(hash='sha256.oink'):
+  try:
+    entity = Entity.objects.get(name='test-hase')
+  except:
+    entity = Entity(name='test-hase')
+    entity.save()
+
+  try:
+    coll = Collection.objects.get(name='test-collection')
+  except:
+    coll = Collection(name='test-collection', entity_ref=entity)
+    coll.save()
+
+  try:
+    container = Container.objects.get(name='test-container')
+  except:
+    container = Container(name='test-container',collection_ref=coll)
+    container.save()
+
+  image = Image(container_ref=container, hash=hash)
+  image.save()
+  return image
+
 class TestImage(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
@@ -21,19 +44,6 @@ class TestImage(unittest.TestCase):
     Image.objects.delete()
     Tag.objects.delete()
 
-  def _create_image(self):
-    entity = Entity(name='test-hase')
-    entity.save()
-
-    coll = Collection(name='test-collection', entity_ref=entity)
-    coll.save()
-
-    container = Container(name='test-container',collection_ref=coll)
-    container.save()
-
-    image = Image(container_ref=container)
-    image.save()
-    return image
 
   def test_image(self):
     entity = Entity(name='test-hase')
@@ -61,7 +71,7 @@ class TestImage(unittest.TestCase):
     self.assertEqual(read_image.entityName(), entity.name)
 
   def test_tags(self):
-    image = self._create_image()
+    image = _create_image()
 
     tag1 = Tag(name='v1', image_ref=image)
     tag1.save()
@@ -74,7 +84,7 @@ class TestImage(unittest.TestCase):
   def test_schema(self):
     schema = ImageSchema()
 
-    image = self._create_image()
+    image = _create_image()
 
     serialized = schema.dump(image)
     self.assertEqual(serialized.data['id'], str(image.id))
@@ -102,7 +112,7 @@ class TestImage(unittest.TestCase):
 
   def test_schema_tags(self):
     schema = ImageSchema()
-    image = self._create_image()
+    image = _create_image()
 
     tag1 = Tag(name='v1', image_ref=image)
     tag1.save()

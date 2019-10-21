@@ -1,8 +1,8 @@
-from Hinkskalle import app, registry, rebar, fsk_admin_auth
+from Hinkskalle import registry, rebar, fsk_admin_auth
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from mongoengine import NotUniqueError, DoesNotExist
-from flask import request
+from flask import request, current_app
 
 from Hinkskalle.models import CollectionSchema, Collection, Entity
 
@@ -40,7 +40,7 @@ def get_collection(entity_id, collection_id):
 )
 def create_collection():
   body = rebar.validated_body
-  app.logger.debug(body)
+  current_app.logger.debug(body)
   entity = Entity.objects.get(id=body['entity'])
   body.pop('entity')
   new_collection = Collection(**body)

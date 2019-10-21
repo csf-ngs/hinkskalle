@@ -1,5 +1,5 @@
-from Hinkskalle import app, registry
-from flask import jsonify, make_response, request
+from Hinkskalle import registry
+from flask import current_app, jsonify, make_response, request, request_started
 from flask_rebar import RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
 from werkzeug import EnvironHeaders
@@ -43,12 +43,11 @@ def config():
     }
   }
 
-
 # super hacky fake content type (singularity does not set it)
 # header props are read-only (go figure) 
 # change original WSGI environ dict (which is accessible)
 # and reset headers (this field is not immutable, go figure some more)
-@app.before_request
+@current_app.before_request
 def before_request_func():
   if request.path.startswith('/v1') and request.method=='POST':
     request.headers.environ['CONTENT_TYPE']='application/json'
@@ -59,19 +58,19 @@ def create_error_object(code, msg):
     { 'title': 'Fail!', 'detail': msg, 'code': code }
   ]
 
-@app.errorhandler(404)
+@current_app.errorhandler(404)
 def not_found(error):
   return make_response(jsonify(status='error', errors=create_error_object(404, 'Not found.')), 404)
 
-@app.errorhandler(500)
+@current_app.errorhandler(500)
 def internal_error(error):
   return make_response(jsonify(status='error', errors=create_error_object(500, str(error))), 500)
 
-@app.errorhandler(403)
+@current_app.errorhandler(403)
 def forbidden_error(error):
   return make_response(jsonify(status="error", errors=create_error_object(403, str(error))), 403)
 
-@app.after_request
+@current_app.after_request
 def add_header(r):
   r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
   r.headers["Pragma"] = "no-cache"

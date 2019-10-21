@@ -1,6 +1,7 @@
-from Hinkskalle import app, registry, fsk_auth
+from Hinkskalle import registry, fsk_auth
 from flask_rebar import RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
+from flask import current_app
 
 class TokenResponseSchema(ResponseSchema):
   status = fields.String()

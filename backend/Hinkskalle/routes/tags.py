@@ -1,8 +1,8 @@
-from Hinkskalle import app, registry, rebar, fsk_admin_auth
+from Hinkskalle import registry, rebar, fsk_admin_auth
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from mongoengine import DoesNotExist
-from flask import request
+from flask import request, current_app
 
 from Hinkskalle.models import Tag, Container
 
@@ -40,7 +40,7 @@ def update_tag(container_id):
   tag = request.get_json(force=True)
   tag_name=tag.keys().first()
   new_tag = container.tag_image(tag_name, tag[tag_name])
-  app.logger.debug(f"created tag {new_tag.name} on {new_tag.image_ref.id}")
+  current_app.logger.debug(f"created tag {new_tag.name} on {new_tag.image_ref.id}")
   return { 'data': container.imageTags() }
 
 

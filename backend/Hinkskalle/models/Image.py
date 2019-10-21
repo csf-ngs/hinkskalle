@@ -2,6 +2,7 @@ from mongoengine import Document, StringField, IntField, BooleanField, Reference
 from marshmallow import Schema, fields
 from datetime import datetime
 
+import os.path
 from Hinkskalle.models import Tag
 
 class ImageSchema(Schema):
@@ -11,7 +12,7 @@ class ImageSchema(Schema):
   blob = fields.String(allow_none=True)
   size = fields.Int(allow_none=True)
   uploaded = fields.Boolean(dump_only=True)
-  customData = fields.String()
+  customData = fields.String(allow_none=True)
 
   containerStars = fields.Integer(dump_only=True)
   containerDownloads = fields.Integer(dump_only=True)
@@ -32,7 +33,7 @@ class ImageSchema(Schema):
 
 class Image(Document):
   description = StringField()
-  hash = StringField()
+  hash = StringField(unique_with='container_ref')
   blob = StringField()
   size = IntField(min_value=0)
   uploaded = BooleanField()
@@ -47,6 +48,8 @@ class Image(Document):
   updatedAt = DateTimeField()
   deletedAt = DateTimeField()
   deleted = BooleanField(required=True, default=False)
+
+  location = StringField()
 
   def container(self):
     return self.container_ref.id
@@ -65,4 +68,7 @@ class Image(Document):
   
   def tags(self):
     return [ tag.name for tag in Tag.objects(image_ref=self) ]
+  
+  def make_filename(self):
+    return os.path.join(self.collectionName(), f"{self.hash}.sif")
    

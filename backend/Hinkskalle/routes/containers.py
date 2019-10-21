@@ -1,8 +1,8 @@
-from Hinkskalle import app, registry, rebar, fsk_admin_auth
+from Hinkskalle import registry, rebar, fsk_admin_auth
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from mongoengine import NotUniqueError, DoesNotExist
-from flask import request
+from flask import request, current_app
 
 from Hinkskalle.models import ContainerSchema, Container, Entity, Collection
 

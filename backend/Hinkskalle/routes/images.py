@@ -1,8 +1,14 @@
-from Hinkskalle import app, registry, rebar, fsk_admin_auth
+from Hinkskalle import registry, rebar, fsk_admin_auth
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from mongoengine import NotUniqueError, DoesNotExist
-from flask import request
+from flask import request, current_app, safe_join, send_file
+
+import os
+import os.path
+import hashlib
+import tempfile
+import shutil
 
 from Hinkskalle.models import ImageSchema, Image, Container, Entity, Collection
 
@@ -12,19 +18,14 @@ class ImageResponseSchema(ResponseSchema):
 class ImageCreateSchema(ImageSchema, RequestSchema):
   pass
 
-
-@registry.handles(
-  rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
-  method='GET',
-  response_body_schema=ImageResponseSchema(),
-)
-def get_image(entity_id, collection_id, tagged_container_id):
+def _parse_tag(tagged_container_id):
   tokens = tagged_container_id.split(":", maxsplit=1)
-  container_id=tokens[0]
-  if len(tokens)>1:
-    tag=tokens[1]
-  else:
-    tag='latest'
+  if len(tokens) == 1:
+    tokens.append('latest')
+  return tokens[0], tokens[1]
+
+def _get_image(entity_id, collection_id, tagged_container_id):
+  container_id, tag = _parse_tag(tagged_container_id)
 
   try:
     entity = Entity.objects.get(name=entity_id)
@@ -33,18 +34,40 @@ def get_image(entity_id, collection_id, tagged_container_id):
   try:
     collection = Collection.objects.get(name=collection_id, entity_ref=entity)
   except DoesNotExist:
-    raise errors.NotFound(f"collection {entity.id}/{collection_id} not found")
+    raise errors.NotFound(f"collection {entity.name}/{collection_id} not found")
   try:
     container = Container.objects.get(name=container_id, collection_ref=collection)
   except DoesNotExist:
-    raise errors.NotFound(f"container {entity.id}/{collection.id}/{container_id} not found")
+    raise errors.NotFound(f"container {entity.name}/{collection.name}/{container_id} not found")
 
-  image_tags = container.imageTags()
-  if not tag in image_tags:
-    raise errors.NotFound(f"tag {tag} on container {entity.id}/{collection.id}/{container.id} not found")
+  if tag.startswith('sha256.'):
+    shahash=tag
+    try:
+      image = Image.objects.get(hash=shahash, container_ref=container)
+    except DoesNotExist:
+      raise errors.NotFound(f"image with hash {shahash} not found in container {container.name}")
+  else:
+    image_tags = container.imageTags()
+    if not tag in image_tags:
+      raise errors.NotFound(f"tag {tag} on container {entity.name}/{collection.name}/{container.name} not found")
 
-  image = Image.objects.get(id=image_tags[tag])
+    image = Image.objects.get(id=image_tags[tag])
+  return image
 
+
+@registry.handles(
+  rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
+  method='GET',
+  response_body_schema=ImageResponseSchema(),
+)
+def get_image(entity_id, collection_id, tagged_container_id):
+  image = _get_image(entity_id, collection_id, tagged_container_id)
+  current_app.logger.debug(f"{image.location}")
+  if image.uploaded and (not image.location or not os.path.exists(image.location)):
+    current_app.logger.debug(f"{image.location} does not exist, resetting uploaded flag.")
+    image.uploaded = False
+    image.location = None
+    image.save()
   return { 'data': image }
 
 @registry.handles(
@@ -56,6 +79,7 @@ def get_image(entity_id, collection_id, tagged_container_id):
 )
 def create_image():
   body = rebar.validated_body
+  current_app.logger.debug(body)
   container = Container.objects.get(id=body['container'])
   body.pop('container')
 
@@ -70,3 +94,62 @@ def create_image():
   container.tag_image('latest', new_image.id)
 
   return { 'data': new_image }
+
+@registry.handles(
+  rule='/v1/imagefile/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
+  method='GET',
+)
+def pull_image(entity_id, collection_id, tagged_container_id):
+  image = _get_image(entity_id, collection_id, tagged_container_id)
+  if not image.uploaded or not image.location:
+    raise errors.NotAcceptable('Image is not uploaded yet?')
+  
+  if not os.path.exists(image.location):
+    raise errors.InternalError(f"Image not found at {image.location}")
+  
+  return send_file(image.location)
+  
+@registry.handles(
+  rule='/v1/imagefile//<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
+  method='GET',
+)
+def pull_image_double_slash_annoy(*args, **kwargs):
+  return pull_image(**kwargs)
+  
+
+@registry.handles(
+  rule='/v1/imagefile/<string:image_id>',
+  method='POST',
+  authenticators=fsk_admin_auth,
+)
+def push_image(image_id):
+  try:
+    image = Image.objects.get(id=image_id)
+  except DoesNotExist:
+    raise errors.NotFound(f"Image {image_id} not found")
+
+  outfn = safe_join(current_app.config.get('IMAGE_PATH'), image.make_filename())
+
+  m = hashlib.sha256()
+  tmpf = tempfile.NamedTemporaryFile(delete=False)
+  read = 0
+  while (True):
+    chunk = request.stream.read(16384)
+    if len(chunk) == 0:
+      break
+    read = read + len(chunk)
+    m.update(chunk)
+    tmpf.write(chunk)
+  
+  digest = m.hexdigest()
+  if image.hash != f"sha256.{digest}":
+    raise errors.UnprocessableEntity("Image hash {image.hash} does not match: {digest}")
+  tmpf.close()
+
+  os.makedirs(os.path.dirname(outfn), exist_ok=True)
+  shutil.move(tmpf.name, outfn)
+  image.location=os.path.abspath(outfn)
+  image.size=read
+  image.uploaded=True
+  image.save()
+  return 'Danke!'

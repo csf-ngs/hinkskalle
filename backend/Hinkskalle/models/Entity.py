@@ -14,7 +14,7 @@ class EntitySchema(Schema):
   size = fields.Integer(dump_only=True)
   quota = fields.Integer(dump_only=True)
   defaultPrivate = fields.Boolean()
-  customData = fields.String()
+  customData = fields.String(allow_none=True)
 
   collections = fields.String(dump_only=True, many=True)
 

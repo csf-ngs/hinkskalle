@@ -89,7 +89,7 @@ class Container(Document):
       for tag in image.tags():
         if tag in tags:
           raise Exception(f"Tag {tag} for image {image.id} is already set on {tags[tag]}")
-        tags[tag]=image.id
+        tags[tag]=str(image.id)
     return tags
 
   def archTags(self):

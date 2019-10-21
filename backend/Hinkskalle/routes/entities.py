@@ -1,8 +1,8 @@
-from Hinkskalle import app, registry, rebar, fsk_admin_auth
+from Hinkskalle import registry, rebar, fsk_admin_auth
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from mongoengine import NotUniqueError, DoesNotExist
-from flask import request
+from flask import request, current_app
 
 from Hinkskalle.models import EntitySchema, Entity
 
@@ -36,7 +36,7 @@ def get_entity(entity_id):
 )
 def create_entity():
   body = rebar.validated_body
-  app.logger.debug(body)
+  current_app.logger.debug(body)
   body.pop('id', None)
   new_entity = Entity(**body)
 

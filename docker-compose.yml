@@ -4,7 +4,6 @@ services:
     image: docker.ngs.vbcf.ac.at/hinkskalle-dev
     volumes:
       - '.:/srv/hinkskalle/src'
-      - '~/.fsk_api.yml:/root/.fsk_api.yml'
     command: './script/start.sh'
     environment:
       PORT: 5000

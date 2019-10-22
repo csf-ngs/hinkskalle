@@ -11,7 +11,7 @@ steps:
 - name: testhase
   image: docker.ngs.vbcf.ac.at/flask-base
   environment:
-    HINKSKALLE_SETTINGS=../../conf/config.json
+    HINKSKALLE_SETTINGS: ../../conf/config.json
   commands:
   - cd backend
   - pip3 install -e .

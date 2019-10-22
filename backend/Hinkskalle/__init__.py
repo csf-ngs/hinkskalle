@@ -39,8 +39,8 @@ def create_app():
   if 'MONGODB_HOST' in os.environ:
     app.config['MONGODB_SETTINGS'] = {
       'host': os.environ['MONGODB_HOST'],
-      'username': os.environ['MONGODB_USERNAME'],
-      'password': os.environ['MONGODB_PASSWORD'],
+      'username': os.environ.get('MONGODB_USERNAME', None),
+      'password': os.environ.get('MONGODB_PASSWORD', None),
     }
 
   from Hinkskalle.models import db

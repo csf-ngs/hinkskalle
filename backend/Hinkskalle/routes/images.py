@@ -162,7 +162,7 @@ def push_image(image_id):
   tmpf = tempfile.NamedTemporaryFile(delete=False)
   read = 0
   while (True):
-    chunk = request.stream.read(curent_app.config.get("UPLOAD_CHUNK_SIZE", 16385))
+    chunk = request.stream.read(current_app.config.get("UPLOAD_CHUNK_SIZE", 16385))
     if len(chunk) == 0:
       break
     read = read + len(chunk)

@@ -1,0 +1,50 @@
+---
+name: hinkskalle
+kind: pipeline
+
+steps:
+- name: fetch
+  image: drone/git
+  commands:
+    - git fetch --tags
+    - git describe > .tags
+- name: bauhaus
+  image: docker:dind
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  - name: dockerauth
+    path: /root/.docker
+  environment:
+    GIT_USER:
+      from_secret: drone_puller_username
+    GIT_PASSWORD:
+      from_secret: drone_puller_password
+  commands:
+  - TAG=$(cat .tags)
+  - >
+    docker build 
+    --label org.label-schema.build-date="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+    --label org.label-schema.vcs-url="$DRONE_GIT_HTTP_URL"
+    --label org.label-schema.vcs-ref="$DRONE_COMMIT_SHA"
+    --label at.ac.vbcf.ngs.blame="$DRONE_COMMIT_AUTHOR"
+    --build-arg GIT_USER="$GIT_USER"
+    --build-arg GIT_PASSWORD="$GIT_PASSWORD"
+    -t docker.ngs.vbcf.ac.at/hinkskalle:$TAG .
+  - docker tag docker.ngs.vbcf.ac.at/hinkskalle:$TAG docker.ngs.vbcf.ac.at/hinkskalle:latest
+- name: pushraus
+  image: docker:dind
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  - name: dockerauth
+    path: /root/.docker
+  commands:
+  - docker push docker.ngs.vbcf.ac.at/hinkskalle
+volumes:
+- name: dockersock
+  host:
+    path: /var/run/docker.sock
+- name: dockerauth
+  host:
+    path: /home/drone/.docker

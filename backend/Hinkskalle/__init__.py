@@ -1,6 +1,5 @@
 from flask import Flask
 from flask_rebar import Rebar
-from flask_mongoengine import MongoEngineSessionInterface
 from logging.config import dictConfig
 
 import os
@@ -39,13 +38,13 @@ def create_app():
   app.config.from_json(os.environ['HINKSKALLE_SETTINGS'])
   if 'MONGODB_HOST' in os.environ:
     app.config['MONGODB_SETTINGS'] = {
-      'host': os.environ['MONGODB_HOST']
+      'host': os.environ['MONGODB_HOST'],
+      'username': os.environ['MONGODB_USERNAME'],
+      'password': os.environ['MONGODB_PASSWORD'],
     }
 
   from Hinkskalle.models import db
   db.init_app(app)
-  app.session_interface = MongoEngineSessionInterface(db)
-
 
   with app.app_context():
     import Hinkskalle.routes

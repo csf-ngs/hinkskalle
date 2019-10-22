@@ -1,5 +1,4 @@
 backend/config.py
-conf/config.json
 conf/secrets.json
 conf/mongo.env
 conf/mongo-entrypoint/01_create_user.sh

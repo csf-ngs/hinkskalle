@@ -1,17 +1,17 @@
 version: '3'
 services:
   api:
-    image: docker.ngs.vbcf.ac.at/flask-base
+    image: docker.ngs.vbcf.ac.at/hinkskalle-dev
     volumes:
-      - '.:/srv/'
+      - '.:/srv/hinkskalle/src'
       - '~/.fsk_api.yml:/root/.fsk_api.yml'
-    command: '/srv/script/start.sh'
+    command: './script/start.sh'
     environment:
       PORT: 5000
       MONGODB_HOST: 'mongodb://mongodb/hinktest'
-      LC_ALL: 'en_US.utf8'
-      FLASK_APP: 'Hinkskalle'
-      HINKSKALLE_SETTINGS: '../../conf/config.json'
+      MONGODB_USERNAME: 'hinkebein'
+      MONGODB_PASSWORD: "${HINKSKALLE_MONGODB_PASSWORD}"
+      FSK_URL: 'http://172.28.128.1:6600/fsk3test'
     ports:
       - '7660:5000'
     links:

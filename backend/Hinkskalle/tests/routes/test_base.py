@@ -15,8 +15,8 @@ class TestBase(RouteBase):
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json()
     self.assertDictEqual(json, {
-      'keystoreAPI': { 'uri': 'http://localhost/'},
-      'libraryAPI': { 'uri': 'http://localhost/'},
-      'tokenAPI': { 'uri': 'http://localhost/'},
+      'keystoreAPI': { 'uri': 'http://localhost'},
+      'libraryAPI': { 'uri': 'http://localhost'},
+      'tokenAPI': { 'uri': 'http://localhost'},
     })
 

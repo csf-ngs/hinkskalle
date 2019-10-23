@@ -33,13 +33,13 @@ def version():
 def config():
   return {
     'libraryAPI': {
-      'uri': request.url_root 
+      'uri': request.url_root.rstrip('/') 
     },
     'keystoreAPI': {
-      'uri': request.url_root
+      'uri': request.url_root.rstrip('/')
     },
     'tokenAPI': {
-      'uri': request.url_root
+      'uri': request.url_root.rstrip('/')
     }
   }
 

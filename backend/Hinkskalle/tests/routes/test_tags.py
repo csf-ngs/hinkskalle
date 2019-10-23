@@ -41,6 +41,16 @@ class TestTags(RouteBase):
 
     self.assertDictEqual(data, { 'v1.0': str(image.id), 'oink': str(image.id) })
     self.assertDictEqual(container.imageTags(), { 'v1.0': str(image.id), 'oink': str(image.id) })
+
+  def test_update_old(self):
+    image, container, _, _ = _create_image()
+    with fake_admin_auth(self.app):
+      ret = self.client.post(f"/v1/tags/{container.id}", json={ 'Tag': 'v1', 'ImageID': str(image.id) })
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+
+    self.assertDictEqual(data, { 'v1': str(image.id) })
+
   
   def test_update_invalid(self):
     image, container, _, _ = _create_image()

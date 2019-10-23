@@ -38,13 +38,21 @@ def update_tag(container_id):
     raise errors.NotFound(f"container {container_id} not found")
 
   tag = request.get_json(force=True)
-  tag_name = list(tag)[0]
+  # why do you have a versioned API when you change
+  # the data structure and send it to the same
+  # endpoint???
+  if 'Tag' in tag and 'ImageID' in tag:
+    tag_name = tag['Tag']
+    tag_image = tag['ImageID']
+  else:
+    tag_name = list(tag)[0]
+    tag_image = tag[tag_name]
   try:
-    new_tag = container.tag_image(tag_name, tag[tag_name])
+    new_tag = container.tag_image(tag_name, tag_image)
   except DoesNotExist:
-    raise errors.NotFound(f"Image {tag[tag_name]} not found for container {container_id}")
+    raise errors.NotFound(f"Image {tag_image} not found for container {container_id}")
   except ValidationError:
-    raise errors.NotFound(f"Invalid image id {tag[tag_name]} not found for container {container_id}")
+    raise errors.NotFound(f"Invalid image id {tag_image} not found for container {container_id}")
 
   current_app.logger.debug(f"created tag {new_tag.name} on {new_tag.image_ref.id}")
   return { 'data': container.imageTags() }

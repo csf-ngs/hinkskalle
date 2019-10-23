@@ -32,6 +32,8 @@ def version():
 )
 def config():
   service_url = request.url_root.rstrip('/')
+  if current_app.config.get('PREFERRED_URL_SCHEME', 'http') == 'https':
+    service_url = service_url.replace('http:', 'https:')
   return {
     'libraryAPI': {
       'uri': service_url

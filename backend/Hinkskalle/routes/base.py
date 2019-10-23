@@ -33,13 +33,13 @@ def version():
 def config():
   return {
     'libraryAPI': {
-      'uri': 'http://172.28.128.1:7660'
+      'uri': request.url_root 
     },
     'keystoreAPI': {
-      'uri': 'http://172.28.128.1:7660'
+      'uri': request.url_root
     },
     'tokenAPI': {
-      'uri': 'http://172.28.128.1:7660'
+      'uri': request.url_root
     }
   }
 

@@ -20,17 +20,36 @@ fsk_admin_auth = FskAdminAuthenticator(key_header='Authorization')
 def create_app():
   dictConfig({
     'version': 1,
-      'formatters': {'default': {
+      'formatters': {
+        'default': {
           'format': '[%(asctime)s] %(levelname)s in %(module)s:%(lineno)d | %(message)s',
-      }},
-      'handlers': {'wsgi': {
+        },
+        'access': {
+          'format': '%(message)s',
+        },
+      },
+      'handlers': {
+        'wsgi': {
           'class': 'logging.StreamHandler',
           'stream': 'ext://flask.logging.wsgi_errors_stream',
           'formatter': 'default'
-      }},
+        },
+        'wsgi_access': {
+          'class': 'logging.StreamHandler',
+          'stream': 'ext://flask.logging.wsgi_errors_stream',
+          'formatter': 'access'
+        },
+      },
       'root': {
           'level': 'DEBUG',
           'handlers': ['wsgi']
+      },
+      'loggers': {
+        'gunicorn.access': {
+          'level': 'INFO',
+          'handlers': ['wsgi_access'],
+          'propagate': False,
+        }
       }
   })
 

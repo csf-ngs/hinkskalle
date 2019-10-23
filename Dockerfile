@@ -23,5 +23,5 @@ COPY conf/config.json /srv/hinkskalle/conf/
 ENV LC_ALL=en_US.utf8
 ENV FLASK_APP=Hinkskalle
 ENV HINKSKALLE_SETTINGS=/srv/hinkskalle/conf/config.json
-CMD [ "gunicorn", "-u", "hinkskalle", "--access-logfile", "-", "--chdir", "/srv/hinkskalle/backend", "-w", "4", "--bind", "0.0.0.0:5000", "wsgi:app" ]
+CMD [ "gunicorn", "-u", "hinkskalle", "--access-logfile", "-", "--error-logfile", "-", "--chdir", "/srv/hinkskalle/backend", "-w", "4", "--bind", "0.0.0.0:5000", "wsgi:app" ]
 EXPOSE 5000

@@ -43,7 +43,6 @@ def get_manifest(collection_id, tagged_container_id):
   if not tag in image_tags:
     raise errors.NotFound(f"Tag {tag} on container {collection.name}/{container.name} does not exist.")
 
-  image = Image.objects.get(id=image_tags[tag])
   return {
     'image': url_for('pull_image', entity_id='', collection_id=collection.name, tagged_container_id=f"{container.name}:{tag}", _external=True),
     'name': container.name,

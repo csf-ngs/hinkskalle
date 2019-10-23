@@ -17,7 +17,7 @@ class TestContainers(RouteBase):
   
   def test_get_default(self):
     container, coll, entity = _create_container()
-    entity.name=''
+    entity.name='default'
     entity.save()
 
     ret = self.client.get(f"/v1/containers//{coll.name}/{container.name}")

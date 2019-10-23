@@ -80,7 +80,7 @@ def get_image(entity_id, collection_id, tagged_container_id):
   response_body_schema=ImageResponseSchema(),
 )
 def get_default_image(collection_id, tagged_container_id):
-  return get_image(entity_id='', collection_id=collection_id, tagged_container_id=tagged_container_id)
+  return get_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
 
 @registry.handles(
   rule='/v1/images',
@@ -142,7 +142,7 @@ def pull_image_double_slash_annoy(*args, **kwargs):
   method='GET',
 )
 def pull_image_default(collection_id, tagged_container_id):
-  return pull_image(entity_id='', collection_id=collection_id, tagged_container_id=tagged_container_id)
+  return pull_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
   
 
 @registry.handles(

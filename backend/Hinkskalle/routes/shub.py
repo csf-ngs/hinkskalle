@@ -22,10 +22,10 @@ class ManifestResponseSchema(ResponseSchema):
 def get_manifest(collection_id, tagged_container_id):
   container_id, tag = _parse_tag(tagged_container_id)
   try:
-    entity = Entity.objects.get(name='')
+    entity = Entity.objects.get(name='default')
   except DoesNotExist:
     current_app.logger.debug("no default entity")
-    raise errors.NotFound(f"default entity '' not found")
+    raise errors.NotFound(f"default entity not found")
 
   try:
     collection = Collection.objects.get(name=collection_id, entity_ref=entity)
@@ -44,7 +44,7 @@ def get_manifest(collection_id, tagged_container_id):
     raise errors.NotFound(f"Tag {tag} on container {collection.name}/{container.name} does not exist.")
 
   return {
-    'image': url_for('pull_image', entity_id='', collection_id=collection.name, tagged_container_id=f"{container.name}:{tag}", _external=True),
+    'image': url_for('pull_image', entity_id='default', collection_id=collection.name, tagged_container_id=f"{container.name}:{tag}", _external=True),
     'name': container.name,
     'tag': tag,
   }

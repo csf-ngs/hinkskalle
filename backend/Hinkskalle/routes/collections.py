@@ -37,7 +37,7 @@ def get_collection(entity_id, collection_id):
   response_body_schema=CollectionResponseSchema(),
 )
 def get_default_collection(collection_id):
-  return get_collection(entity_id='', collection_id=collection_id)
+  return get_collection(entity_id='default', collection_id=collection_id)
 
 @registry.handles(
   rule='/v1/collections',

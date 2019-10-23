@@ -33,7 +33,7 @@ def get_entity(entity_id):
   response_body_schema=EntityResponseSchema(),
 )
 def get_default_entity():
-  return get_entity(entity_id='')
+  return get_entity(entity_id='default')
 
 @registry.handles(
   rule='/v1/entities',

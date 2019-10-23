@@ -30,7 +30,7 @@ class TestImages(RouteBase):
   
   def test_get_default(self):
     image, _, _, entity = _create_image()
-    entity.name=''
+    entity.name='default'
     entity.save()
 
     latest_tag = Tag(name='latest', image_ref=image)
@@ -218,7 +218,7 @@ class TestImages(RouteBase):
     latest_tag = Tag(name='latest', image_ref=image)
     latest_tag.save()
 
-    entity.name=''
+    entity.name='default'
     entity.save()
 
     tmpf = tempfile.NamedTemporaryFile()

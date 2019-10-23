@@ -19,7 +19,7 @@ class TestCollections(RouteBase):
   
   def test_get_default(self):
     coll, entity = _create_collection()
-    entity.name=''
+    entity.name='default'
     entity.save()
 
     ret = self.client.get(f"/v1/collections//{coll.name}")

@@ -29,7 +29,7 @@ class TestEntities(RouteBase):
     })
   
   def test_get_default(self):
-    entity = Entity(name='')
+    entity = Entity(name='default')
     entity.save()
 
     ret = self.client.get('/v1/entities/')

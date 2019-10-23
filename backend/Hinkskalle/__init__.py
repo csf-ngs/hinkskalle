@@ -42,7 +42,7 @@ def create_app():
       'username': os.environ.get('MONGODB_USERNAME', None),
       'password': os.environ.get('MONGODB_PASSWORD', None),
     }
-
+  app.config['PREFERRED_URL_SCHEME']=os.environ.get('PREFERRED_URL_SCHEME', 'http')
   from Hinkskalle.models import db
   db.init_app(app)
 

@@ -20,3 +20,14 @@ class TestBase(RouteBase):
       'tokenAPI': { 'uri': 'http://localhost'},
     })
 
+    self.app.config['PREFERRED_URL_SCHEME']='https'
+    ret = self.app.test_client().get('/assets/config/config.prod.json')
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json()
+    self.assertDictEqual(json, {
+      'keystoreAPI': { 'uri': 'https://localhost'},
+      'libraryAPI': { 'uri': 'https://localhost'},
+      'tokenAPI': { 'uri': 'https://localhost'},
+    })
+
+

@@ -31,15 +31,16 @@ def version():
   response_body_schema=ConfigResponseSchema()
 )
 def config():
+  service_url = request.url_root.rstrip('/')
   return {
     'libraryAPI': {
-      'uri': request.url_root.rstrip('/') 
+      'uri': service_url
     },
     'keystoreAPI': {
-      'uri': request.url_root.rstrip('/')
+      'uri': service_url
     },
     'tokenAPI': {
-      'uri': request.url_root.rstrip('/')
+      'uri': service_url
     }
   }
 

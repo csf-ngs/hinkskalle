@@ -55,11 +55,7 @@ class TestTags(RouteBase):
     
     link_location = os.path.join(self.app.config['IMAGE_PATH'], image.entityName(), image.collectionName(), f"{image.containerName()}_v1.0.sif")
     self.assertTrue(os.path.exists(link_location))
-    # this is a bit complicated
-    # cannot use Pathlib().resolve() because the tmp directory might be a symlink too
-    # resolve from ../../_img/target.sif -> /dir/../../_img/target.sif and then normalize
-    link_target = os.path.normpath(os.path.join(os.path.dirname(link_location), os.readlink(link_location)))
-    self.assertEqual(link_target, image.location)
+    self.assertTrue(os.path.samefile(link_location, image.location))
   
   def test_symlinks_existing(self):
     image, container, _, _ = _create_image()
@@ -74,8 +70,7 @@ class TestTags(RouteBase):
       ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
     self.assertTrue(os.path.exists(link_location))
-    new_link_target = os.path.normpath(os.path.join(os.path.dirname(link_location), os.readlink(link_location)))
-    self.assertEqual(new_link_target, image.location)
+    self.assertTrue(os.path.samefile(link_location, image.location))
 
     os.remove(link_location)
     # overwrite dangling links, too
@@ -96,8 +91,7 @@ class TestTags(RouteBase):
       ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
     self.assertTrue(os.path.exists(link_location))
-    new_link_target = os.path.normpath(os.path.join(os.path.dirname(link_location), os.readlink(link_location)))
-    self.assertEqual(new_link_target, image.location)
+    self.assertTrue(os.path.samefile(link_location, image.location))
 
   def test_update_old(self):
     image, container, _, _ = _create_image()

@@ -61,13 +61,12 @@ def update_tag(container_id):
   if image.uploaded and os.path.exists(image.location):
     subdir = image.collectionName() if image.entityName() == 'default' else os.path.join(image.entityName(), image.collectionName())
     target = os.path.join(current_app.config["IMAGE_PATH"], subdir, f"{image.containerName()}_{new_tag.name}.sif")
-    link_from = os.path.relpath(image.location, os.path.dirname(target))
-    current_app.logger.debug(f"Creating symlink {link_from}->{target}")
+    current_app.logger.debug(f"Creating link {image.location}->{target}")
     os.makedirs(os.path.dirname(target), exist_ok=True)
     if os.path.lexists(target):
       current_app.logger.debug(f"... removing existing {target}")
       os.remove(target)
-    os.symlink(link_from, target)
+    os.link(image.location, target)
   else:
     current_app.logger.warning(f"Tagged image {image.id} which was not uploaded or does not exist!")
 

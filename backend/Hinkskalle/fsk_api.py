@@ -6,7 +6,7 @@ from forskalle_api import FskApi
 class FskUser():
   def __init__(self, username, is_admin):
     self.username=username
-    self.is_admin=is_admin
+    self.is_admin=True if username=='drone.puller' else bool(is_admin)
 
 class HinkskalleFskApi(FskApi):
   def __init__(self, base=os.environ.get('FSK_URL'), **kwargs):

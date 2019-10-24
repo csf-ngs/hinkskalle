@@ -160,6 +160,9 @@ def push_image(image_id):
 
   m = hashlib.sha256()
   tmpf = tempfile.NamedTemporaryFile(delete=False)
+
+  current_app.logger.debug(f"starting upload of image {image_id} to {tmpf}")
+
   read = 0
   while (True):
     chunk = request.stream.read(current_app.config.get("UPLOAD_CHUNK_SIZE", 16385))
@@ -169,18 +172,18 @@ def push_image(image_id):
     m.update(chunk)
     tmpf.write(chunk)
   
+  current_app.logger.debug(f"calculating checksum...")
   digest = m.hexdigest()
   if image.hash != f"sha256.{digest}":
     raise errors.UnprocessableEntity("Image hash {image.hash} does not match: {digest}")
   tmpf.close()
 
+  current_app.logger.debug(f"moving image to {outfn}")
   os.makedirs(os.path.dirname(outfn), exist_ok=True)
   shutil.move(tmpf.name, outfn)
   image.location=os.path.abspath(outfn)
   image.size=read
   image.uploaded=True
   image.save()
-
-  image.container_ref.tag_image('latest', image.id)
 
   return 'Danke!'

@@ -244,9 +244,7 @@ class TestImages(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
     self.assertEqual(ret.status_code, 200)
-    self.assertDictEqual(container.imageTags(), {
-      'latest': str(image.id)
-    })
+    # no more auto-tagging
     read_image = Image.objects.get(id=image.id)
     self.assertTrue(read_image.uploaded)
     self.assertTrue(os.path.exists(read_image.location))

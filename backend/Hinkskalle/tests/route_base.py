@@ -11,11 +11,23 @@ from Hinkskalle.models import Entity, Collection, Container, Image, Tag
 @contextmanager
 def fake_admin_auth(app):
   fsk_admin_auth_mock = mock.patch('fsk_authenticator.FskAdminAuthenticator.authenticate')
+  fsk_auth_mock = mock.patch('fsk_authenticator.FskAuthenticator.authenticate')
   fsk_admin_auth_mock.start()
+  fsk_auth_mock.start()
   with app.app_context():
     g.fsk_user=FskUser('test.hase', True)
     yield
   fsk_admin_auth_mock.stop()
+  fsk_auth_mock.stop()
+
+@contextmanager
+def fake_auth(app):
+  fsk_auth_mock = mock.patch('fsk_authenticator.FskAuthenticator.authenticate')
+  fsk_auth_mock.start()
+  with app.app_context():
+    g.fsk_user=FskUser('test.hase', False)
+    yield
+  fsk_auth_mock.stop()
 
 class RouteBase(unittest.TestCase):
   app = None

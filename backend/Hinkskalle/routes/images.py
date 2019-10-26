@@ -1,4 +1,4 @@
-from Hinkskalle import registry, rebar, fsk_admin_auth
+from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from mongoengine import NotUniqueError, DoesNotExist
@@ -15,6 +15,9 @@ from Hinkskalle.models import ImageSchema, Image, Container, Entity, Collection
 class ImageResponseSchema(ResponseSchema):
   data = fields.Nested(ImageSchema)
 
+class ImageListResponseSchema(ResponseSchema):
+  data = fields.Nested(ImageSchema, many=True)
+
 class ImageCreateSchema(ImageSchema, RequestSchema):
   pass
 
@@ -24,9 +27,7 @@ def _parse_tag(tagged_container_id):
     tokens.append('latest')
   return tokens[0], tokens[1]
 
-def _get_image(entity_id, collection_id, tagged_container_id):
-  container_id, tag = _parse_tag(tagged_container_id)
-
+def _get_container(entity_id, collection_id, container_id):
   try:
     entity = Entity.objects.get(name=entity_id)
   except DoesNotExist:
@@ -42,6 +43,11 @@ def _get_image(entity_id, collection_id, tagged_container_id):
   except DoesNotExist:
     current_app.logger.debug(f"container {entity.name}/{collection.name}/{container_id} not found")
     raise errors.NotFound(f"container {entity.name}/{collection.name}/{container_id} not found")
+  return container
+
+def _get_image(entity_id, collection_id, tagged_container_id):
+  container_id, tag = _parse_tag(tagged_container_id)
+  container = _get_container(entity_id, collection_id, container_id)
 
   if tag.startswith('sha256.'):
     shahash=tag
@@ -61,10 +67,24 @@ def _get_image(entity_id, collection_id, tagged_container_id):
 
 
 @registry.handles(
+  rule='/v1/containers/<string:entity_id>/<string:collection_id>/<string:container_id>/images',
+  method='GET',
+  response_body_schema=ImageListResponseSchema(),
+  authenticators=fsk_auth,
+)
+def list_images(entity_id, collection_id, container_id):
+  container = _get_container(entity_id, collection_id, container_id)
+  if not container.check_access(g.fsk_user):
+    raise errors.Forbidden('access denied')
+  
+  return { 'data': list(Image.objects(container_ref=container)) }
+
+@registry.handles(
   rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
   response_body_schema=ImageResponseSchema(),
 )
+
 def get_image(entity_id, collection_id, tagged_container_id):
   image = _get_image(entity_id, collection_id, tagged_container_id)
   if image.uploaded and (not image.location or not os.path.exists(image.location)):
@@ -87,13 +107,15 @@ def get_default_image(collection_id, tagged_container_id):
   method='POST',
   request_body_schema=ImageCreateSchema(),
   response_body_schema=ImageResponseSchema(),
-  authenticators=fsk_admin_auth,
+  authenticators=fsk_auth,
 )
 def create_image():
   body = rebar.validated_body
   current_app.logger.debug(body)
   container = Container.objects.get(id=body['container'])
   body.pop('container')
+  if not container.check_access(g.fsk_user):
+    raise errors.Forbidden('access denied')
 
   new_image = Image(**body)
   new_image.container_ref=container
@@ -148,13 +170,16 @@ def pull_image_default(collection_id, tagged_container_id):
 @registry.handles(
   rule='/v1/imagefile/<string:image_id>',
   method='POST',
-  authenticators=fsk_admin_auth,
+  authenticators=fsk_auth,
 )
 def push_image(image_id):
   try:
     image = Image.objects.get(id=image_id)
   except DoesNotExist:
     raise errors.NotFound(f"Image {image_id} not found")
+
+  if not image.container_ref.check_access(g.fsk_user):
+    raise errors.Forbidden('access denied')
 
   outfn = safe_join(current_app.config.get('IMAGE_PATH'), '_imgs', image.make_filename())
 

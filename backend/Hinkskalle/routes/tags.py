@@ -1,8 +1,8 @@
-from Hinkskalle import registry, rebar, fsk_admin_auth
+from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from mongoengine import DoesNotExist, ValidationError
-from flask import request, current_app
+from flask import request, current_app, g
 import os.path
 
 from Hinkskalle.models import Tag, Container, Image
@@ -17,12 +17,15 @@ class TagUpdateSchema(RequestSchema):
   rule='/v1/tags/<string:container_id>',
   method='GET',
   response_body_schema=TagResponseSchema(),
+  authenticators=fsk_auth,
 )
 def get_tags(container_id):
   try:
     container = Container.objects.get(id=container_id)
   except DoesNotExist:
     raise errors.NotFound(f"container {container_id} not found")
+  if not container.check_access(g.fsk_user):
+    raise errors.Forbidden(f"access denied.")
   
   return { 'data': container.imageTags() }
 
@@ -30,13 +33,15 @@ def get_tags(container_id):
   rule='/v1/tags/<string:container_id>',
   method='POST',
   response_body_schema=TagResponseSchema(),
-  authenticators=fsk_admin_auth,
+  authenticators=fsk_auth,
 )
 def update_tag(container_id):
   try:
     container = Container.objects.get(id=container_id)
   except DoesNotExist:
     raise errors.NotFound(f"container {container_id} not found")
+  if not container.check_access(g.fsk_user):
+    raise errors.Forbidden('access denied.')
 
   tag = request.get_json(force=True)
   # why do you have a versioned API when you change

@@ -3,7 +3,7 @@ import os.path
 import json
 import tempfile
 import hashlib
-from Hinkskalle.tests.route_base import RouteBase, fake_admin_auth
+from Hinkskalle.tests.route_base import RouteBase, fake_auth, fake_admin_auth
 from tempfile import mkdtemp
 
 from Hinkskalle.models import Image, Tag
@@ -17,6 +17,54 @@ def _prepare_img_data(data=b"Hello Dorian!"):
     return img_data, f"sha256.{m.hexdigest()}"
 
 class TestImages(RouteBase):
+  def test_list_noauth(self):
+    ret = self.client.get('/v1/containers/what/ev/er/images')
+    self.assertEqual(ret.status_code, 401)
+  
+  def test_list(self):
+    image1, container, collection, entity = _create_image('img1')
+    image2 = _create_image('img2')[0]
+    image2.container_ref=container
+    image2.save()
+
+    with fake_admin_auth(self.app):
+      ret = self.client.get(f"/v1/containers/{entity.name}/{collection.name}/{container.name}/images")
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertListEqual([ c['id'] for c in json ], [ str(image1.id), str(image2.id) ] )
+  
+  def test_list_user(self):
+    image1, container, collection, entity = _create_image('img1')
+    image2 = _create_image('img2')[0]
+    image2.container_ref=container
+    image2.save()
+    container.createdBy='test.hase'
+    container.save()
+    collection.createdBy='test.hase'
+    collection.save()
+    entity.createdBy='test.hase'
+    entity.save()
+
+    with fake_auth(self.app):
+      ret = self.client.get(f"/v1/containers/{entity.name}/{collection.name}/{container.name}/images")
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertListEqual([ c['id'] for c in json ], [ str(image1.id), str(image2.id) ] )
+  
+  def test_list_user_other(self):
+    image1, container, collection, entity = _create_image('img1')
+    container.createdBy='test.kuh'
+    container.save()
+    collection.createdBy='test.hase'
+    collection.save()
+    entity.createdBy='test.hase'
+    entity.save()
+
+    with fake_auth(self.app):
+      ret = self.client.get(f"/v1/containers/{entity.name}/{collection.name}/{container.name}/images")
+    self.assertEqual(ret.status_code, 403)
+
+
   def test_get_latest(self):
     image = _create_image()[0]
     latest_tag = Tag(name='latest', image_ref=image)
@@ -99,6 +147,10 @@ class TestImages(RouteBase):
     data = ret.get_json().get('data')
     self.assertFalse(data['uploaded'])
   
+  def test_create_noauth(self):
+    ret = self.client.post("/v1/images")
+    self.assertEqual(ret.status_code, 401)
+
   def test_create(self):
     container, _, _ = _create_container()
     with fake_admin_auth(self.app):
@@ -184,6 +236,37 @@ class TestImages(RouteBase):
     self.assertIsNone(data['size'])
     self.assertDictEqual(other_container.imageTags(), {})
 
+  def test_create_user(self):
+    container, coll, entity = _create_container()
+    entity.createdBy = 'test.hase'
+    entity.save()
+    coll.createdBy = 'test.hase'
+    coll.save()
+    container.createdBy = 'test.hase'
+    container.save()
+
+    with fake_auth(self.app):
+      ret = self.client.post('/v1/images', json={
+        'hash': 'sha256.oink',
+        'container': str(container.id),
+      })
+    self.assertEqual(ret.status_code, 200)
+
+  def test_create_user_other(self):
+    container, coll, entity = _create_container()
+    entity.createdBy = 'test.hase'
+    entity.save()
+    coll.createdBy = 'test.hase'
+    coll.save()
+    container.createdBy = 'test.muh'
+    container.save()
+
+    with fake_auth(self.app):
+      ret = self.client.post('/v1/images', json={
+        'hash': 'sha256.oink',
+        'container': str(container.id),
+      })
+    self.assertEqual(ret.status_code, 403)
 
   def test_pull(self):
     image = _create_image()[0]
@@ -234,6 +317,10 @@ class TestImages(RouteBase):
     ret.close()
     tmpf.close()
   
+  def test_push_noauth(self):
+    ret = self.client.post("/v1/imagefile/whatever")
+    self.assertEqual(ret.status_code, 401)
+
   def test_push(self):
     image, container, _, _ = _create_image()
     self.app.config['IMAGE_PATH']=mkdtemp()
@@ -284,3 +371,39 @@ class TestImages(RouteBase):
     self.assertEqual(ret.status_code, 200)
     read_image = Image.objects.get(id=image.id)
     self.assertNotEqual(read_image.location, '/gru/nz')
+
+  def test_push_user(self):
+    image, container, coll, entity = _create_image()
+    entity.createdBy = 'test.hase'
+    entity.save()
+    coll.createdBy = 'test.hase'
+    coll.save()
+    container.createdBy = 'test.hase'
+    container.save()
+
+    self.app.config['IMAGE_PATH']=mkdtemp()
+    img_data, digest = _prepare_img_data()
+    image.hash = digest
+    image.save()
+
+    with fake_auth(self.app):
+      ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
+    self.assertEqual(ret.status_code, 200)
+
+  def test_push_user_other(self):
+    image, container, coll, entity = _create_image()
+    entity.createdBy = 'test.hase'
+    entity.save()
+    coll.createdBy = 'test.hase'
+    coll.save()
+    container.createdBy = 'test.kuh'
+    container.save()
+
+    self.app.config['IMAGE_PATH']=mkdtemp()
+    img_data, digest = _prepare_img_data()
+    image.hash = digest
+    image.save()
+
+    with fake_auth(self.app):
+      ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
+    self.assertEqual(ret.status_code, 403)

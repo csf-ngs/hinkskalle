@@ -4,29 +4,64 @@ import os
 from tempfile import mkdtemp
 
 from Hinkskalle.models import Container
-from Hinkskalle.tests.route_base import RouteBase, fake_admin_auth
+from Hinkskalle.tests.route_base import RouteBase, fake_auth, fake_admin_auth
 from Hinkskalle.tests.models.test_Image import _create_image
 
 
 class TestTags(RouteBase):
+  def test_get_noauth(self):
+    ret = self.client.get(f"/v1/tags/whatever")
+    self.assertEqual(ret.status_code, 401)
+
   def test_get(self):
     image, container, _, _ = _create_image()
-    ret = self.client.get(f"/v1/tags/{container.id}")
+    with fake_admin_auth(self.app):
+      ret = self.client.get(f"/v1/tags/{container.id}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertDictEqual(data, {})
 
     container.tag_image('v1.0', image.id)
-    ret = self.client.get(f"/v1/tags/{container.id}")
+    with fake_admin_auth(self.app):
+      ret = self.client.get(f"/v1/tags/{container.id}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertDictEqual(data, {'v1.0': str(image.id)})
 
     container.tag_image('oink', image.id)
-    ret = self.client.get(f"/v1/tags/{container.id}")
+    with fake_admin_auth(self.app):
+      ret = self.client.get(f"/v1/tags/{container.id}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertDictEqual(data, {'v1.0': str(image.id), 'oink': str(image.id)})
+  
+  def test_get_user(self):
+    image, container, coll, entity = _create_image()
+    entity.createdBy='test.hase'
+    entity.save()
+    coll.createdBy='test.hase'
+    coll.save()
+    container.createdBy='test.hase'
+    container.save()
+
+    container.tag_image('v1.0', image.id)
+    with fake_auth(self.app):
+      ret = self.client.get(f"/v1/tags/{container.id}")
+    self.assertEqual(ret.status_code, 200)
+
+  def test_get_user_other(self):
+    image, container, coll, entity = _create_image()
+    entity.createdBy='test.hase'
+    entity.save()
+    coll.createdBy='test.hase'
+    coll.save()
+    container.createdBy='test.kuh'
+    container.save()
+
+    container.tag_image('v1.0', image.id)
+    with fake_auth(self.app):
+      ret = self.client.get(f"/v1/tags/{container.id}")
+    self.assertEqual(ret.status_code, 403)
 
   def test_update(self):
     image, container, _, _ = _create_image()
@@ -44,6 +79,32 @@ class TestTags(RouteBase):
 
     self.assertDictEqual(data, { 'v1.0': str(image.id), 'oink': str(image.id) })
     self.assertDictEqual(container.imageTags(), { 'v1.0': str(image.id), 'oink': str(image.id) })
+
+  def test_update_user(self):
+    image, container, coll, entity = _create_image()
+    entity.createdBy='test.hase'
+    entity.save()
+    coll.createdBy='test.hase'
+    coll.save()
+    container.createdBy='test.hase'
+    container.save()
+
+    with fake_auth(self.app):
+      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
+    self.assertEqual(ret.status_code, 200)
+
+  def test_update_user_other(self):
+    image, container, coll, entity = _create_image()
+    entity.createdBy='test.hase'
+    entity.save()
+    coll.createdBy='test.hase'
+    coll.save()
+    container.createdBy='test.kuh'
+    container.save()
+
+    with fake_auth(self.app):
+      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
+    self.assertEqual(ret.status_code, 403)
   
   def test_symlinks(self):
     image, container, _, _ = _create_image()

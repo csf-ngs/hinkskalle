@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from Hinkskalle.models import Entity, Collection, Container, Image, ImageSchema, Tag
 
 from Hinkskalle.tests.models.test_Collection import _create_collection
+from Hinkskalle.fsk_api import FskUser
 
 def _create_image(hash='sha256.oink', postfix='container'):
   try:
@@ -76,6 +77,14 @@ class TestImage(unittest.TestCase):
 
     self.assertListEqual(image.tags(), ['v1', 'v2'])
     Tag.objects.delete()
+  
+  def check_access(self):
+    admin = FskUser('oink', True)
+    user = FskUser('oink', False)
+    image = _create_image()[0]
+    self.asserTrue(image.check_access(admin))
+    self.asserTrue(image.check_access(user))
+
 
   def test_schema(self):
     schema = ImageSchema()

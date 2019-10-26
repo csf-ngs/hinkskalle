@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from Hinkskalle.models import Entity, Collection, Container, ContainerSchema, Image, Tag
 from Hinkskalle.tests.models.test_Collection import _create_collection
+from Hinkskalle.fsk_api import FskUser
 
 def _create_container(postfix='container'):
   coll, entity = _create_collection(f"test-collection-f{postfix}")
@@ -130,6 +131,36 @@ class TestContainer(unittest.TestCase):
     with self.assertRaisesRegex(Exception, 'Tag v2.*already set'):
       container.imageTags()
     
+
+  def test_access(self):
+    admin = FskUser('oink', True)
+    user = FskUser('oink', False)
+
+    container, collection, entity = _create_container()
+    self.assertTrue(container.check_access(admin))
+    self.assertFalse(container.check_access(user))
+
+    container, collection, entity = _create_container('owned')
+    entity.createdBy='oink'
+    entity.save()
+    collection.createdBy='oink'
+    collection.save()
+    container.createdBy='oink'
+    self.assertTrue(container.check_access(user))
+
+    container.createdBy='muh'
+    self.assertFalse(container.check_access(user))
+
+    container, collection, entity = _create_container('default')
+    entity.name='default'
+    entity.save()
+    collection.createdBy='oink'
+    collection.save()
+    container.createdBy='oink'
+    self.assertTrue(container.check_access(user))
+
+    container.createdBy='muh'
+    self.assertFalse(container.check_access(user))
 
 
   def test_schema(self):

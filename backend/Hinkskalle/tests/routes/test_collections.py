@@ -2,16 +2,73 @@
 import unittest
 import os
 import json
-from Hinkskalle.tests.route_base import RouteBase, fake_admin_auth
-from Hinkskalle.models import Entity
+from Hinkskalle.tests.route_base import RouteBase, fake_admin_auth, fake_auth
+from Hinkskalle.models import Entity, Collection
 from Hinkskalle.tests.models.test_Collection import _create_collection
 
 class TestCollections(RouteBase):
+  def test_list_noauth(self):
+    ret = self.client.get('/v1/collections/whatever')
+    self.assertEqual(ret.status_code, 401)
+
+  def test_list(self):
+    coll1, entity = _create_collection('coll1')
+    coll2, _ = _create_collection('coll2')
+
+    with fake_admin_auth(self.app):
+      ret = self.client.get(f"/v1/collections/{entity.name}")
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertIsInstance(json, list)
+    self.assertEqual(len(json), 2)
+    self.assertListEqual([ c['name'] for c in json ], [ coll1.name, coll2.name ] )
+  
+  def test_list_user(self):
+    coll1, entity = _create_collection('coll1')
+    coll2, _ = _create_collection('coll2')
+    coll1.createdBy='test.hase'
+    coll1.save()
+    coll2.createdBy='test.hase'
+    coll2.save()
+    entity.createdBy='test.hase'
+    entity.save()
+
+    with fake_auth(self.app):
+      ret = self.client.get(f"/v1/collections/{entity.name}")
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertListEqual([ c['name'] for c in json ], [ coll1.name, coll2.name ])
+
+  def test_list_user_default(self):
+    # can see own collections in default entity
+    default = Entity(name='default')
+    default.save()
+    coll1 = Collection(name='own-1', createdBy='test.hase', entity_ref=default)
+    coll1.save()
+    coll2 = Collection(name='other-1', createdBy='test.kuh', entity_ref=default)
+    coll2.save()
+
+    with fake_auth(self.app):
+      ret = self.client.get(f"/v1/collections/default")
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertListEqual([ c['name'] for c in json ], [ coll1.name ])
+  
+  def test_list_user_other(self):
+    coll1, entity = _create_collection('coll1')
+    with fake_auth(self.app):
+      ret = self.client.get(f"/v1/collections/{entity.name}")
+    self.assertEqual(ret.status_code, 403)
+
+  def test_get_noauth(self):
+    ret = self.client.get('/v1/collections/what/ever')
+    self.assertEqual(ret.status_code, 401)
   
   def test_get(self):
     coll, entity = _create_collection()
 
-    ret = self.client.get(f"/v1/collections/{coll.entityName()}/{coll.name}")
+    with fake_admin_auth(self.app):
+      ret = self.client.get(f"/v1/collections/{coll.entityName()}/{coll.name}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
 
@@ -22,11 +79,61 @@ class TestCollections(RouteBase):
     entity.name='default'
     entity.save()
 
-    ret = self.client.get(f"/v1/collections//{coll.name}")
+    with fake_admin_auth(self.app):
+      ret = self.client.get(f"/v1/collections//{coll.name}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
 
     self.assertEqual(data['id'], str(coll.id))
+  
+  def test_get_user(self):
+    coll, entity = _create_collection()
+    entity.createdBy='test.hase'
+    entity.save()
+    coll.createdBy='test.hase'
+    coll.save()
+
+    with fake_auth(self.app):
+      ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['id'], str(coll.id))
+
+  def test_get_user_default(self):
+    coll, entity = _create_collection()
+    entity.name='default'
+    entity.save()
+    coll.createdBy='test.hase'
+    coll.save()
+
+    with fake_auth(self.app):
+      ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['id'], str(coll.id))
+  
+  def test_get_user_other_entity(self):
+    coll, entity = _create_collection()
+    coll.createdBy='test.hase'
+    coll.save()
+
+    with fake_auth(self.app):
+      ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
+    self.assertEqual(ret.status_code, 403)
+
+  def test_get_user_other(self):
+    coll, entity = _create_collection()
+    entity.createdBy='test.hase'
+    entity.save()
+
+    with fake_auth(self.app):
+      ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
+    self.assertEqual(ret.status_code, 403)
+
+
+  def test_create_noauth(self):
+    ret = self.client.post("/v1/collections")
+    self.assertEqual(ret.status_code, 401)
 
   def test_create(self):
     entity = Entity(name='test-hase')
@@ -57,3 +164,33 @@ class TestCollections(RouteBase):
         'entity': 'oink oink',
       })
     self.assertEqual(ret.status_code, 500)
+
+  def test_create_user(self):
+    entity = Entity(name='test-hase', createdBy='test.hase')
+    entity.save()
+    with fake_auth(self.app):
+      ret = self.client.post('/v1/collections', json={
+        'name': 'oink',
+        'entity': str(entity.id),
+      })
+    self.assertEqual(ret.status_code, 200)
+
+  def test_create_user_default(self):
+    entity = Entity(name='default')
+    entity.save()
+    with fake_auth(self.app):
+      ret = self.client.post('/v1/collections', json={
+        'name': 'oink',
+        'entity': str(entity.id),
+      })
+    self.assertEqual(ret.status_code, 200)
+  
+  def test_create_user_other(self):
+    entity = Entity(name='muh')
+    entity.save()
+    with fake_auth(self.app):
+      ret = self.client.post('/v1/collections', json={
+        'name': 'oink',
+        'entity': str(entity.id),
+      })
+    self.assertEqual(ret.status_code, 403)

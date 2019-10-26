@@ -73,4 +73,7 @@ class Image(Document):
     return os.path.join(self.entityName(), self.collectionName(), f"{self.containerName}_{tag}.sif")
   def make_filename(self):
     return f"{self.hash}.sif"
+  
+  def check_access(self, fsk_user):
+    return True
    

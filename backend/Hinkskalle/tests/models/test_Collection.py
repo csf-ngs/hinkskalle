@@ -3,6 +3,7 @@ from mongoengine import connect, disconnect
 from datetime import datetime, timedelta
 
 from Hinkskalle.models import Entity, Collection, CollectionSchema
+from Hinkskalle.fsk_api import FskUser
 
 def _create_collection(name='test-collection'):
   try:
@@ -39,6 +40,35 @@ class TestCollection(unittest.TestCase):
 
     self.assertEqual(read_coll.entity(), entity.id)
     self.assertEqual(read_coll.entityName(), entity.name)
+  
+  def test_access(self):
+    admin = FskUser('oink', True)
+    user = FskUser('oink', False)
+    coll, entity = _create_collection('other')
+    self.assertTrue(coll.check_access(admin))
+    self.assertFalse(coll.check_access(user))
+
+    coll, entity = _create_collection('own')
+    entity.createdBy='oink'
+    entity.save()
+    coll.createdBy='oink'
+    self.assertTrue(coll.check_access(user))
+    coll.createdBy='muh'
+    self.assertFalse(coll.check_access(user))
+
+    coll, entity = _create_collection('own-default')
+    entity.createdBy='muh'
+    entity.save()
+    coll.createdBy='oink'
+    self.assertFalse(coll.check_access(user))
+
+    coll, default = _create_collection('default')
+    default.name='default'
+    default.save()
+    coll.createdBy='oink'
+    self.assertTrue(coll.check_access(user))
+    coll.createdBy='muh'
+    self.assertFalse(coll.check_access(user))
 
   def test_schema(self):
     schema = CollectionSchema()

@@ -1,7 +1,8 @@
-from Hinkskalle import registry, rebar, fsk_admin_auth
+from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from mongoengine import NotUniqueError, DoesNotExist
+from mongoengine.queryset.visitor import Q
 from flask import request, current_app, g
 
 from Hinkskalle.models import CollectionSchema, Collection, Entity
@@ -11,14 +12,38 @@ from fsk_authenticator import FskAdminAuthenticator
 class CollectionResponseSchema(ResponseSchema):
   data = fields.Nested(CollectionSchema)
 
+class CollectionListResponseSchema(ResponseSchema):
+  data = fields.Nested(CollectionSchema, many=True)
+
 class CollectionCreateSchema(CollectionSchema, RequestSchema):
   pass
 
+@registry.handles(
+  rule='/v1/collections/<string:entity_id>',
+  method='GET',
+  response_body_schema=CollectionListResponseSchema(),
+  authenticators=fsk_auth,
+)
+def list_collections(entity_id):
+  try:
+    entity = Entity.objects.get(name=entity_id)
+  except DoesNotExist:
+    raise errors.NotFound(f"entity {entity_id} not found")
+  if not entity.check_access(g.fsk_user):
+    raise errors.Forbidden(f"access denied.")
+
+  if g.fsk_user.is_admin:
+    objs = Collection.objects(entity_ref=entity)
+  else:
+    objs = Collection.objects(Q(entity_ref=entity) & Q(createdBy=g.fsk_user.username))
+  
+  return { 'data': list(objs) }
 
 @registry.handles(
   rule='/v1/collections/<string:entity_id>/<string:collection_id>',
   method='GET',
   response_body_schema=CollectionResponseSchema(),
+  authenticators=fsk_auth,
 )
 def get_collection(entity_id, collection_id):
   try:
@@ -29,12 +54,15 @@ def get_collection(entity_id, collection_id):
     collection = Collection.objects.get(name=collection_id, entity_ref=entity)
   except DoesNotExist:
     raise errors.NotFound(f"collection {entity.id}/{collection_id} not found")
+  if not collection.check_access(g.fsk_user):
+    raise errors.Forbidden(f"access denied.")
   return { 'data': collection }
 
 @registry.handles(
   rule='/v1/collections//<string:collection_id>',
   method='GET',
   response_body_schema=CollectionResponseSchema(),
+  authenticators=fsk_auth,
 )
 def get_default_collection(collection_id):
   return get_collection(entity_id='default', collection_id=collection_id)
@@ -44,12 +72,14 @@ def get_default_collection(collection_id):
   method='POST',
   request_body_schema=CollectionCreateSchema(),
   response_body_schema=CollectionResponseSchema(),
-  authenticators=fsk_admin_auth,
+  authenticators=fsk_auth,
 )
 def create_collection():
   body = rebar.validated_body
   current_app.logger.debug(body)
   entity = Entity.objects.get(id=body['entity'])
+  if not entity.check_access(g.fsk_user):
+    raise errors.Forbidden("access denied")
   body.pop('entity')
   new_collection = Collection(**body)
   new_collection.entity_ref=entity

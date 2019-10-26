@@ -34,3 +34,12 @@ class Entity(Document):
 
   def size(self):
     return 0
+
+  def check_access(self, fsk_user):
+    if fsk_user.is_admin:
+      return True
+    elif self.createdBy==fsk_user.username or self.name=='default':
+      return True
+    else:
+      return False
+

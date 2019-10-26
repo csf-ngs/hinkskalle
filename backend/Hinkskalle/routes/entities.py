@@ -36,13 +36,12 @@ def list_entities():
   authenticators=fsk_auth,
 )
 def get_entity(entity_id):
-  if not g.fsk_user.is_admin:
-    if entity_id != 'default' and entity_id != g.fsk_user.username:
-      raise errors.Forbidden('Can only access default or own entity')
   try:
     entity = Entity.objects.get(name=entity_id)
   except DoesNotExist:
     raise errors.NotFound(f"entity {entity_id} not found")
+  if not entity.check_access(g.fsk_user):
+    raise errors.Forbidden("Access denied to entity.")
   return { 'data': entity }
 
 @registry.handles(

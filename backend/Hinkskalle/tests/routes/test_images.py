@@ -289,7 +289,6 @@ class TestImages(RouteBase):
     # singularity requests with double slash
     ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 200)
-    self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello Dorian!")
     ret.close() # avoid unclosed filehandle warning
 
@@ -312,9 +311,14 @@ class TestImages(RouteBase):
 
     ret = self.client.get(f"/v1/imagefile//{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 200)
-    self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello default Entity!")
     ret.close()
+
+    # singularity requests with double slash
+    ret = self.client.get(f"/v1/imagefile///{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.data, b"Hello default Entity!")
+    ret.close() # avoid unclosed filehandle warning
     tmpf.close()
   
   def test_push_noauth(self):

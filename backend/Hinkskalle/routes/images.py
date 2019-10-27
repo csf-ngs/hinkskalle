@@ -165,6 +165,13 @@ def pull_image_double_slash_annoy(*args, **kwargs):
 )
 def pull_image_default(collection_id, tagged_container_id):
   return pull_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
+
+@registry.handles(
+  rule='/v1/imagefile///<string:collection_id>/<string:tagged_container_id>',
+  method='GET',
+)
+def pull_image_default_double_slash_annoy(collection_id, tagged_container_id):
+  return pull_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
   
 
 @registry.handles(

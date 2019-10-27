@@ -59,8 +59,8 @@ def _get_image(entity_id, collection_id, tagged_container_id):
   else:
     image_tags = container.imageTags()
     if not tag in image_tags:
-      current_app.logger.debug(f"tag {tag} on container {entity.name}/{collection.name}/{container.name} not found")
-      raise errors.NotFound(f"tag {tag} on container {entity.name}/{collection.name}/{container.name} not found")
+      current_app.logger.debug(f"tag {tag} on container {container.entityName}/{container.collectionName}/{container.name} not found")
+      raise errors.NotFound(f"tag {tag} on container {container.entityName}/{container.collectionName}/{container.name} not found")
 
     image = Image.objects.get(id=image_tags[tag])
   return image
@@ -149,7 +149,7 @@ def pull_image(entity_id, collection_id, tagged_container_id):
   
   if not os.path.exists(image.location):
     raise errors.InternalError(f"Image not found at {image.location}")
-  
+  Container.objects(id=image.container_ref.id).update_one(inc__downloadCount=1)
   return send_file(image.location)
   
 @registry.handles(

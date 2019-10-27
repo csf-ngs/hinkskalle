@@ -269,7 +269,7 @@ class TestImages(RouteBase):
     self.assertEqual(ret.status_code, 403)
 
   def test_pull(self):
-    image = _create_image()[0]
+    image, container, _, _ = _create_image()
     image.uploaded=True
     latest_tag = Tag(name='latest', image_ref=image)
     latest_tag.save()
@@ -284,12 +284,16 @@ class TestImages(RouteBase):
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello Dorian!")
+    container.reload()
+    self.assertEqual(container.downloadCount, 1)
     ret.close() # avoid unclosed filehandle warning
 
     # singularity requests with double slash
     ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello Dorian!")
+    container.reload()
+    self.assertEqual(container.downloadCount, 2)
     ret.close() # avoid unclosed filehandle warning
 
     tmpf.close()
@@ -338,7 +342,6 @@ class TestImages(RouteBase):
     # no more auto-tagging
     read_image = Image.objects.get(id=image.id)
     self.assertTrue(read_image.uploaded)
-    self.assertIsNotNone(read_image.uploadedAt)
     self.assertTrue(os.path.exists(read_image.location))
     self.assertEqual(read_image.size, os.path.getsize(read_image.location))
 

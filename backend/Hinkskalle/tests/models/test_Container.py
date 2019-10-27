@@ -51,6 +51,22 @@ class TestContainer(unittest.TestCase):
     image1.save()
 
     self.assertEqual(container.images().first().id, image1.id)
+  
+  def test_count(self):
+    container, collection, entity = _create_container()
+    self.assertEqual(container.size(), 0)
+
+    nosave = Container(name='nosave', collection_ref=collection)
+    self.assertEqual(nosave.size(), 0)
+
+    image1 = Image(container_ref=container)
+    image1.save()
+    self.assertEqual(container.size(), 1)
+
+    other_container = _create_container('other')[0]
+    other_image = Image(container_ref=other_container)
+    other_image.save()
+    self.assertEqual(container.size(), 1)
 
   def test_tag_image(self):
     container = _create_container()[0]

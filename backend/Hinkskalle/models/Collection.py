@@ -38,7 +38,8 @@ class Collection(Document):
   deleted = BooleanField(required=True, default=False)
 
   def size(self):
-    return 0
+    from Hinkskalle.models import Container
+    return Container.objects(collection_ref=self).count() if not self._created else 0
 
   def entity(self):
     return self.entity_ref.id

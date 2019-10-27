@@ -33,7 +33,8 @@ class Entity(Document):
   deleted = BooleanField(required=True, default=False)
 
   def size(self):
-    return 0
+    from Hinkskalle.models import Collection
+    return Collection.objects(entity_ref=self).count() if not self._created else 0
 
   def check_access(self, fsk_user):
     if fsk_user.is_admin:

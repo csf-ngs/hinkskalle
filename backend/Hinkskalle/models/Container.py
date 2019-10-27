@@ -49,7 +49,7 @@ class Container(Document):
   deleted = BooleanField(required=True, default=False)
 
   def size(self):
-    return 0
+    return Image.objects(container_ref=self).count() if not self._created else 0
   
   def collection(self):
     return self.collection_ref.id

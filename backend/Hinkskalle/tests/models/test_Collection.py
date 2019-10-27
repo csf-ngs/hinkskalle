@@ -2,7 +2,7 @@ import unittest
 from mongoengine import connect, disconnect
 from datetime import datetime, timedelta
 
-from Hinkskalle.models import Entity, Collection, CollectionSchema
+from Hinkskalle.models import Entity, Collection, CollectionSchema, Container
 from Hinkskalle.fsk_api import FskUser
 
 def _create_collection(name='test-collection'):
@@ -40,6 +40,23 @@ class TestCollection(unittest.TestCase):
 
     self.assertEqual(read_coll.entity(), entity.id)
     self.assertEqual(read_coll.entityName(), entity.name)
+  
+  def test_count(self):
+    coll, entity = _create_collection()
+    self.assertEqual(coll.size(), 0)
+    no_create = Collection(name='no-create', entity_ref=entity)
+    self.assertEqual(no_create.size(), 0)
+
+    cont1 = Container(name='cont_i', collection_ref=coll)
+    cont1.save()
+    self.assertEqual(coll.size(), 1)
+
+    other_coll, _ = _create_collection('other')
+    other_cont = Container(name='cont_other', collection_ref=other_coll)
+    other_cont.save()
+
+    self.assertEqual(coll.size(), 1)
+
   
   def test_access(self):
     admin = FskUser('oink', True)

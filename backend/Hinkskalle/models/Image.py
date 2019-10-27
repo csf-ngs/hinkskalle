@@ -38,8 +38,6 @@ class Image(Document):
   size = IntField(min_value=0)
   uploaded = BooleanField(default=False)
   customData = StringField()
-  containerStars = IntField(default=0)
-  containerDownload = IntField(default=0)
 
   container_ref = ReferenceField('Container')
 
@@ -55,6 +53,10 @@ class Image(Document):
     return self.container_ref.id
   def containerName(self):
     return self.container_ref.name
+  def containerStars(self):
+    return self.container_ref.stars
+  def containerDownloads(self):
+    return self.container_ref.downloadCount
 
   def collection(self):
     return self.container_ref.collection_ref.id

@@ -75,6 +75,7 @@ def get_container(entity_id, collection_id, container_id):
   rule='/v1/containers//<string:collection_id>/<string:container_id>',
   method='GET',
   response_body_schema=ContainerResponseSchema(),
+  authenticators=fsk_auth,
 )
 def get_default_container(collection_id, container_id):
   return get_container(entity_id='default', collection_id=collection_id, container_id=container_id)

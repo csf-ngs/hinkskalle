@@ -338,6 +338,7 @@ class TestImages(RouteBase):
     # no more auto-tagging
     read_image = Image.objects.get(id=image.id)
     self.assertTrue(read_image.uploaded)
+    self.assertIsNotNone(read_image.uploadedAt)
     self.assertTrue(os.path.exists(read_image.location))
     self.assertEqual(read_image.size, os.path.getsize(read_image.location))
 

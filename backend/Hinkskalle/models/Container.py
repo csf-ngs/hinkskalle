@@ -29,8 +29,6 @@ class ContainerSchema(Schema):
   imageTags = fields.Dict(dump_only=True, allow_none=True)
   archTags = fields.Dict(dump_only=True, allow_none=True)
 
-  images = fields.String(dump_only=True, many=True, attribute='image_names')
-
 class Container(Document):
   name = StringField(required=True, unique_with='collection_ref')
   description = StringField()
@@ -60,13 +58,6 @@ class Container(Document):
     return self.collection_ref.entity_ref.id
   def entityName(self):
     return self.collection_ref.entity_ref.name
-
-  def image_names(self):
-    imgs = list(self.images())
-    if len(imgs) == 0:
-      return None
-    else:
-      return [ img.name for img in imgs ]
 
   def images(self):
     return Image.objects(container_ref=self)

@@ -90,8 +90,7 @@ class TestContainers(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/containers//{coll.name}/{container.name}")
     self.assertEqual(ret.status_code, 200)
-    with fake_admin_auth(self.app):
-      data = ret.get_json().get('data')
+    data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(container.id))
 
   def test_get_user(self):

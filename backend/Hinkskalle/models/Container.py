@@ -22,6 +22,9 @@ class ContainerSchema(Schema):
   deletedAt = fields.DateTime(dump_only=True, allow_none=True)
   deleted = fields.Boolean(dump_only=True)
 
+  # image ids, not used? keep to validate schema
+  images = fields.String(dump_only=True, many=True, attribute='image_names')
+
   collection = fields.String(required=True)
   collectionName = fields.String(dump_only=True)
   entity = fields.String(dump_only=True)
@@ -58,6 +61,13 @@ class Container(Document):
     return self.collection_ref.entity_ref.id
   def entityName(self):
     return self.collection_ref.entity_ref.name
+
+  def image_ids(self):
+    imgs = list(self.images())
+    if len(imgs) == 0:
+      return None
+    else:
+      return [ img.id for img in imgs ]
 
   def images(self):
     return Image.objects(container_ref=self)

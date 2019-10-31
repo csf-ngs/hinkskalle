@@ -33,31 +33,21 @@ can use `singularity push -U library:///collection/container:tag` to push there.
 
 ### Access Control
 
-Currently minimal: fsk admins can push (+ create entites, collections, containers), pull public
+Pull is public for all!
 
-Could
+Pushing is restricted to Forskalle users.
 
-- default entity (empty name) and/or NGS entity for fsk admins
-- all fsk users can create and push under their own entity
+- all fsk users can create and push under their own entity (= username)
+- all fsk users can create a collection under the default entity, which belongs to them then
+- admins can push anywhere.
 
-collections + containers have private flags, cannot be set with singularity
-client. Need web UI, or extra cli
-
-entities have `defaultPrivate` flag.
+collections + containers have private flags. Entities have `defaultPrivate`
+flag. But this is not implmented, since it cannot be changed with the
+singularity cli.
 
 ### Tagging
 
-automatically advance latest tag to last push. Could be handled differently (and now is under our control)
-
-## Todo
-
-- cli and/or web UI (search, list, delete)
-- symlinks with nice names
-
-### Deploy
-
-- prod container
-- lock down mongodb
+automatically advance latest tag to last push. Could be handled differently (and now is under our control) (theoretically at least)
 
 ## Motivation
 

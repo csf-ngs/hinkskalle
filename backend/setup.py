@@ -13,7 +13,5 @@ setup(
         'mongomock',
         'flask-rebar',
         'requests',
-        'forskalle-api @ git+https://ngs.vbcf.ac.at/repo/software/forskalle-api.git',
-        'fsk-authenticator @ git+https://ngs.vbcf.ac.at/repo/ngs-software/fsk-authenticator.git',
     ],
 )

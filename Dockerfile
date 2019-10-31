@@ -6,17 +6,9 @@ RUN pip3 install gunicorn[gevent]
 
 RUN useradd -d /srv/hinkskalle -m -s /bin/bash hinkskalle
 
-ARG GIT_USER
-ARG GIT_PASSWORD
 COPY --chown=hinkskalle backend /srv/hinkskalle/backend
-RUN apt-get install -y --no-install-recommends git \
-  && cd /srv/hinkskalle/backend \
-  && git config --global credential.https://ngs.vbcf.ac.at.username $GIT_USER \
-  && echo "#!/bin/bash\necho '$GIT_PASSWORD'" > /tmp/gitpw.sh \
-  && chmod 755 /tmp/gitpw.sh \
-  && GIT_ASKPASS=/tmp/gitpw.sh pip3 install -e . \
-  && rm /tmp/gitpw.sh \
-  && apt-get autoremove -y git
+RUN cd /srv/hinkskalle/backend \
+  && pip3 install -e . \
 
 WORKDIR /srv/hinkskalle
 

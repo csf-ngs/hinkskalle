@@ -8,7 +8,7 @@ RUN useradd -d /srv/hinkskalle -m -s /bin/bash hinkskalle
 
 COPY --chown=hinkskalle backend /srv/hinkskalle/backend
 RUN cd /srv/hinkskalle/backend \
-  && pip3 install -e . \
+  && pip3 install -e . 
 
 WORKDIR /srv/hinkskalle
 

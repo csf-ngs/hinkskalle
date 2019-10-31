@@ -345,6 +345,9 @@ class TestImages(RouteBase):
     self.assertTrue(os.path.exists(read_image.location))
     self.assertEqual(read_image.size, os.path.getsize(read_image.location))
 
+    tags = container.imageTags()
+    self.assertDictEqual(tags, { 'latest': str(read_image.id) }, 'latest tag updated')
+
   def test_push_invalid_hash(self):
     image = _create_image()[0]
     self.app.config['IMAGE_PATH']=mkdtemp()

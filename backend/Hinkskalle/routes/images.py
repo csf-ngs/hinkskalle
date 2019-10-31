@@ -217,5 +217,7 @@ def push_image(image_id):
   image.size=read
   image.uploaded=True
   image.save()
+   
+  image.container_ref.tag_image('latest', image.id)
 
   return 'Danke!'

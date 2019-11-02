@@ -99,8 +99,48 @@ def get_image(entity_id, collection_id, tagged_container_id):
   method='GET',
   response_body_schema=ImageResponseSchema(),
 )
-def get_default_image(collection_id, tagged_container_id):
+def get_image_default_entity(collection_id, tagged_container_id):
   return get_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
+
+@registry.handles(
+  rule='/v1/images/<string:collection_id>/<string:tagged_container_id>',
+  method='GET',
+  response_body_schema=ImageResponseSchema(),
+)
+def get_image_default_entity_single(collection_id, tagged_container_id):
+  return get_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
+
+@registry.handles(
+  rule='/v1/images/<string:entity_id>//<string:tagged_container_id>',
+  method='GET',
+  response_body_schema=ImageResponseSchema(),
+)
+def get_image_default_collection(entity_id, tagged_container_id):
+  return get_image(entity_id=entity_id, collection_id='default', tagged_container_id=tagged_container_id)
+
+@registry.handles(
+  rule='/v1/images///<string:tagged_container_id>',
+  method='GET',
+  response_body_schema=ImageResponseSchema(),
+)
+def get_image_default_entity_default_collection_triple(tagged_container_id):
+  return get_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
+
+@registry.handles(
+  rule='/v1/images//<string:tagged_container_id>',
+  method='GET',
+  response_body_schema=ImageResponseSchema(),
+)
+def get_image_default_entity_default_collection_double(tagged_container_id):
+  return get_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
+
+@registry.handles(
+  rule='/v1/images/<string:tagged_container_id>',
+  method='GET',
+  response_body_schema=ImageResponseSchema(),
+)
+def get_image_default_entity_default_collection_single(tagged_container_id):
+  return get_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
 
 @registry.handles(
   rule='/v1/images',
@@ -163,16 +203,58 @@ def pull_image_double_slash_annoy(*args, **kwargs):
   rule='/v1/imagefile//<string:collection_id>/<string:tagged_container_id>',
   method='GET',
 )
-def pull_image_default(collection_id, tagged_container_id):
+def pull_image_default_entity(collection_id, tagged_container_id):
   return pull_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
 
 @registry.handles(
   rule='/v1/imagefile///<string:collection_id>/<string:tagged_container_id>',
   method='GET',
 )
-def pull_image_default_double_slash_annoy(collection_id, tagged_container_id):
+def pull_image_default_entity_double_slash_annoy(collection_id, tagged_container_id):
   return pull_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
+
+
+@registry.handles(
+  rule='/v1/imagefile/<string:entity_id>//<string:tagged_container_id>',
+  method='GET',
+)
+def pull_image_default_collection(entity_id, tagged_container_id):
+  return pull_image(entity_id=entity_id, collection_id='default', tagged_container_id=tagged_container_id)
+
+@registry.handles(
+  rule='/v1/imagefile//<string:entity_id>//<string:tagged_container_id>',
+  method='GET',
+)
+def pull_image_default_collection_double_slash_annoy(entity_id, tagged_container_id):
+  return pull_image(entity_id=entity_id, collection_id='default', tagged_container_id=tagged_container_id)
+
+@registry.handles(
+  rule='/v1/imagefile////<string:tagged_container_id>',
+  method='GET',
+)
+def pull_image_default_collection_default_entity_four(tagged_container_id):
+  return pull_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
   
+@registry.handles(
+  rule='/v1/imagefile///<string:tagged_container_id>',
+  method='GET',
+)
+def pull_image_default_collection_default_entity_triple(tagged_container_id):
+  return pull_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
+
+@registry.handles(
+  rule='/v1/imagefile//<string:tagged_container_id>',
+  method='GET',
+)
+def pull_image_default_collection_default_entity_double(tagged_container_id):
+  return pull_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
+
+@registry.handles(
+  rule='/v1/imagefile/<string:tagged_container_id>',
+  method='GET',
+)
+def pull_image_default_collection_default_entity_single(tagged_container_id):
+  return pull_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
 
 @registry.handles(
   rule='/v1/imagefile/<string:image_id>',

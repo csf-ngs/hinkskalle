@@ -64,8 +64,30 @@ def get_collection(entity_id, collection_id):
   response_body_schema=CollectionResponseSchema(),
   authenticators=fsk_auth,
 )
-def get_default_collection(collection_id):
+def get_collection_default_entity(collection_id):
+  current_app.logger.debug('get default entity')
   return get_collection(entity_id='default', collection_id=collection_id)
+
+@registry.handles(
+  rule='/v1/collections/<string:entity_id>/',
+  method='GET',
+  response_body_schema=CollectionResponseSchema(),
+  authenticators=fsk_auth
+)
+def get_default_collection(entity_id):
+  current_app.logger.debug('get default collection')
+  return get_collection(entity_id=entity_id, collection_id='default')
+
+# does not work currently, see https://github.com/pallets/flask/issues/3413
+@registry.handles(
+  rule='/v1/collections//',
+  method='GET',
+  response_body_schema=CollectionResponseSchema(),
+  authenticators=fsk_auth
+)
+def get_default_collection_default_entity():
+  current_app.logger.debug('get default collection + entity')
+  return get_collection(entity_id='default', collection_id='default')
 
 @registry.handles(
   rule='/v1/collections',
@@ -81,6 +103,13 @@ def create_collection():
   if not entity.check_access(g.fsk_user):
     raise errors.Forbidden("access denied")
   body.pop('entity')
+  if not body['name']:
+    body['name']='default'
+  
+  current_app.logger.debug(body)
+  if entity.name == 'default' and not g.fsk_user.is_admin:
+    if body['name'] == 'default' or body['name'] == 'pipeline':
+      raise errors.Forbidden("Trying to use a reserved name in the default namespace.")
   new_collection = Collection(**body)
   new_collection.entity_ref=entity
   new_collection.createdBy=g.fsk_user.username

@@ -76,7 +76,7 @@ class TestImages(RouteBase):
     self.assertEqual(data['id'], str(image.id))
     self.assertListEqual(data['tags'], ['latest'])
   
-  def test_get_default(self):
+  def test_get_default_entity(self):
     image, _, _, entity = _create_image()
     entity.name='default'
     entity.save()
@@ -89,6 +89,56 @@ class TestImages(RouteBase):
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(image.id))
 
+  def test_get_default_entity_single(self):
+    image, _, _, entity = _create_image()
+    entity.name='default'
+    entity.save()
+
+    latest_tag = Tag(name='latest', image_ref=image)
+    latest_tag.save()
+
+    ret = self.client.get(f"/v1/images/{image.collectionName()}/{image.containerName()}")
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['id'], str(image.id))
+  
+  def test_get_default_collection(self):
+    image, _, collection, entity = _create_image()
+    collection.name='default'
+    collection.save()
+
+    latest_tag = Tag(name='latest', image_ref=image)
+    latest_tag.save()
+
+    ret = self.client.get(f"/v1/images/{image.entityName()}//{image.containerName()}")
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['id'], str(image.id))
+  
+  def test_get_default_collection_default_entity(self):
+    image, _, collection, entity = _create_image()
+    entity.name = 'default'
+    entity.save()
+    collection.name='default'
+    collection.save()
+
+    latest_tag = Tag(name='latest', image_ref=image)
+    latest_tag.save()
+
+    ret = self.client.get(f"/v1/images///{image.containerName()}")
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['id'], str(image.id))
+
+    ret = self.client.get(f"/v1/images//{image.containerName()}")
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['id'], str(image.id))
+
+    ret = self.client.get(f"/v1/images/{image.containerName()}")
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['id'], str(image.id))
 
   def test_get_with_tag(self):
     v1_image = _create_image()[0]
@@ -322,6 +372,72 @@ class TestImages(RouteBase):
     ret = self.client.get(f"/v1/imagefile///{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello default Entity!")
+    ret.close() # avoid unclosed filehandle warning
+    tmpf.close()
+
+  def test_pull_default_collection(self):
+    image, _, collection, entity = _create_image()
+    image.uploaded=True
+    latest_tag = Tag(name='latest', image_ref=image)
+    latest_tag.save()
+
+    collection.name='default'
+    collection.save()
+
+    tmpf = tempfile.NamedTemporaryFile()
+    tmpf.write(b"Hello default Collection!")
+    tmpf.flush()
+    image.location=tmpf.name
+    image.save()
+
+    ret = self.client.get(f"/v1/imagefile/{image.entityName()}//{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.data, b"Hello default Collection!")
+    ret.close()
+
+    # singularity requests with double slash
+    ret = self.client.get(f"/v1/imagefile//{image.entityName()}//{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.data, b"Hello default Collection!")
+    ret.close() # avoid unclosed filehandle warning
+    tmpf.close()
+
+  def test_pull_default_entity_default_collection(self):
+    image, _, collection, entity = _create_image()
+    image.uploaded=True
+    latest_tag = Tag(name='latest', image_ref=image)
+    latest_tag.save()
+
+    collection.name='default'
+    collection.save()
+    entity.name='default'
+    entity.save()
+
+    tmpf = tempfile.NamedTemporaryFile()
+    tmpf.write(b"Hello default Collection!")
+    tmpf.flush()
+    image.location=tmpf.name
+    image.save()
+
+    ret = self.client.get(f"/v1/imagefile///{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.data, b"Hello default Collection!")
+    ret.close()
+
+    # singularity requests with double slash
+    ret = self.client.get(f"/v1/imagefile////{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.data, b"Hello default Collection!")
+    ret.close() # avoid unclosed filehandle warning
+
+    ret = self.client.get(f"/v1/imagefile//{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.data, b"Hello default Collection!")
+    ret.close() # avoid unclosed filehandle warning
+
+    ret = self.client.get(f"/v1/imagefile/{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.data, b"Hello default Collection!")
     ret.close() # avoid unclosed filehandle warning
     tmpf.close()
   

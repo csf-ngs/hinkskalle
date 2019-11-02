@@ -82,7 +82,7 @@ class TestContainers(RouteBase):
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(container.id))
   
-  def test_get_default(self):
+  def test_get_default_entity(self):
     container, coll, entity = _create_container()
     entity.name='default'
     entity.save()
@@ -90,6 +90,42 @@ class TestContainers(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/containers//{coll.name}/{container.name}")
     self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['id'], str(container.id))
+  
+  def test_get_default_collection(self):
+    container, coll, entity = _create_container()
+    coll.name='default'
+    coll.save()
+
+    with fake_admin_auth(self.app):
+      ret = self.client.get(f"/v1/containers/{entity.name}//{container.name}")
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['id'], str(container.id))
+
+  def test_get_default_collection_default_entity(self):
+    container, coll, entity = _create_container()
+    entity.name='default'
+    entity.save()
+    coll.name='default'
+    coll.save()
+
+    with fake_admin_auth(self.app):
+      ret = self.client.get(f"/v1/containers///{container.name}")
+    self.assertEqual(ret.status_code, 200, 'triple slash')
+    data = ret.get_json().get('data')
+    self.assertEqual(data['id'], str(container.id))
+
+    with fake_admin_auth(self.app):
+      ret = self.client.get(f"/v1/containers//{container.name}")
+    self.assertEqual(ret.status_code, 200, 'double slash')
+    data = ret.get_json().get('data')
+    self.assertEqual(data['id'], str(container.id))
+
+    with fake_admin_auth(self.app):
+      ret = self.client.get(f"/v1/containers/{container.name}")
+    self.assertEqual(ret.status_code, 200, 'single slash')
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(container.id))
 

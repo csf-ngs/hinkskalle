@@ -1,9 +1,12 @@
-from Hinkskalle import registry
+from Hinkskalle import registry, fsk_auth
 from flask import current_app, jsonify, make_response, request
 from flask_rebar import RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
 from werkzeug.datastructures import EnvironHeaders
 import os
+
+from Hinkskalle.routes.images import ImageListResponseSchema
+from Hinkskalle.models import Image, Tag
 
 class VersionResponseSchema(ResponseSchema):
   version = fields.String()
@@ -45,6 +48,17 @@ def config():
       'uri': service_url
     }
   }
+
+@registry.handles(
+  rule='/v1/latest',
+  method='GET',
+  response_body_schema=ImageListResponseSchema(),
+  authenticators=fsk_auth,
+)
+def latest_images():
+  tags = Tag.objects.order_by('-createdAt')[:10]
+  return { 'data': [ tag.image_ref for tag in tags ] }
+
 
 # super hacky fake content type (singularity does not set it)
 # header props are read-only (go figure) 

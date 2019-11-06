@@ -363,6 +363,11 @@ class TestImages(RouteBase):
     image.location=tmpf.name
     image.save()
 
+    ret = self.client.get(f"/v1/imagefile/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.data, b"Hello default Entity!")
+    ret.close()
+
     ret = self.client.get(f"/v1/imagefile//{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello default Entity!")

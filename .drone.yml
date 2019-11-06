@@ -2,6 +2,9 @@
 name: hinkskalle
 kind: pipeline
 
+concurrency:
+  limit: 1
+
 steps:
 - name: fetch
   image: drone/git

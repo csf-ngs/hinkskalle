@@ -16,6 +16,7 @@ class ImageSchema(Schema):
 
   containerStars = fields.Integer(dump_only=True)
   containerDownloads = fields.Integer(dump_only=True)
+  downloadCount = fields.Integer(dump_only=True)
 
   createdAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(dump_only=True)
@@ -38,6 +39,7 @@ class Image(Document):
   size = IntField(min_value=0)
   uploaded = BooleanField(default=False)
   customData = StringField()
+  downloadCount = IntField(default=0)
 
   container_ref = ReferenceField('Container')
 

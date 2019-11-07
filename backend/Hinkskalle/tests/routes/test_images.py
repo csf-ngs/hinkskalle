@@ -336,6 +336,9 @@ class TestImages(RouteBase):
     self.assertEqual(ret.data, b"Hello Dorian!")
     container.reload()
     self.assertEqual(container.downloadCount, 1)
+    image.reload()
+    self.assertEqual(image.downloadCount, 1)
+    self.assertEqual(image.containerDownloads(), 1)
     ret.close() # avoid unclosed filehandle warning
 
     # singularity requests with double slash
@@ -344,6 +347,9 @@ class TestImages(RouteBase):
     self.assertEqual(ret.data, b"Hello Dorian!")
     container.reload()
     self.assertEqual(container.downloadCount, 2)
+    image.reload()
+    self.assertEqual(image.downloadCount, 2)
+    self.assertEqual(image.containerDownloads(), 2)
     ret.close() # avoid unclosed filehandle warning
 
     tmpf.close()

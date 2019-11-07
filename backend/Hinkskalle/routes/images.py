@@ -190,6 +190,7 @@ def pull_image(entity_id, collection_id, tagged_container_id):
   if not os.path.exists(image.location):
     raise errors.InternalError(f"Image not found at {image.location}")
   Container.objects(id=image.container_ref.id).update_one(inc__downloadCount=1)
+  Image.objects(id=image.id).update_one(inc__downloadCount=1)
   return send_file(image.location)
   
 @registry.handles(

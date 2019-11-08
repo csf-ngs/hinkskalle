@@ -40,7 +40,7 @@ class TestBase(RouteBase):
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
 
-    self.assertListEqual([ c['id'] for c in json ], [ str(image1.id), ] )
+    self.assertListEqual([ c['image']['id'] for c in json ], [ str(image1.id), ] )
 
     images=[]
     for idx in range(1, 12):
@@ -54,7 +54,18 @@ class TestBase(RouteBase):
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
 
-    self.assertListEqual([ c['id'] for c in json ], [ str(img.id) for img in images[:10] ] )
+    self.assertListEqual([ c['image']['id'] for c in json ], [ str(img.id) for img in images[:10] ] )
+
+  def test_latest_collect_tags(self):
+    image1, container1, _, _ = _create_image()
+    container1.tag_image('v1.0', image1.id)
+    container1.tag_image('oink', image1.id)
+
+    with fake_auth(self.app):
+      ret = self.client.get('/v1/latest')
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertCountEqual(json[0]['tags'], [ 'v1.0', 'oink'])
 
 
 

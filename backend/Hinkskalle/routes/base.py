@@ -5,8 +5,7 @@ from marshmallow import fields, Schema
 from werkzeug.datastructures import EnvironHeaders
 import os
 
-from Hinkskalle.routes.images import ImageListResponseSchema
-from Hinkskalle.models import Image, Tag
+from Hinkskalle.models import Image, Tag, ImageSchema
 
 class VersionResponseSchema(ResponseSchema):
   version = fields.String()
@@ -49,15 +48,34 @@ def config():
     }
   }
 
+class LatestImageSchema(Schema):
+  tags = fields.List(fields.String())
+  image = fields.Nested(ImageSchema)
+
+class LatestImageListResponseSchema(ResponseSchema):
+  data = fields.Nested(LatestImageSchema, many=True)
+
 @registry.handles(
   rule='/v1/latest',
   method='GET',
-  response_body_schema=ImageListResponseSchema(),
+  response_body_schema=LatestImageListResponseSchema(),
   authenticators=fsk_auth,
 )
 def latest_images():
-  tags = Tag.objects.order_by('-createdAt')[:10]
-  return { 'data': [ tag.image_ref for tag in tags ] }
+  tags = Tag.objects.order_by('-createdAt')
+  ret = {}
+  for tag in tags:
+    if not tag.image_ref.id in ret:
+      current_app.logger.debug(f"return image {tag.image_ref.id}")
+      ret[tag.image_ref.id] = {
+        'tags': [],
+        'image': tag.image_ref,
+      }
+    ret[tag.image_ref.id]['tags'].append(tag.name)
+    if len(ret) >= 10:
+      break
+
+  return { 'data': list(ret.values()) }
 
 
 # super hacky fake content type (singularity does not set it)

@@ -1,5 +1,13 @@
 version: '3'
 services:
+  proxy:
+    image: nginx:latest
+    volumes:
+      - './share/nginx.conf:/etc/nginx/nginx.conf'
+    ports:
+      - '7660:80'
+    links:
+      - api
   api:
     image: docker.ngs.vbcf.ac.at/hinkskalle-dev
     volumes:
@@ -11,8 +19,6 @@ services:
       MONGODB_USERNAME: 'hinkebein'
       MONGODB_PASSWORD: "${HINKSKALLE_MONGODB_PASSWORD}"
       FSK_URL: 'http://172.28.128.1:6600/fsk3test'
-    ports:
-      - '7660:5000'
     links:
       - mongodb
   mongodb:

@@ -2,6 +2,7 @@
 import unittest
 import os
 import json
+import datetime
 from Hinkskalle.tests.route_base import RouteBase, fake_admin_auth, fake_auth
 from Hinkskalle.models import Entity, Collection
 from Hinkskalle.tests.models.test_Collection import _create_collection
@@ -284,5 +285,58 @@ class TestCollections(RouteBase):
       ret = self.client.post('/v1/collections', json={
         'name': 'oink',
         'entity': str(entity.id),
+      })
+    self.assertEqual(ret.status_code, 403)
+
+  def test_update(self):
+    coll, entity = _create_collection()
+
+    with fake_admin_auth(self.app):
+      ret = self.client.put(f"/v1/collections/{entity.name}/{coll.name}", json={
+        'description': 'Mei Huat',
+        'private': True,
+        'customData': 'hot drei Eckn',
+      })
+    self.assertEqual(ret.status_code, 200)
+
+    dbColl = Collection.objects.get(name=coll.name)
+    self.assertEqual(dbColl.description, 'Mei Huat')
+    self.assertTrue(dbColl.private)
+    self.assertEqual(dbColl.customData, 'hot drei Eckn')
+
+    self.assertTrue(abs(dbColl.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+
+  def test_update_user(self):
+    coll, entity = _create_collection()
+    entity.createdBy='test.hase'
+    entity.save()
+    coll.createdBy='test.hase'
+    coll.save()
+
+    with fake_auth(self.app):
+      ret = self.client.put(f"/v1/collections/{entity.name}/{coll.name}", json={
+        'description': 'Mei Huat',
+        'private': True,
+        'customData': 'hot drei Eckn',
+      })
+    self.assertEqual(ret.status_code, 200)
+
+    dbColl = Collection.objects.get(name=coll.name)
+    self.assertEqual(dbColl.description, 'Mei Huat')
+    self.assertTrue(dbColl.private)
+    self.assertEqual(dbColl.customData, 'hot drei Eckn')
+
+  def test_update_user_other(self):
+    coll, entity = _create_collection()
+    entity.createdBy='test.hase'
+    entity.save()
+    coll.createdBy='test.ziege'
+    coll.save()
+
+    with fake_auth(self.app):
+      ret = self.client.put(f"/v1/collections/{entity.name}/{coll.name}", json={
+        'description': 'Mei Huat',
+        'private': True,
+        'customData': 'hot drei Eckn',
       })
     self.assertEqual(ret.status_code, 403)

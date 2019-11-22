@@ -55,4 +55,12 @@ class Collection(Document):
       return True
     else:
       return False
+  
+  def check_update_access(self, fsk_user):
+    if fsk_user.is_admin:
+      return True
+    elif self.createdBy == fsk_user.username:
+      return True
+    else:
+      return False
     

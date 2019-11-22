@@ -4,6 +4,7 @@ from marshmallow import fields, Schema
 from mongoengine import NotUniqueError, DoesNotExist
 from mongoengine.queryset.visitor import Q
 from flask import request, current_app, g
+import datetime
 
 from Hinkskalle.models import CollectionSchema, Collection, Entity
 
@@ -17,6 +18,21 @@ class CollectionListResponseSchema(ResponseSchema):
 
 class CollectionCreateSchema(CollectionSchema, RequestSchema):
   pass
+
+class CollectionUpdateSchema(CollectionSchema, RequestSchema):
+  name = fields.String(dump_only=True)
+  entity = fields.String(dump_only=True)
+
+def _get_collection(entity_id, collection_id):
+  try:
+    entity = Entity.objects.get(name=entity_id)
+  except DoesNotExist:
+    raise errors.NotFound(f"entity {entity_id} not found")
+  try:
+    collection = Collection.objects.get(name=collection_id, entity_ref=entity)
+  except DoesNotExist:
+    raise errors.NotFound(f"collection {entity.id}/{collection_id} not found")
+  return collection
 
 @registry.handles(
   rule='/v1/collections/<string:entity_id>',
@@ -46,14 +62,7 @@ def list_collections(entity_id):
   authenticators=fsk_auth,
 )
 def get_collection(entity_id, collection_id):
-  try:
-    entity = Entity.objects.get(name=entity_id)
-  except DoesNotExist:
-    raise errors.NotFound(f"entity {entity_id} not found")
-  try:
-    collection = Collection.objects.get(name=collection_id, entity_ref=entity)
-  except DoesNotExist:
-    raise errors.NotFound(f"collection {entity.id}/{collection_id} not found")
+  collection = _get_collection(entity_id, collection_id)
   if not collection.check_access(g.fsk_user):
     raise errors.Forbidden(f"access denied.")
   return { 'data': collection }
@@ -121,3 +130,23 @@ def create_collection():
     raise errors.PreconditionFailed(f"Collection {new_collection.id} already exists")
 
   return { 'data': new_collection }
+
+@registry.handles(
+  rule='/v1/collections/<string:entity_id>/<string:collection_id>',
+  method='PUT',
+  request_body_schema=CollectionUpdateSchema(),
+  response_body_schema=CollectionResponseSchema(),
+  authenticators=fsk_auth,
+)
+def update_collection(entity_id, collection_id):
+  body = rebar.validated_body
+  collection = _get_collection(entity_id, collection_id)
+  if not collection.check_update_access(g.fsk_user):
+    raise errors.Forbidden("Access denied to collection")
+  
+  for key in body:
+    setattr(collection, key, body[key])
+  collection.updatedAt = datetime.datetime.now()
+  collection.save()
+
+  return { 'data': collection }

@@ -16,6 +16,7 @@ class ContainerSchema(Schema):
   downloadCount = fields.Integer(dump_only=True)
   stars = fields.Integer(dump_only=True)
   customData = fields.String(allow_none=True)
+  vcsUrl = fields.String(allow_none=True)
   createdAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(dump_only=True, allow_none=True)
   updatedAt = fields.DateTime(dump_only=True, allow_none=True)
@@ -41,6 +42,7 @@ class Container(Document):
   downloadCount = IntField(default=0)
   stars = IntField(default=0)
   customData = StringField()
+  vcsUrl = StringField()
   collection_ref = ReferenceField(Collection, required=True)
 
   createdAt = DateTimeField(default=datetime.utcnow)
@@ -101,6 +103,14 @@ class Container(Document):
       return True
     elif not self.collection_ref.check_access(fsk_user):
       return False
+    elif self.createdBy == fsk_user.username:
+      return True
+    else:
+      return False
+  
+  def check_update_access(self, fsk_user):
+    if fsk_user.is_admin:
+      return True
     elif self.createdBy == fsk_user.username:
       return True
     else:

@@ -4,6 +4,7 @@ from marshmallow import fields, Schema
 from mongoengine import NotUniqueError, DoesNotExist, ValidationError
 from mongoengine.queryset.visitor import Q
 from flask import request, current_app, g
+import datetime
 
 from Hinkskalle.models import ContainerSchema, Container, Entity, Collection
 
@@ -15,6 +16,28 @@ class ContainerListResponseSchema(ResponseSchema):
 
 class ContainerCreateSchema(ContainerSchema, RequestSchema):
   pass
+
+class ContainerUpdateSchema(ContainerSchema, RequestSchema):
+  name = fields.String(dump_only=True)
+  collection = fields.String(dump_only=True)
+
+def _get_container(entity_id, collection_id, container_id):
+  try:
+    entity = Entity.objects.get(name=entity_id)
+  except DoesNotExist:
+    current_app.logger.debug(f"entity {entity_id} not found")
+    raise errors.NotFound(f"entity {entity_id} not found")
+  try:
+    collection = Collection.objects.get(name=collection_id, entity_ref=entity)
+  except DoesNotExist:
+    current_app.logger.debug(f"collection {entity.name}/{collection_id} not found")
+    raise errors.NotFound(f"collection {entity.name}/{collection_id} not found")
+  try:
+    container = Container.objects.get(name=container_id, collection_ref=collection)
+  except DoesNotExist:
+    current_app.logger.debug(f"container {entity.name}/{collection.name}/{container_id} not found")
+    raise errors.NotFound(f"container {entity.name}/{collection.name}/{container_id} not found")
+  return container
 
 @registry.handles(
   rule='/v1/containers/<string:entity_id>/<string:collection_id>',
@@ -50,22 +73,7 @@ def list_containers(entity_id, collection_id):
   authenticators=fsk_auth,
 )
 def get_container(entity_id, collection_id, container_id):
-  try:
-    entity = Entity.objects.get(name=entity_id)
-  except DoesNotExist:
-    current_app.logger.debug(f"entity {entity_id} not found")
-    raise errors.NotFound(f"entity {entity_id} not found")
-  try:
-    collection = Collection.objects.get(name=collection_id, entity_ref=entity)
-  except DoesNotExist:
-    current_app.logger.debug(f"collection {entity.name}/{collection_id} not found")
-    raise errors.NotFound(f"collection {entity.name}/{collection_id} not found")
-  try:
-    container = Container.objects.get(name=container_id, collection_ref=collection)
-  except DoesNotExist:
-    current_app.logger.debug(f"container {entity.name}/{collection.name}/{container_id} not found")
-    raise errors.NotFound(f"container {entity.name}/{collection.name}/{container_id} not found")
-
+  container = _get_container(entity_id, collection_id, container_id)
   if not container.check_access(g.fsk_user):
     raise errors.Forbidden("access denied.")
 
@@ -146,3 +154,23 @@ def create_container():
     raise errors.PreconditionFailed(f"Container {new_container.id} already exists")
 
   return { 'data': new_container }
+
+@registry.handles(
+  rule='/v1/containers/<string:entity_id>/<string:collection_id>/<string:container_id>',
+  method='PUT',
+  request_body_schema=ContainerUpdateSchema(),
+  response_body_schema=ContainerResponseSchema(),
+  authenticators=fsk_auth,
+)
+def update_container(entity_id, collection_id, container_id):
+  body = rebar.validated_body
+  container = _get_container(entity_id, collection_id, container_id)
+  if not container.check_update_access(g.fsk_user):
+    raise errors.Forbidden("Access denied to container")
+
+  for key in body:
+    setattr(container, key,  body[key])
+  container.updatedAt = datetime.datetime.now()
+  container.save()
+
+  return { 'data': container }

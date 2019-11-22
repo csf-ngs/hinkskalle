@@ -3,9 +3,11 @@ import unittest
 import os
 import json
 import tempfile
+import datetime
 from Hinkskalle.tests.route_base import RouteBase, fake_auth, fake_admin_auth
 from Hinkskalle.tests.models.test_Container import _create_container
 from Hinkskalle.tests.models.test_Collection import _create_collection
+from Hinkskalle.models import Container
 
 class TestContainers(RouteBase):
   def test_list_noauth(self):
@@ -212,4 +214,56 @@ class TestContainers(RouteBase):
         'name': 'oink',
         'collection': str(coll.id),
       })
+    self.assertEqual(ret.status_code, 403)
+  
+  def test_update(self):
+    container, coll, entity = _create_container()
+
+    with fake_admin_auth(self.app):
+      ret = self.client.put(f"/v1/containers/{entity.name}/{coll.name}/{container.name}", json={
+        'description': 'Mei Huat',
+        'fullDescription': 'Der hot Drei Eckn',
+        'private': True,
+        'readOnly': True,
+        'vcsUrl': 'http://da.ham',
+      })
+    
+    self.assertEqual(ret.status_code, 200)
+
+    dbContainer = Container.objects.get(name=container.name)
+    self.assertEqual(dbContainer.description, 'Mei Huat')
+    self.assertEqual(dbContainer.fullDescription, 'Der hot Drei Eckn')
+    self.assertTrue(dbContainer.private)
+    self.assertTrue(dbContainer.readOnly)
+    self.assertEqual(dbContainer.vcsUrl, 'http://da.ham')
+
+    self.assertTrue(abs(dbContainer.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+    
+
+  def test_update_user(self):
+    container, coll, entity = _create_container()
+    container.createdBy = 'test.hase'
+    container.save()
+
+    with fake_auth(self.app):
+      ret = self.client.put(f"/v1/containers/{entity.name}/{coll.name}/{container.name}", json={
+        'description': 'Mei Huat',
+        'fullDescription': 'Der hot Drei Eckn',
+        'private': True,
+        'readOnly': True,
+        'vcsUrl': 'http://da.ham',
+      })
+    
+    self.assertEqual(ret.status_code, 200)
+
+  def test_update_user_other(self):
+    container, coll, entity = _create_container()
+    container.createdBy = 'test.ziege'
+    container.save()
+
+    with fake_auth(self.app):
+      ret = self.client.put(f"/v1/containers/{entity.name}/{coll.name}/{container.name}", json={
+        'description': 'Mei Huat',
+      })
+    
     self.assertEqual(ret.status_code, 403)

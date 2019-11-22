@@ -6,8 +6,6 @@ services:
       - './share/nginx.conf:/etc/nginx/nginx.conf'
     ports:
       - '7660:80'
-    links:
-      - api
   api:
     image: docker.ngs.vbcf.ac.at/hinkskalle-dev
     volumes:
@@ -21,6 +19,7 @@ services:
       FSK_URL: 'http://172.28.128.1:6600/fsk3test'
     links:
       - mongodb
+      - proxy
   mongodb:
     image: mongo:4-bionic
     volumes:

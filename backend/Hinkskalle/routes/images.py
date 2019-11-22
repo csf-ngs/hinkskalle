@@ -283,7 +283,7 @@ def push_image(image_id):
   m = hashlib.sha256()
   tmpf = tempfile.NamedTemporaryFile(delete=False)
 
-  current_app.logger.debug(f"starting upload of image {image_id} to {tmpf}")
+  current_app.logger.debug(f"starting upload of image {image_id} to {str(tmpf)}")
 
   read = 0
   while (True):

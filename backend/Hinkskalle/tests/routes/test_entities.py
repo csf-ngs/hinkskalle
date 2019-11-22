@@ -1,6 +1,7 @@
 import unittest
 import os
 import json
+import datetime
 from Hinkskalle.tests.route_base import RouteBase, fake_admin_auth, fake_auth
 
 from Hinkskalle.models import Entity
@@ -173,5 +174,76 @@ class TestEntities(RouteBase):
     with fake_auth(self.app):
       ret = self.client.post('/v1/entities', json={
         'name': ''
+      })
+    self.assertEqual(ret.status_code, 403)
+
+  def test_update(self):
+    entity = Entity(name='grunz')
+    entity.save()
+    with fake_admin_auth(self.app):
+      ret = self.client.put('/v1/entities/grunz', json={
+        'description': 'Oink oink',
+        'defaultPrivate': True,
+      })
+    self.assertEqual(ret.status_code, 200)
+
+    dbEntity = Entity.objects.get(name='grunz')
+    self.assertEqual(dbEntity.description, 'Oink oink')
+    self.assertTrue(dbEntity.defaultPrivate)
+    self.assertTrue(abs(dbEntity.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+    
+    with fake_admin_auth(self.app):
+      ret = self.client.put('/v1/entities/grunz', json={
+        'description': 'Troro',
+      })
+    self.assertEqual(ret.status_code, 200)
+
+    dbEntity = Entity.objects.get(name='grunz')
+    self.assertEqual(dbEntity.description, 'Troro')
+    self.assertTrue(dbEntity.defaultPrivate)
+
+  def test_update_name_change(self):
+    entity = Entity(name='grunz')
+    entity.save()
+    with fake_admin_auth(self.app):
+      ret = self.client.put('/v1/entities/grunz', json={
+        'name': 'Babsi Streusand',
+      })
+    self.assertEqual(ret.status_code, 200)
+
+    dbEntity = Entity.objects.get(name='grunz')
+    self.assertEqual(dbEntity.name, 'grunz')
+
+  def test_update_user(self):
+    entity = Entity(name='grunz', createdBy='test.hase')
+    entity.save()
+    with fake_auth(self.app):
+      ret = self.client.put('/v1/entities/grunz', json={
+        'description': 'Oink oink',
+        'defaultPrivate': True,
+      })
+    self.assertEqual(ret.status_code, 200)
+
+    dbEntity = Entity.objects.get(name='grunz')
+    self.assertEqual(dbEntity.description, 'Oink oink')
+    self.assertTrue(dbEntity.defaultPrivate)
+
+  def test_update_user_other(self):
+    entity = Entity(name='grunz', createdBy='other.hase')
+    entity.save()
+    with fake_auth(self.app):
+      ret = self.client.put('/v1/entities/grunz', json={
+        'description': 'Oink oink',
+        'defaultPrivate': True,
+      })
+    self.assertEqual(ret.status_code, 403)
+
+  def test_update_user_default(self):
+    entity = Entity(name='default')
+    entity.save()
+    with fake_auth(self.app):
+      ret = self.client.put('/v1/entities/default', json={
+        'description': 'Oink oink',
+        'defaultPrivate': True,
       })
     self.assertEqual(ret.status_code, 403)

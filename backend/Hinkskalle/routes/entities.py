@@ -4,6 +4,7 @@ from marshmallow import fields, Schema
 from mongoengine import NotUniqueError, DoesNotExist
 from mongoengine.queryset.visitor import Q
 from flask import request, current_app, g
+import datetime
 
 from Hinkskalle.models import EntitySchema, Entity
 
@@ -15,6 +16,9 @@ class EntityListResponseSchema(ResponseSchema):
 
 class EntityCreateSchema(EntitySchema, RequestSchema):
   pass
+
+class EntityUpdateSchema(EntitySchema, RequestSchema):
+  name = fields.String(dump_only=True)
 
 @registry.handles(
   rule='/v1/entities',
@@ -79,3 +83,29 @@ def create_entity():
     raise errors.PreconditionFailed(f"Entity {new_entity.id} already exists")
 
   return { 'data': new_entity }
+
+@registry.handles(
+  rule='/v1/entities/<string:entity_id>',
+  method='PUT',
+  request_body_schema=EntityUpdateSchema(),
+  response_body_schema=EntityResponseSchema(),
+  authenticators=fsk_auth,
+)
+def update_entity(entity_id):
+  body = rebar.validated_body
+
+  try:
+    entity = Entity.objects.get(name=entity_id)
+  except DoesNotExist:
+    raise errors.NotFound(f"entity {entity_id} not found")
+  if not entity.check_update_access(g.fsk_user):
+    raise errors.Forbidden("Access denied to entity.")
+
+  for key in body:
+    setattr(entity, key, body[key])
+  entity.updatedAt = datetime.datetime.now()
+  entity.save()
+
+  return { 'data': entity }
+
+  

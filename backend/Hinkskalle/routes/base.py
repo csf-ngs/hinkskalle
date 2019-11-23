@@ -113,6 +113,7 @@ def add_header(r):
   r.headers['Cache-Control'] = 'public, max-age=0'
   r.headers['Access-Control-Allow-Origin'] = '*'
   r.headers['Access-Control-Allow-Credentials'] = 'true'
-  r.headers['Access-Control-Allow-Headers'] = 'Authorization'
+  r.headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type'
+  r.headers['Access-Control-Allow-Methods'] = 'PUT, POST, GET, DELETE, OPTIONS'
 
   return r

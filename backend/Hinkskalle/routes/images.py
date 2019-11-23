@@ -297,7 +297,7 @@ def push_image(image_id):
   current_app.logger.debug(f"calculating checksum...")
   digest = m.hexdigest()
   if image.hash != f"sha256.{digest}":
-    raise errors.UnprocessableEntity("Image hash {image.hash} does not match: {digest}")
+    raise errors.UnprocessableEntity(f"Image hash {image.hash} does not match: {digest}")
   tmpf.close()
 
   current_app.logger.debug(f"moving image to {outfn}")

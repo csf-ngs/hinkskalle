@@ -7,6 +7,7 @@ from flask import request, current_app, safe_join, send_file, g
 import os.path
 import subprocess
 import json
+import datetime
 
 from Hinkskalle.models import ImageSchema, Image, Container, Entity, Collection
 
@@ -18,6 +19,13 @@ class ImageListResponseSchema(ResponseSchema):
 
 class ImageCreateSchema(ImageSchema, RequestSchema):
   pass
+
+class ImageUpdateSchema(ImageSchema, RequestSchema):
+  hash = fields.String(dump_only=True)
+  blob = fields.String(dump_only=True)
+  uploaded = fields.String(dump_only=True)
+  container = fields.String(dump_only=True)
+
 
 class ImageInspectSchema(Schema):
   attributes = fields.Dict()
@@ -181,6 +189,28 @@ def create_image():
     container.tag_image('latest', new_image.id)
 
   return { 'data': new_image }
+
+@registry.handles(
+  rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
+  method='PUT',
+  request_body_schema=ImageUpdateSchema(),
+  response_body_schema=ImageResponseSchema(),
+  authenticators=fsk_auth,
+)
+def update_image(entity_id, collection_id, tagged_container_id):
+  body = rebar.validated_body
+  image = _get_image(entity_id, collection_id, tagged_container_id)
+
+  if not image.check_update_access(g.fsk_user):
+    raise errors.Forbidden('access denied')
+
+  for key in body:
+    setattr(image, key, body[key])
+  image.updatedAt = datetime.datetime.now()
+  image.save()
+
+  return { 'data': image }
+
 
 @registry.handles(
   rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>/inspect',

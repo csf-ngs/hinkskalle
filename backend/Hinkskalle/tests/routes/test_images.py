@@ -1,5 +1,6 @@
 import unittest
 import json
+import datetime
 from Hinkskalle.tests.route_base import RouteBase, fake_auth, fake_admin_auth
 
 from Hinkskalle.models import Image, Tag
@@ -305,5 +306,49 @@ class TestImages(RouteBase):
       ret = self.client.post('/v1/images', json={
         'hash': 'sha256.oink',
         'container': str(container.id),
+      })
+    self.assertEqual(ret.status_code, 403)
+
+  def test_update(self):
+    image = _create_image()[0]
+    latest_tag = Tag(name='oink', image_ref=image)
+    latest_tag.save()
+
+    with fake_admin_auth(self.app):
+      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:oink", json={
+        'description': 'Mei Huat',
+        'customData': 'hot drei Eckn',
+      })
+    self.assertEqual(ret.status_code, 200)
+
+    dbImage = Image.objects.get(id=image.id)
+    self.assertEqual(dbImage.description, 'Mei Huat')
+    self.assertEqual(dbImage.customData, 'hot drei Eckn')
+
+    self.assertTrue(abs(dbImage.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+
+  def test_update_user(self):
+    image = _create_image()[0]
+    image.container_ref.createdBy = 'test.hase'
+    image.container_ref.save()
+    latest_tag = Tag(name='oink', image_ref=image)
+    latest_tag.save()
+
+    with fake_auth(self.app):
+      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:oink", json={
+        'description': 'Mei Huat',
+        'customData': 'hot drei Eckn',
+      })
+    self.assertEqual(ret.status_code, 200)
+
+  def test_update_user_other(self):
+    image = _create_image()[0]
+    latest_tag = Tag(name='oink', image_ref=image)
+    latest_tag.save()
+
+    with fake_auth(self.app):
+      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:oink", json={
+        'description': 'Mei Huat',
+        'customData': 'hot drei Eckn',
       })
     self.assertEqual(ret.status_code, 403)

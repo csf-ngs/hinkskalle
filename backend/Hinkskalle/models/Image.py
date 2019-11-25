@@ -10,7 +10,7 @@ class ImageSchema(Schema):
   description = fields.String(allow_none=True)
   hash = fields.String()
   blob = fields.String(allow_none=True)
-  size = fields.Int(allow_none=True)
+  size = fields.Int(allow_none=True, dump_only=True)
   uploaded = fields.Boolean()
   customData = fields.String(allow_none=True)
 
@@ -80,4 +80,7 @@ class Image(Document):
   
   def check_access(self, fsk_user):
     return True
+  
+  def check_update_access(self, fsk_user):
+    return self.container_ref.check_update_access(fsk_user)
    

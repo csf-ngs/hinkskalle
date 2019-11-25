@@ -1,3 +1,5 @@
+FROM docker.ngs.vbcf.ac.at/singularity-base as singularity
+
 FROM docker.ngs.vbcf.ac.at/flask-base
 
 RUN apt-get install -y jq gosu
@@ -13,6 +15,11 @@ RUN cd /srv/hinkskalle/backend \
 WORKDIR /srv/hinkskalle
 
 COPY conf/config.json /srv/hinkskalle/conf/
+
+COPY --from=singularity /usr/local/bin/*singularity* /usr/local/bin/
+COPY --from=singularity /usr/local/etc/singularity/ /usr/local/etc/singularity/
+COPY --from=singularity /usr/local/libexec/singularity/ /usr/local/libexec/singularity/
+COPY --from=singularity /usr/local/var/singularity/ /usr/local/var/singularity/
 
 ENV LC_ALL=en_US.utf8
 ENV FLASK_APP=Hinkskalle

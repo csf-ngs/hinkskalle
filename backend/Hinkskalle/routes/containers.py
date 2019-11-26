@@ -141,7 +141,7 @@ def create_container():
   except DoesNotExist:
     raise errors.NotFound(f"collection {body['collection']} not found")
 
-  if not collection.check_access(g.fsk_user):
+  if not collection.check_update_access(g.fsk_user):
     raise errors.Forbidden(f"access denied.")
   body.pop('collection')
   new_container = Container(**body)

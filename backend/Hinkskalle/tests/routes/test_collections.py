@@ -229,7 +229,7 @@ class TestCollections(RouteBase):
         'name': 'oink',
         'entity': str(entity.id),
       })
-    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.status_code, 403)
 
   def test_create_user_default_no_name(self):
     entity = Entity(name='test-hase', createdBy='test.hase')

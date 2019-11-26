@@ -109,7 +109,7 @@ def create_collection():
   body = rebar.validated_body
   current_app.logger.debug(body)
   entity = Entity.objects.get(id=body['entity'])
-  if not entity.check_access(g.fsk_user):
+  if not entity.check_update_access(g.fsk_user):
     raise errors.Forbidden("access denied")
   body.pop('entity')
   if not body['name']:

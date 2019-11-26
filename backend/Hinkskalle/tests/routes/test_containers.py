@@ -170,6 +170,36 @@ class TestContainers(RouteBase):
     data = ret.get_json().get('data')
     self.assertEqual(data['collection'], str(coll.id))
     self.assertEqual(data['createdBy'], 'test.hase')
+  
+  def test_create_private(self):
+    coll, _ = _create_collection()
+    coll.private = True
+    coll.save()
+    with fake_admin_auth(self.app):
+      ret = self.client.post('/v1/containers', json={
+        'name': 'oink',
+        'collection': str(coll.id),
+      })
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    dbContainer = Container.objects.get(id=data['id'])
+    self.assertTrue(dbContainer.private)
+
+    coll.private = False
+    coll.save()
+    with fake_admin_auth(self.app):
+      ret = self.client.post('/v1/containers', json={
+        'name': 'auch.oink',
+        'collection': str(coll.id),
+      })
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    dbContainer = Container.objects.get(id=data['id'])
+    self.assertFalse(dbContainer.private)
+
+
+
+
 
   def test_create_not_unique(self):
     container, coll, _ = _create_container()

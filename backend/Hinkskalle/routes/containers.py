@@ -147,6 +147,8 @@ def create_container():
   new_container = Container(**body)
   new_container.collection_ref=collection
   new_container.createdBy=g.fsk_user.username
+  if collection.private:
+    new_container.private = True
 
   try:
     new_container.save()

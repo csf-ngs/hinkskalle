@@ -152,7 +152,7 @@ class TestCollections(RouteBase):
 
     with fake_auth(self.app):
       ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
-    self.assertEqual(ret.status_code, 403)
+    self.assertEqual(ret.status_code, 200)
 
   def test_get_user_other(self):
     coll, entity = _create_collection()
@@ -180,6 +180,36 @@ class TestCollections(RouteBase):
     data = ret.get_json().get('data')
     self.assertEqual(data['entity'], str(entity.id))
     self.assertEqual(data['createdBy'], 'test.hase')
+  
+  def test_create_defaultPrivate(self):
+    entity = Entity(name='test-hase')
+    entity.defaultPrivate = True
+    entity.save()
+
+    with fake_admin_auth(self.app):
+      ret = self.client.post('/v1/collections', json={
+        'name': 'oink',
+        'entity': str(entity.id),
+      })
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    dbColl = Collection.objects.get(id=data['id'])
+    self.assertTrue(dbColl.private)
+
+    entity.defaultPrivate = False
+    entity.save()
+
+    with fake_admin_auth(self.app):
+      ret = self.client.post('/v1/collections', json={
+        'name': 'auch.oink',
+        'entity': str(entity.id),
+      })
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    dbColl = Collection.objects.get(id=data['id'])
+    self.assertFalse(dbColl.private)
+
+
 
   def test_create_default(self):
     entity = Entity(name='test-hase')

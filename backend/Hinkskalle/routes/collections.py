@@ -121,6 +121,8 @@ def create_collection():
       raise errors.Forbidden("Trying to use a reserved name in the default namespace.")
   new_collection = Collection(**body)
   new_collection.entity_ref=entity
+  if entity.defaultPrivate:
+    new_collection.private=True
   new_collection.createdBy=g.fsk_user.username
 
   try:

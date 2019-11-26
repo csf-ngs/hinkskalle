@@ -18,11 +18,8 @@ import shutil
 )
 def pull_image(entity_id, collection_id, tagged_container_id):
   image = _get_image(entity_id, collection_id, tagged_container_id)
-  if image.container_ref.private:
-    if not g.fsk_user:
-      raise errors.Forbidden('Private image, please send token.')
-    if not (g.fsk_user.is_admin or g.fsk_user.username == image.container_ref.createdBy):
-      raise errors.Forbidden('Private image, access denied.')
+  if not image.check_access(g.fsk_user):
+    raise errors.Forbidden('Private image, access denied.')
 
   if not image.uploaded or not image.location:
     raise errors.NotAcceptable('Image is not uploaded yet?')
@@ -127,6 +124,9 @@ def push_image(image_id):
 
   if not image.container_ref.check_update_access(g.fsk_user):
     raise errors.Forbidden('access denied')
+
+  if image.container_ref.readOnly:
+    raise errors.NotAcceptable('container is readonly')
 
   outfn = safe_join(current_app.config.get('IMAGE_PATH'), '_imgs', image.make_filename())
 

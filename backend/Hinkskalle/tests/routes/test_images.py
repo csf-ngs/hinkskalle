@@ -237,6 +237,18 @@ class TestImages(RouteBase):
     self.assertEqual(data['container'], str(container.id))
     self.assertEqual(data['createdBy'], 'test.hase')
 
+  def test_create_readonly(self):
+    container, _, _ = _create_container()
+    container.readOnly = True
+    container.save()
+
+    with fake_admin_auth(self.app):
+      ret = self.client.post('/v1/images', json={
+        'hash': 'sha256.oink',
+        'container': str(container.id),
+      })
+    self.assertEqual(ret.status_code, 406)
+
   def test_create_uploaded(self):
     container, _, _ = _create_container()
     with fake_admin_auth(self.app):

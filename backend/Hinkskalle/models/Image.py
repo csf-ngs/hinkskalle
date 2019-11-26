@@ -79,7 +79,13 @@ class Image(Document):
     return f"{self.hash}.sif"
   
   def check_access(self, fsk_user):
-    return True
+    if not self.container_ref.private:
+      return True
+    
+    if not fsk_user:
+      return False
+    
+    return self.container_ref.check_access(fsk_user)
   
   def check_update_access(self, fsk_user):
     return self.container_ref.check_update_access(fsk_user)

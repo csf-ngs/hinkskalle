@@ -101,8 +101,6 @@ class Container(Document):
   def check_access(self, fsk_user):
     if fsk_user.is_admin:
       return True
-    elif not self.collection_ref.check_access(fsk_user):
-      return False
     elif self.createdBy == fsk_user.username:
       return True
     else:

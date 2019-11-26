@@ -201,6 +201,20 @@ class TestImages(RouteBase):
     tags = container.imageTags()
     self.assertDictEqual(tags, { 'latest': str(read_image.id) }, 'latest tag updated')
 
+  def test_push_readonly(self):
+    image, container, _, _ = _create_image()
+    container.readOnly = True
+    container.save()
+
+    self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
+    img_data, digest = _prepare_img_data()
+    image.hash = digest
+    image.save()
+
+    with fake_admin_auth(self.app):
+      ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
+    self.assertEqual(ret.status_code, 406)
+
   def test_push_invalid_hash(self):
     image = _create_image()[0]
     self.app.config['IMAGE_PATH']=tempfile.mkdtemp()

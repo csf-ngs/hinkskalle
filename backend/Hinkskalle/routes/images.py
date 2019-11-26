@@ -100,11 +100,9 @@ def list_images(entity_id, collection_id, container_id):
 )
 def get_image(entity_id, collection_id, tagged_container_id):
   image = _get_image(entity_id, collection_id, tagged_container_id)
-  if image.container_ref.private:
-    if not g.fsk_user:
-      raise errors.Forbidden('Private image, please send token.')
-    if not (g.fsk_user.is_admin or g.fsk_user.username == image.container_ref.createdBy):
+  if not image.check_access(g.fsk_user):
       raise errors.Forbidden('Private image, access denied.')
+
   if image.uploaded and (not image.location or not os.path.exists(image.location)):
     current_app.logger.debug(f"{image.location} does not exist, resetting uploaded flag.")
     image.uploaded = False
@@ -180,6 +178,8 @@ def create_image():
   body.pop('container')
   if not container.check_update_access(g.fsk_user):
     raise errors.Forbidden('access denied')
+  if container.readOnly:
+    raise errors.NotAcceptable('container is readonly')
 
   new_image = Image(**body)
   new_image.container_ref=container

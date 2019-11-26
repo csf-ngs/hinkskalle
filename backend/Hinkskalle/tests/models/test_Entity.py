@@ -55,6 +55,21 @@ class TestEntity(unittest.TestCase):
     default = Entity(name='default')
     self.assertTrue(default.check_access(user))
 
+  def test_update_access(self):
+    admin = FskUser('oink', True)
+    user = FskUser('oink', False)
+    entity = Entity(name='test-hase')
+
+    self.assertTrue(entity.check_update_access(admin))
+    self.assertFalse(entity.check_update_access(user))
+
+    entity.createdBy='oink'
+    self.assertTrue(entity.check_update_access(user))
+
+    default = Entity(name='default')
+    self.assertFalse(default.check_update_access(user))
+
+
 
   def test_schema(self):
     entity = Entity(name='Test Hase')

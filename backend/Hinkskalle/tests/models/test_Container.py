@@ -177,6 +177,17 @@ class TestContainer(unittest.TestCase):
 
     container.createdBy='muh'
     self.assertFalse(container.check_access(user))
+  
+  def test_update_access(self):
+    admin = FskUser('admin.oink', True)
+    user = FskUser('user.oink', False)
+
+    container, _, _ = _create_container()
+    self.assertTrue(container.check_update_access(admin))
+    self.assertFalse(container.check_update_access(user))
+
+    container.createdBy = user.username
+    self.assertTrue(container.check_update_access(user))
 
 
   def test_schema(self):

@@ -77,7 +77,7 @@ class TestCollection(unittest.TestCase):
     entity.createdBy='muh'
     entity.save()
     coll.createdBy='oink'
-    self.assertFalse(coll.check_access(user))
+    self.assertTrue(coll.check_access(user))
 
     coll, default = _create_collection('default')
     default.name='default'
@@ -86,6 +86,23 @@ class TestCollection(unittest.TestCase):
     self.assertTrue(coll.check_access(user))
     coll.createdBy='muh'
     self.assertFalse(coll.check_access(user))
+  
+  def test_update_access(self):
+    admin = FskUser('admin.oink', True)
+    user = FskUser('user.oink', False)
+
+    coll, _ = _create_collection('other')
+    self.assertTrue(coll.check_update_access(admin))
+    self.assertFalse(coll.check_update_access(user))
+
+    coll, _ = _create_collection('own')
+    coll.createdBy = user.username 
+    self.assertTrue(coll.check_update_access(user))
+
+    coll, default = _create_collection('default')
+    default.name='default'
+    default.save()
+    self.assertFalse(coll.check_update_access(user))
 
   def test_schema(self):
     schema = CollectionSchema()

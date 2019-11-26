@@ -78,12 +78,39 @@ class TestImage(unittest.TestCase):
     self.assertListEqual(image.tags(), ['v1', 'v2'])
     Tag.objects.delete()
   
-  def check_access(self):
+  def test_access(self):
     admin = FskUser('oink', True)
     user = FskUser('oink', False)
     image = _create_image()[0]
-    self.asserTrue(image.check_access(admin))
-    self.asserTrue(image.check_access(user))
+    self.assertTrue(image.check_access(admin))
+    self.assertTrue(image.check_access(user))
+    self.assertTrue(image.check_access(None))
+  
+  def test_access_private(self):
+    admin = FskUser('admin.oink', True)
+    user = FskUser('user.oink', False)
+
+    image, container, _, _ = _create_image()
+    container.private = True
+
+    self.assertFalse(image.check_access(None))
+    self.assertTrue(image.check_access(admin))
+    self.assertFalse(image.check_access(user))
+
+    container.createdBy = user.username
+    self.assertTrue(image.check_access(user))
+
+  
+  def test_update_access(self):
+    admin = FskUser('admin.oink', True)
+    user = FskUser('user.oink', False)
+
+    image, container, _, _ = _create_image()
+    self.assertTrue(image.check_update_access(admin))
+    self.assertFalse(image.check_update_access(user))
+
+    container.createdBy = user.username
+    self.assertTrue(image.check_update_access(user))
 
 
   def test_schema(self):

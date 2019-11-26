@@ -166,7 +166,7 @@ def create_image():
   current_app.logger.debug(body)
   container = Container.objects.get(id=body['container'])
   body.pop('container')
-  if not container.check_access(g.fsk_user):
+  if not container.check_update_access(g.fsk_user):
     raise errors.Forbidden('access denied')
 
   new_image = Image(**body)

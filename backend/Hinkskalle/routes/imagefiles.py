@@ -108,7 +108,7 @@ def push_image(image_id):
   except DoesNotExist:
     raise errors.NotFound(f"Image {image_id} not found")
 
-  if not image.container_ref.check_access(g.fsk_user):
+  if not image.container_ref.check_update_access(g.fsk_user):
     raise errors.Forbidden('access denied')
 
   outfn = safe_join(current_app.config.get('IMAGE_PATH'), '_imgs', image.make_filename())

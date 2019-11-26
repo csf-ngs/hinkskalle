@@ -1,4 +1,4 @@
-from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth
+from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth, fsk_optional_auth
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from mongoengine import NotUniqueError, DoesNotExist
@@ -96,9 +96,15 @@ def list_images(entity_id, collection_id, container_id):
   rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
   response_body_schema=ImageResponseSchema(),
+  authenticators=fsk_optional_auth,
 )
 def get_image(entity_id, collection_id, tagged_container_id):
   image = _get_image(entity_id, collection_id, tagged_container_id)
+  if image.container_ref.private:
+    if not g.fsk_user:
+      raise errors.Forbidden('Private image, please send token.')
+    if not (g.fsk_user.is_admin or g.fsk_user.username == image.container_ref.createdBy):
+      raise errors.Forbidden('Private image, access denied.')
   if image.uploaded and (not image.location or not os.path.exists(image.location)):
     current_app.logger.debug(f"{image.location} does not exist, resetting uploaded flag.")
     image.uploaded = False
@@ -110,6 +116,7 @@ def get_image(entity_id, collection_id, tagged_container_id):
   rule='/v1/images//<string:collection_id>/<string:tagged_container_id>',
   method='GET',
   response_body_schema=ImageResponseSchema(),
+  authenticators=fsk_optional_auth,
 )
 def get_image_default_entity(collection_id, tagged_container_id):
   return get_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
@@ -118,6 +125,7 @@ def get_image_default_entity(collection_id, tagged_container_id):
   rule='/v1/images/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
   response_body_schema=ImageResponseSchema(),
+  authenticators=fsk_optional_auth,
 )
 def get_image_default_entity_single(collection_id, tagged_container_id):
   return get_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
@@ -126,6 +134,7 @@ def get_image_default_entity_single(collection_id, tagged_container_id):
   rule='/v1/images/<string:entity_id>//<string:tagged_container_id>',
   method='GET',
   response_body_schema=ImageResponseSchema(),
+  authenticators=fsk_optional_auth,
 )
 def get_image_default_collection(entity_id, tagged_container_id):
   return get_image(entity_id=entity_id, collection_id='default', tagged_container_id=tagged_container_id)
@@ -134,6 +143,7 @@ def get_image_default_collection(entity_id, tagged_container_id):
   rule='/v1/images///<string:tagged_container_id>',
   method='GET',
   response_body_schema=ImageResponseSchema(),
+  authenticators=fsk_optional_auth,
 )
 def get_image_default_entity_default_collection_triple(tagged_container_id):
   return get_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
@@ -142,6 +152,7 @@ def get_image_default_entity_default_collection_triple(tagged_container_id):
   rule='/v1/images//<string:tagged_container_id>',
   method='GET',
   response_body_schema=ImageResponseSchema(),
+  authenticators=fsk_optional_auth,
 )
 def get_image_default_entity_default_collection_double(tagged_container_id):
   return get_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
@@ -150,6 +161,7 @@ def get_image_default_entity_default_collection_double(tagged_container_id):
   rule='/v1/images/<string:tagged_container_id>',
   method='GET',
   response_body_schema=ImageResponseSchema(),
+  authenticators=fsk_optional_auth,
 )
 def get_image_default_entity_default_collection_single(tagged_container_id):
   return get_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)

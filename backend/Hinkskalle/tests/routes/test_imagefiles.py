@@ -14,21 +14,25 @@ def _prepare_img_data(data=b"Hello Dorian!"):
     m.update(img_data)
     return img_data, f"sha256.{m.hexdigest()}"
 
+def _fake_img_file(image, data=b"Hello Dorian!"):
+    tmpf = tempfile.NamedTemporaryFile()
+    tmpf.write(data)
+    tmpf.flush()
+    image.location=tmpf.name
+    image.uploaded=True
+    image.save()
+    return tmpf
+
+
 class TestImages(RouteBase):
   def test_pull(self):
     image, container, _, _ = _create_image()
-    image.uploaded=True
     latest_tag = Tag(name='latest', image_ref=image)
     latest_tag.save()
 
-    tmpf = tempfile.NamedTemporaryFile()
-    tmpf.write(b"Hello Dorian!")
-    tmpf.flush()
-    image.location=tmpf.name
-    image.save()
+    tmpf = _fake_img_file(image)
 
     ret = self.client.get(f"/v1/imagefile/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
-    self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello Dorian!")
     container.reload()
@@ -50,20 +54,56 @@ class TestImages(RouteBase):
     ret.close() # avoid unclosed filehandle warning
 
     tmpf.close()
+  
+  def test_pull_private(self):
+    image, container, _, _ = _create_image()
+    latest_tag = Tag(name='latest', image_ref=image)
+    latest_tag.save()
+    container.private = True
+    container.save()
+
+    tmpf = _fake_img_file(image)
+
+    ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 403)
+
+    with fake_auth(self.app):
+      ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+      self.assertEqual(ret.status_code, 403)
+
+    with fake_admin_auth(self.app):
+      ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+      self.assertEqual(ret.status_code, 200)
+    ret.close()
+    
+    tmpf.close()
+  
+  def test_pull_private_own(self):
+    image, container, _, _ = _create_image()
+    latest_tag = Tag(name='latest', image_ref=image)
+    latest_tag.save()
+    container.private = True
+    container.createdBy = 'test.hase'
+    container.save()
+
+    tmpf = _fake_img_file(image)
+    
+    with fake_auth(self.app):
+      ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+      self.assertEqual(ret.status_code, 200)
+    ret.close()
+    
+    tmpf.close()
+
   def test_pull_default_entity(self):
     image, _, _, entity = _create_image()
-    image.uploaded=True
     latest_tag = Tag(name='latest', image_ref=image)
     latest_tag.save()
 
     entity.name='default'
     entity.save()
 
-    tmpf = tempfile.NamedTemporaryFile()
-    tmpf.write(b"Hello default Entity!")
-    tmpf.flush()
-    image.location=tmpf.name
-    image.save()
+    tmpf = _fake_img_file(image, b"Hello default Entity!")
 
     ret = self.client.get(f"/v1/imagefile/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 200)
@@ -84,18 +124,13 @@ class TestImages(RouteBase):
 
   def test_pull_default_collection(self):
     image, _, collection, entity = _create_image()
-    image.uploaded=True
     latest_tag = Tag(name='latest', image_ref=image)
     latest_tag.save()
 
     collection.name='default'
     collection.save()
 
-    tmpf = tempfile.NamedTemporaryFile()
-    tmpf.write(b"Hello default Collection!")
-    tmpf.flush()
-    image.location=tmpf.name
-    image.save()
+    tmpf = _fake_img_file(image, b"Hello default Collection!")
 
     ret = self.client.get(f"/v1/imagefile/{image.entityName()}//{image.containerName()}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 200)
@@ -111,7 +146,6 @@ class TestImages(RouteBase):
 
   def test_pull_default_entity_default_collection(self):
     image, _, collection, entity = _create_image()
-    image.uploaded=True
     latest_tag = Tag(name='latest', image_ref=image)
     latest_tag.save()
 
@@ -120,11 +154,7 @@ class TestImages(RouteBase):
     entity.name='default'
     entity.save()
 
-    tmpf = tempfile.NamedTemporaryFile()
-    tmpf.write(b"Hello default Collection!")
-    tmpf.flush()
-    image.location=tmpf.name
-    image.save()
+    tmpf = _fake_img_file(image, b"Hello default Collection!")
 
     ret = self.client.get(f"/v1/imagefile///{image.containerName()}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 200)

@@ -12,9 +12,12 @@ registry.set_default_authenticator(None)
 
 from Hinkskalle.fsk_api import HinkskalleFskApi
 from fsk_authenticator import FskAdminAuthenticator, FskAuthenticator
+from Hinkskalle.util.auth import FskOptionalAuthenticator
+
 FskAuthenticator.register_fsk_api_class(HinkskalleFskApi)
 fsk_auth = FskAuthenticator(key_header='Authorization')
 fsk_admin_auth = FskAdminAuthenticator(key_header='Authorization')
+fsk_optional_auth = FskOptionalAuthenticator(key_header='Authorization')
 
 
 def create_app():

@@ -1,4 +1,4 @@
-from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth
+from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth, fsk_optional_auth
 from flask_rebar import errors
 from mongoengine import DoesNotExist
 from flask import request, current_app, safe_join, send_file, g
@@ -14,9 +14,16 @@ import shutil
 @registry.handles(
   rule='/v1/imagefile/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
+  authenticators=fsk_optional_auth,
 )
 def pull_image(entity_id, collection_id, tagged_container_id):
   image = _get_image(entity_id, collection_id, tagged_container_id)
+  if image.container_ref.private:
+    if not g.fsk_user:
+      raise errors.Forbidden('Private image, please send token.')
+    if not (g.fsk_user.is_admin or g.fsk_user.username == image.container_ref.createdBy):
+      raise errors.Forbidden('Private image, access denied.')
+
   if not image.uploaded or not image.location:
     raise errors.NotAcceptable('Image is not uploaded yet?')
   
@@ -29,6 +36,7 @@ def pull_image(entity_id, collection_id, tagged_container_id):
 @registry.handles(
   rule='/v1/imagefile//<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
+  authenticators=fsk_optional_auth,
 )
 def pull_image_double_slash_annoy(*args, **kwargs):
   return pull_image(**kwargs)
@@ -36,6 +44,7 @@ def pull_image_double_slash_annoy(*args, **kwargs):
 @registry.handles(
   rule='/v1/imagefile/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
+  authenticators=fsk_optional_auth,
 )
 def pull_image_default_entity(collection_id, tagged_container_id):
   return pull_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
@@ -43,6 +52,7 @@ def pull_image_default_entity(collection_id, tagged_container_id):
 @registry.handles(
   rule='/v1/imagefile//<string:collection_id>/<string:tagged_container_id>',
   method='GET',
+  authenticators=fsk_optional_auth,
 )
 def pull_image_default_entity_double(collection_id, tagged_container_id):
   return pull_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
@@ -50,6 +60,7 @@ def pull_image_default_entity_double(collection_id, tagged_container_id):
 @registry.handles(
   rule='/v1/imagefile///<string:collection_id>/<string:tagged_container_id>',
   method='GET',
+  authenticators=fsk_optional_auth,
 )
 def pull_image_default_entity_triple_double_slash_annoy(collection_id, tagged_container_id):
   return pull_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
@@ -58,6 +69,7 @@ def pull_image_default_entity_triple_double_slash_annoy(collection_id, tagged_co
 @registry.handles(
   rule='/v1/imagefile/<string:entity_id>//<string:tagged_container_id>',
   method='GET',
+  authenticators=fsk_optional_auth,
 )
 def pull_image_default_collection(entity_id, tagged_container_id):
   return pull_image(entity_id=entity_id, collection_id='default', tagged_container_id=tagged_container_id)
@@ -65,6 +77,7 @@ def pull_image_default_collection(entity_id, tagged_container_id):
 @registry.handles(
   rule='/v1/imagefile//<string:entity_id>//<string:tagged_container_id>',
   method='GET',
+  authenticators=fsk_optional_auth,
 )
 def pull_image_default_collection_double_slash_annoy(entity_id, tagged_container_id):
   return pull_image(entity_id=entity_id, collection_id='default', tagged_container_id=tagged_container_id)
@@ -72,6 +85,7 @@ def pull_image_default_collection_double_slash_annoy(entity_id, tagged_container
 @registry.handles(
   rule='/v1/imagefile////<string:tagged_container_id>',
   method='GET',
+  authenticators=fsk_optional_auth,
 )
 def pull_image_default_collection_default_entity_four(tagged_container_id):
   return pull_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
@@ -79,6 +93,7 @@ def pull_image_default_collection_default_entity_four(tagged_container_id):
 @registry.handles(
   rule='/v1/imagefile///<string:tagged_container_id>',
   method='GET',
+  authenticators=fsk_optional_auth,
 )
 def pull_image_default_collection_default_entity_triple(tagged_container_id):
   return pull_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
@@ -86,6 +101,7 @@ def pull_image_default_collection_default_entity_triple(tagged_container_id):
 @registry.handles(
   rule='/v1/imagefile//<string:tagged_container_id>',
   method='GET',
+  authenticators=fsk_optional_auth,
 )
 def pull_image_default_collection_default_entity_double(tagged_container_id):
   return pull_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
@@ -93,6 +109,7 @@ def pull_image_default_collection_default_entity_double(tagged_container_id):
 @registry.handles(
   rule='/v1/imagefile/<string:tagged_container_id>',
   method='GET',
+  authenticators=fsk_optional_auth,
 )
 def pull_image_default_collection_default_entity_single(tagged_container_id):
   return pull_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)

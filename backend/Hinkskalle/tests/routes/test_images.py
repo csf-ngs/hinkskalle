@@ -67,6 +67,38 @@ class TestImages(RouteBase):
     self.assertEqual(data['id'], str(image.id))
     self.assertListEqual(data['tags'], ['latest'])
   
+  def test_get_private(self):
+    image, container, _, _ = _create_image()
+    latest_tag = Tag(name='latest', image_ref=image)
+    latest_tag.save()
+
+    container.private = True
+    container.save()
+
+    ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}")
+    self.assertEqual(ret.status_code, 403)
+
+    with fake_auth(self.app):
+      ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}")
+      self.assertEqual(ret.status_code, 403)
+    
+    with fake_admin_auth(self.app):
+      ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}")
+      self.assertEqual(ret.status_code, 200)
+
+  def test_get_private_own(self):
+    image, container, _, _ = _create_image()
+    latest_tag = Tag(name='latest', image_ref=image)
+    latest_tag.save()
+
+    container.createdBy = 'test.hase'
+    container.private = True
+    container.save()
+
+    with fake_auth(self.app):
+      ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}")
+      self.assertEqual(ret.status_code, 200)
+
   def test_get_default_entity(self):
     image, _, _, entity = _create_image()
     entity.name='default'

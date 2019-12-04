@@ -152,7 +152,8 @@ def push_image(image_id):
 
   current_app.logger.debug(f"moving image to {outfn}")
   os.makedirs(os.path.dirname(outfn), exist_ok=True)
-  shutil.move(tmpf.name, outfn)
+  shutil.copy(tmpf.name, outfn)
+  os.remove(tmpf.name)
   image.location=os.path.abspath(outfn)
   image.size=read
   image.uploaded=True

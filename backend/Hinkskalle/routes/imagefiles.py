@@ -129,11 +129,12 @@ def push_image(image_id):
     raise errors.NotAcceptable('container is readonly')
 
   outfn = safe_join(current_app.config.get('IMAGE_PATH'), '_imgs', image.make_filename())
+  upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
+  os.makedirs(upload_tmp, exist_ok=True)
 
   m = hashlib.sha256()
-  tmpf = tempfile.NamedTemporaryFile(delete=False)
-
-  current_app.logger.debug(f"starting upload of image {image_id} to {str(tmpf)}")
+  tmpf = tempfile.NamedTemporaryFile(delete=False, dir=upload_tmp)
+  current_app.logger.debug(f"starting upload of image {image_id} to {tmpf.name}")
 
   read = 0
   while (True):
@@ -152,8 +153,7 @@ def push_image(image_id):
 
   current_app.logger.debug(f"moving image to {outfn}")
   os.makedirs(os.path.dirname(outfn), exist_ok=True)
-  shutil.copy(tmpf.name, outfn)
-  os.remove(tmpf.name)
+  shutil.move(tmpf.name, outfn)
   image.location=os.path.abspath(outfn)
   image.size=read
   image.uploaded=True

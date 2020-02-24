@@ -99,7 +99,7 @@ class TestCollections(RouteBase):
 
     self.assertEqual(data['id'], str(coll.id))
 
-  @unittest.skip("does not work currently, see https://github.com/pallets/flask/issues/3413")
+  #@unittest.skip("does not work currently, see https://github.com/pallets/flask/issues/3413")
   def test_get_default_entity_default(self):
     coll, entity = _create_collection()
     entity.name='default'

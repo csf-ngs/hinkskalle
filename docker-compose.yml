@@ -7,7 +7,7 @@ services:
     ports:
       - '7660:80'
   api:
-    image: docker.ngs.vbcf.ac.at/hinkskalle-dev
+    image: docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.1.1
     volumes:
       - '.:/srv/hinkskalle/src'
     command: './script/start.sh'

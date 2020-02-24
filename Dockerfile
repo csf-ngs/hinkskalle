@@ -1,6 +1,6 @@
 FROM docker.ngs.vbcf.ac.at/singularity-base as singularity
 
-FROM docker.ngs.vbcf.ac.at/flask-base
+FROM docker.ngs.vbcf.ac.at/flask-base:v0.1.1
 
 RUN apt-get install -y jq gosu
 

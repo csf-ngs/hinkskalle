@@ -96,9 +96,8 @@ class TestCollections(RouteBase):
       ret = self.client.get(f"/v1/collections//{coll.name}")
     self.assertEqual(ret.status_code, 308)
     self.assertRegex(ret.headers.get('Location', None), rf"/v1/collections/default/{coll.name}$")
-    print(ret.headers.get('Location'))
     with fake_admin_auth(self.app):
-      ret = self.client.get(f"/v1/collections/default/{coll.name}")
+      ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(coll.id))
@@ -122,7 +121,7 @@ class TestCollections(RouteBase):
     self.assertEqual(ret.status_code, 308)
     self.assertRegex(ret.headers.get('Location', None), rf"/v1/collections/default/$")
     with fake_admin_auth(self.app):
-      ret = self.client.get(f"/v1/collections/default/")
+      ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(coll.id))

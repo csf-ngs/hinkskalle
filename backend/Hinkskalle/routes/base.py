@@ -99,6 +99,7 @@ def not_found(error):
 
 @current_app.errorhandler(500)
 def internal_error(error):
+  current_app.logger.error(error)
   return make_response(jsonify(status='error', errors=create_error_object(500, str(error))), 500)
 
 @current_app.errorhandler(403)

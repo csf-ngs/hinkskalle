@@ -44,7 +44,9 @@ class TestImages(RouteBase):
 
     # singularity requests with double slash
     ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
-    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.status_code, 308)
+
+    ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.data, b"Hello Dorian!")
     container.reload()
     self.assertEqual(container.downloadCount, 2)
@@ -65,14 +67,20 @@ class TestImages(RouteBase):
     tmpf = _fake_img_file(image)
 
     ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 308)
+    ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 403)
 
     with fake_auth(self.app):
       ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+      self.assertEqual(ret.status_code, 308)
+      ret = self.client.get(ret.headers.get('Location'))
       self.assertEqual(ret.status_code, 403)
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+      self.assertEqual(ret.status_code, 308)
+      ret = self.client.get(ret.headers.get('Location'))
       self.assertEqual(ret.status_code, 200)
     ret.close()
     
@@ -90,6 +98,8 @@ class TestImages(RouteBase):
     
     with fake_auth(self.app):
       ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+      self.assertEqual(ret.status_code, 308)
+      ret = self.client.get(ret.headers.get('Location'))
       self.assertEqual(ret.status_code, 200)
     ret.close()
     
@@ -111,12 +121,18 @@ class TestImages(RouteBase):
     ret.close()
 
     ret = self.client.get(f"/v1/imagefile//{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 308)
+    ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello default Entity!")
     ret.close()
 
     # singularity requests with double slash
     ret = self.client.get(f"/v1/imagefile///{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 308)
+    ret = self.client.get(ret.headers.get("Location"))
+    self.assertEqual(ret.status_code, 308)
+    ret = self.client.get(ret.headers.get("Location"))
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello default Entity!")
     ret.close() # avoid unclosed filehandle warning
@@ -133,12 +149,22 @@ class TestImages(RouteBase):
     tmpf = _fake_img_file(image, b"Hello default Collection!")
 
     ret = self.client.get(f"/v1/imagefile/{image.entityName()}//{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 308)
+    self.assertRegex(ret.headers.get('Location', None), rf"/v1/imagefile/{image.entityName()}/default/{image.containerName()}:{latest_tag.name}$")
+
+    ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello default Collection!")
     ret.close()
 
     # singularity requests with double slash
     ret = self.client.get(f"/v1/imagefile//{image.entityName()}//{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 308)
+    self.assertRegex(ret.headers.get('Location', None), rf"/v1/imagefile//{image.entityName()}/default/{image.containerName()}:{latest_tag.name}$")
+    ret = self.client.get(ret.headers.get('Location'))
+    self.assertEqual(ret.status_code, 308)
+    ret = self.client.get(ret.headers.get('Location'))
+
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello default Collection!")
     ret.close() # avoid unclosed filehandle warning
@@ -157,17 +183,35 @@ class TestImages(RouteBase):
     tmpf = _fake_img_file(image, b"Hello default Collection!")
 
     ret = self.client.get(f"/v1/imagefile///{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 308)
+    self.assertRegex(ret.headers.get('Location', None), rf"/v1/imagefile//default/{image.containerName()}:{latest_tag.name}$")
+    ret = self.client.get(ret.headers.get('Location'))
+    self.assertEqual(ret.status_code, 308)
+    ret = self.client.get(ret.headers.get('Location'))
+
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello default Collection!")
     ret.close()
 
     # singularity requests with double slash
     ret = self.client.get(f"/v1/imagefile////{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 308)
+    self.assertRegex(ret.headers.get('Location', None), rf"/v1/imagefile//default//{image.containerName()}:{latest_tag.name}$")
+    ret = self.client.get(ret.headers.get('Location'))
+    self.assertEqual(ret.status_code, 308)
+    self.assertRegex(ret.headers.get('Location', None), rf"/v1/imagefile//default/default/{image.containerName()}:{latest_tag.name}$")
+    ret = self.client.get(ret.headers.get('Location'))
+    self.assertEqual(ret.status_code, 308)
+    ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello default Collection!")
     ret.close() # avoid unclosed filehandle warning
 
     ret = self.client.get(f"/v1/imagefile//{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 308)
+    self.assertRegex(ret.headers.get('Location', None), rf"/v1/imagefile/{image.containerName()}:{latest_tag.name}$")
+
+    ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello default Collection!")
     ret.close() # avoid unclosed filehandle warning

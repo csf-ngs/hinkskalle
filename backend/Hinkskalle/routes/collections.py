@@ -96,7 +96,6 @@ def get_default_collection_default_entity():
 )
 def create_collection():
   body = rebar.validated_body
-  current_app.logger.debug(body)
   entity = Entity.objects.get(id=body['entity'])
   if not entity.check_update_access(g.fsk_user):
     raise errors.Forbidden("access denied")
@@ -104,7 +103,6 @@ def create_collection():
   if not body['name']:
     body['name']='default'
   
-  current_app.logger.debug(body)
   if entity.name == 'default' and not g.fsk_user.is_admin:
     if body['name'] == 'default' or body['name'] == 'pipeline':
       raise errors.Forbidden("Trying to use a reserved name in the default namespace.")

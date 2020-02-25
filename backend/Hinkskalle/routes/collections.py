@@ -68,16 +68,6 @@ def get_collection(entity_id, collection_id):
   return { 'data': collection }
 
 @registry.handles(
-  rule='/v1/collections//<string:collection_id>',
-  method='GET',
-  response_body_schema=CollectionResponseSchema(),
-  authenticators=fsk_auth,
-)
-def get_collection_default_entity(collection_id):
-  current_app.logger.debug('get default entity')
-  return get_collection(entity_id='default', collection_id=collection_id)
-
-@registry.handles(
   rule='/v1/collections/<string:entity_id>/',
   method='GET',
   response_body_schema=CollectionResponseSchema(),
@@ -87,16 +77,15 @@ def get_default_collection(entity_id):
   current_app.logger.debug('get default collection')
   return get_collection(entity_id=entity_id, collection_id='default')
 
-# does not work currently, see https://github.com/pallets/flask/issues/3413
 @registry.handles(
-  rule='/v1/collections//',
+  rule='/v1/collections/',
   method='GET',
   response_body_schema=CollectionResponseSchema(),
   authenticators=fsk_auth
 )
 def get_default_collection_default_entity():
-  current_app.logger.debug('get default collection + entity')
   return get_collection(entity_id='default', collection_id='default')
+
 
 @registry.handles(
   rule='/v1/collections',

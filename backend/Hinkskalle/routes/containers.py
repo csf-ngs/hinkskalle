@@ -80,23 +80,14 @@ def get_container(entity_id, collection_id, container_id):
   return { 'data': container }
 
 @registry.handles(
-  rule='/v1/containers/<string:entity_id>//<string:container_id>',
-  method='GET',
-  response_body_schema=ContainerResponseSchema(),
-  authenticators=fsk_auth,
-)
-def get_container_default_collection_single(entity_id, container_id):
-  print("route found")
-  return get_container(entity_id=entity_id, collection_id='default', container_id=container_id)
-
-@registry.handles(
   rule='/v1/containers/<string:container_id>',
   method='GET',
   response_body_schema=ContainerResponseSchema(),
   authenticators=fsk_auth,
 )
-def get_container_default_collection_default_entity_single(container_id):
-  return get_container(entity_id='default', collection_id='default', container_id=container_id)
+def get_default_container(container_id):
+  return get_container('default', 'default', container_id)
+
 
 
 @registry.handles(

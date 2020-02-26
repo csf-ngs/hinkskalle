@@ -1,7 +1,7 @@
 version: '3'
 services:
   api:
-    image: docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.2.0-1-g8c00abd
+    image: docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.3.0
     volumes:
       - '.:/srv/hinkskalle/src'
     command: './script/start.sh'

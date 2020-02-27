@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_rebar import Rebar
 from logging.config import dictConfig
+from flask_sqlalchemy import SQLAlchemy
 
 import os
 
@@ -19,6 +20,7 @@ fsk_auth = FskAuthenticator(key_header='Authorization')
 fsk_admin_auth = FskAdminAuthenticator(key_header='Authorization')
 fsk_optional_auth = FskOptionalAuthenticator(key_header='Authorization')
 
+db = SQLAlchemy()
 
 def create_app():
   dictConfig({
@@ -57,18 +59,15 @@ def create_app():
   })
 
   app = Flask(__name__)
-  app.config.from_json(os.environ['HINKSKALLE_SETTINGS'])
-  if 'MONGODB_HOST' in os.environ:
-    app.config['MONGODB_SETTINGS'] = {
-      'host': os.environ['MONGODB_HOST'],
-      'username': os.environ.get('MONGODB_USERNAME', None),
-      'password': os.environ.get('MONGODB_PASSWORD', None),
-    }
+  app.config.from_json(os.environ.get('HINKSKALLE_SETTINGS', '../../conf/config.json'))
+  if 'SQLALCHEMY_DATABASE_URI' in os.environ:
+    app.config['SQLALCHEMY_DATABASE_URI']=os.environ['SQLALCHEMY_DATABASE_URI']
+
   app.config['PREFERRED_URL_SCHEME']=os.environ.get('PREFERRED_URL_SCHEME', 'http')
-  from Hinkskalle.models import db
   db.init_app(app)
 
   with app.app_context():
+    import Hinkskalle.commands
     import Hinkskalle.routes
     # make sure init_app is called after importing routes??
     rebar.init_app(app)

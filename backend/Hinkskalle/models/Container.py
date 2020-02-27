@@ -1,4 +1,4 @@
-from mongoengine import Document, StringField, ListField, ReferenceField, BooleanField, DateTimeField, IntField
+from Hinkskalle import db
 from datetime import datetime
 
 from Hinkskalle.models import Collection, Image, Tag
@@ -33,26 +33,32 @@ class ContainerSchema(Schema):
   imageTags = fields.Dict(dump_only=True, allow_none=True)
   archTags = fields.Dict(dump_only=True, allow_none=True)
 
-class Container(Document):
-  name = StringField(required=True, unique_with='collection_ref')
-  description = StringField()
-  fullDescription = StringField()
-  private = BooleanField(default=False)
-  readOnly = BooleanField(default=False)
-  downloadCount = IntField(default=0)
-  stars = IntField(default=0)
-  customData = StringField()
-  vcsUrl = StringField()
-  collection_ref = ReferenceField(Collection, required=True)
+class Container(db.Model):
+  id = db.Column(db.Integer, primary_key=True)
+  name = db.Column(db.String(), nullable=False)
+  description = db.Column(db.String())
+  fullDescription = db.Column(db.String())
+  private = db.Column(db.Boolean, default=False)
+  readOnly = db.Column(db.Boolean, default=False)
+  downloadCount = db.Column(db.Integer, default=0)
+  stars = db.Column(db.Integer, default=0)
+  customData = db.Column(db.String())
+  vcsUrl = db.Column(db.String())
 
-  createdAt = DateTimeField(default=datetime.utcnow)
-  createdBy = StringField()
-  updatedAt = DateTimeField()
-  deletedAt = DateTimeField()
-  deleted = BooleanField(required=True, default=False)
+  collection_id = db.Column(db.Integer, db.ForeignKey('collection.id'), nullable=False)
+
+  createdAt = db.Column(db.DateTime, default=datetime.utcnow)
+  createdBy = db.Column(db.String())
+  updatedAt = db.Column(db.DateTime)
+  deletedAt = db.Column(db.DateTime)
+  deleted = db.Column(db.Boolean, default=False, nullable=False)
+
+  images = db.relationship('Image', backref='container_ref', lazy=True)
+
+  __table_args__ = (db.UniqueConstraint('name', 'collection_id', name='name_collection_id_idx'),)
 
   def size(self):
-    return Image.objects(container_ref=self).count() if not self._created else 0
+    return len(self.images)
   
   def collection(self):
     return self.collection_ref.id
@@ -65,14 +71,11 @@ class Container(Document):
     return self.collection_ref.entity_ref.name
 
   def image_ids(self):
-    imgs = list(self.images())
+    imgs = list(self.images)
     if len(imgs) == 0:
       return None
     else:
       return [ img.id for img in imgs ]
-
-  def images(self):
-    return Image.objects(container_ref=self)
   
   def tag_image(self, tag, image_id):
     image = Image.objects.get(id=image_id)
@@ -88,8 +91,8 @@ class Container(Document):
 
   def imageTags(self):
     tags = {}
-    for image in self.images():
-      for tag in image.tags():
+    for image in self.images:
+      for tag in image.tags:
         if tag in tags:
           raise Exception(f"Tag {tag} for image {image.id} is already set on {tags[tag]}")
         tags[tag]=str(image.id)

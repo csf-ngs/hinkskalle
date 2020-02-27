@@ -1,4 +1,4 @@
-from mongoengine import Document, StringField, IntField, BooleanField, ReferenceField, DateTimeField
+from Hinkskalle import db
 from marshmallow import Schema, fields
 from datetime import datetime
 
@@ -32,24 +32,30 @@ class ImageSchema(Schema):
   entityName = fields.String(dump_only=True)
   tags = fields.List(fields.String(), dump_only=True)
 
-class Image(Document):
-  description = StringField()
-  hash = StringField(unique_with='container_ref')
-  blob = StringField()
-  size = IntField(min_value=0)
-  uploaded = BooleanField(default=False)
-  customData = StringField()
-  downloadCount = IntField(default=0)
+class Image(db.Model):
+  id = db.Column(db.Integer, primary_key=True)
+  description = db.Column(db.String())
 
-  container_ref = ReferenceField('Container')
+  hash = db.Column(db.String())
+  blob = db.Column(db.String())
+  size = db.Column(db.Integer)
+  uploaded = db.Column(db.Boolean, default=False)
+  customData = db.Column(db.String())
+  downloadCount = db.Column(db.Integer, default=0)
 
-  createdAt = DateTimeField(default=datetime.utcnow)
-  createdBy = StringField()
-  updatedAt = DateTimeField()
-  deletedAt = DateTimeField()
-  deleted = BooleanField(required=True, default=False)
+  container_id = db.Column(db.Integer, db.ForeignKey('container.id'), nullable=False)
 
-  location = StringField()
+  createdAt = db.Column(db.DateTime, default=datetime.utcnow)
+  createdBy = db.Column(db.String())
+  updatedAt = db.Column(db.DateTime)
+  deletedAt = db.Column(db.DateTime)
+  deleted = db.Column(db.Boolean, default=False, nullable=False)
+
+  location = db.Column(db.String())
+
+  tags = db.relationship('Tag', backref='image_ref', lazy=True)
+
+  __table_args__ = (db.UniqueConstraint('hash', 'container_id', name='hash_container_id_idx'),)
 
   def container(self):
     return self.container_ref.id
@@ -69,9 +75,6 @@ class Image(Document):
     return self.container_ref.collection_ref.entity_ref.id
   def entityName(self):
     return self.container_ref.collection_ref.entity_ref.name
-  
-  def tags(self):
-    return [ tag.name for tag in Tag.objects(image_ref=self) ]
   
   def make_prettyname(self, tag):
     return os.path.join(self.entityName(), self.collectionName(), f"{self.containerName}_{tag}.sif")

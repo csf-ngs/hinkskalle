@@ -31,14 +31,6 @@ def pull_image(entity_id, collection_id, tagged_container_id):
   return send_file(image.location)
   
 @registry.handles(
-  rule='/v1/imagefile//<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
-  method='GET',
-  authenticators=fsk_optional_auth,
-)
-def pull_image_double_slash_annoy(*args, **kwargs):
-  return pull_image(**kwargs)
-
-@registry.handles(
   rule='/v1/imagefile/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
   authenticators=fsk_optional_auth,
@@ -46,62 +38,6 @@ def pull_image_double_slash_annoy(*args, **kwargs):
 def pull_image_default_entity(collection_id, tagged_container_id):
   return pull_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
 
-@registry.handles(
-  rule='/v1/imagefile//<string:collection_id>/<string:tagged_container_id>',
-  method='GET',
-  authenticators=fsk_optional_auth,
-)
-def pull_image_default_entity_double(collection_id, tagged_container_id):
-  return pull_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
-
-@registry.handles(
-  rule='/v1/imagefile///<string:collection_id>/<string:tagged_container_id>',
-  method='GET',
-  authenticators=fsk_optional_auth,
-)
-def pull_image_default_entity_triple_double_slash_annoy(collection_id, tagged_container_id):
-  return pull_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
-
-
-@registry.handles(
-  rule='/v1/imagefile/<string:entity_id>//<string:tagged_container_id>',
-  method='GET',
-  authenticators=fsk_optional_auth,
-)
-def pull_image_default_collection(entity_id, tagged_container_id):
-  return pull_image(entity_id=entity_id, collection_id='default', tagged_container_id=tagged_container_id)
-
-@registry.handles(
-  rule='/v1/imagefile//<string:entity_id>//<string:tagged_container_id>',
-  method='GET',
-  authenticators=fsk_optional_auth,
-)
-def pull_image_default_collection_double_slash_annoy(entity_id, tagged_container_id):
-  return pull_image(entity_id=entity_id, collection_id='default', tagged_container_id=tagged_container_id)
-
-@registry.handles(
-  rule='/v1/imagefile////<string:tagged_container_id>',
-  method='GET',
-  authenticators=fsk_optional_auth,
-)
-def pull_image_default_collection_default_entity_four(tagged_container_id):
-  return pull_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
-  
-@registry.handles(
-  rule='/v1/imagefile///<string:tagged_container_id>',
-  method='GET',
-  authenticators=fsk_optional_auth,
-)
-def pull_image_default_collection_default_entity_triple(tagged_container_id):
-  return pull_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
-
-@registry.handles(
-  rule='/v1/imagefile//<string:tagged_container_id>',
-  method='GET',
-  authenticators=fsk_optional_auth,
-)
-def pull_image_default_collection_default_entity_double(tagged_container_id):
-  return pull_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
 
 @registry.handles(
   rule='/v1/imagefile/<string:tagged_container_id>',

@@ -42,6 +42,14 @@ class RouteBase(unittest.TestCase):
     self.app.config['TESTING'] = True
     self.client = self.app.test_client()
 
+    # This is strange: The real before_request_func
+    # gets executed only once. I guess it has something to do with using current_app??
+    # anyways, this is a quick and dirty fix
+    from Hinkskalle.routes import before_request_func
+    @self.app.before_request
+    def fake_before():
+      return before_request_func()
+
   def tearDown(self):
     Entity.objects.delete()
     Collection.objects.delete()

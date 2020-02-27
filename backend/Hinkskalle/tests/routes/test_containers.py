@@ -66,7 +66,7 @@ class TestContainers(RouteBase):
     self.assertListEqual([ c['name'] for c in json ], [ container1.name ])
   
   def test_list_user_other(self):
-    container, coll, entity = _create_container('coll1')
+    _, coll, entity = _create_container('coll1')
     with fake_auth(self.app):
       ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}")
     self.assertEqual(ret.status_code, 403)
@@ -91,6 +91,11 @@ class TestContainers(RouteBase):
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/containers//{coll.name}/{container.name}")
+    self.assertEqual(ret.status_code, 308)
+    self.assertRegex(ret.headers.get('Location', None), rf"/v1/containers/default/{coll.name}/{container.name}")
+
+    with fake_admin_auth(self.app):
+      ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(container.id))
@@ -102,6 +107,10 @@ class TestContainers(RouteBase):
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/containers/{entity.name}//{container.name}")
+    self.assertEqual(ret.status_code, 308)
+    self.assertRegex(ret.headers.get('Location', None), rf"/v1/containers/{entity.name}/default/{container.name}$")
+    with fake_admin_auth(self.app):
+      ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(container.id))
@@ -115,15 +124,31 @@ class TestContainers(RouteBase):
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/containers///{container.name}")
-    self.assertEqual(ret.status_code, 200, 'triple slash')
+    self.assertEqual(ret.status_code, 308, 'triple slash')
+    self.assertRegex(ret.headers.get('Location', None), rf"/v1/containers/default//{container.name}$")
+    with fake_admin_auth(self.app):
+      ret = self.client.get(ret.headers.get('Location'))
+    self.assertEqual(ret.status_code, 308, 'triple slash')
+    self.assertRegex(ret.headers.get('Location', None), rf"/v1/containers/default/default/{container.name}$")
+
+    with fake_admin_auth(self.app):
+      ret = self.client.get(ret.headers.get('Location'))
+    self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(container.id))
 
-    with fake_admin_auth(self.app):
-      ret = self.client.get(f"/v1/containers//{container.name}")
-    self.assertEqual(ret.status_code, 200, 'double slash')
-    data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(container.id))
+    # double slash expansion gives an ambigous route (collides with list containers)
+    # maybe we get by without it
+    # with fake_admin_auth(self.app):
+    #   ret = self.client.get(f"/v1/containers//{container.name}")
+    # self.assertEqual(ret.status_code, 308, 'double slash')
+    # self.assertRegex(ret.headers.get('Location', None), rf"/v1/containers/default/{container.name}$")
+
+    # with fake_admin_auth(self.app):
+    #   ret = self.client.get(ret.headers.get('Location'))
+    # self.assertEqual(ret.status_code, 200)
+    # data = ret.get_json().get('data')
+    # self.assertEqual(data['id'], str(container.id))
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/containers/{container.name}")

@@ -1,9 +1,10 @@
 from Hinkskalle import registry, fsk_auth
-from flask import current_app, jsonify, make_response, request
+from flask import current_app, jsonify, make_response, request, redirect
 from flask_rebar import RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
 from werkzeug.datastructures import EnvironHeaders
 import os
+import re
 
 from Hinkskalle.models import Tag, ContainerSchema
 
@@ -78,15 +79,19 @@ def latest_container():
   return { 'data': list(ret.values()) }
 
 
-# super hacky fake content type (singularity does not set it)
-# header props are read-only (go figure) 
-# change original WSGI environ dict (which is accessible)
-# and reset headers (this field is not immutable, go figure some more)
 @current_app.before_request
 def before_request_func():
+  # fake content type (singularity does not set it)
   if request.path.startswith('/v1') and request.method=='POST':
-    request.headers.environ['CONTENT_TYPE']='application/json'
-    request.headers = EnvironHeaders(request.headers.environ)
+    request.headers.environ.update(CONTENT_TYPE='application/json')
+  
+  # redirect double slashes to /default/ (singularity client sends meaningful //)
+  # only pull (/imagefile//) should not be redirected. For some reason
+  # singularity pull uses a double slash there. Let the regular (werkzeug) // normalization
+  # take care of that.
+  if request.path.startswith('/v1') and re.search(r"(?<!imagefile)//", request.path):
+    newpath = re.sub(r"(?<!imagefile)//", "/default/", request.path)
+    return redirect(newpath, 308)
 
 def create_error_object(code, msg):
   return [
@@ -99,6 +104,7 @@ def not_found(error):
 
 @current_app.errorhandler(500)
 def internal_error(error):
+  current_app.logger.error(error)
   return make_response(jsonify(status='error', errors=create_error_object(500, str(error))), 500)
 
 @current_app.errorhandler(403)

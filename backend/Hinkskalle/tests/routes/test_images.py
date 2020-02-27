@@ -108,6 +108,10 @@ class TestImages(RouteBase):
     latest_tag.save()
 
     ret = self.client.get(f"/v1/images//{image.collectionName()}/{image.containerName()}")
+    self.assertEqual(ret.status_code, 308)
+    self.assertRegex(ret.headers.get('Location', None), rf"/v1/images/default/{image.collectionName()}/{image.containerName()}$")
+    
+    ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(image.id))
@@ -134,6 +138,10 @@ class TestImages(RouteBase):
     latest_tag.save()
 
     ret = self.client.get(f"/v1/images/{image.entityName()}//{image.containerName()}")
+    self.assertEqual(ret.status_code, 308)
+    self.assertRegex(ret.headers.get('Location', None), rf"/v1/images/{image.entityName()}/default/{image.containerName()}$")
+
+    ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(image.id))
@@ -149,11 +157,22 @@ class TestImages(RouteBase):
     latest_tag.save()
 
     ret = self.client.get(f"/v1/images///{image.containerName()}")
+    self.assertEqual(ret.status_code, 308)
+    self.assertRegex(ret.headers.get('Location', None), rf"/v1/images/default//{image.containerName()}$")
+    ret = self.client.get(ret.headers.get('Location'))
+    self.assertEqual(ret.status_code, 308)
+    self.assertRegex(ret.headers.get('Location', None), rf"/v1/images/default/default/{image.containerName()}$")
+
+    ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(image.id))
 
     ret = self.client.get(f"/v1/images//{image.containerName()}")
+    self.assertEqual(ret.status_code, 308)
+    self.assertRegex(ret.headers.get('Location', None), rf"/v1/images/default/{image.containerName()}$")
+
+    ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(image.id))

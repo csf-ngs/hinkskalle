@@ -111,15 +111,6 @@ def get_image(entity_id, collection_id, tagged_container_id):
   return { 'data': image }
 
 @registry.handles(
-  rule='/v1/images//<string:collection_id>/<string:tagged_container_id>',
-  method='GET',
-  response_body_schema=ImageResponseSchema(),
-  authenticators=fsk_optional_auth,
-)
-def get_image_default_entity(collection_id, tagged_container_id):
-  return get_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
-
-@registry.handles(
   rule='/v1/images/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
   response_body_schema=ImageResponseSchema(),
@@ -127,33 +118,6 @@ def get_image_default_entity(collection_id, tagged_container_id):
 )
 def get_image_default_entity_single(collection_id, tagged_container_id):
   return get_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
-
-@registry.handles(
-  rule='/v1/images/<string:entity_id>//<string:tagged_container_id>',
-  method='GET',
-  response_body_schema=ImageResponseSchema(),
-  authenticators=fsk_optional_auth,
-)
-def get_image_default_collection(entity_id, tagged_container_id):
-  return get_image(entity_id=entity_id, collection_id='default', tagged_container_id=tagged_container_id)
-
-@registry.handles(
-  rule='/v1/images///<string:tagged_container_id>',
-  method='GET',
-  response_body_schema=ImageResponseSchema(),
-  authenticators=fsk_optional_auth,
-)
-def get_image_default_entity_default_collection_triple(tagged_container_id):
-  return get_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
-
-@registry.handles(
-  rule='/v1/images//<string:tagged_container_id>',
-  method='GET',
-  response_body_schema=ImageResponseSchema(),
-  authenticators=fsk_optional_auth,
-)
-def get_image_default_entity_default_collection_double(tagged_container_id):
-  return get_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
 
 @registry.handles(
   rule='/v1/images/<string:tagged_container_id>',

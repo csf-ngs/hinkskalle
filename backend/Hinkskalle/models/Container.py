@@ -6,7 +6,7 @@ from Hinkskalle.models import Collection, Image, Tag
 from marshmallow import fields, Schema
 
 class ContainerSchema(Schema):
-  id = fields.String(dump_only=True, required=True)
+  id = fields.Integer(dump_only=True, required=True)
   name = fields.String(required=True)
   description = fields.String(allow_none=True)
   fullDescription = fields.String(allow_none=True)
@@ -26,9 +26,9 @@ class ContainerSchema(Schema):
   # image ids, not used? keep to validate schema
   images = fields.String(dump_only=True, many=True, attribute='image_names')
 
-  collection = fields.String(required=True)
+  collection = fields.Integer(required=True)
   collectionName = fields.String(dump_only=True)
-  entity = fields.String(dump_only=True)
+  entity = fields.Integer(dump_only=True)
   entityName = fields.String(dump_only=True)
   imageTags = fields.Dict(dump_only=True, allow_none=True)
   archTags = fields.Dict(dump_only=True, allow_none=True)
@@ -78,24 +78,25 @@ class Container(db.Model):
       return [ img.id for img in imgs ]
   
   def tag_image(self, tag, image_id):
-    image = Image.objects.get(id=image_id)
-    cur_tag = Tag.objects(name=tag, image_ref__in=self.images()).first()
+    image = Image.query.get(image_id)
+    cur_tag = Tag.query.filter(Tag.name == tag, Tag.image_id.in_([ i.id for i in self.images ])).first()
     if cur_tag:
       cur_tag.image_ref=image
       cur_tag.updatedAt=datetime.utcnow()
-      cur_tag.save()
+      db.session.commit()
     else:
       cur_tag = Tag(name=tag, image_ref=image)
-      cur_tag.save()
+      db.session.add(cur_tag)
+      db.session.commit()
     return cur_tag
 
   def imageTags(self):
     tags = {}
     for image in self.images:
-      for tag in image.tags:
+      for tag in image.tags():
         if tag in tags:
           raise Exception(f"Tag {tag} for image {image.id} is already set on {tags[tag]}")
-        tags[tag]=str(image.id)
+        tags[tag]=image.id
     return tags
 
   def archTags(self):

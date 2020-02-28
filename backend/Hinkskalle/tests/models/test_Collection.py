@@ -1,40 +1,32 @@
-import unittest
 from mongoengine import connect, disconnect
 from datetime import datetime, timedelta
 
 from Hinkskalle.models import Entity, Collection, CollectionSchema, Container
 from Hinkskalle.fsk_api import FskUser
 
+from Hinkskalle import db
+from Hinkskalle.tests.model_base import ModelBase
+
 def _create_collection(name='test-collection'):
   try:
-    entity = Entity.objects.get(name='test-hase')
+    entity = Entity.query.filter_by(name='test-hase').one()
   except:
     entity = Entity(name='test-hase')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
 
-  coll = Collection(name=name, entity_ref=entity)
-  coll.save()
+
+  coll = Collection(name=name, entity_id=entity.id)
+  db.session.add(coll)
+  db.session.commit()
   return coll, entity
 
 
-class TestCollection(unittest.TestCase):
-  @classmethod
-  def setUpClass(cls):
-    disconnect()
-    connect('mongoenginetest', host='mongomock://localhost')
-  
-  @classmethod
-  def tearDownClass(cls):
-    disconnect()
-  
-  def tearDown(self):
-    Entity.objects.delete()
-    Collection.objects.delete()
-
+class TestCollection(ModelBase):
   def test_collection(self):
     coll, entity = _create_collection()
 
-    read_coll = Collection.objects.get(name='test-collection')
+    read_coll = Collection.query.filter_by(name='test-collection').one()
     self.assertEqual(read_coll.id, coll.id)
     self.assertTrue(abs(read_coll.createdAt - datetime.utcnow()) < timedelta(seconds=1))
 
@@ -48,12 +40,14 @@ class TestCollection(unittest.TestCase):
     self.assertEqual(no_create.size(), 0)
 
     cont1 = Container(name='cont_i', collection_ref=coll)
-    cont1.save()
+    db.session.add(cont1)
+    db.session.commit()
     self.assertEqual(coll.size(), 1)
 
     other_coll, _ = _create_collection('other')
     other_cont = Container(name='cont_other', collection_ref=other_coll)
-    other_cont.save()
+    db.session.add(other_cont)
+    db.session.commit()
 
     self.assertEqual(coll.size(), 1)
 
@@ -67,7 +61,7 @@ class TestCollection(unittest.TestCase):
 
     coll, entity = _create_collection('own')
     entity.createdBy='oink'
-    entity.save()
+    db.session.commit()
     coll.createdBy='oink'
     self.assertTrue(coll.check_access(user))
     coll.createdBy='muh'
@@ -75,13 +69,13 @@ class TestCollection(unittest.TestCase):
 
     coll, entity = _create_collection('own-default')
     entity.createdBy='muh'
-    entity.save()
+    db.session.commit()
     coll.createdBy='oink'
     self.assertTrue(coll.check_access(user))
 
     coll, default = _create_collection('default')
     default.name='default'
-    default.save()
+    db.session.commit()
     coll.createdBy='oink'
     self.assertTrue(coll.check_access(user))
     coll.createdBy='muh'
@@ -101,7 +95,7 @@ class TestCollection(unittest.TestCase):
 
     coll, default = _create_collection('default')
     default.name='default'
-    default.save()
+    db.session.commit()
     self.assertFalse(coll.check_update_access(user))
 
   def test_schema(self):
@@ -110,9 +104,9 @@ class TestCollection(unittest.TestCase):
 
     serialized = schema.dump(coll)
     self.assertDictEqual(serialized.errors, {})
-    self.assertEqual(serialized.data['id'], str(coll.id))
+    self.assertEqual(serialized.data['id'], coll.id)
     self.assertEqual(serialized.data['name'], coll.name)
 
-    self.assertEqual(serialized.data['entity'], str(entity.id))
+    self.assertEqual(serialized.data['entity'], entity.id)
     self.assertEqual(serialized.data['entityName'], entity.name)
 

@@ -6,7 +6,7 @@ import os.path
 from Hinkskalle.models import Tag
 
 class ImageSchema(Schema):
-  id = fields.String(required=True, dump_only=True)
+  id = fields.Integer(required=True, dump_only=True)
   description = fields.String(allow_none=True)
   hash = fields.String()
   blob = fields.String(allow_none=True)
@@ -53,9 +53,12 @@ class Image(db.Model):
 
   location = db.Column(db.String())
 
-  tags = db.relationship('Tag', backref='image_ref', lazy=True)
+  tags_ref = db.relationship('Tag', backref='image_ref', lazy=True)
 
   __table_args__ = (db.UniqueConstraint('hash', 'container_id', name='hash_container_id_idx'),)
+
+  def tags(self):
+    return [ tag.name for tag in self.tags_ref ]
 
   def container(self):
     return self.container_ref.id

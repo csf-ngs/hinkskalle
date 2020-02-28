@@ -3,7 +3,7 @@ from marshmallow import fields, Schema
 from datetime import datetime
 
 class EntitySchema(Schema):
-  id = fields.String(required=True, dump_only=True)
+  id = fields.Integer(required=True, dump_only=True)
   name = fields.String(required=True)
   description = fields.String(allow_none=True)
   createdAt = fields.DateTime(dump_only=True)

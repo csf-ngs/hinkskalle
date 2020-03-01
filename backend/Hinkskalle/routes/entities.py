@@ -1,8 +1,9 @@
-from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth
+from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth, db
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from mongoengine import NotUniqueError, DoesNotExist
-from mongoengine.queryset.visitor import Q
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import or_
 from flask import request, current_app, g
 import datetime
 
@@ -28,9 +29,9 @@ class EntityUpdateSchema(EntitySchema, RequestSchema):
 )
 def list_entities():
   if g.fsk_user.is_admin:
-    objs = Entity.objects()
+    objs = Entity.query.all()
   else:
-    objs = Entity.objects(Q(createdBy=g.fsk_user.username) | Q(name='default'))
+    objs = Entity.query.filter(or_(Entity.createdBy==g.fsk_user.username, Entity.name=='default'))
   return { 'data': list(objs) }
 
 @registry.handles(
@@ -41,8 +42,8 @@ def list_entities():
 )
 def get_entity(entity_id):
   try:
-    entity = Entity.objects.get(name=entity_id)
-  except DoesNotExist:
+    entity = Entity.query.filter(Entity.name == entity_id).one()
+  except NoResultFound:
     raise errors.NotFound(f"entity {entity_id} not found")
   if not entity.check_access(g.fsk_user):
     raise errors.Forbidden("Access denied to entity.")
@@ -78,8 +79,9 @@ def create_entity():
   new_entity.createdBy = g.fsk_user.username
 
   try:
-    new_entity.save()
-  except NotUniqueError as err:
+    db.session.add(new_entity)
+    db.session.commit()
+  except IntegrityError as err:
     raise errors.PreconditionFailed(f"Entity {new_entity.id} already exists")
 
   return { 'data': new_entity }
@@ -95,8 +97,8 @@ def update_entity(entity_id):
   body = rebar.validated_body
 
   try:
-    entity = Entity.objects.get(name=entity_id)
-  except DoesNotExist:
+    entity = Entity.query.filter(Entity.name==entity_id).one()
+  except NoResultFound:
     raise errors.NotFound(f"entity {entity_id} not found")
   if not entity.check_update_access(g.fsk_user):
     raise errors.Forbidden("Access denied to entity.")
@@ -104,7 +106,7 @@ def update_entity(entity_id):
   for key in body:
     setattr(entity, key, body[key])
   entity.updatedAt = datetime.datetime.now()
-  entity.save()
+  db.session.commit()
 
   return { 'data': entity }
 

@@ -26,7 +26,7 @@ class Entity(db.Model):
   customData = db.Column(db.String())
 
   defaultPrivate = db.Column(db.Boolean, default=False)
-  quoate = db.Column(db.Integer, default=0)
+  quota = db.Column(db.Integer, default=0)
 
   createdAt = db.Column(db.DateTime, default=datetime.utcnow)
   createdBy = db.Column(db.String())
@@ -34,10 +34,10 @@ class Entity(db.Model):
   deletedAt = db.Column(db.DateTime)
   deleted = db.Column(db.Boolean, default=False, nullable=False)
 
-  collections = db.relationship('Collection', backref='entity_ref', lazy='dynamic')
+  collections_ref = db.relationship('Collection', backref='entity_ref', lazy='dynamic')
 
   def size(self):
-    return len(self.collections) 
+    return self.collections_ref.count()
 
   def check_access(self, fsk_user):
     if fsk_user.is_admin:

@@ -5,6 +5,7 @@ import datetime
 from Hinkskalle.tests.route_base import RouteBase, fake_admin_auth, fake_auth
 
 from Hinkskalle.models import Entity
+from Hinkskalle import db
 
 class TestEntities(RouteBase):
   def test_list_noauth(self):
@@ -13,11 +14,12 @@ class TestEntities(RouteBase):
 
   def test_list(self):
     default = Entity(name='default')
-    default.save()
+    db.session.add(default)
     entity1 = Entity(name='muhkuh')
-    entity1.save()
+    db.session.add(entity1)
     entity2 = Entity(name='grunzschwein')
-    entity2.save()
+    db.session.add(entity2)
+    db.session.commit()
 
     with fake_admin_auth(self.app):
       ret = self.client.get('/v1/entities')
@@ -29,11 +31,12 @@ class TestEntities(RouteBase):
   
   def test_list_user(self):
     default = Entity(name='default')
-    default.save()
+    db.session.add(default)
     entity1 = Entity(name='muhkuh', createdBy='test.hase')
-    entity1.save()
+    db.session.add(entity1)
     entity2 = Entity(name='grunzschwein')
-    entity2.save()
+    db.session.add(entity2)
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.get('/v1/entities')
@@ -47,14 +50,16 @@ class TestEntities(RouteBase):
 
   def test_get(self):
     entity = Entity(name='grunz')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
+
     with fake_admin_auth(self.app):
       ret = self.client.get('/v1/entities/grunz')
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json()
     json['data'].pop('createdAt')
     self.assertDictEqual(json['data'], {
-      'id': str(entity.id),
+      'id': entity.id,
       'name': entity.name,
       'description': entity.description,
       'customData': entity.customData,
@@ -70,43 +75,47 @@ class TestEntities(RouteBase):
   
   def test_get_default(self):
     entity = Entity(name='default')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
 
     with fake_admin_auth(self.app):
       ret = self.client.get('/v1/entities/')
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(entity.id))
+    self.assertEqual(data['id'], entity.id)
   
   def test_get_user(self):
     entity = Entity(name='test.hase', createdBy='test.hase')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.get('/v1/entities/test.hase')
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(entity.id))
+    self.assertEqual(data['id'], entity.id)
   
   def test_get_user_default(self):
     entity = Entity(name='default')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.get('/v1/entities/')
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(entity.id))
+    self.assertEqual(data['id'], entity.id)
 
     with fake_auth(self.app):
       ret = self.client.get('/v1/entities/default')
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(entity.id))
+    self.assertEqual(data['id'], entity.id)
   
   def test_get_user_other(self):
     entity = Entity(name='grunz', createdBy='someone.else')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.get('/v1/entities/grunz')
@@ -141,7 +150,8 @@ class TestEntities(RouteBase):
 
   def test_create_not_unique(self):
     entity = Entity(name='grunz')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
 
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/entities', json={
@@ -179,7 +189,8 @@ class TestEntities(RouteBase):
 
   def test_update(self):
     entity = Entity(name='grunz')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
     with fake_admin_auth(self.app):
       ret = self.client.put('/v1/entities/grunz', json={
         'description': 'Oink oink',
@@ -187,7 +198,7 @@ class TestEntities(RouteBase):
       })
     self.assertEqual(ret.status_code, 200)
 
-    dbEntity = Entity.objects.get(name='grunz')
+    dbEntity = Entity.query.filter(Entity.name=='grunz').one()
     self.assertEqual(dbEntity.description, 'Oink oink')
     self.assertTrue(dbEntity.defaultPrivate)
     self.assertTrue(abs(dbEntity.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
@@ -198,25 +209,27 @@ class TestEntities(RouteBase):
       })
     self.assertEqual(ret.status_code, 200)
 
-    dbEntity = Entity.objects.get(name='grunz')
+    dbEntity = Entity.query.filter(Entity.name=='grunz').one()
     self.assertEqual(dbEntity.description, 'Troro')
     self.assertTrue(dbEntity.defaultPrivate)
 
   def test_update_name_change(self):
     entity = Entity(name='grunz')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
     with fake_admin_auth(self.app):
       ret = self.client.put('/v1/entities/grunz', json={
         'name': 'Babsi Streusand',
       })
     self.assertEqual(ret.status_code, 200)
 
-    dbEntity = Entity.objects.get(name='grunz')
+    dbEntity = Entity.query.filter(Entity.name=='grunz').one()
     self.assertEqual(dbEntity.name, 'grunz')
 
   def test_update_user(self):
     entity = Entity(name='grunz', createdBy='test.hase')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
     with fake_auth(self.app):
       ret = self.client.put('/v1/entities/grunz', json={
         'description': 'Oink oink',
@@ -224,13 +237,14 @@ class TestEntities(RouteBase):
       })
     self.assertEqual(ret.status_code, 200)
 
-    dbEntity = Entity.objects.get(name='grunz')
+    dbEntity = Entity.query.filter(Entity.name=='grunz').one()
     self.assertEqual(dbEntity.description, 'Oink oink')
     self.assertTrue(dbEntity.defaultPrivate)
 
   def test_update_user_other(self):
     entity = Entity(name='grunz', createdBy='other.hase')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
     with fake_auth(self.app):
       ret = self.client.put('/v1/entities/grunz', json={
         'description': 'Oink oink',
@@ -240,7 +254,8 @@ class TestEntities(RouteBase):
 
   def test_update_user_default(self):
     entity = Entity(name='default')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
     with fake_auth(self.app):
       ret = self.client.put('/v1/entities/default', json={
         'description': 'Oink oink',

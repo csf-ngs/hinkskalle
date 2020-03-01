@@ -28,12 +28,12 @@ def _get_container(entity_id, collection_id, container_id):
     current_app.logger.debug(f"entity {entity_id} not found")
     raise errors.NotFound(f"entity {entity_id} not found")
   try:
-    collection = entity.collections.filter(Collection.name==collection_id).one()
+    collection = entity.collections_ref.filter(Collection.name==collection_id).one()
   except NoResultFound:
     current_app.logger.debug(f"collection {entity.name}/{collection_id} not found")
     raise errors.NotFound(f"collection {entity.name}/{collection_id} not found")
   try:
-    container = collection.containers.filter(Container.name==container_id).one()
+    container = collection.containers_ref.filter(Container.name==container_id).one()
   except NoResultFound:
     current_app.logger.debug(f"container {entity.name}/{collection.name}/{container_id} not found")
     raise errors.NotFound(f"container {entity.name}/{collection.name}/{container_id} not found")
@@ -51,7 +51,7 @@ def list_containers(entity_id, collection_id):
   except NoResultFound:
     raise errors.NotFound(f"entity {entity_id} not found")
   try:
-    collection = entity.collections.filter(Collection.name==collection_id).one()
+    collection = entity.collections_ref.filter(Collection.name==collection_id).one()
   except NoResultFound:
     current_app.logger.debug(f"collection {entity.name}/{collection_id} not found")
     raise errors.NotFound(f"collection {entity.name}/{collection_id} not found")
@@ -60,9 +60,9 @@ def list_containers(entity_id, collection_id):
     raise errors.Forbidden(f"access denied.")
 
   if g.fsk_user.is_admin:
-    objs = collection.containers.all()
+    objs = collection.containers_ref.all()
   else:
-    objs = collection.containers.filter(Container.createdBy==g.fsk_user.username)
+    objs = collection.containers_ref.filter(Container.createdBy==g.fsk_user.username)
 
   return { 'data': list(objs) }
 

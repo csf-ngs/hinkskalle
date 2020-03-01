@@ -53,12 +53,12 @@ class Container(db.Model):
   deletedAt = db.Column(db.DateTime)
   deleted = db.Column(db.Boolean, default=False, nullable=False)
 
-  images = db.relationship('Image', backref='container_ref', lazy=True)
+  images_ref = db.relationship('Image', backref='container_ref', lazy='dynamic')
 
   __table_args__ = (db.UniqueConstraint('name', 'collection_id', name='name_collection_id_idx'),)
 
   def size(self):
-    return len(self.images)
+    return self.images_ref.count()
   
   def collection(self):
     return self.collection_ref.id
@@ -79,7 +79,7 @@ class Container(db.Model):
   
   def tag_image(self, tag, image_id):
     image = Image.query.get(image_id)
-    cur_tag = Tag.query.filter(Tag.name == tag, Tag.image_id.in_([ i.id for i in self.images ])).first()
+    cur_tag = Tag.query.filter(Tag.name == tag, Tag.image_id.in_([ i.id for i in self.images_ref ])).first()
     if cur_tag:
       cur_tag.image_ref=image
       cur_tag.updatedAt=datetime.utcnow()
@@ -92,7 +92,7 @@ class Container(db.Model):
 
   def imageTags(self):
     tags = {}
-    for image in self.images:
+    for image in self.images_ref:
       for tag in image.tags():
         if tag in tags:
           raise Exception(f"Tag {tag} for image {image.id} is already set on {tags[tag]}")

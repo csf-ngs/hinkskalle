@@ -38,7 +38,7 @@ class Collection(db.Model):
   deletedAt = db.Column(db.DateTime)
   deleted = db.Column(db.Boolean, default=False, nullable=False)
 
-  containers = db.relationship('Container', backref='collection_ref', lazy=True)
+  containers = db.relationship('Container', backref='collection_ref', lazy='dynamic')
 
   __table_args__ = (db.UniqueConstraint('name', 'entity_id', name='name_entity_id_idx'),)
 

@@ -34,7 +34,7 @@ class Entity(db.Model):
   deletedAt = db.Column(db.DateTime)
   deleted = db.Column(db.Boolean, default=False, nullable=False)
 
-  collections = db.relationship('Collection', backref='entity_ref', lazy=True)
+  collections = db.relationship('Collection', backref='entity_ref', lazy='dynamic')
 
   def size(self):
     return len(self.collections) 

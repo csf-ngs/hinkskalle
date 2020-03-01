@@ -1,8 +1,8 @@
-from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth
+from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth, db
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from mongoengine import NotUniqueError, DoesNotExist, ValidationError
-from mongoengine.queryset.visitor import Q
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import IntegrityError
 from flask import request, current_app, g
 import datetime
 
@@ -23,18 +23,18 @@ class ContainerUpdateSchema(ContainerSchema, RequestSchema):
 
 def _get_container(entity_id, collection_id, container_id):
   try:
-    entity = Entity.objects.get(name=entity_id)
-  except DoesNotExist:
+    entity = db.session.query(Entity).filter(Entity.name==entity_id).one()
+  except NoResultFound:
     current_app.logger.debug(f"entity {entity_id} not found")
     raise errors.NotFound(f"entity {entity_id} not found")
   try:
-    collection = Collection.objects.get(name=collection_id, entity_ref=entity)
-  except DoesNotExist:
+    collection = entity.collections.filter(Collection.name==collection_id).one()
+  except NoResultFound:
     current_app.logger.debug(f"collection {entity.name}/{collection_id} not found")
     raise errors.NotFound(f"collection {entity.name}/{collection_id} not found")
   try:
-    container = Container.objects.get(name=container_id, collection_ref=collection)
-  except DoesNotExist:
+    container = collection.containers.filter(Container.name==container_id).one()
+  except NoResultFound:
     current_app.logger.debug(f"container {entity.name}/{collection.name}/{container_id} not found")
     raise errors.NotFound(f"container {entity.name}/{collection.name}/{container_id} not found")
   return container
@@ -47,12 +47,12 @@ def _get_container(entity_id, collection_id, container_id):
 )
 def list_containers(entity_id, collection_id):
   try:
-    entity = Entity.objects.get(name=entity_id)
-  except DoesNotExist:
+    entity = db.session.query(Entity).filter(Entity.name==entity_id).one()
+  except NoResultFound:
     raise errors.NotFound(f"entity {entity_id} not found")
   try:
-    collection = Collection.objects.get(name=collection_id, entity_ref=entity)
-  except DoesNotExist:
+    collection = entity.collections.filter(Collection.name==collection_id).one()
+  except NoResultFound:
     current_app.logger.debug(f"collection {entity.name}/{collection_id} not found")
     raise errors.NotFound(f"collection {entity.name}/{collection_id} not found")
 
@@ -60,9 +60,9 @@ def list_containers(entity_id, collection_id):
     raise errors.Forbidden(f"access denied.")
 
   if g.fsk_user.is_admin:
-    objs = Container.objects(collection_ref=collection)
+    objs = collection.containers.all()
   else:
-    objs = Container.objects(Q(collection_ref=collection) & Q(createdBy=g.fsk_user.username))
+    objs = collection.containers.filter(Container.createdBy==g.fsk_user.username)
 
   return { 'data': list(objs) }
 
@@ -100,10 +100,8 @@ def get_default_container(container_id):
 def create_container():
   body = rebar.validated_body
   try:
-    collection = Collection.objects.get(id=body['collection'])
-  except ValidationError as err:
-    raise errors.InternalError(str(err))
-  except DoesNotExist:
+    collection = db.session.query(Collection).get(body['collection'])
+  except NoResultFound:
     raise errors.NotFound(f"collection {body['collection']} not found")
 
   if not collection.check_update_access(g.fsk_user):
@@ -112,12 +110,14 @@ def create_container():
   new_container = Container(**body)
   new_container.collection_ref=collection
   new_container.createdBy=g.fsk_user.username
+  db.session.expire(collection)
   if collection.private:
     new_container.private = True
 
   try:
-    new_container.save()
-  except NotUniqueError as err:
+    db.session.add(new_container)
+    db.session.commit()
+  except IntegrityError as err:
     raise errors.PreconditionFailed(f"Container {new_container.id} already exists")
 
   return { 'data': new_container }
@@ -138,6 +138,6 @@ def update_container(entity_id, collection_id, container_id):
   for key in body:
     setattr(container, key,  body[key])
   container.updatedAt = datetime.datetime.now()
-  container.save()
+  db.session.commit()
 
   return { 'data': container }

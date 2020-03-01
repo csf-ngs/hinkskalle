@@ -3,6 +3,7 @@ import unittest
 from Hinkskalle.tests.route_base import RouteBase, fake_auth
 from Hinkskalle.tests.models.test_Image import _create_image
 from Hinkskalle.models import Image
+from Hinkskalle import db
 
 class TestBase(RouteBase):
   def test_version(self):
@@ -41,7 +42,7 @@ class TestBase(RouteBase):
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
 
-    self.assertListEqual([ c['container']['id'] for c in json ], [ str(image1.container_ref.id), ] )
+    self.assertListEqual([ c['container']['id'] for c in json ], [ image1.container_ref.id, ] )
 
     images=[]
     for idx in range(1, 12):
@@ -55,12 +56,13 @@ class TestBase(RouteBase):
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
 
-    self.assertListEqual([ c['container']['id'] for c in json ], [ str(img.container_ref.id) for img in images[:10] ] )
+    self.assertListEqual([ c['container']['id'] for c in json ], [ img.container_ref.id for img in images[:10] ] )
   
   def test_latest_collect_images(self):
     image1, container1, _, _ = _create_image(postfix='hase1')
     image2 = Image(container_ref=container1, hash='blahase1')
-    image2.save()
+    db.session.add(image2)
+    db.session.commit()
 
     image3, container3, _, _ = _create_image(postfix="fuchs1")
 
@@ -73,7 +75,7 @@ class TestBase(RouteBase):
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
 
-    self.assertCountEqual([ c['container']['id'] for c in json ], [ str(container.id) for container in [container1, container3]])
+    self.assertCountEqual([ c['container']['id'] for c in json ], [ container.id for container in [container1, container3]])
 
 
   def test_latest_collect_tags(self):

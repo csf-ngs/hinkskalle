@@ -1,10 +1,11 @@
-from Hinkskalle import registry, fsk_auth
+from Hinkskalle import registry, fsk_auth, db
 from flask import current_app, jsonify, make_response, request, redirect
 from flask_rebar import RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
 from werkzeug.datastructures import EnvironHeaders
 import os
 import re
+from sqlalchemy import desc
 
 from Hinkskalle.models import Tag, ContainerSchema
 
@@ -63,7 +64,7 @@ class LatestContainerListResponseSchema(ResponseSchema):
   authenticators=fsk_auth,
 )
 def latest_container():
-  tags = Tag.objects.order_by('-createdAt')
+  tags = db.session.query(Tag).order_by(desc(Tag.createdAt))
   ret = {}
   for tag in tags:
     if not tag.image_ref.container_ref.id in ret:

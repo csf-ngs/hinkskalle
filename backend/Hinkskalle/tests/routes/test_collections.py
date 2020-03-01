@@ -6,6 +6,7 @@ import datetime
 from Hinkskalle.tests.route_base import RouteBase, fake_admin_auth, fake_auth
 from Hinkskalle.models import Entity, Collection
 from Hinkskalle.tests.models.test_Collection import _create_collection
+from Hinkskalle import db
 
 class TestCollections(RouteBase):
   def test_list_noauth(self):
@@ -27,12 +28,11 @@ class TestCollections(RouteBase):
   def test_list_user(self):
     coll1, entity = _create_collection('coll1')
     coll2, _ = _create_collection('coll2')
+
     coll1.createdBy='test.hase'
-    coll1.save()
     coll2.createdBy='test.hase'
-    coll2.save()
     entity.createdBy='test.hase'
-    entity.save()
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.get(f"/v1/collections/{entity.name}")
@@ -43,11 +43,12 @@ class TestCollections(RouteBase):
   def test_list_user_default_entity(self):
     # can see own collections in default entity
     default = Entity(name='default')
-    default.save()
+    db.session.add(default)
     coll1 = Collection(name='own-1', createdBy='test.hase', entity_ref=default)
-    coll1.save()
+    db.session.add(coll1)
     coll2 = Collection(name='other-1', createdBy='test.kuh', entity_ref=default)
-    coll2.save()
+    db.session.add(coll2)
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.get(f"/v1/collections/default")
@@ -73,24 +74,24 @@ class TestCollections(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
 
-    self.assertEqual(data['id'], str(coll.id))
+    self.assertEqual(data['id'], coll.id)
   
   def test_get_default(self):
     coll, entity = _create_collection()
     coll.name='default'
-    coll.save()
+    db.session.commit()
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/collections/{entity.name}/")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
 
-    self.assertEqual(data['id'], str(coll.id))
+    self.assertEqual(data['id'], coll.id)
   
   def test_get_default_entity(self):
     coll, entity = _create_collection()
     entity.name='default'
-    entity.save()
+    db.session.commit()
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/collections//{coll.name}")
@@ -100,21 +101,21 @@ class TestCollections(RouteBase):
       ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(coll.id))
+    self.assertEqual(data['id'], coll.id)
 
   #@unittest.skip("does not work currently, see https://github.com/pallets/flask/issues/3413")
   def test_get_default_entity_default(self):
     coll, entity = _create_collection()
     entity.name='default'
-    entity.save()
+    db.session.commit()
     coll.name='default'
-    coll.save()
+    db.session.commit()
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/collections/")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(coll.id))
+    self.assertEqual(data['id'], coll.id)
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/collections//")
@@ -124,38 +125,38 @@ class TestCollections(RouteBase):
       ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(coll.id))
+    self.assertEqual(data['id'], coll.id)
   
   def test_get_user(self):
     coll, entity = _create_collection()
     entity.createdBy='test.hase'
-    entity.save()
+    db.session.commit()
     coll.createdBy='test.hase'
-    coll.save()
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(coll.id))
+    self.assertEqual(data['id'], coll.id)
 
   def test_get_user_default_entity(self):
     coll, entity = _create_collection()
     entity.name='default'
-    entity.save()
+    db.session.commit()
     coll.createdBy='test.hase'
-    coll.save()
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(coll.id))
+    self.assertEqual(data['id'], coll.id)
   
   def test_get_user_other_entity(self):
     coll, entity = _create_collection()
     coll.createdBy='test.hase'
-    coll.save()
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
@@ -164,7 +165,7 @@ class TestCollections(RouteBase):
   def test_get_user_other(self):
     coll, entity = _create_collection()
     entity.createdBy='test.hase'
-    entity.save()
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
@@ -177,54 +178,60 @@ class TestCollections(RouteBase):
 
   def test_create(self):
     entity = Entity(name='test-hase')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'oink',
-        'entity': str(entity.id),
+        'entity': entity.id,
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['entity'], str(entity.id))
+    self.assertEqual(data['entity'], entity.id)
     self.assertEqual(data['createdBy'], 'test.hase')
   
   def test_create_defaultPrivate(self):
     entity = Entity(name='test-hase')
     entity.defaultPrivate = True
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
 
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'oink',
-        'entity': str(entity.id),
+        'entity': entity.id,
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    dbColl = Collection.objects.get(id=data['id'])
+    dbColl = db.session.query(Collection).get(data['id'])
     self.assertTrue(dbColl.private)
 
+    # why do I need to refetch from db?? entity seems to be
+    # gone from session.
+    entity = Entity.query.get(entity.id)
     entity.defaultPrivate = False
-    entity.save()
+    db.session.commit()
 
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'auch.oink',
-        'entity': str(entity.id),
+        'entity': entity.id,
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    dbColl = Collection.objects.get(id=data['id'])
+    dbColl = db.session.query(Collection).get(data['id'])
     self.assertFalse(dbColl.private)
 
 
 
   def test_create_default(self):
     entity = Entity(name='test-hase')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': '',
-        'entity': str(entity.id),
+        'entity': entity.id,
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
@@ -236,7 +243,7 @@ class TestCollections(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': coll.name,
-        'entity': str(entity.id),
+        'entity': entity.id,
       })
     self.assertEqual(ret.status_code, 412)
   
@@ -244,84 +251,89 @@ class TestCollections(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'oink',
-        'entity': 'oink oink',
+        'entity': -666,
       })
     self.assertEqual(ret.status_code, 500)
 
   def test_create_user(self):
     entity = Entity(name='test-hase', createdBy='test.hase')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'oink',
-        'entity': str(entity.id),
+        'entity': entity.id,
       })
     self.assertEqual(ret.status_code, 200)
 
   def test_create_user_default_entity(self):
     entity = Entity(name='default')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'oink',
-        'entity': str(entity.id),
+        'entity': entity.id,
       })
     self.assertEqual(ret.status_code, 403)
 
   def test_create_user_default_no_name(self):
     entity = Entity(name='test-hase', createdBy='test.hase')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': '',
-        'entity': str(entity.id),
+        'entity': entity.id,
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['name'], 'default')
 
-    Collection.objects.get(id=data['id']).delete()
+    db.session.query(Collection).filter(Collection.id==data['id']).delete()
 
 
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'default',
-        'entity': str(entity.id),
+        'entity': entity.id,
       })
     self.assertEqual(ret.status_code, 200)
   
   def test_create_user_default_entity_reserved(self):
     entity = Entity(name='default')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': '',
-        'entity': str(entity.id)
+        'entity': entity.id
       })
     self.assertEqual(ret.status_code, 403, 'empty name')
 
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'default',
-        'entity': str(entity.id)
+        'entity': entity.id
       })
     self.assertEqual(ret.status_code, 403, 'default')
 
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'pipeline',
-        'entity': str(entity.id)
+        'entity': entity.id
       })
     self.assertEqual(ret.status_code, 403, 'pipeline')
   
   
   def test_create_user_other(self):
     entity = Entity(name='muh')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'oink',
-        'entity': str(entity.id),
+        'entity': entity.id,
       })
     self.assertEqual(ret.status_code, 403)
 
@@ -336,7 +348,7 @@ class TestCollections(RouteBase):
       })
     self.assertEqual(ret.status_code, 200)
 
-    dbColl = Collection.objects.get(name=coll.name)
+    dbColl = db.session.query(Collection).filter(Collection.name==coll.name).one()
     self.assertEqual(dbColl.description, 'Mei Huat')
     self.assertTrue(dbColl.private)
     self.assertEqual(dbColl.customData, 'hot drei Eckn')
@@ -346,9 +358,9 @@ class TestCollections(RouteBase):
   def test_update_user(self):
     coll, entity = _create_collection()
     entity.createdBy='test.hase'
-    entity.save()
+    db.session.commit()
     coll.createdBy='test.hase'
-    coll.save()
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.put(f"/v1/collections/{entity.name}/{coll.name}", json={
@@ -358,7 +370,7 @@ class TestCollections(RouteBase):
       })
     self.assertEqual(ret.status_code, 200)
 
-    dbColl = Collection.objects.get(name=coll.name)
+    dbColl = db.session.query(Collection).filter(Collection.name==coll.name).one()
     self.assertEqual(dbColl.description, 'Mei Huat')
     self.assertTrue(dbColl.private)
     self.assertEqual(dbColl.customData, 'hot drei Eckn')
@@ -366,9 +378,9 @@ class TestCollections(RouteBase):
   def test_update_user_other(self):
     coll, entity = _create_collection()
     entity.createdBy='test.hase'
-    entity.save()
+    db.session.commit()
     coll.createdBy='test.ziege'
-    coll.save()
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.put(f"/v1/collections/{entity.name}/{coll.name}", json={

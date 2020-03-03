@@ -40,6 +40,7 @@ class RouteBase(unittest.TestCase):
   def setUp(self):
     self.app = create_app()
     self.app.config['TESTING'] = True
+    self.app.config['DEBUG'] = True
     self.client = self.app.test_client()
 
     self.app.app_context().push()

@@ -96,7 +96,11 @@ def get_default_collection_default_entity():
 )
 def create_collection():
   body = rebar.validated_body
-  entity = Entity.query.get(body['entity'])
+  try:
+    entity = Entity.query.filter(Entity.id==body['entity']).one()
+  except NoResultFound:
+    raise errors.NotFound(f"entity {body['entity']} not found")
+
   if not entity.check_update_access(g.fsk_user):
     raise errors.Forbidden("access denied")
   body.pop('entity')

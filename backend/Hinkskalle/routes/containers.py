@@ -100,7 +100,7 @@ def get_default_container(container_id):
 def create_container():
   body = rebar.validated_body
   try:
-    collection = db.session.query(Collection).get(body['collection'])
+    collection = db.session.query(Collection).filter(Collection.id==body['collection']).one()
   except NoResultFound:
     raise errors.NotFound(f"collection {body['collection']} not found")
 

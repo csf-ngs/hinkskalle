@@ -24,11 +24,11 @@ class ImageSchema(Schema):
   deletedAt = fields.DateTime(dump_only=True, allow_none=True)
   deleted = fields.Boolean(dump_only=True)
 
-  container = fields.String(required=True)
+  container = fields.Int(required=True)
   containerName = fields.String(dump_only=True)
-  collection = fields.String(dump_only=True)
+  collection = fields.Int(dump_only=True)
   collectionName = fields.String(dump_only=True)
-  entity = fields.String(dump_only=True)
+  entity = fields.Int(dump_only=True)
   entityName = fields.String(dump_only=True)
   tags = fields.List(fields.String(), dump_only=True)
 

@@ -1,7 +1,8 @@
-from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth
+from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth, db
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from mongoengine import DoesNotExist, ValidationError
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import IntegrityError
 from flask import request, current_app, g
 import os.path
 
@@ -21,8 +22,8 @@ class TagUpdateSchema(RequestSchema):
 )
 def get_tags(container_id):
   try:
-    container = Container.objects.get(id=container_id)
-  except DoesNotExist:
+    container = db.session.query(Container).filter(Container.id==container_id).one()
+  except NoResultFound:
     raise errors.NotFound(f"container {container_id} not found")
   if not container.check_access(g.fsk_user):
     raise errors.Forbidden(f"access denied.")
@@ -37,8 +38,8 @@ def get_tags(container_id):
 )
 def update_tag(container_id):
   try:
-    container = Container.objects.get(id=container_id)
-  except DoesNotExist:
+    container = db.session.query(Container).filter(Container.id==container_id).one()
+  except NoResultFound:
     raise errors.NotFound(f"container {container_id} not found")
   if not container.check_access(g.fsk_user):
     raise errors.Forbidden('access denied.')
@@ -55,9 +56,9 @@ def update_tag(container_id):
     tag_image = tag[tag_name]
   try:
     new_tag = container.tag_image(tag_name, tag_image)
-  except DoesNotExist:
+  except NoResultFound:
     raise errors.NotFound(f"Image {tag_image} not found for container {container_id}")
-  except ValidationError:
+  except IntegrityError:
     raise errors.NotFound(f"Invalid image id {tag_image} not found for container {container_id}")
 
   current_app.logger.debug(f"created tag {new_tag.name} on {new_tag.image_ref.id}")

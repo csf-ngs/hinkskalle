@@ -133,11 +133,11 @@ class TestImage(ModelBase):
 
     serialized = schema.dump(image)
     self.assertDictEqual(serialized.errors, {})
-    self.assertEqual(serialized.data['container'], str(container.id))
+    self.assertEqual(serialized.data['container'], container.id)
     self.assertEqual(serialized.data['containerName'], container.name)
-    self.assertEqual(serialized.data['collection'], str(coll.id))
+    self.assertEqual(serialized.data['collection'], coll.id)
     self.assertEqual(serialized.data['collectionName'], coll.name)
-    self.assertEqual(serialized.data['entity'], str(entity.id))
+    self.assertEqual(serialized.data['entity'], entity.id)
     self.assertEqual(serialized.data['entityName'], entity.name)
 
   def test_schema_tags(self):

@@ -5,6 +5,7 @@ import json
 import tempfile
 from Hinkskalle.tests.route_base import RouteBase
 
+from Hinkskalle import db
 from Hinkskalle.models import Tag
 from Hinkskalle.tests.models.test_Image import _create_image
 
@@ -12,10 +13,10 @@ class TestEntities(RouteBase):
   def test_manifest(self):
     image, _, _, entity = _create_image()
     latest_tag = Tag(name='latest', image_ref=image)
-    latest_tag.save()
+    db.session.add(latest_tag)
 
     entity.name='default'
-    entity.save()
+    db.session.commit()
 
     ret = self.client.get(f"/api/container/{image.collectionName()}/{image.containerName()}:latest")
     self.assertEqual(ret.status_code, 200)
@@ -31,11 +32,12 @@ class TestEntities(RouteBase):
   def test_pull(self):
     image = _create_image()[0]
     latest_tag = Tag(name='latest', image_ref=image)
-    latest_tag.save()
+    db.session.add(latest_tag)
+    db.session.commit()
 
     tmpf = tempfile.NamedTemporaryFile()
     tmpf.write(b"Hello Dorian!")
     tmpf.flush()
     image.location = tmpf.name
-    image.save()
+    db.session.commit()
 

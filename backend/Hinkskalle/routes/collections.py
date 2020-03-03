@@ -29,7 +29,7 @@ def _get_collection(entity_id, collection_id):
   except NoResultFound:
     raise errors.NotFound(f"entity {entity_id} not found")
   try:
-    collection = db.session.query(Collection).filter(Collection.name==collection_id, Collection.entity_id==entity.id).one()
+    collection = entity.collections_ref.filter(Collection.name==collection_id).one()
   except NoResultFound:
     raise errors.NotFound(f"collection {entity.id}/{collection_id} not found")
   return collection
@@ -44,7 +44,6 @@ def list_collections(entity_id):
   try:
     entity = db.session.query(Entity).filter(Entity.name==entity_id).one()
   except NoResultFound:
-    print("not found")
     raise errors.NotFound(f"entity {entity_id} not found")
   if not entity.check_access(g.fsk_user):
     raise errors.Forbidden(f"access denied.")

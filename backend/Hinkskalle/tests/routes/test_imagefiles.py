@@ -245,7 +245,7 @@ class TestImages(RouteBase):
     self.assertEqual(read_image.size, os.path.getsize(read_image.location))
 
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.imageTags(), { 'latest': read_image.id }, 'latest tag updated')
+    self.assertDictEqual(db_container.imageTags(), { 'latest': str(read_image.id) }, 'latest tag updated')
 
   def test_push_readonly(self):
     image, container, _, _ = _create_image()

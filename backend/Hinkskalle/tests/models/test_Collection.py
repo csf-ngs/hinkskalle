@@ -104,9 +104,9 @@ class TestCollection(ModelBase):
 
     serialized = schema.dump(coll)
     self.assertDictEqual(serialized.errors, {})
-    self.assertEqual(serialized.data['id'], coll.id)
+    self.assertEqual(serialized.data['id'], str(coll.id))
     self.assertEqual(serialized.data['name'], coll.name)
 
-    self.assertEqual(serialized.data['entity'], entity.id)
+    self.assertEqual(serialized.data['entity'], str(entity.id))
     self.assertEqual(serialized.data['entityName'], entity.name)
 

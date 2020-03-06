@@ -77,7 +77,7 @@ class TestContainers(RouteBase):
       ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], container.id)
+    self.assertEqual(data['id'], str(container.id))
   
   def test_get_default_entity(self):
     container, coll, entity = _create_container()
@@ -93,7 +93,7 @@ class TestContainers(RouteBase):
       ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], container.id)
+    self.assertEqual(data['id'], str(container.id))
   
   def test_get_default_collection(self):
     container, coll, entity = _create_container()
@@ -108,7 +108,7 @@ class TestContainers(RouteBase):
       ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], container.id)
+    self.assertEqual(data['id'], str(container.id))
 
   def test_get_default_collection_default_entity(self):
     container, coll, entity = _create_container()
@@ -129,7 +129,7 @@ class TestContainers(RouteBase):
       ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], container.id)
+    self.assertEqual(data['id'], str(container.id))
 
     # double slash expansion gives an ambigous route (collides with list containers)
     # maybe we get by without it
@@ -142,13 +142,13 @@ class TestContainers(RouteBase):
     #   ret = self.client.get(ret.headers.get('Location'))
     # self.assertEqual(ret.status_code, 200)
     # data = ret.get_json().get('data')
-    # self.assertEqual(data['id'], container.id)
+    # self.assertEqual(data['id'], str(container.id))
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/containers/{container.name}")
     self.assertEqual(ret.status_code, 200, 'single slash')
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], container.id)
+    self.assertEqual(data['id'], str(container.id))
 
   def test_get_user(self):
     container, coll, entity = _create_container()
@@ -161,7 +161,7 @@ class TestContainers(RouteBase):
       ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], container.id)
+    self.assertEqual(data['id'], str(container.id))
 
   def test_get_user_other(self):
     container, coll, entity = _create_container()
@@ -179,11 +179,11 @@ class TestContainers(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/containers', json={
         'name': 'oink',
-        'collection': coll.id,
+        'collection': str(coll.id),
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['collection'], coll.id)
+    self.assertEqual(data['collection'], str(coll.id))
     self.assertEqual(data['createdBy'], 'test.hase')
   
   def test_create_private(self):
@@ -194,7 +194,7 @@ class TestContainers(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/containers', json={
         'name': 'oink',
-        'collection': coll.id,
+        'collection': str(coll.id),
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
@@ -207,7 +207,7 @@ class TestContainers(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/containers', json={
         'name': 'auch.oink',
-        'collection': coll2.id,
+        'collection': str(coll2.id),
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
@@ -223,7 +223,7 @@ class TestContainers(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/containers', json={
         'name': container.name,
-        'collection': coll.id,
+        'collection': str(coll.id),
       })
     self.assertEqual(ret.status_code, 412)
   
@@ -233,7 +233,7 @@ class TestContainers(RouteBase):
         'name': 'oink',
         'collection': -666,
       })
-    self.assertEqual(ret.status_code, 404)
+    self.assertEqual(ret.status_code, 400)
   
   def test_create_user(self):
     coll, entity = _create_collection()
@@ -244,7 +244,7 @@ class TestContainers(RouteBase):
     with fake_auth(self.app):
       ret = self.client.post('/v1/containers', json={
         'name': 'oink',
-        'collection': coll.id,
+        'collection': str(coll.id),
       })
     self.assertEqual(ret.status_code, 200)
 
@@ -257,7 +257,7 @@ class TestContainers(RouteBase):
     with fake_auth(self.app):
       ret = self.client.post('/v1/containers', json={
         'name': 'oink',
-        'collection': coll.id,
+        'collection': str(coll.id),
       })
     self.assertEqual(ret.status_code, 403)
   

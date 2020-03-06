@@ -42,7 +42,7 @@ class TestBase(RouteBase):
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
 
-    self.assertListEqual([ c['container']['id'] for c in json ], [ image1.container_ref.id, ] )
+    self.assertListEqual([ c['container']['id'] for c in json ], [ str(image1.container_ref.id), ] )
 
     images=[]
     for idx in range(1, 12):
@@ -56,7 +56,7 @@ class TestBase(RouteBase):
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
 
-    self.assertListEqual([ c['container']['id'] for c in json ], [ img.container_ref.id for img in images[:10] ] )
+    self.assertListEqual([ c['container']['id'] for c in json ], [ str(img.container_ref.id) for img in images[:10] ] )
   
   def test_latest_collect_images(self):
     image1, container1, _, _ = _create_image(postfix='hase1')
@@ -75,7 +75,7 @@ class TestBase(RouteBase):
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
 
-    self.assertCountEqual([ c['container']['id'] for c in json ], [ container.id for container in [container1, container3]])
+    self.assertCountEqual([ c['container']['id'] for c in json ], [ str(container.id) for container in [container1, container3]])
 
 
   def test_latest_collect_tags(self):

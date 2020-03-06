@@ -74,7 +74,7 @@ class TestCollections(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
 
-    self.assertEqual(data['id'], coll.id)
+    self.assertEqual(data['id'], str(coll.id))
   
   def test_get_default(self):
     coll, entity = _create_collection()
@@ -86,7 +86,7 @@ class TestCollections(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
 
-    self.assertEqual(data['id'], coll.id)
+    self.assertEqual(data['id'], str(coll.id))
   
   def test_get_default_entity(self):
     coll, entity = _create_collection()
@@ -101,7 +101,7 @@ class TestCollections(RouteBase):
       ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], coll.id)
+    self.assertEqual(data['id'], str(coll.id))
 
   #@unittest.skip("does not work currently, see https://github.com/pallets/flask/issues/3413")
   def test_get_default_entity_default(self):
@@ -115,7 +115,7 @@ class TestCollections(RouteBase):
       ret = self.client.get(f"/v1/collections/")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], coll.id)
+    self.assertEqual(data['id'], str(coll.id))
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/collections//")
@@ -125,7 +125,7 @@ class TestCollections(RouteBase):
       ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], coll.id)
+    self.assertEqual(data['id'], str(coll.id))
   
   def test_get_user(self):
     coll, entity = _create_collection()
@@ -138,7 +138,7 @@ class TestCollections(RouteBase):
       ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], coll.id)
+    self.assertEqual(data['id'], str(coll.id))
 
   def test_get_user_default_entity(self):
     coll, entity = _create_collection()
@@ -151,7 +151,7 @@ class TestCollections(RouteBase):
       ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], coll.id)
+    self.assertEqual(data['id'], str(coll.id))
   
   def test_get_user_other_entity(self):
     coll, entity = _create_collection()
@@ -183,11 +183,11 @@ class TestCollections(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'oink',
-        'entity': entity.id,
+        'entity': str(entity.id),
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['entity'], entity.id)
+    self.assertEqual(data['entity'], str(entity.id))
     self.assertEqual(data['createdBy'], 'test.hase')
   
   def test_create_defaultPrivate(self):
@@ -199,7 +199,7 @@ class TestCollections(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'oink',
-        'entity': entity.id,
+        'entity': str(entity.id),
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
@@ -215,7 +215,7 @@ class TestCollections(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'auch.oink',
-        'entity': entity.id,
+        'entity': str(entity.id),
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
@@ -231,7 +231,7 @@ class TestCollections(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': '',
-        'entity': entity.id,
+        'entity': str(entity.id),
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
@@ -243,7 +243,7 @@ class TestCollections(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': coll.name,
-        'entity': entity.id,
+        'entity': str(entity.id),
       })
     self.assertEqual(ret.status_code, 412)
   
@@ -253,7 +253,7 @@ class TestCollections(RouteBase):
         'name': 'oink',
         'entity': -666,
       })
-    self.assertEqual(ret.status_code, 404)
+    self.assertEqual(ret.status_code, 400)
 
   def test_create_user(self):
     entity = Entity(name='test-hase', createdBy='test.hase')
@@ -262,7 +262,7 @@ class TestCollections(RouteBase):
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'oink',
-        'entity': entity.id,
+        'entity': str(entity.id),
       })
     self.assertEqual(ret.status_code, 200)
 
@@ -273,7 +273,7 @@ class TestCollections(RouteBase):
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'oink',
-        'entity': entity.id,
+        'entity': str(entity.id),
       })
     self.assertEqual(ret.status_code, 403)
 
@@ -284,7 +284,7 @@ class TestCollections(RouteBase):
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': '',
-        'entity': entity.id,
+        'entity': str(entity.id),
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
@@ -296,7 +296,7 @@ class TestCollections(RouteBase):
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'default',
-        'entity': entity.id,
+        'entity': str(entity.id),
       })
     self.assertEqual(ret.status_code, 200)
   
@@ -307,21 +307,21 @@ class TestCollections(RouteBase):
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': '',
-        'entity': entity.id
+        'entity': str(entity.id)
       })
     self.assertEqual(ret.status_code, 403, 'empty name')
 
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'default',
-        'entity': entity.id
+        'entity': str(entity.id)
       })
     self.assertEqual(ret.status_code, 403, 'default')
 
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'pipeline',
-        'entity': entity.id
+        'entity': str(entity.id)
       })
     self.assertEqual(ret.status_code, 403, 'pipeline')
   
@@ -333,7 +333,7 @@ class TestCollections(RouteBase):
     with fake_auth(self.app):
       ret = self.client.post('/v1/collections', json={
         'name': 'oink',
-        'entity': entity.id,
+        'entity': str(entity.id),
       })
     self.assertEqual(ret.status_code, 403)
 

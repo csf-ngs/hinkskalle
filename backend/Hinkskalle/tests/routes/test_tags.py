@@ -27,14 +27,14 @@ class TestTags(RouteBase):
       ret = self.client.get(f"/v1/tags/{container.id}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertDictEqual(data, {'v1.0': image.id})
+    self.assertDictEqual(data, {'v1.0': str(image.id)})
 
     container.tag_image('oink', image.id)
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/tags/{container.id}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertDictEqual(data, {'v1.0': image.id, 'oink': image.id})
+    self.assertDictEqual(data, {'v1.0': str(image.id), 'oink': str(image.id)})
   
   def test_get_user(self):
     image, container, coll, entity = _create_image()
@@ -43,7 +43,7 @@ class TestTags(RouteBase):
     container.createdBy='test.hase'
     db.session.commit()
 
-    container.tag_image('v1.0', image.id)
+    container.tag_image('v1.0', str(image.id))
     with fake_auth(self.app):
       ret = self.client.get(f"/v1/tags/{container.id}")
     self.assertEqual(ret.status_code, 200)
@@ -64,21 +64,21 @@ class TestTags(RouteBase):
     image, container, _, _ = _create_image()
     container_id=container.id
     with fake_admin_auth(self.app):
-      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': image.id})
+      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertDictEqual(data, { 'v1.0': image.id })
+    self.assertDictEqual(data, { 'v1.0': str(image.id) })
     db_container=Container.query.get(container_id)
-    self.assertDictEqual(db_container.imageTags(), { 'v1.0': image.id })
+    self.assertDictEqual(db_container.imageTags(), { 'v1.0': str(image.id) })
 
     with fake_admin_auth(self.app):
-      ret = self.client.post(f"/v1/tags/{container.id}", json={'oink': image.id})
+      ret = self.client.post(f"/v1/tags/{container.id}", json={'oink': str(image.id)})
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
 
-    self.assertDictEqual(data, { 'v1.0': image.id, 'oink': image.id })
+    self.assertDictEqual(data, { 'v1.0': str(image.id), 'oink': str(image.id) })
     db_container=Container.query.get(container_id)
-    self.assertDictEqual(db_container.imageTags(), { 'v1.0': image.id, 'oink': image.id })
+    self.assertDictEqual(db_container.imageTags(), { 'v1.0': str(image.id), 'oink': str(image.id) })
 
   def test_update_user(self):
     image, container, coll, entity = _create_image()
@@ -88,7 +88,7 @@ class TestTags(RouteBase):
     db.session.commit()
 
     with fake_auth(self.app):
-      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': image.id})
+      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
 
   def test_update_user_other(self):
@@ -99,7 +99,7 @@ class TestTags(RouteBase):
     db.session.commit()
 
     with fake_auth(self.app):
-      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': image.id})
+      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 403)
   
   def test_symlinks(self):
@@ -107,7 +107,7 @@ class TestTags(RouteBase):
     self._fake_uploaded_image(image)
 
     with fake_admin_auth(self.app):
-      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': image.id})
+      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
     
     link_location = os.path.join(self.app.config['IMAGE_PATH'], image.entityName(), image.collectionName(), f"{image.containerName()}_v1.0.sif")
@@ -124,7 +124,7 @@ class TestTags(RouteBase):
       outfh.write('muh')
     
     with fake_admin_auth(self.app):
-      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': image.id})
+      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
     self.assertTrue(os.path.exists(link_location))
     self.assertTrue(os.path.samefile(link_location, image.location))
@@ -133,7 +133,7 @@ class TestTags(RouteBase):
     # overwrite dangling links, too
     os.symlink('/oink/oink/gru.nz', link_location)
     with fake_admin_auth(self.app):
-      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': image.id})
+      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
 
   def test_symlinks_default_entity(self):
@@ -145,7 +145,7 @@ class TestTags(RouteBase):
     link_location = os.path.join(self.app.config['IMAGE_PATH'], image.collectionName(), f"{image.containerName()}_v1.0.sif")
     
     with fake_admin_auth(self.app):
-      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': image.id})
+      ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
     self.assertTrue(os.path.exists(link_location))
     self.assertTrue(os.path.samefile(link_location, image.location))
@@ -153,11 +153,11 @@ class TestTags(RouteBase):
   def test_update_old(self):
     image, container, _, _ = _create_image()
     with fake_admin_auth(self.app):
-      ret = self.client.post(f"/v1/tags/{container.id}", json={ 'Tag': 'v1', 'ImageID': image.id })
+      ret = self.client.post(f"/v1/tags/{container.id}", json={ 'Tag': 'v1', 'ImageID': str(image.id) })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
 
-    self.assertDictEqual(data, { 'v1': image.id })
+    self.assertDictEqual(data, { 'v1': str(image.id) })
 
   
   def test_update_invalid(self):

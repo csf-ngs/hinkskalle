@@ -129,7 +129,7 @@ class TestContainer(ModelBase):
     image1tag1 = Tag(name='v1', image_id=image1.id)
     db.session.add(image1tag1)
     db.session.commit()
-    self.assertDictEqual(container.imageTags(), { 'v1': image1.id })
+    self.assertDictEqual(container.imageTags(), { 'v1': str(image1.id) })
 
     image2 = Image(hash='test-image-2', container_id=container.id)
     db.session.add(image2)
@@ -137,7 +137,7 @@ class TestContainer(ModelBase):
     image2tag1 = Tag(name='v2', image_id=image2.id)
     db.session.add(image2tag1)
     db.session.commit()
-    self.assertDictEqual(container.imageTags(), { 'v1': image1.id, 'v2': image2.id })
+    self.assertDictEqual(container.imageTags(), { 'v1': str(image1.id), 'v2': str(image2.id) })
 
     invalidTag = Tag(name='v2', image_id=image1.id)
     db.session.add(invalidTag)
@@ -203,15 +203,15 @@ class TestContainer(ModelBase):
 
     schema = ContainerSchema()
     serialized = schema.dump(container)
-    self.assertEqual(serialized.data['id'], container.id)
+    self.assertEqual(serialized.data['id'], str(container.id))
     self.assertEqual(serialized.data['name'], container.name)
     self.assertEqual(serialized.data['private'], False)
     self.assertEqual(serialized.data['readOnly'], False)
 
     serialized = schema.dump(container)
-    self.assertEqual(serialized.data['collection'], coll.id)
+    self.assertEqual(serialized.data['collection'], str(coll.id))
     self.assertEqual(serialized.data['collectionName'], coll.name)
-    self.assertEqual(serialized.data['entity'], entity.id)
+    self.assertEqual(serialized.data['entity'], str(entity.id))
     self.assertEqual(serialized.data['entityName'], entity.name)
   
   def test_schema_tags(self):
@@ -232,4 +232,4 @@ class TestContainer(ModelBase):
 
     schema = ContainerSchema()
     serialized = schema.dump(container)
-    self.assertDictEqual(serialized.data['imageTags'], { 'v1': image1.id, 'v2': image2.id })
+    self.assertDictEqual(serialized.data['imageTags'], { 'v1': str(image1.id), 'v2': str(image2.id) })

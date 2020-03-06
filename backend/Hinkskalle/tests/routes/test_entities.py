@@ -59,7 +59,7 @@ class TestEntities(RouteBase):
     json = ret.get_json()
     json['data'].pop('createdAt')
     self.assertDictEqual(json['data'], {
-      'id': entity.id,
+      'id': str(entity.id),
       'name': entity.name,
       'description': entity.description,
       'customData': entity.customData,
@@ -82,7 +82,7 @@ class TestEntities(RouteBase):
       ret = self.client.get('/v1/entities/')
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], entity.id)
+    self.assertEqual(data['id'], str(entity.id))
   
   def test_get_user(self):
     entity = Entity(name='test.hase', createdBy='test.hase')
@@ -93,7 +93,7 @@ class TestEntities(RouteBase):
       ret = self.client.get('/v1/entities/test.hase')
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], entity.id)
+    self.assertEqual(data['id'], str(entity.id))
   
   def test_get_user_default(self):
     entity = Entity(name='default')
@@ -104,13 +104,13 @@ class TestEntities(RouteBase):
       ret = self.client.get('/v1/entities/')
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], entity.id)
+    self.assertEqual(data['id'], str(entity.id))
 
     with fake_auth(self.app):
       ret = self.client.get('/v1/entities/default')
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], entity.id)
+    self.assertEqual(data['id'], str(entity.id))
   
   def test_get_user_other(self):
     entity = Entity(name='grunz', createdBy='someone.else')

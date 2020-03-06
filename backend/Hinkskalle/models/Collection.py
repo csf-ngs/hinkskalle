@@ -5,7 +5,7 @@ from datetime import datetime
 from Hinkskalle.models import Entity
 
 class CollectionSchema(Schema):
-  id = fields.Integer(required=True, dump_only=True)
+  id = fields.String(required=True, dump_only=True)
   name = fields.String(required=True)
   description = fields.String(allow_none=True)
   createdAt = fields.DateTime(dump_only=True)
@@ -17,7 +17,7 @@ class CollectionSchema(Schema):
   private = fields.Boolean()
   customData = fields.String(allow_none=True)
 
-  entity = fields.Integer(required=True)
+  entity = fields.String(required=True)
   entityName = fields.String(dump_only=True)
 
   containers = fields.String(dump_only=True, many=True)

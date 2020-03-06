@@ -1,5 +1,5 @@
 from Hinkskalle import registry, fsk_auth, db
-from flask import current_app, jsonify, make_response, request, redirect
+from flask import current_app, jsonify, make_response, request, redirect, g
 from flask_rebar import RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
 from werkzeug.datastructures import EnvironHeaders
@@ -64,9 +64,11 @@ class LatestContainerListResponseSchema(ResponseSchema):
   authenticators=fsk_auth,
 )
 def latest_container():
-  tags = db.session.query(Tag).order_by(desc(Tag.createdAt))
+  tags = Tag.query.order_by(desc(Tag.createdAt))
   ret = {}
   for tag in tags:
+    if not tag.image_ref.check_access(g.fsk_user):
+      continue
     if not tag.image_ref.container_ref.id in ret:
       #current_app.logger.debug(f"return image {tag.name}/{tag.image_ref.container_ref.name}")
       ret[tag.image_ref.container_ref.id] = {

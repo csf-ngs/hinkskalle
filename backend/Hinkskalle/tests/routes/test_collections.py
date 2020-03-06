@@ -203,7 +203,7 @@ class TestCollections(RouteBase):
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    dbColl = db.session.query(Collection).get(data['id'])
+    dbColl = Collection.query.get(data['id'])
     self.assertTrue(dbColl.private)
 
     # why do I need to refetch from db?? entity seems to be
@@ -219,7 +219,7 @@ class TestCollections(RouteBase):
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    dbColl = db.session.query(Collection).get(data['id'])
+    dbColl = Collection.query.get(data['id'])
     self.assertFalse(dbColl.private)
 
 
@@ -290,7 +290,7 @@ class TestCollections(RouteBase):
     data = ret.get_json().get('data')
     self.assertEqual(data['name'], 'default')
 
-    db.session.query(Collection).filter(Collection.id==data['id']).delete()
+    Collection.query.filter(Collection.id==data['id']).delete()
 
 
     with fake_auth(self.app):
@@ -348,7 +348,7 @@ class TestCollections(RouteBase):
       })
     self.assertEqual(ret.status_code, 200)
 
-    dbColl = db.session.query(Collection).filter(Collection.name==coll.name).one()
+    dbColl = Collection.query.filter(Collection.name==coll.name).one()
     self.assertEqual(dbColl.description, 'Mei Huat')
     self.assertTrue(dbColl.private)
     self.assertEqual(dbColl.customData, 'hot drei Eckn')
@@ -370,7 +370,7 @@ class TestCollections(RouteBase):
       })
     self.assertEqual(ret.status_code, 200)
 
-    dbColl = db.session.query(Collection).filter(Collection.name==coll.name).one()
+    dbColl = Collection.query.filter(Collection.name==coll.name).one()
     self.assertEqual(dbColl.description, 'Mei Huat')
     self.assertTrue(dbColl.private)
     self.assertEqual(dbColl.customData, 'hot drei Eckn')

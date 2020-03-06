@@ -26,7 +26,7 @@ def pull_image(entity_id, collection_id, tagged_container_id):
   
   if not os.path.exists(image.location):
     raise errors.InternalError(f"Image not found at {image.location}")
-  container = db.session.query(Container).filter(Container.id==image.container_id).one()
+  container = Container.query.filter(Container.id==image.container_id).one()
   container.downloadCount += 1
   image.downloadCount += 1
   db.session.commit()
@@ -57,7 +57,7 @@ def pull_image_default_collection_default_entity_single(tagged_container_id):
 )
 def push_image(image_id):
   try:
-    image = db.session.query(Image).filter(Image.id==image_id).one()
+    image = Image.query.filter(Image.id==image_id).one()
   except NoResultFound:
     raise errors.NotFound(f"Image {image_id} not found")
 

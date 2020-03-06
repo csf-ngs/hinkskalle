@@ -22,7 +22,7 @@ class ManifestResponseSchema(ResponseSchema):
 def get_manifest(collection_id, tagged_container_id):
   container_id, tag = _parse_tag(tagged_container_id)
   try:
-    entity = db.session.query(Entity).filter(Entity.name=='default').one()
+    entity = Entity.query.filter(Entity.name=='default').one()
   except NoResultFound:
     current_app.logger.debug("no default entity")
     raise errors.NotFound(f"default entity not found")

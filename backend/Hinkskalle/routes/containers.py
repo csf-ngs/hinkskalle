@@ -23,7 +23,7 @@ class ContainerUpdateSchema(ContainerSchema, RequestSchema):
 
 def _get_container(entity_id, collection_id, container_id):
   try:
-    entity = db.session.query(Entity).filter(Entity.name==entity_id).one()
+    entity = Entity.query.filter(Entity.name==entity_id).one()
   except NoResultFound:
     current_app.logger.debug(f"entity {entity_id} not found")
     raise errors.NotFound(f"entity {entity_id} not found")
@@ -47,7 +47,7 @@ def _get_container(entity_id, collection_id, container_id):
 )
 def list_containers(entity_id, collection_id):
   try:
-    entity = db.session.query(Entity).filter(Entity.name==entity_id).one()
+    entity = Entity.query.filter(Entity.name==entity_id).one()
   except NoResultFound:
     raise errors.NotFound(f"entity {entity_id} not found")
   try:
@@ -100,7 +100,7 @@ def get_default_container(container_id):
 def create_container():
   body = rebar.validated_body
   try:
-    collection = db.session.query(Collection).filter(Collection.id==body['collection']).one()
+    collection = Collection.query.filter(Collection.id==body['collection']).one()
   except NoResultFound:
     raise errors.NotFound(f"collection {body['collection']} not found")
 

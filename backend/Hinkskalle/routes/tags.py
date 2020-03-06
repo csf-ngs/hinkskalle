@@ -22,7 +22,7 @@ class TagUpdateSchema(RequestSchema):
 )
 def get_tags(container_id):
   try:
-    container = db.session.query(Container).filter(Container.id==container_id).one()
+    container = Container.query.filter(Container.id==container_id).one()
   except NoResultFound:
     raise errors.NotFound(f"container {container_id} not found")
   if not container.check_access(g.fsk_user):
@@ -38,7 +38,7 @@ def get_tags(container_id):
 )
 def update_tag(container_id):
   try:
-    container = db.session.query(Container).filter(Container.id==container_id).one()
+    container = Container.query.filter(Container.id==container_id).one()
   except NoResultFound:
     raise errors.NotFound(f"container {container_id} not found")
   if not container.check_access(g.fsk_user):

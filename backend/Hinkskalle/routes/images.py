@@ -43,7 +43,7 @@ def _parse_tag(tagged_container_id):
 
 def _get_container(entity_id, collection_id, container_id):
   try:
-    entity = db.session.query(Entity).filter(Entity.name==entity_id).one()
+    entity = Entity.query.filter(Entity.name==entity_id).one()
   except NoResultFound:
     current_app.logger.debug(f"entity {entity_id} not found")
     raise errors.NotFound(f"entity {entity_id} not found")
@@ -66,7 +66,7 @@ def _get_image(entity_id, collection_id, tagged_container_id):
   if tag.startswith('sha256.'):
     shahash=tag
     try:
-      image = db.session.query(Image).filter(Image.hash==shahash, Image.container_id==container.id).one()
+      image = container.images_ref.filter(Image.hash==shahash).one()
     except NoResultFound:
       current_app.logger.debug(f"image with hash {shahash} not found in container {container.name}")
       raise errors.NotFound(f"image with hash {shahash} not found in container {container.name}")
@@ -76,7 +76,7 @@ def _get_image(entity_id, collection_id, tagged_container_id):
       current_app.logger.debug(f"tag {tag} on container {container.entityName}/{container.collectionName}/{container.name} not found")
       raise errors.NotFound(f"tag {tag} on container {container.entityName}/{container.collectionName}/{container.name} not found")
 
-    image = db.session.query(Image).get(image_tags[tag])
+    image = Image.query.get(image_tags[tag])
   return image
 
 
@@ -139,7 +139,7 @@ def get_image_default_entity_default_collection_single(tagged_container_id):
 def create_image():
   body = rebar.validated_body
   current_app.logger.debug(body)
-  container = db.session.query(Container).get(body['container'])
+  container = Container.query.get(body['container'])
   if not container:
     raise errors.NotFound(f"container {body['container']} not found")
   body.pop('container')
@@ -152,7 +152,7 @@ def create_image():
   new_image.container_ref=container
   new_image.createdBy = g.fsk_user.username
 
-  # for some reason the db session autoflushes when running the query below
+  # the db session autoflushes when running the query below
   # so we have to add here and catch any IntegrityError exceptions. 
   try:
     db.session.add(new_image)
@@ -160,8 +160,8 @@ def create_image():
   except IntegrityError as err:
     raise errors.PreconditionFailed(f"Image {new_image.id}/{new_image.hash} already exists")
 
-  # this will flush the session; if the image is not unique it'll crash unless we try to insert before
-  existing_images = [ img for img in db.session.query(Image).filter(Image.hash==new_image.hash).all() if img.container_id != container.id and img.uploaded ]
+  # this will flush the session; if the image is not unique it would crash unless we try to insert before
+  existing_images = [ img for img in Image.query.filter(Image.hash==new_image.hash).all() if img.container_id != container.id and img.uploaded ]
   if len(existing_images) > 0:
     current_app.logger.debug(f"hash already found, re-using image location {existing_images[0].location}")
     new_image.uploaded=True

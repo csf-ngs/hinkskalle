@@ -25,7 +25,7 @@ class CollectionUpdateSchema(CollectionSchema, RequestSchema):
 
 def _get_collection(entity_id, collection_id):
   try:
-    entity = db.session.query(Entity).filter(Entity.name==entity_id).one()
+    entity = Entity.query.filter(Entity.name==entity_id).one()
   except NoResultFound:
     raise errors.NotFound(f"entity {entity_id} not found")
   try:
@@ -42,16 +42,16 @@ def _get_collection(entity_id, collection_id):
 )
 def list_collections(entity_id):
   try:
-    entity = db.session.query(Entity).filter(Entity.name==entity_id).one()
+    entity = Entity.query.filter(Entity.name==entity_id).one()
   except NoResultFound:
     raise errors.NotFound(f"entity {entity_id} not found")
   if not entity.check_access(g.fsk_user):
     raise errors.Forbidden(f"access denied.")
 
   if g.fsk_user.is_admin:
-    objs = db.session.query(Collection).filter(Collection.entity_id == entity.id).all()
+    objs = Collection.query.filter(Collection.entity_id == entity.id).all()
   else:
-    objs = db.session.query(Collection).filter(Collection.entity_id == entity.id, Collection.createdBy==g.fsk_user.username).all()
+    objs = Collection.query.filter(Collection.entity_id == entity.id, Collection.createdBy==g.fsk_user.username).all()
   
   return { 'data': list(objs) }
 

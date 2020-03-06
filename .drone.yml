@@ -12,7 +12,7 @@ steps:
     - git fetch --tags
     - git describe > .tags
 - name: testhase
-  image: docker.ngs.vbcf.ac.at/flask-base:v1.1.1-1-g89d661f
+  image: docker.ngs.vbcf.ac.at/flask-base:v1.1.2
   environment:
     HINKSKALLE_SETTINGS: ../../conf/config.json
   commands:

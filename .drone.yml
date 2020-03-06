@@ -34,8 +34,7 @@ steps:
     --label org.label-schema.vcs-url="$DRONE_GIT_HTTP_URL"
     --label org.label-schema.vcs-ref="$DRONE_COMMIT_SHA"
     --label at.ac.vbcf.ngs.blame="$DRONE_COMMIT_AUTHOR"
-    -t docker.ngs.vbcf.ac.at/hinkskalle:$TAG .
-  - docker tag docker.ngs.vbcf.ac.at/hinkskalle:$TAG docker.ngs.vbcf.ac.at/hinkskalle:latest
+    -t docker.ngs.vbcf.ac.at/hinkskalle .
 - name: pushraus
   image: docker:dind
   volumes:
@@ -44,6 +43,8 @@ steps:
   - name: dockerauth
     path: /root/.docker
   commands:
+  - TAG=$(cat .tags)
+  - docker tag docker.ngs.vbcf.ac.at/hinkskalle docker.ngs.vbcf.ac.at/hinkskalle:$TAG
   - docker push docker.ngs.vbcf.ac.at/hinkskalle
   when:
     event:

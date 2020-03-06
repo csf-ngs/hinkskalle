@@ -27,7 +27,6 @@ steps:
   - name: dockerauth
     path: /root/.docker
   commands:
-  - TAG=$(cat .tags)
   - >
     docker build 
     --label org.label-schema.build-date="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"

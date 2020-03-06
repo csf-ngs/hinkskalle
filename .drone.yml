@@ -46,7 +46,7 @@ steps:
   commands:
   - docker push docker.ngs.vbcf.ac.at/hinkskalle
   when:
-    events:
+    event:
       - tag
 volumes:
 - name: dockersock

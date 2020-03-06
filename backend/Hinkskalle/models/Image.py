@@ -53,7 +53,7 @@ class Image(db.Model):
 
   location = db.Column(db.String())
 
-  tags_ref = db.relationship('Tag', backref='image_ref', lazy=True)
+  tags_ref = db.relationship('Tag', backref='image_ref', lazy='dynamic')
 
   __table_args__ = (db.UniqueConstraint('hash', 'container_id', name='hash_container_id_idx'),)
 

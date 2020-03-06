@@ -1,9 +1,9 @@
-from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth
+from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth, db
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from mongoengine import NotUniqueError, DoesNotExist
-from mongoengine.queryset.visitor import Q
 from flask import request, current_app, g
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import NoResultFound
 import datetime
 
 from Hinkskalle.models import CollectionSchema, Collection, Entity
@@ -25,12 +25,12 @@ class CollectionUpdateSchema(CollectionSchema, RequestSchema):
 
 def _get_collection(entity_id, collection_id):
   try:
-    entity = Entity.objects.get(name=entity_id)
-  except DoesNotExist:
+    entity = Entity.query.filter(Entity.name==entity_id).one()
+  except NoResultFound:
     raise errors.NotFound(f"entity {entity_id} not found")
   try:
-    collection = Collection.objects.get(name=collection_id, entity_ref=entity)
-  except DoesNotExist:
+    collection = entity.collections_ref.filter(Collection.name==collection_id).one()
+  except NoResultFound:
     raise errors.NotFound(f"collection {entity.id}/{collection_id} not found")
   return collection
 
@@ -42,16 +42,16 @@ def _get_collection(entity_id, collection_id):
 )
 def list_collections(entity_id):
   try:
-    entity = Entity.objects.get(name=entity_id)
-  except DoesNotExist:
+    entity = Entity.query.filter(Entity.name==entity_id).one()
+  except NoResultFound:
     raise errors.NotFound(f"entity {entity_id} not found")
   if not entity.check_access(g.fsk_user):
     raise errors.Forbidden(f"access denied.")
 
   if g.fsk_user.is_admin:
-    objs = Collection.objects(entity_ref=entity)
+    objs = Collection.query.filter(Collection.entity_id == entity.id).all()
   else:
-    objs = Collection.objects(Q(entity_ref=entity) & Q(createdBy=g.fsk_user.username))
+    objs = Collection.query.filter(Collection.entity_id == entity.id, Collection.createdBy==g.fsk_user.username).all()
   
   return { 'data': list(objs) }
 
@@ -96,7 +96,11 @@ def get_default_collection_default_entity():
 )
 def create_collection():
   body = rebar.validated_body
-  entity = Entity.objects.get(id=body['entity'])
+  try:
+    entity = Entity.query.filter(Entity.id==body['entity']).one()
+  except NoResultFound:
+    raise errors.NotFound(f"entity {body['entity']} not found")
+
   if not entity.check_update_access(g.fsk_user):
     raise errors.Forbidden("access denied")
   body.pop('entity')
@@ -113,8 +117,9 @@ def create_collection():
   new_collection.createdBy=g.fsk_user.username
 
   try:
-    new_collection.save()
-  except NotUniqueError as err:
+    db.session.add(new_collection)
+    db.session.commit()
+  except IntegrityError as err:
     current_app.logger.debug(err)
     raise errors.PreconditionFailed(f"Collection {new_collection.id} already exists")
 
@@ -136,6 +141,6 @@ def update_collection(entity_id, collection_id):
   for key in body:
     setattr(collection, key, body[key])
   collection.updatedAt = datetime.datetime.now()
-  collection.save()
+  db.session.commit()
 
   return { 'data': collection }

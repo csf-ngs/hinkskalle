@@ -1,8 +1,9 @@
-from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth, fsk_optional_auth
+from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth, fsk_optional_auth, db
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from mongoengine import NotUniqueError, DoesNotExist
 from flask import request, current_app, safe_join, send_file, g
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import IntegrityError
 
 import os.path
 import subprocess
@@ -42,18 +43,18 @@ def _parse_tag(tagged_container_id):
 
 def _get_container(entity_id, collection_id, container_id):
   try:
-    entity = Entity.objects.get(name=entity_id)
-  except DoesNotExist:
+    entity = Entity.query.filter(Entity.name==entity_id).one()
+  except NoResultFound:
     current_app.logger.debug(f"entity {entity_id} not found")
     raise errors.NotFound(f"entity {entity_id} not found")
   try:
-    collection = Collection.objects.get(name=collection_id, entity_ref=entity)
-  except DoesNotExist:
+    collection = entity.collections_ref.filter(Collection.name==collection_id).one()
+  except NoResultFound:
     current_app.logger.debug(f"collection {entity.name}/{collection_id} not found")
     raise errors.NotFound(f"collection {entity.name}/{collection_id} not found")
   try:
-    container = Container.objects.get(name=container_id, collection_ref=collection)
-  except DoesNotExist:
+    container = collection.containers_ref.filter(Container.name==container_id).one()
+  except NoResultFound:
     current_app.logger.debug(f"container {entity.name}/{collection.name}/{container_id} not found")
     raise errors.NotFound(f"container {entity.name}/{collection.name}/{container_id} not found")
   return container
@@ -65,8 +66,8 @@ def _get_image(entity_id, collection_id, tagged_container_id):
   if tag.startswith('sha256.'):
     shahash=tag
     try:
-      image = Image.objects.get(hash=shahash, container_ref=container)
-    except DoesNotExist:
+      image = container.images_ref.filter(Image.hash==shahash).one()
+    except NoResultFound:
       current_app.logger.debug(f"image with hash {shahash} not found in container {container.name}")
       raise errors.NotFound(f"image with hash {shahash} not found in container {container.name}")
   else:
@@ -75,7 +76,7 @@ def _get_image(entity_id, collection_id, tagged_container_id):
       current_app.logger.debug(f"tag {tag} on container {container.entityName}/{container.collectionName}/{container.name} not found")
       raise errors.NotFound(f"tag {tag} on container {container.entityName}/{container.collectionName}/{container.name} not found")
 
-    image = Image.objects.get(id=image_tags[tag])
+    image = Image.query.get(image_tags[tag])
   return image
 
 
@@ -90,7 +91,7 @@ def list_images(entity_id, collection_id, container_id):
   if not container.check_access(g.fsk_user):
     raise errors.Forbidden('access denied')
   
-  return { 'data': list(Image.objects(container_ref=container)) }
+  return { 'data': list(container.images_ref) }
 
 @registry.handles(
   rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
@@ -107,7 +108,7 @@ def get_image(entity_id, collection_id, tagged_container_id):
     current_app.logger.debug(f"{image.location} does not exist, resetting uploaded flag.")
     image.uploaded = False
     image.location = None
-    image.save()
+    db.session.commit()
   return { 'data': image }
 
 @registry.handles(
@@ -138,7 +139,9 @@ def get_image_default_entity_default_collection_single(tagged_container_id):
 def create_image():
   body = rebar.validated_body
   current_app.logger.debug(body)
-  container = Container.objects.get(id=body['container'])
+  container = Container.query.get(body['container'])
+  if not container:
+    raise errors.NotFound(f"container {body['container']} not found")
   body.pop('container')
   if not container.check_update_access(g.fsk_user):
     raise errors.Forbidden('access denied')
@@ -149,17 +152,22 @@ def create_image():
   new_image.container_ref=container
   new_image.createdBy = g.fsk_user.username
 
-  existing_images = [ img for img in Image.objects.filter(hash=new_image.hash) if img.container_ref != container and img.uploaded ]
+  # the db session autoflushes when running the query below
+  # so we have to add here and catch any IntegrityError exceptions. 
+  try:
+    db.session.add(new_image)
+    db.session.commit()
+  except IntegrityError as err:
+    raise errors.PreconditionFailed(f"Image {new_image.id}/{new_image.hash} already exists")
+
+  # this will flush the session; if the image is not unique it would crash unless we try to insert before
+  existing_images = [ img for img in Image.query.filter(Image.hash==new_image.hash).all() if img.container_id != container.id and img.uploaded ]
   if len(existing_images) > 0:
     current_app.logger.debug(f"hash already found, re-using image location {existing_images[0].location}")
     new_image.uploaded=True
     new_image.size=existing_images[0].size
     new_image.location=existing_images[0].location
-
-  try:
-    new_image.save()
-  except NotUniqueError as err:
-    raise errors.PreconditionFailed(f"Image {new_image.id}/{new_image.hash} already exists")
+    db.session.commit()
 
   if new_image.uploaded:
     container.tag_image('latest', new_image.id)
@@ -183,7 +191,7 @@ def update_image(entity_id, collection_id, tagged_container_id):
   for key in body:
     setattr(image, key, body[key])
   image.updatedAt = datetime.datetime.now()
-  image.save()
+  db.session.commit()
 
   return { 'data': image }
 

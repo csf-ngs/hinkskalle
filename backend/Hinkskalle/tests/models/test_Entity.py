@@ -1,45 +1,40 @@
-import unittest
 from mongoengine import connect, disconnect
 from datetime import datetime, timedelta
 
+from Hinkskalle.tests.model_base import ModelBase
 from Hinkskalle.models import Entity, EntitySchema, Collection
 from Hinkskalle.fsk_api import FskUser
+from Hinkskalle import db
 
-class TestEntity(unittest.TestCase):
-  @classmethod
-  def setUpClass(cls):
-    disconnect()
-    connect('mongoenginetest', host='mongomock://localhost')
-  
-  @classmethod
-  def tearDownClass(cls):
-    disconnect()
+class TestEntity(ModelBase):
 
-  def tearDown(self):
-    Entity.objects.delete()
-  
   def test_entity(self):
     entity = Entity(name='test-hase')
-    entity.save()
+    db.session.add(entity)
+    db.session.commit()
 
-    read_entity = Entity.objects.get(name='test-hase')
+    read_entity = Entity.query.filter_by(name='test-hase').first()
     self.assertEqual(read_entity.id, entity.id)
     self.assertTrue(abs(read_entity.createdAt - datetime.utcnow()) < timedelta(seconds=1))
   
   def test_count(self):
     ent = Entity(name='test-hase')
     self.assertEqual(ent.size(), 0)
-    ent.save()
+    db.session.add(ent)
+    db.session.commit()
     self.assertEqual(ent.size(), 0)
 
     coll1 = Collection(name='coll_i', entity_ref=ent)
-    coll1.save()
+    db.session.add(coll1)
+    db.session.commit()
     self.assertEqual(ent.size(), 1)
 
     other_ent = Entity(name='other-hase')
-    other_ent.save()
+    db.session.add(other_ent)
+    db.session.commit()
     other_coll = Collection(name="coll_other", entity_ref=other_ent)
-    other_coll.save()
+    db.session.add(other_coll)
+    db.session.commit()
 
     self.assertEqual(ent.size(), 1)
 

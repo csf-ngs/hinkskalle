@@ -1,22 +1,14 @@
 version: '3'
 services:
   api:
-    image: docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.3.0
+    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.3.0"
     volumes:
       - '.:/srv/hinkskalle/src'
+      - './data/sqlite:/data/db'
     command: './script/start.sh'
     environment:
       PORT: 5000
-      MONGODB_HOST: 'mongodb://mongodb/hinktest'
-      MONGODB_USERNAME: 'hinkebein'
-      MONGODB_PASSWORD: "${HINKSKALLE_MONGODB_PASSWORD}"
+      SQLALCHEMY_DATABASE_URI: 'sqlite:////data/db/hinkskalle.db'
       FSK_URL: 'http://172.28.128.1:6600/fsk3test'
-    links:
-      - mongodb
     ports:
       - '7660:5000'
-  mongodb:
-    image: mongo:4-bionic
-    volumes:
-      - './data/db:/data/db'
-      - './data/configdb:/data/configdb'

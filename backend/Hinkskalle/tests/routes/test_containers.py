@@ -8,6 +8,7 @@ from Hinkskalle.tests.route_base import RouteBase, fake_auth, fake_admin_auth
 from Hinkskalle.tests.models.test_Container import _create_container
 from Hinkskalle.tests.models.test_Collection import _create_collection
 from Hinkskalle.models import Container
+from Hinkskalle import db
 
 class TestContainers(RouteBase):
   def test_list_noauth(self):
@@ -18,7 +19,7 @@ class TestContainers(RouteBase):
     container1, coll, entity = _create_container('cont1')
     container2, _, _ = _create_container('cont2')
     container2.collection_ref=coll
-    container2.save()
+    db.session.commit()
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}")
@@ -32,14 +33,11 @@ class TestContainers(RouteBase):
     container1, coll, entity = _create_container('cont1')
     container2, _, _ = _create_container('cont2')
     container1.createdBy='test.hase'
-    container1.save()
     container2.createdBy='test.hase'
     container2.collection_ref=coll
-    container2.save()
     coll.createdBy='test.hase'
-    coll.save()
     entity.createdBy='test.hase'
-    entity.save()
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}")
@@ -51,13 +49,10 @@ class TestContainers(RouteBase):
     container1, coll, entity = _create_container('cont1')
     container2, _, _ = _create_container('cont2')
     container1.createdBy='test.hase'
-    container1.save()
     container2.createdBy='test.kuh'
-    container2.save()
     coll.createdBy='test.hase'
-    coll.save()
     entity.name='default'
-    entity.save()
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.get(f"/v1/containers/default/{coll.name}")
@@ -82,12 +77,12 @@ class TestContainers(RouteBase):
       ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(container.id))
+    self.assertEqual(data['id'], container.id)
   
   def test_get_default_entity(self):
     container, coll, entity = _create_container()
     entity.name='default'
-    entity.save()
+    db.session.commit()
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/containers//{coll.name}/{container.name}")
@@ -98,12 +93,12 @@ class TestContainers(RouteBase):
       ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(container.id))
+    self.assertEqual(data['id'], container.id)
   
   def test_get_default_collection(self):
     container, coll, entity = _create_container()
     coll.name='default'
-    coll.save()
+    db.session.commit()
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/containers/{entity.name}//{container.name}")
@@ -113,14 +108,13 @@ class TestContainers(RouteBase):
       ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(container.id))
+    self.assertEqual(data['id'], container.id)
 
   def test_get_default_collection_default_entity(self):
     container, coll, entity = _create_container()
     entity.name='default'
-    entity.save()
     coll.name='default'
-    coll.save()
+    db.session.commit()
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/containers///{container.name}")
@@ -135,7 +129,7 @@ class TestContainers(RouteBase):
       ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(container.id))
+    self.assertEqual(data['id'], container.id)
 
     # double slash expansion gives an ambigous route (collides with list containers)
     # maybe we get by without it
@@ -148,37 +142,33 @@ class TestContainers(RouteBase):
     #   ret = self.client.get(ret.headers.get('Location'))
     # self.assertEqual(ret.status_code, 200)
     # data = ret.get_json().get('data')
-    # self.assertEqual(data['id'], str(container.id))
+    # self.assertEqual(data['id'], container.id)
 
     with fake_admin_auth(self.app):
       ret = self.client.get(f"/v1/containers/{container.name}")
     self.assertEqual(ret.status_code, 200, 'single slash')
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(container.id))
+    self.assertEqual(data['id'], container.id)
 
   def test_get_user(self):
     container, coll, entity = _create_container()
     entity.createdBy='test.hase'
-    entity.save()
     coll.createdBy='test.hase'
-    coll.save()
     container.createdBy='test.hase'
-    container.save()
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['id'], str(container.id))
+    self.assertEqual(data['id'], container.id)
 
   def test_get_user_other(self):
     container, coll, entity = _create_container()
     entity.createdBy='test.hase'
-    entity.save()
     coll.createdBy='test.hase'
-    coll.save()
     container.createdBy='test.kuh'
-    container.save()
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
@@ -189,37 +179,39 @@ class TestContainers(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/containers', json={
         'name': 'oink',
-        'collection': str(coll.id),
+        'collection': coll.id,
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertEqual(data['collection'], str(coll.id))
+    self.assertEqual(data['collection'], coll.id)
     self.assertEqual(data['createdBy'], 'test.hase')
   
   def test_create_private(self):
     coll, _ = _create_collection()
     coll.private = True
-    coll.save()
+    db.session.commit()
+
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/containers', json={
         'name': 'oink',
-        'collection': str(coll.id),
+        'collection': coll.id,
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    dbContainer = Container.objects.get(id=data['id'])
+    dbContainer = Container.query.get(data['id'])
     self.assertTrue(dbContainer.private)
 
-    coll.private = False
-    coll.save()
+    coll2, _ = _create_collection('no-private')
+    coll2.private = False
+    db.session.commit()
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/containers', json={
         'name': 'auch.oink',
-        'collection': str(coll.id),
+        'collection': coll2.id,
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    dbContainer = Container.objects.get(id=data['id'])
+    dbContainer = Container.query.get(data['id'])
     self.assertFalse(dbContainer.private)
 
 
@@ -231,7 +223,7 @@ class TestContainers(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/containers', json={
         'name': container.name,
-        'collection': str(coll.id),
+        'collection': coll.id,
       })
     self.assertEqual(ret.status_code, 412)
   
@@ -239,35 +231,33 @@ class TestContainers(RouteBase):
     with fake_admin_auth(self.app):
       ret = self.client.post('/v1/containers', json={
         'name': 'oink',
-        'collection': 'oink oink',
+        'collection': -666,
       })
-    self.assertEqual(ret.status_code, 500)
+    self.assertEqual(ret.status_code, 404)
   
   def test_create_user(self):
     coll, entity = _create_collection()
     entity.createdBy = 'test.hase'
-    entity.save()
     coll.createdBy = 'test.hase'
-    coll.save()
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.post('/v1/containers', json={
         'name': 'oink',
-        'collection': str(coll.id),
+        'collection': coll.id,
       })
     self.assertEqual(ret.status_code, 200)
 
   def test_create_user_other(self):
     coll, entity = _create_collection()
     entity.createdBy = 'test.hase'
-    entity.save()
     coll.createdBy = 'test.kuh'
-    coll.save()
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.post('/v1/containers', json={
         'name': 'oink',
-        'collection': str(coll.id),
+        'collection': coll.id,
       })
     self.assertEqual(ret.status_code, 403)
   
@@ -285,7 +275,7 @@ class TestContainers(RouteBase):
     
     self.assertEqual(ret.status_code, 200)
 
-    dbContainer = Container.objects.get(name=container.name)
+    dbContainer = Container.query.filter(Container.name==container.name).one()
     self.assertEqual(dbContainer.description, 'Mei Huat')
     self.assertEqual(dbContainer.fullDescription, 'Der hot Drei Eckn')
     self.assertTrue(dbContainer.private)
@@ -298,7 +288,7 @@ class TestContainers(RouteBase):
   def test_update_user(self):
     container, coll, entity = _create_container()
     container.createdBy = 'test.hase'
-    container.save()
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.put(f"/v1/containers/{entity.name}/{coll.name}/{container.name}", json={
@@ -314,7 +304,7 @@ class TestContainers(RouteBase):
   def test_update_user_other(self):
     container, coll, entity = _create_container()
     container.createdBy = 'test.ziege'
-    container.save()
+    db.session.commit()
 
     with fake_auth(self.app):
       ret = self.client.put(f"/v1/containers/{entity.name}/{coll.name}/{container.name}", json={

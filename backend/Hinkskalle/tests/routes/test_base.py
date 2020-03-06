@@ -1,8 +1,9 @@
 import unittest
 
-from Hinkskalle.tests.route_base import RouteBase, fake_auth
+from Hinkskalle.tests.route_base import RouteBase, fake_auth, fake_admin_auth
 from Hinkskalle.tests.models.test_Image import _create_image
 from Hinkskalle.models import Image
+from Hinkskalle import db
 
 class TestBase(RouteBase):
   def test_version(self):
@@ -41,7 +42,7 @@ class TestBase(RouteBase):
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
 
-    self.assertListEqual([ c['container']['id'] for c in json ], [ str(image1.container_ref.id), ] )
+    self.assertListEqual([ c['container']['id'] for c in json ], [ image1.container_ref.id, ] )
 
     images=[]
     for idx in range(1, 12):
@@ -50,17 +51,18 @@ class TestBase(RouteBase):
       images.append(img)
     images.reverse()
     
-    with fake_auth(self.app):
+    with fake_admin_auth(self.app):
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
 
-    self.assertListEqual([ c['container']['id'] for c in json ], [ str(img.container_ref.id) for img in images[:10] ] )
+    self.assertListEqual([ c['container']['id'] for c in json ], [ img.container_ref.id for img in images[:10] ] )
   
   def test_latest_collect_images(self):
     image1, container1, _, _ = _create_image(postfix='hase1')
     image2 = Image(container_ref=container1, hash='blahase1')
-    image2.save()
+    db.session.add(image2)
+    db.session.commit()
 
     image3, container3, _, _ = _create_image(postfix="fuchs1")
 
@@ -68,12 +70,12 @@ class TestBase(RouteBase):
     container1.tag_image('v2.0', image2.id)
     container3.tag_image('nomnom', image3.id)
 
-    with fake_auth(self.app):
+    with fake_admin_auth(self.app):
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
 
-    self.assertCountEqual([ c['container']['id'] for c in json ], [ str(container.id) for container in [container1, container3]])
+    self.assertCountEqual([ c['container']['id'] for c in json ], [ container.id for container in [container1, container3]])
 
 
   def test_latest_collect_tags(self):
@@ -81,9 +83,55 @@ class TestBase(RouteBase):
     container1.tag_image('v1.0', image1.id)
     container1.tag_image('oink', image1.id)
 
-    with fake_auth(self.app):
+    with fake_admin_auth(self.app):
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
     self.assertCountEqual(json[0]['tags'], [ 'v1.0', 'oink'])
 
+  def test_latest_user(self):
+    image1, container1, _, _ = _create_image()
+    container1.tag_image('oink', image1.id)
+
+    with fake_auth(self.app):
+      ret = self.client.get('/v1/latest')
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertCountEqual(json[0]['tags'], [ 'oink' ])
+
+  def test_latest_private(self):
+    image1, container1, _, _ = _create_image()
+    container1.tag_image('oink', image1.id)
+    container1.private=True
+    db.session.commit()
+
+    with fake_auth(self.app):
+      ret = self.client.get('/v1/latest')
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertCountEqual(json, [])
+
+  def test_latest_own_private(self):
+    image1, container1, _, _ = _create_image()
+    container1.tag_image('oink', image1.id)
+    container1.private=True
+    container1.createdBy='test.hase'
+    db.session.commit()
+
+    with fake_auth(self.app):
+      ret = self.client.get('/v1/latest')
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertCountEqual(json[0]['tags'], [ 'oink' ])
+
+  def test_latest_admin_private(self):
+    image1, container1, _, _ = _create_image()
+    container1.tag_image('oink', image1.id)
+    container1.private=True
+    db.session.commit()
+
+    with fake_admin_auth(self.app):
+      ret = self.client.get('/v1/latest')
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertCountEqual(json[0]['tags'], [ 'oink' ])

@@ -1,9 +1,9 @@
-from mongoengine import Document, StringField, IntField, BooleanField, DateTimeField
+from Hinkskalle import db
 from marshmallow import fields, Schema
 from datetime import datetime
 
 class EntitySchema(Schema):
-  id = fields.String(required=True, dump_only=True)
+  id = fields.Integer(required=True, dump_only=True)
   name = fields.String(required=True)
   description = fields.String(allow_none=True)
   createdAt = fields.DateTime(dump_only=True)
@@ -19,22 +19,25 @@ class EntitySchema(Schema):
   collections = fields.String(dump_only=True, many=True)
 
 
-class Entity(Document):
-  name = StringField(required=True, unique=True)
-  description = StringField()
-  customData = StringField()
-  defaultPrivate = BooleanField(default=False)
-  quota = IntField(default=0)
+class Entity(db.Model):
+  id = db.Column(db.Integer, primary_key=True)
+  name = db.Column(db.String(), unique=True, nullable=False)
+  description = db.Column(db.String())
+  customData = db.Column(db.String())
 
-  createdAt = DateTimeField(default=datetime.utcnow)
-  createdBy = StringField()
-  updatedAt = DateTimeField()
-  deletedAt = DateTimeField()
-  deleted = BooleanField(required=True, default=False)
+  defaultPrivate = db.Column(db.Boolean, default=False)
+  quota = db.Column(db.Integer, default=0)
+
+  createdAt = db.Column(db.DateTime, default=datetime.utcnow)
+  createdBy = db.Column(db.String())
+  updatedAt = db.Column(db.DateTime)
+  deletedAt = db.Column(db.DateTime)
+  deleted = db.Column(db.Boolean, default=False, nullable=False)
+
+  collections_ref = db.relationship('Collection', backref='entity_ref', lazy='dynamic')
 
   def size(self):
-    from Hinkskalle.models import Collection
-    return Collection.objects(entity_ref=self).count() if not self._created else 0
+    return self.collections_ref.count()
 
   def check_access(self, fsk_user):
     if fsk_user.is_admin:

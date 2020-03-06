@@ -1,7 +1,7 @@
-from Hinkskalle import registry
+from Hinkskalle import registry, db
 from flask_rebar import ResponseSchema, errors
 from marshmallow import fields, Schema
-from mongoengine import DoesNotExist
+from sqlalchemy.orm.exc import NoResultFound
 from flask import url_for, current_app
 
 from Hinkskalle.models import Entity, Collection, Container, Image
@@ -22,19 +22,19 @@ class ManifestResponseSchema(ResponseSchema):
 def get_manifest(collection_id, tagged_container_id):
   container_id, tag = _parse_tag(tagged_container_id)
   try:
-    entity = Entity.objects.get(name='default')
-  except DoesNotExist:
+    entity = Entity.query.filter(Entity.name=='default').one()
+  except NoResultFound:
     current_app.logger.debug("no default entity")
     raise errors.NotFound(f"default entity not found")
 
   try:
-    collection = Collection.objects.get(name=collection_id, entity_ref=entity)
-  except DoesNotExist:
+    collection = entity.collections_ref.filter(Collection.name==collection_id).one()
+  except NoResultFound:
     current_app.logger.debug(f"collection {collection_id} not found for default entity")
     raise errors.NotFound(f"collection {collection_id} does not exist.")
 
   try:
-    container = Container.objects.get(name=container_id, collection_ref=collection)
+    container = collection.containers_ref.filter(Container.name==container_id).one()
   except:
     current_app.logger.debug(f"container {container_id} not found for default/{collection.name}")
     raise errors.NotFound(f"container {container_id} not found.") 

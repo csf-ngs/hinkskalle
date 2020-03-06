@@ -45,6 +45,9 @@ steps:
     path: /root/.docker
   commands:
   - docker push docker.ngs.vbcf.ac.at/hinkskalle
+  when:
+    event:
+      - tag
 volumes:
 - name: dockersock
   host:

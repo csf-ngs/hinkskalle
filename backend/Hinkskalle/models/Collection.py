@@ -1,11 +1,11 @@
-from mongoengine import Document, StringField, ReferenceField, BooleanField, DateTimeField
+from Hinkskalle import db
 from marshmallow import Schema, fields
 from datetime import datetime
 
 from Hinkskalle.models import Entity
 
 class CollectionSchema(Schema):
-  id = fields.String(required=True, dump_only=True)
+  id = fields.Integer(required=True, dump_only=True)
   name = fields.String(required=True)
   description = fields.String(allow_none=True)
   createdAt = fields.DateTime(dump_only=True)
@@ -17,29 +17,33 @@ class CollectionSchema(Schema):
   private = fields.Boolean()
   customData = fields.String(allow_none=True)
 
-  entity = fields.String(required=True)
+  entity = fields.Integer(required=True)
   entityName = fields.String(dump_only=True)
 
   containers = fields.String(dump_only=True, many=True)
 
 
-class Collection(Document):
-  name = StringField(required=True, unique_with='entity_ref')
-  description = StringField()
-  customData = StringField()
-  private = BooleanField(default=False)
+class Collection(db.Model):
+  id = db.Column(db.Integer, primary_key=True)
+  name = db.Column(db.String(), nullable=False)
+  description = db.Column(db.String())
+  customData = db.Column(db.String())
+  private = db.Column(db.Boolean, default=False)
 
-  entity_ref = ReferenceField(Entity, required=True)
+  entity_id = db.Column(db.Integer, db.ForeignKey('entity.id'), nullable=False)
 
-  createdAt = DateTimeField(default=datetime.utcnow)
-  createdBy = StringField()
-  updatedAt = DateTimeField()
-  deletedAt = DateTimeField()
-  deleted = BooleanField(required=True, default=False)
+  createdAt = db.Column(db.DateTime, default=datetime.utcnow)
+  createdBy = db.Column(db.String())
+  updatedAt = db.Column(db.DateTime)
+  deletedAt = db.Column(db.DateTime)
+  deleted = db.Column(db.Boolean, default=False, nullable=False)
+
+  containers_ref = db.relationship('Container', backref='collection_ref', lazy='dynamic')
+
+  __table_args__ = (db.UniqueConstraint('name', 'entity_id', name='name_entity_id_idx'),)
 
   def size(self):
-    from Hinkskalle.models import Container
-    return Container.objects(collection_ref=self).count() if not self._created else 0
+    return self.containers_ref.count()
 
   def entity(self):
     return self.entity_ref.id

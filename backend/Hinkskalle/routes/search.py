@@ -29,16 +29,15 @@ class SearchQuerySchema(RequestSchema):
 )
 def search():
   args = rebar.validated_args
-  value_re = re.compile(args['value'], re.IGNORECASE)
-  if g.fsk_user.is_admin:
-    query = Q(name=value_re)
-  else:
-    query = Q(name=value_re) & Q(createdBy=g.fsk_user.username)
 
-  entities = Entity.objects(query)
-  collections = Collection.objects(query)
-  containers = Container.objects(query)
+  entities = Entity.query.filter(Entity.name.ilike(f"%{args['value']}%"))
+  collections = Collection.query.filter(Collection.name.ilike(f"%{args['value']}%"))
+  containers = Container.query.filter(Container.name.ilike(f"%{args['value']}%"))
 
+  if not g.fsk_user.is_admin:
+    entities = entities.filter(Entity.createdBy==g.fsk_user.username)
+    collections = collections.filter(Collection.createdBy==g.fsk_user.username)
+    containers = containers.filter(Container.createdBy==g.fsk_user.username)
 
   return {
     'data': {

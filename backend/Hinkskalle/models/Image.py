@@ -21,8 +21,8 @@ class ImageSchema(Schema):
   createdAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(dump_only=True)
   updatedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deletedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deleted = fields.Boolean(dump_only=True)
+  deletedAt = fields.DateTime(dump_only=True, default=None)
+  deleted = fields.Boolean(dump_only=True, default=False)
 
   container = fields.String(required=True)
   containerName = fields.String(dump_only=True)
@@ -48,8 +48,6 @@ class Image(db.Model):
   createdAt = db.Column(db.DateTime, default=datetime.utcnow)
   createdBy = db.Column(db.String())
   updatedAt = db.Column(db.DateTime)
-  deletedAt = db.Column(db.DateTime)
-  deleted = db.Column(db.Boolean, default=False, nullable=False)
 
   location = db.Column(db.String())
 

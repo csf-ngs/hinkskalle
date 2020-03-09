@@ -73,3 +73,6 @@ class TestEntity(ModelBase):
     self.assertEqual(serialized.data['id'], entity.id)
     self.assertEqual(serialized.data['name'], entity.name)
 
+    self.assertIsNone(serialized.data['deletedAt'])
+    self.assertFalse(serialized.data['deleted'])
+

@@ -11,8 +11,8 @@ class CollectionSchema(Schema):
   createdAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(dump_only=True, allow_none=True)
   updatedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deletedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deleted = fields.Boolean(dump_only=True)
+  deletedAt = fields.DateTime(dump_only=True, default=None)
+  deleted = fields.Boolean(dump_only=True, default=False)
   size = fields.Integer(dump_only=True)
   private = fields.Boolean()
   customData = fields.String(allow_none=True)
@@ -35,8 +35,6 @@ class Collection(db.Model):
   createdAt = db.Column(db.DateTime, default=datetime.utcnow)
   createdBy = db.Column(db.String())
   updatedAt = db.Column(db.DateTime)
-  deletedAt = db.Column(db.DateTime)
-  deleted = db.Column(db.Boolean, default=False, nullable=False)
 
   containers_ref = db.relationship('Container', backref='collection_ref', lazy='dynamic')
 

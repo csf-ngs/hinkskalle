@@ -110,3 +110,6 @@ class TestCollection(ModelBase):
     self.assertEqual(serialized.data['entity'], str(entity.id))
     self.assertEqual(serialized.data['entityName'], entity.name)
 
+    self.assertIsNone(serialized.data['deletedAt'])
+    self.assertFalse(serialized.data['deleted'])
+

@@ -9,8 +9,8 @@ class EntitySchema(Schema):
   createdAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(dump_only=True, allow_none=True)
   updatedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deletedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deleted = fields.Boolean(dump_only=True)
+  deletedAt = fields.DateTime(dump_only=True, default=None)
+  deleted = fields.Boolean(dump_only=True, default=False)
   size = fields.Integer(dump_only=True)
   quota = fields.Integer(dump_only=True)
   defaultPrivate = fields.Boolean()
@@ -31,8 +31,6 @@ class Entity(db.Model):
   createdAt = db.Column(db.DateTime, default=datetime.utcnow)
   createdBy = db.Column(db.String())
   updatedAt = db.Column(db.DateTime)
-  deletedAt = db.Column(db.DateTime)
-  deleted = db.Column(db.Boolean, default=False, nullable=False)
 
   collections_ref = db.relationship('Collection', backref='entity_ref', lazy='dynamic')
 

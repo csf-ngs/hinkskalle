@@ -10,7 +10,7 @@ currently:
 
 - can create entity with own username
 - full control underneath own entity (search/push)
-- can pull from `default` entitty
+- can pull from `default` entity
 
 - pull is public
 

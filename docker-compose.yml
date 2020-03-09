@@ -1,7 +1,7 @@
 version: '3'
 services:
   api:
-    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.3.0"
+    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.3.2"
     volumes:
       - '.:/srv/hinkskalle/src'
       - './data/sqlite:/data/db'

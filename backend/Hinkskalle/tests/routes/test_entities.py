@@ -69,8 +69,8 @@ class TestEntities(RouteBase):
       #'createdAt': entity.createdAt.isoformat('T', timespec='milliseconds'),
       'createdBy': entity.createdBy,
       'updatedAt': entity.updatedAt,
-      'deletedAt': entity.deletedAt,
-      'deleted': entity.deleted,
+      'deletedAt': None,
+      'deleted': False,
     })
   
   def test_get_default(self):

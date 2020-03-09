@@ -11,5 +11,6 @@ setup(
         'Flask-SQLAlchemy',
         'flask-rebar',
         'requests',
+        'passlib',
     ],
 )

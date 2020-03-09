@@ -61,6 +61,17 @@ class TestUser(ModelBase):
     read_user = User.query.filter_by(username=user.username).one()
     self.assertListEqual(read_user.tokens, [read_token])
   
+  def test_password(self):
+    user = _create_user()
+    user.set_password('geheimhase')
+    db.session.commit()
+
+    read_user = User.query.filter_by(username=user.username).one()
+    self.assertNotEqual(read_user.password, 'geheimhase')
+
+    self.assertTrue(read_user.check_password('geheimhase'))
+    self.assertFalse(read_user.check_password('Falscher Hase'))
+  
   def test_schema(self):
     schema = UserSchema()
     user = _create_user()
@@ -75,6 +86,7 @@ class TestUser(ModelBase):
     self.assertIsNone(serialized.data['deletedAt'])
 
     self.assertNotIn('tokens', serialized.data)
+    self.assertNotIn('password', serialized.data)
 
     user.is_admin=True
     serialized = schema.dump(user)

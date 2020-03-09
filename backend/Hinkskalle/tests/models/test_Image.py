@@ -1,5 +1,4 @@
 import unittest
-from mongoengine import connect, disconnect
 from datetime import datetime, timedelta
 
 from Hinkskalle.models import Entity, Collection, Container, Image, ImageSchema, Tag

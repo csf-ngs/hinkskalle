@@ -3,7 +3,6 @@ from flask_rebar import RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
 from flask import current_app, g
 import re
-from mongoengine.queryset.visitor import Q
 
 
 from Hinkskalle.models import Entity, EntitySchema, Collection, CollectionSchema, Container, ContainerSchema, ImageSchema

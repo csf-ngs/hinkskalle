@@ -33,7 +33,7 @@ class Collection(db.Model):
   entity_id = db.Column(db.Integer, db.ForeignKey('entity.id'), nullable=False)
 
   createdAt = db.Column(db.DateTime, default=datetime.utcnow)
-  createdBy = db.Column(db.String(), db.ForeignKey('user.id'))
+  createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime)
 
   entity_ref = db.relationship('Entity', back_populates='collections_ref')

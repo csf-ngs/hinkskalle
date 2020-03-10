@@ -46,7 +46,7 @@ class Image(db.Model):
   container_id = db.Column(db.Integer, db.ForeignKey('container.id'), nullable=False)
 
   createdAt = db.Column(db.DateTime, default=datetime.utcnow)
-  createdBy = db.Column(db.String(), db.ForeignKey('user.id'))
+  createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime)
 
   owner = db.relationship('User', back_populates='images')

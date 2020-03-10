@@ -36,7 +36,8 @@ class Collection(db.Model):
   createdBy = db.Column(db.String(), db.ForeignKey('user.id'))
   updatedAt = db.Column(db.DateTime)
 
-  containers_ref = db.relationship('Container', backref='collection_ref', lazy='dynamic')
+  entity_ref = db.relationship('Entity', back_populates='collections_ref')
+  containers_ref = db.relationship('Container', back_populates='collection_ref', lazy='dynamic')
   owner = db.relationship('User', back_populates='collections')
 
   __table_args__ = (db.UniqueConstraint('name', 'entity_id', name='name_entity_id_idx'),)

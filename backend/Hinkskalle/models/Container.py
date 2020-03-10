@@ -51,7 +51,8 @@ class Container(db.Model):
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime)
 
-  images_ref = db.relationship('Image', backref='container_ref', lazy='dynamic')
+  collection_ref = db.relationship('Collection', back_populates='containers_ref')
+  images_ref = db.relationship('Image', back_populates='container_ref', lazy='dynamic')
   owner = db.relationship('User', back_populates='containers')
 
   __table_args__ = (db.UniqueConstraint('name', 'collection_id', name='name_collection_id_idx'),)

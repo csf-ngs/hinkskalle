@@ -34,7 +34,7 @@ class Entity(db.Model):
 
   owner = db.relationship('User', back_populates='entities')
 
-  collections_ref = db.relationship('Collection', backref='entity_ref', lazy='dynamic')
+  collections_ref = db.relationship('Collection', back_populates='entity_ref', lazy='dynamic')
 
   def size(self):
     return self.collections_ref.count()

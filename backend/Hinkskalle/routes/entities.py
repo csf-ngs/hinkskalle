@@ -31,7 +31,7 @@ def list_entities():
   if g.fsk_user.is_admin:
     objs = Entity.query.all()
   else:
-    objs = Entity.query.filter(or_(Entity.createdBy==g.fsk_user.username, Entity.name=='default'))
+    objs = Entity.query.filter(or_(Entity.owner==g.fsk_user, Entity.name=='default'))
   return { 'data': list(objs) }
 
 @registry.handles(
@@ -76,7 +76,7 @@ def create_entity():
     raise errors.Forbidden('You can only create an entity with your username.')
 
   new_entity = Entity(**body)
-  new_entity.createdBy = g.fsk_user.username
+  new_entity.owner = g.fsk_user
 
   try:
     db.session.add(new_entity)

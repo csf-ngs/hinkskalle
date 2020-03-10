@@ -51,7 +51,7 @@ def list_collections(entity_id):
   if g.fsk_user.is_admin:
     objs = Collection.query.filter(Collection.entity_id == entity.id).all()
   else:
-    objs = Collection.query.filter(Collection.entity_id == entity.id, Collection.createdBy==g.fsk_user.username).all()
+    objs = Collection.query.filter(Collection.entity_id == entity.id, Collection.owner==g.fsk_user).all()
   
   return { 'data': list(objs) }
 
@@ -114,7 +114,7 @@ def create_collection():
   new_collection.entity_ref=entity
   if entity.defaultPrivate:
     new_collection.private=True
-  new_collection.createdBy=g.fsk_user.username
+  new_collection.owner=g.fsk_user
 
   try:
     db.session.add(new_collection)

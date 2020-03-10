@@ -155,9 +155,7 @@ class TestContainer(ModelBase):
 
     container, collection, entity = _create_container('owned')
     entity.createdBy='oink'
-    db.session.commit()
     collection.createdBy='oink'
-    db.session.commit()
     container.createdBy='oink'
     self.assertTrue(container.check_access(user))
 
@@ -166,9 +164,7 @@ class TestContainer(ModelBase):
 
     container, collection, entity = _create_container('default')
     entity.name='default'
-    db.session.commit()
     collection.createdBy='oink'
-    db.session.commit()
     container.createdBy='oink'
     self.assertTrue(container.check_access(user))
 

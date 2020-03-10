@@ -2,9 +2,8 @@ from datetime import datetime, timedelta
 
 from Hinkskalle.models import Entity, Collection, Container, ContainerSchema, Image, Tag
 from Hinkskalle.tests.models.test_Collection import _create_collection
-from Hinkskalle.tests.model_base import ModelBase
+from Hinkskalle.tests.model_base import ModelBase, _create_user
 from Hinkskalle import db
-from Hinkskalle.fsk_api import FskUser
 
 
 def _create_container(postfix='container'):
@@ -146,40 +145,41 @@ class TestContainer(ModelBase):
     
 
   def test_access(self):
-    admin = FskUser('oink', True)
-    user = FskUser('oink', False)
+    admin = _create_user(name='admin.oink', is_admin=True)
+    user = _create_user(name='user.oink', is_admin=False)
+    other_user = _create_user(name='user.muh', is_admin=False)
 
     container, collection, entity = _create_container()
     self.assertTrue(container.check_access(admin))
     self.assertFalse(container.check_access(user))
 
     container, collection, entity = _create_container('owned')
-    entity.createdBy='oink'
-    collection.createdBy='oink'
-    container.createdBy='oink'
+    entity.owner=user
+    collection.owner=user
+    container.owner=user
     self.assertTrue(container.check_access(user))
 
-    container.createdBy='muh'
+    container.owner=other_user
     self.assertFalse(container.check_access(user))
 
     container, collection, entity = _create_container('default')
     entity.name='default'
-    collection.createdBy='oink'
-    container.createdBy='oink'
+    collection.owner=user
+    container.owner=user
     self.assertTrue(container.check_access(user))
 
-    container.createdBy='muh'
+    container.owner=other_user
     self.assertFalse(container.check_access(user))
   
   def test_update_access(self):
-    admin = FskUser('admin.oink', True)
-    user = FskUser('user.oink', False)
+    admin = _create_user(name='admin.oink', is_admin=True)
+    user = _create_user(name='user.oink', is_admin=False)
 
     container, _, _ = _create_container()
     self.assertTrue(container.check_update_access(admin))
     self.assertFalse(container.check_update_access(user))
 
-    container.createdBy = user.username
+    container.owner = user
     self.assertTrue(container.check_update_access(user))
 
 

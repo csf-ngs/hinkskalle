@@ -1,15 +1,9 @@
 from datetime import datetime, timedelta
-from Hinkskalle.tests.model_base import ModelBase
+from Hinkskalle.tests.model_base import ModelBase, _create_group, _create_user
 
 from Hinkskalle.models import Group, GroupSchema
 
 from Hinkskalle import db
-
-def _create_group(name='Testhasenstall'):
-  group = Group(name=name, email=name+'@ha.se')
-  db.session.add(group)
-  db.session.commit()
-  return group
 
 class TestGroup(ModelBase):
 
@@ -35,7 +29,6 @@ class TestGroup(ModelBase):
   
   def test_schema_users(self):
     schema = GroupSchema()
-    from Hinkskalle.tests.models.test_User import _create_user
     user = _create_user()
     group = _create_group()
     group.users.append(user)

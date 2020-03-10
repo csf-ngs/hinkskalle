@@ -33,10 +33,11 @@ class Collection(db.Model):
   entity_id = db.Column(db.Integer, db.ForeignKey('entity.id'), nullable=False)
 
   createdAt = db.Column(db.DateTime, default=datetime.utcnow)
-  createdBy = db.Column(db.String())
+  createdBy = db.Column(db.String(), db.ForeignKey('user.id'))
   updatedAt = db.Column(db.DateTime)
 
   containers_ref = db.relationship('Container', backref='collection_ref', lazy='dynamic')
+  owner = db.relationship('User', back_populates='collections')
 
   __table_args__ = (db.UniqueConstraint('name', 'entity_id', name='name_entity_id_idx'),)
 
@@ -48,18 +49,18 @@ class Collection(db.Model):
   def entityName(self):
     return self.entity_ref.name
   
-  def check_access(self, fsk_user):
-    if fsk_user.is_admin:
+  def check_access(self, user):
+    if user.is_admin:
       return True
-    elif self.createdBy == fsk_user.username:
+    elif self.owner == user:
       return True
     else:
       return False
   
-  def check_update_access(self, fsk_user):
-    if fsk_user.is_admin:
+  def check_update_access(self, user):
+    if user.is_admin:
       return True
-    elif self.createdBy == fsk_user.username:
+    elif self.owner == user:
       return True
     else:
       return False

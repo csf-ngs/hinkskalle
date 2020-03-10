@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
 
-from Hinkskalle.tests.model_base import ModelBase
+from Hinkskalle.tests.model_base import ModelBase, _create_user
 from Hinkskalle.models import Entity, EntitySchema, Collection
-from Hinkskalle.fsk_api import FskUser
 from Hinkskalle import db
 
 class TestEntity(ModelBase):
@@ -38,26 +37,26 @@ class TestEntity(ModelBase):
     self.assertEqual(ent.size(), 1)
 
   def test_access(self):
-    admin = FskUser('oink', True)
-    user = FskUser('oink', False)
+    admin = _create_user(name='admin.oink', is_admin=True)
+    user = _create_user(name='user.oink', is_admin=False)
     entity = Entity(name='test-hase')
     self.assertTrue(entity.check_access(admin))
     self.assertFalse(entity.check_access(user))
-    entity.createdBy='oink'
+    entity.owner=user
     self.assertTrue(entity.check_access(user))
 
     default = Entity(name='default')
     self.assertTrue(default.check_access(user))
 
   def test_update_access(self):
-    admin = FskUser('oink', True)
-    user = FskUser('oink', False)
+    admin = _create_user(name='admin.oink', is_admin=True)
+    user = _create_user(name='user.oink', is_admin=False)
     entity = Entity(name='test-hase')
 
     self.assertTrue(entity.check_update_access(admin))
     self.assertFalse(entity.check_update_access(user))
 
-    entity.createdBy='oink'
+    entity.owner=user
     self.assertTrue(entity.check_update_access(user))
 
     default = Entity(name='default')

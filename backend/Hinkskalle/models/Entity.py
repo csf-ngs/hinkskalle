@@ -29,26 +29,28 @@ class Entity(db.Model):
   quota = db.Column(db.Integer, default=0)
 
   createdAt = db.Column(db.DateTime, default=datetime.utcnow)
-  createdBy = db.Column(db.String())
+  createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime)
+
+  owner = db.relationship('User', back_populates='entities')
 
   collections_ref = db.relationship('Collection', backref='entity_ref', lazy='dynamic')
 
   def size(self):
     return self.collections_ref.count()
 
-  def check_access(self, fsk_user):
-    if fsk_user.is_admin:
+  def check_access(self, user):
+    if user.is_admin:
       return True
-    elif self.createdBy==fsk_user.username or self.name=='default':
+    elif self.owner==user or self.name=='default':
       return True
     else:
       return False
   
-  def check_update_access(self, fsk_user):
-    if fsk_user.is_admin:
+  def check_update_access(self, user):
+    if user.is_admin:
       return True
-    elif self.createdBy == fsk_user.username:
+    elif self.owner == user:
       return True
     else:
       return False

@@ -42,6 +42,12 @@ class User(db.Model):
   createdBy = db.Column(db.String())
   updatedAt = db.Column(db.DateTime)
 
+  entities = db.relationship('Entity', back_populates='owner')
+  collections = db.relationship('Collection', back_populates='owner')
+  containers = db.relationship('Container', back_populates='owner')
+  images = db.relationship('Image', back_populates='owner')
+  tags = db.relationship('Tag', back_populates='owner')
+
   def set_password(self, pw):
     self.password = sha512_crypt.hash(pw)
   

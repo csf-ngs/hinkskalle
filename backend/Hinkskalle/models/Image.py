@@ -46,12 +46,14 @@ class Image(db.Model):
   container_id = db.Column(db.Integer, db.ForeignKey('container.id'), nullable=False)
 
   createdAt = db.Column(db.DateTime, default=datetime.utcnow)
-  createdBy = db.Column(db.String())
+  createdBy = db.Column(db.String(), db.ForeignKey('user.id'))
   updatedAt = db.Column(db.DateTime)
+
+  owner = db.relationship('User', back_populates='images')
 
   location = db.Column(db.String())
 
-  tags_ref = db.relationship('Tag', backref='image_ref', lazy='dynamic')
+  tags_ref = db.relationship('Tag', back_populates='image_ref', lazy='dynamic')
 
   __table_args__ = (db.UniqueConstraint('hash', 'container_id', name='hash_container_id_idx'),)
 
@@ -82,15 +84,15 @@ class Image(db.Model):
   def make_filename(self):
     return f"{self.hash}.sif"
   
-  def check_access(self, fsk_user):
+  def check_access(self, user):
     if not self.container_ref.private:
       return True
     
-    if not fsk_user:
+    if not user:
       return False
     
-    return self.container_ref.check_access(fsk_user)
+    return self.container_ref.check_access(user)
   
-  def check_update_access(self, fsk_user):
-    return self.container_ref.check_update_access(fsk_user)
+  def check_update_access(self, user):
+    return self.container_ref.check_update_access(user)
    

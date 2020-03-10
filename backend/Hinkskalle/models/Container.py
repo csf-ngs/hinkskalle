@@ -48,10 +48,11 @@ class Container(db.Model):
   collection_id = db.Column(db.Integer, db.ForeignKey('collection.id'), nullable=False)
 
   createdAt = db.Column(db.DateTime, default=datetime.utcnow)
-  createdBy = db.Column(db.String())
+  createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime)
 
   images_ref = db.relationship('Image', backref='container_ref', lazy='dynamic')
+  owner = db.relationship('User', back_populates='containers')
 
   __table_args__ = (db.UniqueConstraint('name', 'collection_id', name='name_collection_id_idx'),)
 
@@ -93,18 +94,18 @@ class Container(db.Model):
   def archTags(self):
     return {}
   
-  def check_access(self, fsk_user):
-    if fsk_user.is_admin:
+  def check_access(self, user):
+    if user.is_admin:
       return True
-    elif self.createdBy == fsk_user.username:
+    elif self.owner == user:
       return True
     else:
       return False
   
-  def check_update_access(self, fsk_user):
-    if fsk_user.is_admin:
+  def check_update_access(self, user):
+    if user.is_admin:
       return True
-    elif self.createdBy == fsk_user.username:
+    elif self.owner == user:
       return True
     else:
       return False

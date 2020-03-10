@@ -1,18 +1,9 @@
 from datetime import datetime, timedelta
-from Hinkskalle.tests.model_base import ModelBase
+from Hinkskalle.tests.model_base import ModelBase, _create_group, _create_user
 
 from Hinkskalle.models import User, UserSchema, Group, Token, TokenSchema
 
-from Hinkskalle.tests.models.test_Group import _create_group
-
 from Hinkskalle import db
-
-def _create_user(name='test.hase'):
-  firstname, lastname = name.split('.')
-  user = User(username=name, email=name+'@ha.se', firstname=firstname, lastname=lastname)
-  db.session.add(user)
-  db.session.commit()
-  return user
 
 class TestUser(ModelBase):
 

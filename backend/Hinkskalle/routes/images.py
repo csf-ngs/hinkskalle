@@ -150,7 +150,7 @@ def create_image():
 
   new_image = Image(**body)
   new_image.container_ref=container
-  new_image.createdBy = g.fsk_user.username
+  new_image.owner = g.fsk_user
 
   # the db session autoflushes when running the query below
   # so we have to add here and catch any IntegrityError exceptions. 

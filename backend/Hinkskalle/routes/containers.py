@@ -62,7 +62,7 @@ def list_containers(entity_id, collection_id):
   if g.fsk_user.is_admin:
     objs = collection.containers_ref.all()
   else:
-    objs = collection.containers_ref.filter(Container.createdBy==g.fsk_user.username)
+    objs = collection.containers_ref.filter(Container.owner==g.fsk_user)
 
   return { 'data': list(objs) }
 
@@ -109,7 +109,7 @@ def create_container():
   body.pop('collection')
   new_container = Container(**body)
   new_container.collection_ref=collection
-  new_container.createdBy=g.fsk_user.username
+  new_container.owner=g.fsk_user
   db.session.expire(collection)
   if collection.private:
     new_container.private = True

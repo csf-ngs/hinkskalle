@@ -3,7 +3,7 @@ import os.path
 import json
 import tempfile
 import hashlib
-from Hinkskalle.tests.route_base import RouteBase, fake_auth, fake_admin_auth
+from Hinkskalle.tests.route_base import RouteBase
 
 from Hinkskalle.models import Image, Tag, Container
 from Hinkskalle.tests.models.test_Image import _create_image
@@ -72,13 +72,13 @@ class TestImages(RouteBase):
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 403)
 
-    with fake_auth(self.app):
+    with self.fake_auth():
       ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
       self.assertEqual(ret.status_code, 308)
       ret = self.client.get(ret.headers.get('Location'))
       self.assertEqual(ret.status_code, 403)
 
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
       self.assertEqual(ret.status_code, 308)
       ret = self.client.get(ret.headers.get('Location'))
@@ -92,12 +92,12 @@ class TestImages(RouteBase):
     latest_tag = Tag(name='latest', image_ref=image)
     db.session.add(latest_tag)
     container.private = True
-    container.createdBy = 'test.hase'
+    container.owner=self.user
     db.session.commit()
 
     tmpf = _fake_img_file(image)
     
-    with fake_auth(self.app):
+    with self.fake_auth():
       ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
       self.assertEqual(ret.status_code, 308)
       ret = self.client.get(ret.headers.get('Location'))
@@ -235,7 +235,7 @@ class TestImages(RouteBase):
     image_id = image.id
     container_id = container.id
 
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
     self.assertEqual(ret.status_code, 200)
     # no more auto-tagging
@@ -257,7 +257,7 @@ class TestImages(RouteBase):
     image.hash = digest
     db.session.commit()
 
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
     self.assertEqual(ret.status_code, 406)
 
@@ -267,7 +267,7 @@ class TestImages(RouteBase):
 
     img_data=b"Hello Dorian!"
 
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
     self.assertEqual(ret.status_code, 422)
   
@@ -277,7 +277,7 @@ class TestImages(RouteBase):
     img_data, digest = _prepare_img_data()
     image.hash=digest
     db.session.commit()
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
     self.assertEqual(ret.status_code, 200)
   
@@ -291,7 +291,7 @@ class TestImages(RouteBase):
     image.hash=digest
     db.session.commit()
     image_id = image.id
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
     self.assertEqual(ret.status_code, 200)
     read_image = Image.query.get(image_id)
@@ -299,9 +299,9 @@ class TestImages(RouteBase):
 
   def test_push_user(self):
     image, container, coll, entity = _create_image()
-    entity.createdBy = 'test.hase'
-    coll.createdBy = 'test.hase'
-    container.createdBy = 'test.hase'
+    entity.owner=self.user
+    coll.owner=self.user
+    container.owner=self.user
     db.session.commit()
 
     self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
@@ -309,15 +309,15 @@ class TestImages(RouteBase):
     image.hash = digest
     db.session.commit()
 
-    with fake_auth(self.app):
+    with self.fake_auth():
       ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
     self.assertEqual(ret.status_code, 200)
 
   def test_push_user_other(self):
     image, container, coll, entity = _create_image()
-    entity.createdBy = 'test.hase'
-    coll.createdBy = 'test.hase'
-    container.createdBy = 'test.kuh'
+    entity.owner=self.user
+    coll.owner=self.user
+    container.owner=self.other_user
     db.session.commit()
 
     self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
@@ -325,6 +325,6 @@ class TestImages(RouteBase):
     image.hash = digest
     db.session.commit()
 
-    with fake_auth(self.app):
+    with self.fake_auth():
       ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
     self.assertEqual(ret.status_code, 403)

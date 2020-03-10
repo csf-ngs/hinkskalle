@@ -5,7 +5,7 @@ from tempfile import mkdtemp
 
 from Hinkskalle import db
 from Hinkskalle.models import Container
-from Hinkskalle.tests.route_base import RouteBase, fake_auth, fake_admin_auth
+from Hinkskalle.tests.route_base import RouteBase
 from Hinkskalle.tests.models.test_Image import _create_image
 
 
@@ -16,21 +16,21 @@ class TestTags(RouteBase):
 
   def test_get(self):
     image, container, _, _ = _create_image()
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.get(f"/v1/tags/{container.id}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertDictEqual(data, {})
 
     container.tag_image('v1.0', image.id)
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.get(f"/v1/tags/{container.id}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertDictEqual(data, {'v1.0': str(image.id)})
 
     container.tag_image('oink', image.id)
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.get(f"/v1/tags/{container.id}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
@@ -38,32 +38,32 @@ class TestTags(RouteBase):
   
   def test_get_user(self):
     image, container, coll, entity = _create_image()
-    entity.createdBy='test.hase'
-    coll.createdBy='test.hase'
-    container.createdBy='test.hase'
+    entity.owner=self.user
+    coll.owner=self.user
+    container.owner=self.user
     db.session.commit()
 
     container.tag_image('v1.0', str(image.id))
-    with fake_auth(self.app):
+    with self.fake_auth():
       ret = self.client.get(f"/v1/tags/{container.id}")
     self.assertEqual(ret.status_code, 200)
 
   def test_get_user_other(self):
     image, container, coll, entity = _create_image()
-    entity.createdBy='test.hase'
-    coll.createdBy='test.hase'
-    container.createdBy='test.kuh'
+    entity.owner=self.user
+    coll.owner=self.user
+    container.owner=self.other_user
     db.session.commit()
 
     container.tag_image('v1.0', image.id)
-    with fake_auth(self.app):
+    with self.fake_auth():
       ret = self.client.get(f"/v1/tags/{container.id}")
     self.assertEqual(ret.status_code, 403)
 
   def test_update(self):
     image, container, _, _ = _create_image()
     container_id=container.id
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
@@ -71,7 +71,7 @@ class TestTags(RouteBase):
     db_container=Container.query.get(container_id)
     self.assertDictEqual(db_container.imageTags(), { 'v1.0': str(image.id) })
 
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={'oink': str(image.id)})
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
@@ -82,23 +82,23 @@ class TestTags(RouteBase):
 
   def test_update_user(self):
     image, container, coll, entity = _create_image()
-    entity.createdBy='test.hase'
-    coll.createdBy='test.hase'
-    container.createdBy='test.hase'
+    entity.owner=self.user
+    coll.owner=self.user
+    container.owner=self.user
     db.session.commit()
 
-    with fake_auth(self.app):
+    with self.fake_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
 
   def test_update_user_other(self):
     image, container, coll, entity = _create_image()
-    entity.createdBy='test.hase'
-    coll.createdBy='test.hase'
-    container.createdBy='test.kuh'
+    entity.owner=self.user
+    coll.owner=self.user
+    container.owner=self.other_user
     db.session.commit()
 
-    with fake_auth(self.app):
+    with self.fake_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 403)
   
@@ -106,7 +106,7 @@ class TestTags(RouteBase):
     image, container, _, _ = _create_image()
     self._fake_uploaded_image(image)
 
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
     
@@ -123,7 +123,7 @@ class TestTags(RouteBase):
     with open(link_location, 'w') as outfh:
       outfh.write('muh')
     
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
     self.assertTrue(os.path.exists(link_location))
@@ -132,7 +132,7 @@ class TestTags(RouteBase):
     os.remove(link_location)
     # overwrite dangling links, too
     os.symlink('/oink/oink/gru.nz', link_location)
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
 
@@ -144,7 +144,7 @@ class TestTags(RouteBase):
 
     link_location = os.path.join(self.app.config['IMAGE_PATH'], image.collectionName(), f"{image.containerName()}_v1.0.sif")
     
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
     self.assertTrue(os.path.exists(link_location))
@@ -152,7 +152,7 @@ class TestTags(RouteBase):
 
   def test_update_old(self):
     image, container, _, _ = _create_image()
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={ 'Tag': 'v1', 'ImageID': str(image.id) })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
@@ -164,12 +164,12 @@ class TestTags(RouteBase):
     image, container, _, _ = _create_image()
     image_id=image.id
     container_id=container.id
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': 'oink'})
     self.assertEqual(ret.status_code, 404)
     invalidid = image_id*-1
 
-    with fake_admin_auth(self.app):
+    with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container_id}", json={'v1.0': invalidid})
     self.assertEqual(ret.status_code, 404)
 

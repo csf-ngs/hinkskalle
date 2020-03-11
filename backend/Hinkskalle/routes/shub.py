@@ -38,6 +38,9 @@ def get_manifest(collection_id, tagged_container_id):
   except:
     current_app.logger.debug(f"container {container_id} not found for default/{collection.name}")
     raise errors.NotFound(f"container {container_id} not found.") 
+
+  if container.private:
+    raise errors.Forbidden(f"container {container_id} is private.")
   
   image_tags = container.imageTags()
   if not tag in image_tags:

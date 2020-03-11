@@ -5,10 +5,14 @@ services:
     volumes:
       - '.:/srv/hinkskalle/src'
       - './data/sqlite:/data/db'
-    command: './script/start.sh'
+    command: '../script/start.sh'
     environment:
       PORT: 5000
+      LC_ALL: en_US.utf8
+      FLASK_APP: Hinkskalle
       SQLALCHEMY_DATABASE_URI: 'sqlite:////data/db/hinkskalle.db'
+      HINKSKALLE_SETTINGS: '/srv/hinkskalle/src/conf/config.json'
       FSK_URL: 'http://172.28.128.1:6600/fsk3test'
     ports:
       - '7660:5000'
+    working_dir: '/srv/hinkskalle/src/backend'

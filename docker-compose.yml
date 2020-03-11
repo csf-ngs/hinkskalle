@@ -9,6 +9,5 @@ services:
     environment:
       PORT: 5000
       SQLALCHEMY_DATABASE_URI: 'sqlite:////data/db/hinkskalle.db'
-      FSK_URL: 'http://172.28.128.1:6600/fsk3test'
     ports:
       - '7660:5000'

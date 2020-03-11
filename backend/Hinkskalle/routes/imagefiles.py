@@ -1,4 +1,5 @@
-from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth, fsk_optional_auth, db
+from Hinkskalle import registry, rebar, authenticator, db
+from Hinkskalle.util.auth import Scopes
 from flask_rebar import errors
 from sqlalchemy.orm.exc import NoResultFound
 from flask import request, current_app, safe_join, send_file, g
@@ -14,11 +15,11 @@ import shutil
 @registry.handles(
   rule='/v1/imagefile/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
-  authenticators=fsk_optional_auth,
+  authenticators=authenticator.with_scope(Scopes.optional),
 )
 def pull_image(entity_id, collection_id, tagged_container_id):
   image = _get_image(entity_id, collection_id, tagged_container_id)
-  if not image.check_access(g.fsk_user):
+  if not image.check_access(g.authenticated_user):
     raise errors.Forbidden('Private image, access denied.')
 
   if not image.uploaded or not image.location:
@@ -36,7 +37,7 @@ def pull_image(entity_id, collection_id, tagged_container_id):
 @registry.handles(
   rule='/v1/imagefile/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
-  authenticators=fsk_optional_auth,
+  authenticators=authenticator.with_scope(Scopes.optional),
 )
 def pull_image_default_entity(collection_id, tagged_container_id):
   return pull_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
@@ -45,7 +46,7 @@ def pull_image_default_entity(collection_id, tagged_container_id):
 @registry.handles(
   rule='/v1/imagefile/<string:tagged_container_id>',
   method='GET',
-  authenticators=fsk_optional_auth,
+  authenticators=authenticator.with_scope(Scopes.optional),
 )
 def pull_image_default_collection_default_entity_single(tagged_container_id):
   return pull_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
@@ -53,7 +54,7 @@ def pull_image_default_collection_default_entity_single(tagged_container_id):
 @registry.handles(
   rule='/v1/imagefile/<string:image_id>',
   method='POST',
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def push_image(image_id):
   try:
@@ -61,7 +62,7 @@ def push_image(image_id):
   except NoResultFound:
     raise errors.NotFound(f"Image {image_id} not found")
 
-  if not image.container_ref.check_update_access(g.fsk_user):
+  if not image.container_ref.check_update_access(g.authenticated_user):
     raise errors.Forbidden('access denied')
 
   if image.container_ref.readOnly:

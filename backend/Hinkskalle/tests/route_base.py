@@ -46,24 +46,21 @@ class RouteBase(unittest.TestCase):
 
   @contextmanager
   def fake_auth(self):
-    fsk_auth_mock = mock.patch('fsk_authenticator.FskAuthenticator.authenticate')
-    fsk_auth_mock.start()
+    token_auth_mock = mock.patch('Hinkskalle.util.auth.TokenAuthenticator.authenticate')
+    token_auth_mock.start()
     with self.app.app_context():
       # re-read user from database to ensure that it is in the context db session
-      g.fsk_user=User.query.filter(User.username==self.username).one()
+      g.authenticated_user=User.query.filter(User.username==self.username).one()
       yield
-    fsk_auth_mock.stop()
+    token_auth_mock.stop()
 
   @contextmanager
   def fake_admin_auth(self):
-    fsk_admin_auth_mock = mock.patch('fsk_authenticator.FskAdminAuthenticator.authenticate')
-    fsk_auth_mock = mock.patch('fsk_authenticator.FskAuthenticator.authenticate')
-    fsk_admin_auth_mock.start()
-    fsk_auth_mock.start()
+    token_auth_mock = mock.patch('Hinkskalle.util.auth.TokenAuthenticator.authenticate')
+    token_auth_mock.start()
     with self.app.app_context():
       # re-read user from database to ensure that it is in the context db session
-      g.fsk_user=User.query.filter(User.username==self.admin_username).one()
+      g.authenticated_user=User.query.filter(User.username==self.admin_username).one()
       yield
-    fsk_admin_auth_mock.stop()
-    fsk_auth_mock.stop()
+    token_auth_mock.stop()
 

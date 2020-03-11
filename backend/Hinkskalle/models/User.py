@@ -34,6 +34,7 @@ class User(db.Model):
   firstname = db.Column(db.String(), nullable=False)
   lastname = db.Column(db.String(), nullable=False)
   is_admin = db.Column(db.Boolean, default=False)
+  is_active = db.Column(db.Boolean, default=True)
 
   groups = db.relationship('Group', secondary=user_groups_table, back_populates='users')
   tokens = db.relationship('Token', back_populates='user')

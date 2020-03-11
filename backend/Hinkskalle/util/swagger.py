@@ -1,19 +1,17 @@
-from flask_rebar import SwaggerV2Generator
-from fsk_authenticator.swagger import register_fsk_authenticator
-from Hinkskalle.util.auth import FskOptionalAuthenticator
+from flask_rebar import HandlerRegistry
+from flask_rebar.swagger_generation import swagger_words as sw
 
-generator = SwaggerV2Generator()
-register_fsk_authenticator(generator)
+from .auth import TokenAuthenticator, ScopedTokenAuthenticator
 
-def convert_authenticator(authenticator):
-  return (authenticator.name, {
-    'name': authenticator.name,
-    'type': 'apiKey',
-    'in': 'header',
-  })
+# this has very much been stolen from the auth0 authenticator
 
-generator.register_authenticator_converter(
-    authenticator_class=FskOptionalAuthenticator,
-    converter=convert_authenticator,
-)
+def register_authenticators(registry: HandlerRegistry):
+  registry.swagger_generator.register_authenticator_converter(TokenAuthenticator, _convert_authenticator)
+  registry.swagger_generator.register_authenticator_converter(ScopedTokenAuthenticator, _convert_scoped_authenticator)
 
+def _convert_authenticator(authenticator):
+  definition = { sw.name: authenticator.type, sw.in_: authenticator.header, sw.type_: sw.api_key }
+  return 'token_auth', definition
+
+def _convert_scoped_authenticator(authenticator):
+  return _convert_authenticator(authenticator.authenticator)

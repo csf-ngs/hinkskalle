@@ -1,4 +1,5 @@
-from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth, db
+from Hinkskalle import registry, rebar, authenticator, db
+from Hinkskalle.util.auth import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from sqlalchemy.orm.exc import NoResultFound
@@ -18,14 +19,14 @@ class TagUpdateSchema(RequestSchema):
   rule='/v1/tags/<string:container_id>',
   method='GET',
   response_body_schema=TagResponseSchema(),
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def get_tags(container_id):
   try:
     container = Container.query.filter(Container.id==container_id).one()
   except NoResultFound:
     raise errors.NotFound(f"container {container_id} not found")
-  if not container.check_access(g.fsk_user):
+  if not container.check_access(g.authenticated_user):
     raise errors.Forbidden(f"access denied.")
   
   return { 'data': container.imageTags() }
@@ -34,14 +35,14 @@ def get_tags(container_id):
   rule='/v1/tags/<string:container_id>',
   method='POST',
   response_body_schema=TagResponseSchema(),
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def update_tag(container_id):
   try:
     container = Container.query.filter(Container.id==container_id).one()
   except NoResultFound:
     raise errors.NotFound(f"container {container_id} not found")
-  if not container.check_access(g.fsk_user):
+  if not container.check_access(g.authenticated_user):
     raise errors.Forbidden('access denied.')
 
   tag = request.get_json(force=True)

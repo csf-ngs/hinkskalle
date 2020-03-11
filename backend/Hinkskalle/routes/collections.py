@@ -1,4 +1,5 @@
-from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth, db
+from Hinkskalle import registry, rebar, authenticator, db
+from Hinkskalle.util.auth import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from flask import request, current_app, g
@@ -7,8 +8,6 @@ from sqlalchemy.orm.exc import NoResultFound
 import datetime
 
 from Hinkskalle.models import CollectionSchema, Collection, Entity
-
-from fsk_authenticator import FskAdminAuthenticator
 
 class CollectionResponseSchema(ResponseSchema):
   data = fields.Nested(CollectionSchema)
@@ -38,20 +37,20 @@ def _get_collection(entity_id, collection_id):
   rule='/v1/collections/<string:entity_id>',
   method='GET',
   response_body_schema=CollectionListResponseSchema(),
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def list_collections(entity_id):
   try:
     entity = Entity.query.filter(Entity.name==entity_id).one()
   except NoResultFound:
     raise errors.NotFound(f"entity {entity_id} not found")
-  if not entity.check_access(g.fsk_user):
+  if not entity.check_access(g.authenticated_user):
     raise errors.Forbidden(f"access denied.")
 
-  if g.fsk_user.is_admin:
+  if g.authenticated_user.is_admin:
     objs = Collection.query.filter(Collection.entity_id == entity.id).all()
   else:
-    objs = Collection.query.filter(Collection.entity_id == entity.id, Collection.owner==g.fsk_user).all()
+    objs = Collection.query.filter(Collection.entity_id == entity.id, Collection.owner==g.authenticated_user).all()
   
   return { 'data': list(objs) }
 
@@ -59,11 +58,11 @@ def list_collections(entity_id):
   rule='/v1/collections/<string:entity_id>/<string:collection_id>',
   method='GET',
   response_body_schema=CollectionResponseSchema(),
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def get_collection(entity_id, collection_id):
   collection = _get_collection(entity_id, collection_id)
-  if not collection.check_access(g.fsk_user):
+  if not collection.check_access(g.authenticated_user):
     raise errors.Forbidden(f"access denied.")
   return { 'data': collection }
 
@@ -71,17 +70,16 @@ def get_collection(entity_id, collection_id):
   rule='/v1/collections/<string:entity_id>/',
   method='GET',
   response_body_schema=CollectionResponseSchema(),
-  authenticators=fsk_auth
+  authenticators=authenticator.with_scope(Scopes.user)
 )
 def get_default_collection(entity_id):
-  current_app.logger.debug('get default collection')
   return get_collection(entity_id=entity_id, collection_id='default')
 
 @registry.handles(
   rule='/v1/collections/',
   method='GET',
   response_body_schema=CollectionResponseSchema(),
-  authenticators=fsk_auth
+  authenticators=authenticator.with_scope(Scopes.user)
 )
 def get_default_collection_default_entity():
   return get_collection(entity_id='default', collection_id='default')
@@ -92,7 +90,7 @@ def get_default_collection_default_entity():
   method='POST',
   request_body_schema=CollectionCreateSchema(),
   response_body_schema=CollectionResponseSchema(),
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def create_collection():
   body = rebar.validated_body
@@ -101,26 +99,25 @@ def create_collection():
   except NoResultFound:
     raise errors.NotFound(f"entity {body['entity']} not found")
 
-  if not entity.check_update_access(g.fsk_user):
+  if not entity.check_update_access(g.authenticated_user):
     raise errors.Forbidden("access denied")
   body.pop('entity')
   if not body['name']:
     body['name']='default'
   
-  if entity.name == 'default' and not g.fsk_user.is_admin:
+  if entity.name == 'default' and not g.authenticated_user.is_admin:
     if body['name'] == 'default' or body['name'] == 'pipeline':
       raise errors.Forbidden("Trying to use a reserved name in the default namespace.")
   new_collection = Collection(**body)
   new_collection.entity_ref=entity
   if entity.defaultPrivate:
     new_collection.private=True
-  new_collection.owner=g.fsk_user
+  new_collection.owner=g.authenticated_user
 
   try:
     db.session.add(new_collection)
     db.session.commit()
   except IntegrityError as err:
-    current_app.logger.debug(err)
     raise errors.PreconditionFailed(f"Collection {new_collection.id} already exists")
 
   return { 'data': new_collection }
@@ -130,12 +127,12 @@ def create_collection():
   method='PUT',
   request_body_schema=CollectionUpdateSchema(),
   response_body_schema=CollectionResponseSchema(),
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def update_collection(entity_id, collection_id):
   body = rebar.validated_body
   collection = _get_collection(entity_id, collection_id)
-  if not collection.check_update_access(g.fsk_user):
+  if not collection.check_update_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to collection")
   
   for key in body:

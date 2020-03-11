@@ -6,19 +6,15 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 
 rebar = Rebar()
-from Hinkskalle.util.swagger import generator
 
-registry = rebar.create_handler_registry(prefix="/", swagger_generator=generator)
+registry = rebar.create_handler_registry(prefix="/")
 registry.set_default_authenticator(None)
 
-from Hinkskalle.fsk_api import HinkskalleFskApi
-from fsk_authenticator import FskAdminAuthenticator, FskAuthenticator
-from Hinkskalle.util.auth import FskOptionalAuthenticator
+from Hinkskalle.util.swagger import register_authenticators
+register_authenticators(registry)
 
-FskAuthenticator.register_fsk_api_class(HinkskalleFskApi)
-fsk_auth = FskAuthenticator(key_header='Authorization')
-fsk_admin_auth = FskAdminAuthenticator(key_header='Authorization')
-fsk_optional_auth = FskOptionalAuthenticator(key_header='Authorization')
+from Hinkskalle.util.auth import TokenAuthenticator
+authenticator = TokenAuthenticator()
 
 db = SQLAlchemy()
 

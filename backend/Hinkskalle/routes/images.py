@@ -1,4 +1,5 @@
-from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth, fsk_optional_auth, db
+from Hinkskalle import registry, rebar, authenticator, db
+from Hinkskalle.util.auth import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from flask import request, current_app, safe_join, send_file, g
@@ -84,11 +85,11 @@ def _get_image(entity_id, collection_id, tagged_container_id):
   rule='/v1/containers/<string:entity_id>/<string:collection_id>/<string:container_id>/images',
   method='GET',
   response_body_schema=ImageListResponseSchema(),
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def list_images(entity_id, collection_id, container_id):
   container = _get_container(entity_id, collection_id, container_id)
-  if not container.check_access(g.fsk_user):
+  if not container.check_access(g.authenticated_user):
     raise errors.Forbidden('access denied')
   
   return { 'data': list(container.images_ref) }
@@ -97,11 +98,11 @@ def list_images(entity_id, collection_id, container_id):
   rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
   response_body_schema=ImageResponseSchema(),
-  authenticators=fsk_optional_auth,
+  authenticators=authenticator.with_scope(Scopes.optional),
 )
 def get_image(entity_id, collection_id, tagged_container_id):
   image = _get_image(entity_id, collection_id, tagged_container_id)
-  if not image.check_access(g.fsk_user):
+  if not image.check_access(g.authenticated_user):
       raise errors.Forbidden('Private image, access denied.')
 
   if image.uploaded and (not image.location or not os.path.exists(image.location)):
@@ -115,7 +116,7 @@ def get_image(entity_id, collection_id, tagged_container_id):
   rule='/v1/images/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
   response_body_schema=ImageResponseSchema(),
-  authenticators=fsk_optional_auth,
+  authenticators=authenticator.with_scope(Scopes.optional),
 )
 def get_image_default_entity_single(collection_id, tagged_container_id):
   return get_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
@@ -124,7 +125,7 @@ def get_image_default_entity_single(collection_id, tagged_container_id):
   rule='/v1/images/<string:tagged_container_id>',
   method='GET',
   response_body_schema=ImageResponseSchema(),
-  authenticators=fsk_optional_auth,
+  authenticators=authenticator.with_scope(Scopes.optional),
 )
 def get_image_default_entity_default_collection_single(tagged_container_id):
   return get_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
@@ -134,7 +135,7 @@ def get_image_default_entity_default_collection_single(tagged_container_id):
   method='POST',
   request_body_schema=ImageCreateSchema(),
   response_body_schema=ImageResponseSchema(),
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def create_image():
   body = rebar.validated_body
@@ -143,14 +144,14 @@ def create_image():
   if not container:
     raise errors.NotFound(f"container {body['container']} not found")
   body.pop('container')
-  if not container.check_update_access(g.fsk_user):
+  if not container.check_update_access(g.authenticated_user):
     raise errors.Forbidden('access denied')
   if container.readOnly:
     raise errors.NotAcceptable('container is readonly')
 
   new_image = Image(**body)
   new_image.container_ref=container
-  new_image.owner = g.fsk_user
+  new_image.owner = g.authenticated_user
 
   # the db session autoflushes when running the query below
   # so we have to add here and catch any IntegrityError exceptions. 
@@ -179,13 +180,13 @@ def create_image():
   method='PUT',
   request_body_schema=ImageUpdateSchema(),
   response_body_schema=ImageResponseSchema(),
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def update_image(entity_id, collection_id, tagged_container_id):
   body = rebar.validated_body
   image = _get_image(entity_id, collection_id, tagged_container_id)
 
-  if not image.check_update_access(g.fsk_user):
+  if not image.check_update_access(g.authenticated_user):
     raise errors.Forbidden('access denied')
 
   for key in body:

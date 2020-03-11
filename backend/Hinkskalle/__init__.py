@@ -2,6 +2,7 @@ from flask import Flask
 from flask_rebar import Rebar
 from logging.config import dictConfig
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import MetaData
 from flask_migrate import Migrate
 
 import os
@@ -17,7 +18,15 @@ register_authenticators(registry)
 from Hinkskalle.util.auth import TokenAuthenticator
 authenticator = TokenAuthenticator()
 
-db = SQLAlchemy()
+# see https://github.com/miguelgrinberg/Flask-Migrate/issues/61#issuecomment-208131722
+naming_convention = {
+    "ix": 'ix_%(column_0_label)s',
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(column_0_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+}
+db = SQLAlchemy(metadata=MetaData(naming_convention=naming_convention))
 migrate = Migrate()
 
 def create_app():
@@ -71,7 +80,8 @@ def create_app():
     # make sure init_app is called after importing routes??
     rebar.init_app(app)
 
-  migrate.init_app(app, db)
+    # see https://github.com/miguelgrinberg/Flask-Migrate/issues/61#issuecomment-208131722
+    migrate.init_app(app, db, render_as_batch=db.engine.url.drivername == 'sqlite')
 
   return app
 

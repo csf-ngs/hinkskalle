@@ -16,6 +16,8 @@ class UserSchema(Schema):
   firstname = fields.String()
   lastname = fields.String()
   is_admin = fields.Boolean(load_from='isAdmin', dump_to='isAdmin')
+  is_active = fields.Boolean(load_from='isActive', dump_to='isActive')
+  source = fields.String()
 
   groups = fields.List(fields.Nested('GroupSchema', allow_none=True, exclude=('users', )))
 
@@ -35,6 +37,7 @@ class User(db.Model):
   lastname = db.Column(db.String(), nullable=False)
   is_admin = db.Column(db.Boolean, default=False)
   is_active = db.Column(db.Boolean, default=True)
+  source = db.Column(db.String(), default='local', nullable=False)
 
   groups = db.relationship('Group', secondary=user_groups_table, back_populates='users')
   tokens = db.relationship('Token', back_populates='user')

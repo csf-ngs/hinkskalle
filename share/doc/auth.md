@@ -13,14 +13,11 @@ currently:
 - can pull from `default` entity
 
 - pull is public
-
-`private` flag not implemented
+- `private` flag restricts pull to owner + admins
 
 #### Private Flag
 
-First step: implement private flag:
-
-- no pull/search except for self
+- check searchable??
 
 #### Group Entities
 
@@ -46,14 +43,7 @@ n tokens per user. Fine-grained authorization?
 
 Create tokens in web interface (`/auth/tokens` is where the cli directs you to)
 
-additionally upstream token verification:
-
-- forward token to another backend
-- backend returns user data if token valid
-
-would be convenient for Forskalle, but any other backend would have to return a
-defined JSON structure OR would need to implement configurable mapping (ugh)
-
+- temporary tokens with limited validity for web interface?
 
 ## LDAP authentication
 
@@ -61,6 +51,8 @@ provide LDAP password check backend for login to web
 
 almost have to synchronize LDAP user+group list with local tables, otherwise it
 will be hard to define access (only users that have logged in available for searching??)
+
+-> maybe better to have a special user/group search route that collects results from all sources (ldap, local, ...)
 
 ## Oauth
 

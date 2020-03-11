@@ -67,13 +67,14 @@ def create_app():
 
   app.config['PREFERRED_URL_SCHEME']=os.environ.get('PREFERRED_URL_SCHEME', 'http')
   db.init_app(app)
-  migrate.init_app(app, db)
 
   with app.app_context():
     import Hinkskalle.commands
     import Hinkskalle.routes
     # make sure init_app is called after importing routes??
     rebar.init_app(app)
+
+  migrate.init_app(app, db)
 
   return app
 

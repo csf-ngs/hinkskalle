@@ -11,3 +11,4 @@ frontend.vue/
 tmp/
 data/
 *.egg-info
+backend/.env

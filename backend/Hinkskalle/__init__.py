@@ -71,6 +71,8 @@ def create_app():
     # make sure init_app is called after importing routes??
     rebar.init_app(app)
 
+  migrate.init_app(app, db)
+
   return app
 
 if __name__ == '__main__':

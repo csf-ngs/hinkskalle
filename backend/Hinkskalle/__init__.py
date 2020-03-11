@@ -2,6 +2,7 @@ from flask import Flask
 from flask_rebar import Rebar
 from logging.config import dictConfig
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
 import os
 
@@ -21,6 +22,7 @@ fsk_admin_auth = FskAdminAuthenticator(key_header='Authorization')
 fsk_optional_auth = FskOptionalAuthenticator(key_header='Authorization')
 
 db = SQLAlchemy()
+migrate = Migrate()
 
 def create_app():
   dictConfig({
@@ -65,6 +67,7 @@ def create_app():
 
   app.config['PREFERRED_URL_SCHEME']=os.environ.get('PREFERRED_URL_SCHEME', 'http')
   db.init_app(app)
+  migrate.init_app(app, db)
 
   with app.app_context():
     import Hinkskalle.commands

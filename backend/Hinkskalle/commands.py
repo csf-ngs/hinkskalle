@@ -5,7 +5,7 @@ from Hinkskalle import db
 import os
 import re
 
-db_cli = AppGroup('db')
+db_cli = AppGroup('local_db', short_help='hinkskalle specific db commands')
 
 @db_cli.command('init')
 def init_db():

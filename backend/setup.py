@@ -9,6 +9,7 @@ setup(
         'flask',
         'SimpleJSON',
         'Flask-SQLAlchemy',
+        'Flask-Migrate',
         'flask-rebar',
         'requests',
         'passlib',

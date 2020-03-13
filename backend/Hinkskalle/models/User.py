@@ -13,8 +13,8 @@ class UserSchema(Schema):
   id = fields.String(required=True, dump_only=True)
   username = fields.String(required=True)
   email = fields.String(required=True)
-  firstname = fields.String()
-  lastname = fields.String()
+  firstname = fields.String(required=True)
+  lastname = fields.String(required=True)
   is_admin = fields.Boolean(load_from='isAdmin', dump_to='isAdmin')
   is_active = fields.Boolean(load_from='isActive', dump_to='isActive')
   source = fields.String()
@@ -57,6 +57,17 @@ class User(db.Model):
   
   def check_password(self, pw):
     return sha512_crypt.verify(pw, self.password)
+
+  def check_access(self, user):
+    return True
+  
+  def check_update_access(self, user):
+    if user.is_admin:
+      return True
+    elif self.id == user.id:
+      return True
+    else:
+      return False
 
 class GroupSchema(Schema):
   id = fields.String(required=True, dump_only=True)

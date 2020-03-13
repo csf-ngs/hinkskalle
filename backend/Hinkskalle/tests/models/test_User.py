@@ -104,6 +104,25 @@ class TestUser(ModelBase):
     self.assertDictEqual(serialized.errors, {})
     self.assertEqual(serialized.data['id'], 'geheimhase')
     self.assertEqual(serialized.data['user']['id'], str(user.id))
+  
+  def test_access(self):
+    subject = _create_user()
+
+    try_admin = _create_user('admin.hase', is_admin=True)
+    try_normal = _create_user('normal.hase')
+
+    self.assertTrue(subject.check_access(try_admin))
+    self.assertTrue(subject.check_access(try_normal))
+  
+  def test_update_access(self):
+    subject = _create_user()
+
+    try_admin = _create_user('admin.hase', is_admin=True)
+    try_normal = _create_user('normal.hase')
+
+    self.assertTrue(subject.check_update_access(try_admin))
+    self.assertFalse(subject.check_update_access(try_normal))
+    self.assertTrue(subject.check_update_access(subject))
 
   def test_schema_groups(self):
     schema = UserSchema()

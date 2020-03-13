@@ -47,7 +47,7 @@ class Container(db.Model):
 
   collection_id = db.Column(db.Integer, db.ForeignKey('collection.id'), nullable=False)
 
-  createdAt = db.Column(db.DateTime, default=datetime.utcnow)
+  createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime)
 
@@ -75,7 +75,7 @@ class Container(db.Model):
     cur_tag = Tag.query.filter(Tag.name == tag, Tag.image_id.in_([ i.id for i in self.images_ref ])).first()
     if cur_tag:
       cur_tag.image_ref=image
-      cur_tag.updatedAt=datetime.utcnow()
+      cur_tag.updatedAt=datetime.now()
       db.session.commit()
     else:
       cur_tag = Tag(name=tag, image_ref=image)

@@ -14,7 +14,7 @@ class TestGroup(ModelBase):
 
     read_group = Group.query.filter_by(name='Testhasenstall').first()
     self.assertEqual(read_group.id, group.id)
-    self.assertTrue(abs(read_group.createdAt - datetime.utcnow()) < timedelta(seconds=1))
+    self.assertTrue(abs(read_group.createdAt - datetime.now()) < timedelta(seconds=1))
   
   def test_schema(self):
     schema = GroupSchema()

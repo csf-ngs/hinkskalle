@@ -197,6 +197,10 @@ class TestCollections(RouteBase):
     data = ret.get_json().get('data')
     self.assertEqual(data['entity'], str(entity.id))
     self.assertEqual(data['createdBy'], self.admin_username)
+
+    db_collection = Collection.query.get(data['id'])
+    self.assertTrue(abs(db_collection.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+
   
   def test_create_defaultPrivate(self):
     entity = Entity(name='test-hase')

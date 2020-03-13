@@ -28,7 +28,7 @@ class Entity(db.Model):
   defaultPrivate = db.Column(db.Boolean, default=False)
   quota = db.Column(db.Integer, default=0)
 
-  createdAt = db.Column(db.DateTime, default=datetime.utcnow)
+  createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime)
 

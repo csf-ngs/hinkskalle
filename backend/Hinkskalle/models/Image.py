@@ -45,7 +45,7 @@ class Image(db.Model):
 
   container_id = db.Column(db.Integer, db.ForeignKey('container.id'), nullable=False)
 
-  createdAt = db.Column(db.DateTime, default=datetime.utcnow)
+  createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime)
 

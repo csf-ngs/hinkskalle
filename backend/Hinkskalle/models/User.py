@@ -90,7 +90,7 @@ class Group(db.Model):
 
   users = db.relationship('User', secondary=user_groups_table, back_populates='groups')
 
-  createdAt = db.Column(db.DateTime, default=datetime.utcnow)
+  createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String())
   updatedAt = db.Column(db.DateTime)
 
@@ -111,6 +111,6 @@ class Token(db.Model):
 
   user = db.relationship('User', back_populates='tokens')
 
-  createdAt = db.Column(db.DateTime, default=datetime.utcnow)
+  createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String())
   updatedAt = db.Column(db.DateTime)

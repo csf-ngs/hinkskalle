@@ -26,7 +26,7 @@ class TestCollection(ModelBase):
 
     read_coll = Collection.query.filter_by(name='test-collection').one()
     self.assertEqual(read_coll.id, coll.id)
-    self.assertTrue(abs(read_coll.createdAt - datetime.utcnow()) < timedelta(seconds=1))
+    self.assertTrue(abs(read_coll.createdAt - datetime.now()) < timedelta(seconds=1))
 
     self.assertEqual(read_coll.entity(), entity.id)
     self.assertEqual(read_coll.entityName(), entity.name)

@@ -131,13 +131,14 @@ class TestEntities(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post('/v1/entities', json={
         'name': 'grunz',
-        'createdAt': '0001-01-01T00:00:00Z',
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['name'], 'grunz')
-    self.assertNotEqual(data['createdAt'], '0001-01-01T00:00:00+00:00')
     self.assertEqual(data['createdBy'], self.admin_username)
+
+    db_entity = Entity.query.get(data['id'])
+    self.assertTrue(abs(db_entity.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
 
   def test_create_default(self):
     with self.fake_admin_auth():

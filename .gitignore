@@ -12,3 +12,6 @@ tmp/
 data/
 *.egg-info
 backend/.env
+.coverage
+test_report.html
+coverage_report/

@@ -12,13 +12,13 @@ steps:
     - git fetch --tags
     - git describe > .tags
 - name: testhase
-  image: docker.ngs.vbcf.ac.at/flask-base:v1.1.3
+  image: docker.ngs.vbcf.ac.at/flask-base:v1.1.4
   environment:
     HINKSKALLE_SETTINGS: ../../conf/config.json
   commands:
   - cd backend
   - pip3 install -e .
-  - python3 -m unittest discover -s Hinkskalle/tests/
+  - nose2
 - name: bauhaus
   image: docker:dind
   volumes:

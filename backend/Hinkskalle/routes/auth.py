@@ -4,7 +4,6 @@ from Hinkskalle.util.auth import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from flask import current_app, g
-import secrets
 
 class TokenResponseSchema(ResponseSchema):
   status = fields.String()
@@ -47,7 +46,7 @@ def get_token():
     raise errors.Unauthorized("Invalid password.")
 
   g.authenticated_user = user
-  token = Token(id=secrets.token_urlsafe(48), user=user)
+  token = user.create_token()
   db.session.add(token)
   db.session.commit()
   return { 'data': token }

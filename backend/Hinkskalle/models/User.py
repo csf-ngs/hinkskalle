@@ -3,6 +3,7 @@ from marshmallow import fields, Schema
 from datetime import datetime
 
 from passlib.hash import sha512_crypt
+import secrets
 
 user_groups_table = db.Table('users_groups', db.metadata,
   db.Column('user_id', db.Integer, db.ForeignKey('user.id'), nullable=False),
@@ -51,6 +52,13 @@ class User(db.Model):
   containers = db.relationship('Container', back_populates='owner')
   images = db.relationship('Image', back_populates='owner')
   tags = db.relationship('Tag', back_populates='owner')
+
+
+  def create_token(self):
+    token = Token(id=secrets.token_urlsafe(48))
+    self.tokens.append(token)
+    db.session.commit()
+    return token
 
   def set_password(self, pw):
     self.password = sha512_crypt.hash(pw)

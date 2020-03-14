@@ -52,6 +52,14 @@ class TestUser(ModelBase):
     read_user = User.query.filter_by(username=user.username).one()
     self.assertListEqual(read_user.tokens, [read_token])
   
+  def test_generate_token(self):
+    user = _create_user()
+    token1 = user.create_token()
+    
+    self.assertGreater(len(token1.id), 32)
+    self.assertEqual(token1.user_id, user.id)
+    self.assertListEqual(user.tokens, [token1])
+  
   def test_password(self):
     user = _create_user()
     user.set_password('geheimhase')

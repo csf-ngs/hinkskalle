@@ -41,11 +41,11 @@ class TestUser(ModelBase):
   
   def test_token(self):
     user = _create_user()
-    token1 = Token(user=user, id='geheimhase')
+    token1 = Token(user=user, token='geheimhase')
     db.session.add(token1)
     db.session.commit()
 
-    read_token = Token.query.get('geheimhase')
+    read_token = Token.query.filter(Token.token=='geheimhase').one()
     self.assertEqual(read_token.user_id, user.id)
     self.assertEqual(read_token.user, user)
 
@@ -56,7 +56,7 @@ class TestUser(ModelBase):
     user = _create_user()
     token1 = user.create_token()
     
-    self.assertGreater(len(token1.id), 32)
+    self.assertGreater(len(token1.token), 32)
     self.assertEqual(token1.user_id, user.id)
     self.assertListEqual(user.tokens, [token1])
   
@@ -70,6 +70,15 @@ class TestUser(ModelBase):
 
     self.assertTrue(read_user.check_password('geheimhase'))
     self.assertFalse(read_user.check_password('Falscher Hase'))
+  
+  def test_password_none(self):
+    user = _create_user()
+    self.assertFalse(user.check_password('irgendwas'))
+
+    user.password = 'something'
+    db.session.commit()
+    self.assertFalse(user.check_password('something'))
+
   
   def test_schema(self):
     schema = UserSchema()
@@ -106,11 +115,11 @@ class TestUser(ModelBase):
   def test_schema_token(self):
     schema = TokenSchema()
     user = _create_user()
-    token = Token(user=user, id='geheimhase')
+    token = Token(user=user, token='geheimhase')
 
     serialized = schema.dump(token)
     self.assertDictEqual(serialized.errors, {})
-    self.assertEqual(serialized.data['id'], 'geheimhase')
+    self.assertEqual(serialized.data['token'], 'geheimhase')
     self.assertEqual(serialized.data['user']['id'], str(user.id))
   
   def test_access(self):

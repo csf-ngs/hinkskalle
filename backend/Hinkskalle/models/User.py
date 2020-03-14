@@ -1,6 +1,7 @@
 from Hinkskalle import db
 from marshmallow import fields, Schema
 from datetime import datetime
+from flask import current_app
 
 from passlib.hash import sha512_crypt
 import secrets
@@ -55,7 +56,7 @@ class User(db.Model):
 
 
   def create_token(self):
-    token = Token(id=secrets.token_urlsafe(48))
+    token = Token(token=secrets.token_urlsafe(48))
     self.tokens.append(token)
     db.session.commit()
     return token
@@ -64,7 +65,15 @@ class User(db.Model):
     self.password = sha512_crypt.hash(pw)
   
   def check_password(self, pw):
-    return sha512_crypt.verify(pw, self.password)
+    if not self.password:
+      current_app.logger.debug(f"User {self.username} password is NULL")
+      return False
+    try:
+      result = sha512_crypt.verify(pw, self.password)
+    except Exception as err:
+      current_app.logger.debug(f"User {self.username} hash check failed: {err}")
+      return False
+    return result
 
   def check_access(self, user):
     return True
@@ -104,6 +113,7 @@ class Group(db.Model):
 
 class TokenSchema(Schema):
   id = fields.String(required=True, dump_only=True)
+  token = fields.String(required=True, dump_only=True)
 
   user = fields.Nested('UserSchema')
 
@@ -114,7 +124,8 @@ class TokenSchema(Schema):
   deleted = fields.Boolean(dump_only=True, default=False)
 
 class Token(db.Model):
-  id = db.Column(db.String(), primary_key=True)
+  id = db.Column(db.Integer, primary_key=True)
+  token = db.Column(db.String(), unique=True, nullable=False)
   user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
   user = db.relationship('User', back_populates='tokens')

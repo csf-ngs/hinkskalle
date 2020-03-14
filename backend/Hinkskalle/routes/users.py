@@ -19,6 +19,7 @@ class UserListResponseSchema(ResponseSchema):
   data = fields.Nested(UserSchema, many=True)
 
 class UserCreateSchema(UserSchema, RequestSchema):
+  password = fields.String()
   pass
 
 # taken from https://flask-rebar.readthedocs.io/en/latest/recipes.html#marshmallow-partial-schemas
@@ -67,9 +68,13 @@ def get_user(username):
 def create_user():
   body = rebar.validated_body
   body.pop('id', None)
+  password = body.pop('password', None)
 
   new_user = User(**body)
   new_user.createdBy = g.authenticated_user.username
+
+  if password:
+    new_user.set_password(password)
 
   try:
     db.session.add(new_user)

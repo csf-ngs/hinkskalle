@@ -46,12 +46,14 @@ def upgrade():
     sa.UniqueConstraint('username')
     )
     op.create_table('token',
-    sa.Column('id', sa.String(), nullable=False),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('token', sa.String(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('createdAt', sa.DateTime(), nullable=True),
     sa.Column('createdBy', sa.String(), nullable=True),
     sa.Column('updatedAt', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.UniqueConstraint('token'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('users_groups',

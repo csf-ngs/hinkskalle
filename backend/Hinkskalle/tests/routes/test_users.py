@@ -105,6 +105,7 @@ class TestUsers(RouteBase):
       'source': 'Mars',
       'isAdmin': True,
       'isActive': False,
+      'password': 'geheimhase',
     }
     with self.fake_admin_auth():
       ret = self.client.post('/v1/users', json=user_data)
@@ -115,6 +116,7 @@ class TestUsers(RouteBase):
     for f in ['email', 'firstname', 'lastname', 'source', 'isAdmin', 'isActive']:
       uf = 'is_active' if f == 'isActive' else 'is_admin' if f == 'isAdmin' else f
       self.assertEqual(getattr(db_user, uf), user_data[f])
+    self.assertTrue(db_user.check_password(user_data['password']))
     self.assertEqual(db_user.createdBy, self.admin_username)
     self.assertTrue(abs(db_user.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
   

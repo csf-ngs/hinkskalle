@@ -63,7 +63,7 @@ class TestTokenAuth(RouteBase):
   def test_token_status(self):
     user = _create_user(name='test.hase')
     token_text = 'geheimschwein'
-    user.tokens.append(Token(id='geheimschwein'))
+    user.tokens.append(Token(token='geheimschwein'))
 
     with self.app.test_client() as c:
       ret = c.get('/v1/token-status', headers={ 'Authorization': f"bearer {token_text}"})
@@ -87,7 +87,7 @@ class TestTokenAuth(RouteBase):
   def test_search_token(self):
     user = _create_user(name='test.hase')
     token_text = 'geheimschwein'
-    user.tokens.append(Token(id='geheimschwein'))
+    user.tokens.append(Token(token='geheimschwein'))
 
     with self.app.test_client() as c:
       ret = c.get('/v1/search?value=grunz', headers={ 'Authorization': f"bearer {token_text}"})
@@ -97,7 +97,7 @@ class TestTokenAuth(RouteBase):
   def test_invalid_token(self):
     user = _create_user(name='test.hase')
     token_text = 'geheimschwein'
-    user.tokens.append(Token(id='geheimschwein'))
+    user.tokens.append(Token(token='geheimschwein'))
 
     with self.app.test_client() as c:
       ret = c.get('/v1/search?value=grunz', headers={ 'Authorization': f"bearer oink{token_text}"})
@@ -107,7 +107,7 @@ class TestTokenAuth(RouteBase):
   def test_invalid_header(self):
     user = _create_user(name='test.hase')
     token_text = 'geheimschwein'
-    user.tokens.append(Token(id='geheimschwein'))
+    user.tokens.append(Token(token='geheimschwein'))
 
     ret = self.client.get('/v1/search?value=grunz', headers={ 'Authorization': f"bearer"})
     self.assertEqual(ret.status_code, 406)
@@ -124,7 +124,7 @@ class TestTokenAuth(RouteBase):
   def test_deactivated(self):
     user = _create_user(name='test.hase')
     token_text = 'geheimschwein'
-    user.tokens.append(Token(id='geheimschwein'))
+    user.tokens.append(Token(token='geheimschwein'))
     user.is_active=False
 
     ret = self.client.get('/v1/search?value=grunz', headers={ 'Authorization': f"bearer {token_text}"})

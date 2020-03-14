@@ -11,10 +11,10 @@ user_groups_table = db.Table('users_groups', db.metadata,
 
 class UserSchema(Schema):
   id = fields.String(required=True, dump_only=True)
-  username = fields.String()
-  email = fields.String()
-  firstname = fields.String()
-  lastname = fields.String()
+  username = fields.String(required=True)
+  email = fields.String(required=True)
+  firstname = fields.String(required=True)
+  lastname = fields.String(required=True)
   is_admin = fields.Boolean(load_from='isAdmin', dump_to='isAdmin')
   is_active = fields.Boolean(load_from='isActive', dump_to='isActive')
   source = fields.String()

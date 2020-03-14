@@ -21,8 +21,13 @@ class UserListResponseSchema(ResponseSchema):
 class UserCreateSchema(UserSchema, RequestSchema):
   pass
 
+# taken from https://flask-rebar.readthedocs.io/en/latest/recipes.html#marshmallow-partial-schemas
+# to allow partial updates
 class UserUpdateSchema(UserSchema, RequestSchema):
-  pass
+  def __init__(self, **kwargs):
+    super_kwargs = dict(kwargs)
+    partial_arg = super_kwargs.pop('partial', True)
+    super(UserUpdateSchema, self).__init__(partial=partial_arg, **super_kwargs)
 
 class UserDeleteResponseSchema(ResponseSchema):
   stats = fields.String()

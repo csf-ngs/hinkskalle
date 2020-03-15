@@ -2,8 +2,9 @@ from sqlalchemy.orm.exc import NoResultFound
 from flask import g
 
 from .exceptions import UserDisabled, UserNotFound, InvalidPassword
+from .base import PasswordCheckerBase
 
-class LocalUsers():
+class LocalUsers(PasswordCheckerBase):
 
   def __init__(self):
     pass

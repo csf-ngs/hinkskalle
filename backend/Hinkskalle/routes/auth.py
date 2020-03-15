@@ -1,6 +1,7 @@
-from Hinkskalle import registry, authenticator, rebar, db
+from Hinkskalle import registry, password_checkers, authenticator, rebar, db
 from Hinkskalle.models import TokenSchema, User, Token
 from Hinkskalle.util.auth.token import Scopes
+from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from flask import current_app, g
@@ -35,17 +36,10 @@ def token_status():
 def get_token():
   body = rebar.validated_body
   try:
-    user = User.query.filter(User.username==body['username']).one()
-  except:
-    raise errors.Unauthorized("Username not found.")
+    user = password_checkers.check_password(body['username'], body['password'])
+  except (UserNotFound, UserDisabled, InvalidPassword) as err:
+    raise errors.Unauthorized(err.message)
 
-  if not user.is_active:
-    raise errors.Unauthorized("User is disabled.")
-  
-  if not user.check_password(body['password']):
-    raise errors.Unauthorized("Invalid password.")
-
-  g.authenticated_user = user
   token = user.create_token()
   db.session.add(token)
   db.session.commit()

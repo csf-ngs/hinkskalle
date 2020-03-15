@@ -29,6 +29,9 @@ naming_convention = {
 db = SQLAlchemy(metadata=MetaData(naming_convention=naming_convention))
 migrate = Migrate()
 
+from Hinkskalle.util.auth import PasswordAuthenticators
+password_checkers=PasswordAuthenticators()
+
 def create_app():
   dictConfig({
     'version': 1,
@@ -82,6 +85,8 @@ def create_app():
 
     # see https://github.com/miguelgrinberg/Flask-Migrate/issues/61#issuecomment-208131722
     migrate.init_app(app, db, render_as_batch=db.engine.url.drivername == 'sqlite')
+  
+  password_checkers.init_app(app)
 
   return app
 

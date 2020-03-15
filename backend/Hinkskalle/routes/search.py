@@ -1,5 +1,5 @@
 from Hinkskalle import registry, rebar, authenticator
-from Hinkskalle.util.auth import Scopes
+from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
 from flask import current_app, g

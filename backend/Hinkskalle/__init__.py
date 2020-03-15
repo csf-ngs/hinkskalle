@@ -15,7 +15,7 @@ registry.set_default_authenticator(None)
 from Hinkskalle.util.swagger import register_authenticators
 register_authenticators(registry)
 
-from Hinkskalle.util.auth import TokenAuthenticator
+from Hinkskalle.util.auth.token import TokenAuthenticator
 authenticator = TokenAuthenticator()
 
 # see https://github.com/miguelgrinberg/Flask-Migrate/issues/61#issuecomment-208131722

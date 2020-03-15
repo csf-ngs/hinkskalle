@@ -28,16 +28,16 @@ class TestEntities(RouteBase):
       #'version': None,
       #'commit': None,
     })
-  
-  def test_pull(self):
-    image = _create_image()[0]
+
+  def test_manifest_private(self):
+    image, container, _, entity = _create_image()
     latest_tag = Tag(name='latest', image_ref=image)
     db.session.add(latest_tag)
+    entity.name='default'
+    container.private=True
+
     db.session.commit()
 
-    tmpf = tempfile.NamedTemporaryFile()
-    tmpf.write(b"Hello Dorian!")
-    tmpf.flush()
-    image.location = tmpf.name
-    db.session.commit()
+    ret = self.client.get(f"/api/container/{image.collectionName()}/{image.containerName()}:latest")
+    self.assertEqual(ret.status_code, 403)
 

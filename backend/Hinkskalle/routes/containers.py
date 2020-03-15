@@ -1,4 +1,5 @@
-from Hinkskalle import registry, rebar, fsk_auth, fsk_admin_auth, db
+from Hinkskalle import registry, rebar, authenticator, db
+from Hinkskalle.util.auth import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from sqlalchemy.orm.exc import NoResultFound
@@ -43,7 +44,7 @@ def _get_container(entity_id, collection_id, container_id):
   rule='/v1/containers/<string:entity_id>/<string:collection_id>',
   method='GET',
   response_body_schema=ContainerListResponseSchema(),
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def list_containers(entity_id, collection_id):
   try:
@@ -56,13 +57,13 @@ def list_containers(entity_id, collection_id):
     current_app.logger.debug(f"collection {entity.name}/{collection_id} not found")
     raise errors.NotFound(f"collection {entity.name}/{collection_id} not found")
 
-  if not collection.check_access(g.fsk_user):
+  if not collection.check_access(g.authenticated_user):
     raise errors.Forbidden(f"access denied.")
 
-  if g.fsk_user.is_admin:
+  if g.authenticated_user.is_admin:
     objs = collection.containers_ref.all()
   else:
-    objs = collection.containers_ref.filter(Container.createdBy==g.fsk_user.username)
+    objs = collection.containers_ref.filter(Container.owner==g.authenticated_user)
 
   return { 'data': list(objs) }
 
@@ -70,11 +71,11 @@ def list_containers(entity_id, collection_id):
   rule='/v1/containers/<string:entity_id>/<string:collection_id>/<string:container_id>',
   method='GET',
   response_body_schema=ContainerResponseSchema(),
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def get_container(entity_id, collection_id, container_id):
   container = _get_container(entity_id, collection_id, container_id)
-  if not container.check_access(g.fsk_user):
+  if not container.check_access(g.authenticated_user):
     raise errors.Forbidden("access denied.")
 
   return { 'data': container }
@@ -83,7 +84,7 @@ def get_container(entity_id, collection_id, container_id):
   rule='/v1/containers/<string:container_id>',
   method='GET',
   response_body_schema=ContainerResponseSchema(),
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def get_default_container(container_id):
   return get_container('default', 'default', container_id)
@@ -95,7 +96,7 @@ def get_default_container(container_id):
   method='POST',
   request_body_schema=ContainerCreateSchema(),
   response_body_schema=ContainerResponseSchema(),
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def create_container():
   body = rebar.validated_body
@@ -104,12 +105,12 @@ def create_container():
   except NoResultFound:
     raise errors.NotFound(f"collection {body['collection']} not found")
 
-  if not collection.check_update_access(g.fsk_user):
+  if not collection.check_update_access(g.authenticated_user):
     raise errors.Forbidden(f"access denied.")
   body.pop('collection')
   new_container = Container(**body)
   new_container.collection_ref=collection
-  new_container.createdBy=g.fsk_user.username
+  new_container.owner=g.authenticated_user
   db.session.expire(collection)
   if collection.private:
     new_container.private = True
@@ -127,12 +128,12 @@ def create_container():
   method='PUT',
   request_body_schema=ContainerUpdateSchema(),
   response_body_schema=ContainerResponseSchema(),
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def update_container(entity_id, collection_id, container_id):
   body = rebar.validated_body
   container = _get_container(entity_id, collection_id, container_id)
-  if not container.check_update_access(g.fsk_user):
+  if not container.check_update_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to container")
 
   for key in body:

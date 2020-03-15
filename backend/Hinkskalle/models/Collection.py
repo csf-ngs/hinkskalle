@@ -11,8 +11,8 @@ class CollectionSchema(Schema):
   createdAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(dump_only=True, allow_none=True)
   updatedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deletedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deleted = fields.Boolean(dump_only=True)
+  deletedAt = fields.DateTime(dump_only=True, default=None)
+  deleted = fields.Boolean(dump_only=True, default=False)
   size = fields.Integer(dump_only=True)
   private = fields.Boolean()
   customData = fields.String(allow_none=True)
@@ -32,13 +32,13 @@ class Collection(db.Model):
 
   entity_id = db.Column(db.Integer, db.ForeignKey('entity.id'), nullable=False)
 
-  createdAt = db.Column(db.DateTime, default=datetime.utcnow)
-  createdBy = db.Column(db.String())
+  createdAt = db.Column(db.DateTime, default=datetime.now)
+  createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime)
-  deletedAt = db.Column(db.DateTime)
-  deleted = db.Column(db.Boolean, default=False, nullable=False)
 
-  containers_ref = db.relationship('Container', backref='collection_ref', lazy='dynamic')
+  entity_ref = db.relationship('Entity', back_populates='collections_ref')
+  containers_ref = db.relationship('Container', back_populates='collection_ref', lazy='dynamic')
+  owner = db.relationship('User', back_populates='collections')
 
   __table_args__ = (db.UniqueConstraint('name', 'entity_id', name='name_entity_id_idx'),)
 
@@ -50,18 +50,18 @@ class Collection(db.Model):
   def entityName(self):
     return self.entity_ref.name
   
-  def check_access(self, fsk_user):
-    if fsk_user.is_admin:
+  def check_access(self, user):
+    if user.is_admin:
       return True
-    elif self.createdBy == fsk_user.username:
+    elif self.owner == user:
       return True
     else:
       return False
   
-  def check_update_access(self, fsk_user):
-    if fsk_user.is_admin:
+  def check_update_access(self, user):
+    if user.is_admin:
       return True
-    elif self.createdBy == fsk_user.username:
+    elif self.owner == user:
       return True
     else:
       return False

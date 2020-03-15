@@ -12,5 +12,6 @@ setup(
         'Flask-Migrate',
         'flask-rebar',
         'requests',
+        'passlib',
     ],
 )

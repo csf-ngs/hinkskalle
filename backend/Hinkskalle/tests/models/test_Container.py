@@ -1,11 +1,9 @@
-from mongoengine import connect, disconnect
 from datetime import datetime, timedelta
 
 from Hinkskalle.models import Entity, Collection, Container, ContainerSchema, Image, Tag
 from Hinkskalle.tests.models.test_Collection import _create_collection
-from Hinkskalle.tests.model_base import ModelBase
+from Hinkskalle.tests.model_base import ModelBase, _create_user
 from Hinkskalle import db
-from Hinkskalle.fsk_api import FskUser
 
 
 def _create_container(postfix='container'):
@@ -24,7 +22,7 @@ class TestContainer(ModelBase):
 
     read_container = Container.query.filter_by(name=container.name).one()
     self.assertEqual(read_container.id, container.id)
-    self.assertTrue(abs(read_container.createdAt - datetime.utcnow()) < timedelta(seconds=1))
+    self.assertTrue(abs(read_container.createdAt - datetime.now()) < timedelta(seconds=1))
 
     self.assertEqual(read_container.collection(), coll.id)
     self.assertEqual(read_container.collectionName(), coll.name)
@@ -68,7 +66,7 @@ class TestContainer(ModelBase):
 
     new_tag = container.tag_image('v1', image1.id)
     self.assertEqual(new_tag.image_ref.id, image1.id)
-    self.assertTrue(abs(new_tag.createdAt - datetime.utcnow()) < timedelta(seconds=1))
+    self.assertTrue(abs(new_tag.createdAt - datetime.now()) < timedelta(seconds=1))
     self.assertIsNone(new_tag.updatedAt)
     tags = Tag.query.filter(Tag.image_id.in_([ c.id for c in container.images_ref ])).all()
     self.assertListEqual(
@@ -78,7 +76,7 @@ class TestContainer(ModelBase):
 
     new_tag = container.tag_image('v1', image1.id)
     self.assertEqual(new_tag.image_ref.id, image1.id)
-    self.assertTrue(abs(new_tag.updatedAt - datetime.utcnow()) < timedelta(seconds=1))
+    self.assertTrue(abs(new_tag.updatedAt - datetime.now()) < timedelta(seconds=1))
     tags = Tag.query.filter(Tag.image_id.in_([ c.id for c in container.images_ref ])).all()
     self.assertListEqual(
       [f"{tag.name}:{tag.image_ref.id}" for tag in tags ],
@@ -87,7 +85,7 @@ class TestContainer(ModelBase):
 
     new_tag = container.tag_image('v1.1', image1.id)
     self.assertEqual(new_tag.image_ref.id, image1.id)
-    self.assertTrue(abs(new_tag.createdAt - datetime.utcnow()) < timedelta(seconds=1))
+    self.assertTrue(abs(new_tag.createdAt - datetime.now()) < timedelta(seconds=1))
     self.assertIsNone(new_tag.updatedAt)
     tags = Tag.query.filter(Tag.image_id.in_([ c.id for c in container.images_ref ])).all()
     self.assertListEqual(
@@ -101,7 +99,7 @@ class TestContainer(ModelBase):
 
     new_tag = container.tag_image('v2', image2.id)
     self.assertEqual(new_tag.image_ref.id, image2.id)
-    self.assertTrue(abs(new_tag.createdAt - datetime.utcnow()) < timedelta(seconds=1))
+    self.assertTrue(abs(new_tag.createdAt - datetime.now()) < timedelta(seconds=1))
     self.assertIsNone(new_tag.updatedAt)
     tags = Tag.query.filter(Tag.image_id.in_([ c.id for c in container.images_ref ])).all()
     self.assertListEqual(
@@ -111,7 +109,7 @@ class TestContainer(ModelBase):
 
     new_tag = container.tag_image('v1.1', image2.id)
     self.assertEqual(new_tag.image_ref.id, image2.id)
-    self.assertTrue(abs(new_tag.updatedAt - datetime.utcnow()) < timedelta(seconds=1))
+    self.assertTrue(abs(new_tag.updatedAt - datetime.now()) < timedelta(seconds=1))
     tags = Tag.query.filter(Tag.image_id.in_([ c.id for c in container.images_ref ])).all()
     self.assertListEqual(
       [f"{tag.name}:{tag.image_ref.id}" for tag in tags ],
@@ -147,44 +145,41 @@ class TestContainer(ModelBase):
     
 
   def test_access(self):
-    admin = FskUser('oink', True)
-    user = FskUser('oink', False)
+    admin = _create_user(name='admin.oink', is_admin=True)
+    user = _create_user(name='user.oink', is_admin=False)
+    other_user = _create_user(name='user.muh', is_admin=False)
 
     container, collection, entity = _create_container()
     self.assertTrue(container.check_access(admin))
     self.assertFalse(container.check_access(user))
 
     container, collection, entity = _create_container('owned')
-    entity.createdBy='oink'
-    db.session.commit()
-    collection.createdBy='oink'
-    db.session.commit()
-    container.createdBy='oink'
+    entity.owner=user
+    collection.owner=user
+    container.owner=user
     self.assertTrue(container.check_access(user))
 
-    container.createdBy='muh'
+    container.owner=other_user
     self.assertFalse(container.check_access(user))
 
     container, collection, entity = _create_container('default')
     entity.name='default'
-    db.session.commit()
-    collection.createdBy='oink'
-    db.session.commit()
-    container.createdBy='oink'
+    collection.owner=user
+    container.owner=user
     self.assertTrue(container.check_access(user))
 
-    container.createdBy='muh'
+    container.owner=other_user
     self.assertFalse(container.check_access(user))
   
   def test_update_access(self):
-    admin = FskUser('admin.oink', True)
-    user = FskUser('user.oink', False)
+    admin = _create_user(name='admin.oink', is_admin=True)
+    user = _create_user(name='user.oink', is_admin=False)
 
     container, _, _ = _create_container()
     self.assertTrue(container.check_update_access(admin))
     self.assertFalse(container.check_update_access(user))
 
-    container.createdBy = user.username
+    container.owner = user
     self.assertTrue(container.check_update_access(user))
 
 
@@ -207,6 +202,8 @@ class TestContainer(ModelBase):
     self.assertEqual(serialized.data['name'], container.name)
     self.assertEqual(serialized.data['private'], False)
     self.assertEqual(serialized.data['readOnly'], False)
+    self.assertIsNone(serialized.data['deletedAt'])
+    self.assertFalse(serialized.data['deleted'])
 
     serialized = schema.dump(container)
     self.assertEqual(serialized.data['collection'], str(coll.id))

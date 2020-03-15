@@ -5,29 +5,9 @@ from flask import g
 from contextlib import contextmanager
 
 from Hinkskalle import create_app, db
-from Hinkskalle.fsk_api import FskUser
-from Hinkskalle.models import Entity, Collection, Container, Image, Tag
+from Hinkskalle.models import Entity, Collection, Container, Image, Tag, User
 
-@contextmanager
-def fake_admin_auth(app):
-  fsk_admin_auth_mock = mock.patch('fsk_authenticator.FskAdminAuthenticator.authenticate')
-  fsk_auth_mock = mock.patch('fsk_authenticator.FskAuthenticator.authenticate')
-  fsk_admin_auth_mock.start()
-  fsk_auth_mock.start()
-  with app.app_context():
-    g.fsk_user=FskUser('test.hase', True)
-    yield
-  fsk_admin_auth_mock.stop()
-  fsk_auth_mock.stop()
-
-@contextmanager
-def fake_auth(app):
-  fsk_auth_mock = mock.patch('fsk_authenticator.FskAuthenticator.authenticate')
-  fsk_auth_mock.start()
-  with app.app_context():
-    g.fsk_user=FskUser('test.hase', False)
-    yield
-  fsk_auth_mock.stop()
+from Hinkskalle.tests.model_base import _create_user
 
 class RouteBase(unittest.TestCase):
   app = None
@@ -46,6 +26,13 @@ class RouteBase(unittest.TestCase):
     self.app.app_context().push()
     db.create_all()
 
+    self.admin_username='admin.hase'
+    self.admin_user = _create_user(name=self.admin_username, is_admin=True)
+    self.username='user.hase'
+    self.user = _create_user(name=self.username, is_admin=False)
+    self.other_username='other.hase'
+    self.other_user = _create_user(name=self.other_username, is_admin=False)
+
     # This is strange: The real before_request_func
     # gets executed only once. I guess it has something to do with using current_app??
     # anyways, this is a quick and dirty fix
@@ -56,3 +43,24 @@ class RouteBase(unittest.TestCase):
 
   def tearDown(self):
     db.drop_all()
+
+  @contextmanager
+  def fake_auth(self):
+    token_auth_mock = mock.patch('Hinkskalle.util.auth.TokenAuthenticator.authenticate')
+    token_auth_mock.start()
+    with self.app.app_context():
+      # re-read user from database to ensure that it is in the context db session
+      g.authenticated_user=User.query.filter(User.username==self.username).one()
+      yield
+    token_auth_mock.stop()
+
+  @contextmanager
+  def fake_admin_auth(self):
+    token_auth_mock = mock.patch('Hinkskalle.util.auth.TokenAuthenticator.authenticate')
+    token_auth_mock.start()
+    with self.app.app_context():
+      # re-read user from database to ensure that it is in the context db session
+      g.authenticated_user=User.query.filter(User.username==self.admin_username).one()
+      yield
+    token_auth_mock.stop()
+

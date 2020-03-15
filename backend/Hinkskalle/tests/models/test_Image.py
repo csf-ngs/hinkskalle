@@ -1,14 +1,12 @@
 import unittest
-from mongoengine import connect, disconnect
 from datetime import datetime, timedelta
 
 from Hinkskalle.models import Entity, Collection, Container, Image, ImageSchema, Tag
 
 from Hinkskalle.tests.models.test_Collection import _create_collection
-from Hinkskalle.fsk_api import FskUser
 
 from Hinkskalle import db
-from Hinkskalle.tests.model_base import ModelBase
+from Hinkskalle.tests.model_base import ModelBase, _create_user
 
 def _create_image(hash='sha256.oink', postfix='container'):
   try:
@@ -49,7 +47,7 @@ class TestImage(ModelBase):
     db.session.commit()
 
     read_image = Image.query.get(image.id)
-    self.assertTrue(abs(read_image.createdAt - datetime.utcnow()) < timedelta(seconds=1))
+    self.assertTrue(abs(read_image.createdAt - datetime.now()) < timedelta(seconds=1))
 
     self.assertEqual(read_image.container(), container.id)
     self.assertEqual(read_image.containerName(), container.name)
@@ -74,16 +72,16 @@ class TestImage(ModelBase):
     Tag.__table__.delete()
   
   def test_access(self):
-    admin = FskUser('oink', True)
-    user = FskUser('oink', False)
+    admin = _create_user(name='admin.oink', is_admin=True)
+    user = _create_user(name='user.oink', is_admin=False)
     image = _create_image()[0]
     self.assertTrue(image.check_access(admin))
     self.assertTrue(image.check_access(user))
     self.assertTrue(image.check_access(None))
   
   def test_access_private(self):
-    admin = FskUser('admin.oink', True)
-    user = FskUser('user.oink', False)
+    admin = _create_user(name='admin.oink', is_admin=True)
+    user = _create_user(name='user.oink', is_admin=False)
 
     image, container, _, _ = _create_image()
     container.private = True
@@ -92,19 +90,19 @@ class TestImage(ModelBase):
     self.assertTrue(image.check_access(admin))
     self.assertFalse(image.check_access(user))
 
-    container.createdBy = user.username
+    container.owner = user
     self.assertTrue(image.check_access(user))
 
   
   def test_update_access(self):
-    admin = FskUser('admin.oink', True)
-    user = FskUser('user.oink', False)
+    admin = _create_user(name='admin.oink', is_admin=True)
+    user = _create_user(name='user.oink', is_admin=False)
 
     image, container, _, _ = _create_image()
     self.assertTrue(image.check_update_access(admin))
     self.assertFalse(image.check_update_access(user))
 
-    container.createdBy = user.username
+    container.owner = user
     self.assertTrue(image.check_update_access(user))
 
 
@@ -139,6 +137,8 @@ class TestImage(ModelBase):
     self.assertEqual(serialized.data['collectionName'], coll.name)
     self.assertEqual(serialized.data['entity'], str(entity.id))
     self.assertEqual(serialized.data['entityName'], entity.name)
+    self.assertIsNone(serialized.data['deletedAt'])
+    self.assertFalse(serialized.data['deleted'])
 
   def test_schema_tags(self):
     schema = ImageSchema()

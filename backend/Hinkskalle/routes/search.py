@@ -1,9 +1,9 @@
-from Hinkskalle import registry, rebar, fsk_auth
+from Hinkskalle import registry, rebar, authenticator
+from Hinkskalle.util.auth import Scopes
 from flask_rebar import RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
 from flask import current_app, g
 import re
-from mongoengine.queryset.visitor import Q
 
 
 from Hinkskalle.models import Entity, EntitySchema, Collection, CollectionSchema, Container, ContainerSchema, ImageSchema
@@ -25,7 +25,7 @@ class SearchQuerySchema(RequestSchema):
   method='GET',
   response_body_schema=SearchResponseSchema(),
   query_string_schema=SearchQuerySchema(),
-  authenticators=fsk_auth,
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def search():
   args = rebar.validated_args
@@ -34,10 +34,10 @@ def search():
   collections = Collection.query.filter(Collection.name.ilike(f"%{args['value']}%"))
   containers = Container.query.filter(Container.name.ilike(f"%{args['value']}%"))
 
-  if not g.fsk_user.is_admin:
-    entities = entities.filter(Entity.createdBy==g.fsk_user.username)
-    collections = collections.filter(Collection.createdBy==g.fsk_user.username)
-    containers = containers.filter(Container.createdBy==g.fsk_user.username)
+  if not g.authenticated_user.is_admin:
+    entities = entities.filter(Entity.owner==g.authenticated_user)
+    collections = collections.filter(Collection.owner==g.authenticated_user)
+    containers = containers.filter(Container.owner==g.authenticated_user)
 
   return {
     'data': {

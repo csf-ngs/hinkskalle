@@ -1,11 +1,9 @@
-from mongoengine import connect, disconnect
 from datetime import datetime, timedelta
 
 from Hinkskalle.models import Entity, Collection, CollectionSchema, Container
-from Hinkskalle.fsk_api import FskUser
 
 from Hinkskalle import db
-from Hinkskalle.tests.model_base import ModelBase
+from Hinkskalle.tests.model_base import ModelBase, _create_user
 
 def _create_collection(name='test-collection'):
   try:
@@ -28,7 +26,7 @@ class TestCollection(ModelBase):
 
     read_coll = Collection.query.filter_by(name='test-collection').one()
     self.assertEqual(read_coll.id, coll.id)
-    self.assertTrue(abs(read_coll.createdAt - datetime.utcnow()) < timedelta(seconds=1))
+    self.assertTrue(abs(read_coll.createdAt - datetime.now()) < timedelta(seconds=1))
 
     self.assertEqual(read_coll.entity(), entity.id)
     self.assertEqual(read_coll.entityName(), entity.name)
@@ -53,44 +51,42 @@ class TestCollection(ModelBase):
 
   
   def test_access(self):
-    admin = FskUser('oink', True)
-    user = FskUser('oink', False)
+    admin = _create_user(name='admin.oink', is_admin=True)
+    user = _create_user(name='user.oink', is_admin=False)
+    other_user = _create_user(name='user.muh', is_admin=False)
     coll, entity = _create_collection('other')
     self.assertTrue(coll.check_access(admin))
     self.assertFalse(coll.check_access(user))
 
     coll, entity = _create_collection('own')
-    entity.createdBy='oink'
-    db.session.commit()
-    coll.createdBy='oink'
+    entity.owner=user
+    coll.owner=user
     self.assertTrue(coll.check_access(user))
-    coll.createdBy='muh'
+    coll.owner=other_user
     self.assertFalse(coll.check_access(user))
 
     coll, entity = _create_collection('own-default')
-    entity.createdBy='muh'
-    db.session.commit()
-    coll.createdBy='oink'
+    entity.owner=other_user
+    coll.owner=user
     self.assertTrue(coll.check_access(user))
 
     coll, default = _create_collection('default')
     default.name='default'
-    db.session.commit()
-    coll.createdBy='oink'
+    coll.owner=user
     self.assertTrue(coll.check_access(user))
-    coll.createdBy='muh'
+    coll.owner=other_user
     self.assertFalse(coll.check_access(user))
   
   def test_update_access(self):
-    admin = FskUser('admin.oink', True)
-    user = FskUser('user.oink', False)
+    admin = _create_user(name='admin.oink', is_admin=True)
+    user = _create_user(name='user.oink', is_admin=False)
 
     coll, _ = _create_collection('other')
     self.assertTrue(coll.check_update_access(admin))
     self.assertFalse(coll.check_update_access(user))
 
     coll, _ = _create_collection('own')
-    coll.createdBy = user.username 
+    coll.owner = user
     self.assertTrue(coll.check_update_access(user))
 
     coll, default = _create_collection('default')
@@ -109,4 +105,7 @@ class TestCollection(ModelBase):
 
     self.assertEqual(serialized.data['entity'], str(entity.id))
     self.assertEqual(serialized.data['entityName'], entity.name)
+
+    self.assertIsNone(serialized.data['deletedAt'])
+    self.assertFalse(serialized.data['deleted'])
 

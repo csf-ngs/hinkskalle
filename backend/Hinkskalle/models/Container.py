@@ -20,8 +20,8 @@ class ContainerSchema(Schema):
   createdAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(dump_only=True, allow_none=True)
   updatedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deletedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deleted = fields.Boolean(dump_only=True)
+  deletedAt = fields.DateTime(dump_only=True, default=None)
+  deleted = fields.Boolean(dump_only=True, default=False)
 
   # image ids, not used? keep to validate schema
   images = fields.String(dump_only=True, many=True, attribute='image_names')
@@ -47,13 +47,13 @@ class Container(db.Model):
 
   collection_id = db.Column(db.Integer, db.ForeignKey('collection.id'), nullable=False)
 
-  createdAt = db.Column(db.DateTime, default=datetime.utcnow)
-  createdBy = db.Column(db.String())
+  createdAt = db.Column(db.DateTime, default=datetime.now)
+  createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime)
-  deletedAt = db.Column(db.DateTime)
-  deleted = db.Column(db.Boolean, default=False, nullable=False)
 
-  images_ref = db.relationship('Image', backref='container_ref', lazy='dynamic')
+  collection_ref = db.relationship('Collection', back_populates='containers_ref')
+  images_ref = db.relationship('Image', back_populates='container_ref', lazy='dynamic')
+  owner = db.relationship('User', back_populates='containers')
 
   __table_args__ = (db.UniqueConstraint('name', 'collection_id', name='name_collection_id_idx'),)
 
@@ -75,7 +75,7 @@ class Container(db.Model):
     cur_tag = Tag.query.filter(Tag.name == tag, Tag.image_id.in_([ i.id for i in self.images_ref ])).first()
     if cur_tag:
       cur_tag.image_ref=image
-      cur_tag.updatedAt=datetime.utcnow()
+      cur_tag.updatedAt=datetime.now()
       db.session.commit()
     else:
       cur_tag = Tag(name=tag, image_ref=image)
@@ -95,18 +95,18 @@ class Container(db.Model):
   def archTags(self):
     return {}
   
-  def check_access(self, fsk_user):
-    if fsk_user.is_admin:
+  def check_access(self, user):
+    if user.is_admin:
       return True
-    elif self.createdBy == fsk_user.username:
+    elif self.owner == user:
       return True
     else:
       return False
   
-  def check_update_access(self, fsk_user):
-    if fsk_user.is_admin:
+  def check_update_access(self, user):
+    if user.is_admin:
       return True
-    elif self.createdBy == fsk_user.username:
+    elif self.owner == user:
       return True
     else:
       return False

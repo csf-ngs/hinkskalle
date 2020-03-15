@@ -8,3 +8,6 @@ from Hinkskalle.routes.imagefiles import *
 from Hinkskalle.routes.tags import *
 from Hinkskalle.routes.search import *
 from Hinkskalle.routes.shub import *
+
+from Hinkskalle.routes.users import *
+from Hinkskalle.routes.tokens import *

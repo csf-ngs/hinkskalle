@@ -2,26 +2,31 @@ from flask import Flask
 from flask_rebar import Rebar
 from logging.config import dictConfig
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import MetaData
 from flask_migrate import Migrate
 
 import os
 
 rebar = Rebar()
-from Hinkskalle.util.swagger import generator
 
-registry = rebar.create_handler_registry(prefix="/", swagger_generator=generator)
+registry = rebar.create_handler_registry(prefix="/")
 registry.set_default_authenticator(None)
 
-from Hinkskalle.fsk_api import HinkskalleFskApi
-from fsk_authenticator import FskAdminAuthenticator, FskAuthenticator
-from Hinkskalle.util.auth import FskOptionalAuthenticator
+from Hinkskalle.util.swagger import register_authenticators
+register_authenticators(registry)
 
-FskAuthenticator.register_fsk_api_class(HinkskalleFskApi)
-fsk_auth = FskAuthenticator(key_header='Authorization')
-fsk_admin_auth = FskAdminAuthenticator(key_header='Authorization')
-fsk_optional_auth = FskOptionalAuthenticator(key_header='Authorization')
+from Hinkskalle.util.auth import TokenAuthenticator
+authenticator = TokenAuthenticator()
 
-db = SQLAlchemy()
+# see https://github.com/miguelgrinberg/Flask-Migrate/issues/61#issuecomment-208131722
+naming_convention = {
+    "ix": 'ix_%(column_0_label)s',
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(column_0_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+}
+db = SQLAlchemy(metadata=MetaData(naming_convention=naming_convention))
 migrate = Migrate()
 
 def create_app():
@@ -67,6 +72,7 @@ def create_app():
 
   app.config['PREFERRED_URL_SCHEME']=os.environ.get('PREFERRED_URL_SCHEME', 'http')
   db.init_app(app)
+  migrate.init_app(app, db)
 
   with app.app_context():
     import Hinkskalle.commands
@@ -74,7 +80,8 @@ def create_app():
     # make sure init_app is called after importing routes??
     rebar.init_app(app)
 
-  migrate.init_app(app, db)
+    # see https://github.com/miguelgrinberg/Flask-Migrate/issues/61#issuecomment-208131722
+    migrate.init_app(app, db, render_as_batch=db.engine.url.drivername == 'sqlite')
 
   return app
 

@@ -13,5 +13,6 @@ setup(
         'flask-rebar',
         'requests',
         'passlib',
+        'python-ldap',
     ],
 )

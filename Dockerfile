@@ -10,6 +10,7 @@ RUN useradd -d /srv/hinkskalle -m -s /bin/bash hinkskalle
 
 COPY --chown=hinkskalle backend /srv/hinkskalle/backend
 RUN cd /srv/hinkskalle/backend \
+  && pip3 uninstall -y enum34 \
   && pip3 install -e . 
 
 WORKDIR /srv/hinkskalle

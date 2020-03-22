@@ -54,4 +54,4 @@ volumes:
     path: /var/run/docker.sock
 - name: dockerauth
   host:
-    path: /home/drone/.docker
+    path: /home/docker/.docker

@@ -1,6 +1,6 @@
 FROM docker.ngs.vbcf.ac.at/singularity-base as singularity
 
-FROM docker.ngs.vbcf.ac.at/flask-base:v1.1.2
+FROM docker.ngs.vbcf.ac.at/flask-base:v1.1.4
 
 RUN apt-get install -y jq gosu
 
@@ -10,7 +10,6 @@ RUN useradd -d /srv/hinkskalle -m -s /bin/bash hinkskalle
 
 COPY --chown=hinkskalle backend /srv/hinkskalle/backend
 RUN cd /srv/hinkskalle/backend \
-  && pip3 uninstall -y enum34 \
   && pip3 install -e . 
 
 WORKDIR /srv/hinkskalle

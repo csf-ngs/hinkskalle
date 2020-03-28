@@ -51,6 +51,7 @@ class TestPasswordAuth(RouteBase):
       ret = c.post('/v1/get-token', json={ 'username': user.username, 'password': 'supergeheim' } )
       self.assertEqual(ret.status_code, 401)
       self.assertIsNone(g.get('authenticated_user'))
+  
 
 
       

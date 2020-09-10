@@ -10,7 +10,7 @@ class LocalUsers(PasswordCheckerBase):
     pass
 
   def check_password(self, username, password):
-    from Hinkskalle.models import User, Token
+    from Hinkskalle.models import User
     try:
       user = User.query.filter(User.username==username, User.source=='local').one()
     except NoResultFound:

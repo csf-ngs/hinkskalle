@@ -9,3 +9,7 @@ class UserDisabled(Exception):
 class InvalidPassword(Exception):
   def __init__(self):
     self.message="Invalid password"
+
+class UserConflict(Exception):
+  def __init__(self):
+    self.message="Local user with same username exists"

@@ -1,5 +1,5 @@
 from .base import PasswordCheckerBase
-from .exceptions import UserNotFound, InvalidPassword
+from .exceptions import UserNotFound, InvalidPassword, UserDisabled, UserConflict
 
 from sqlalchemy.orm.exc import NoResultFound 
 
@@ -49,6 +49,13 @@ class LDAPUsers(PasswordCheckerBase):
     attrs = entry.get('attributes')
     try:
       user = User.query.filter(User.username==attrs.get('cn')).one()
+
+      if not user.is_active:
+        raise UserDisabled()
+
+      if not user.source == 'ldap':
+        raise UserConflict()
+
     except NoResultFound:
       user = User()
     
@@ -72,6 +79,10 @@ class LDAPUsers(PasswordCheckerBase):
     except (LDAPInvalidCredentialsResult, LDAPPasswordIsMandatoryError):
       raise InvalidPassword()
     self.ldap.close()
+
+    db_user = self._sync_user(ldap_user)
+    g.authenticated_user = db_user
+    return db_user
     
 
 

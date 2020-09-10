@@ -62,13 +62,11 @@ class LDAPUsers(PasswordCheckerBase):
 
     db.session.add(user)
     db.session.commit()
-
-
+    return user
 
   def check_password(self, username, password):
     self.ldap.connect()
     ldap_user = self.ldap.search_user(username)
-    print(ldap_user)
     try:
       self.ldap.connection.rebind(user=ldap_user.get('dn'), password=password)
     except (LDAPInvalidCredentialsResult, LDAPPasswordIsMandatoryError):

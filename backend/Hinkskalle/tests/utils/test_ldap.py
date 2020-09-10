@@ -1,4 +1,4 @@
-from Hinkskalle.tests.model_base import ModelBase
+from Hinkskalle.tests.model_base import ModelBase, _create_user
 from ldap3 import Server, Connection, MOCK_SYNC, OFFLINE_AD_2012_R2
 
 from Hinkskalle.util.auth.ldap import LDAPUsers, LDAPService
@@ -76,4 +76,26 @@ class TestLdap(ModelBase):
   
   def test_sync(self):
     auth = self._setup_mock()
-    auth._sync_user({ 'attributes': { 'cn': 'test.hase' }})
+    db_user = auth._sync_user({ 'attributes': { 'cn': 'test.hase', 'mail': 'test@ha.se', 'givenName': 'Test', 'sn': 'Hase' }})
+    self.assertEqual(db_user.username, 'test.hase')
+    self.assertEqual(db_user.email, 'test@ha.se')
+    self.assertEqual(db_user.firstname, 'Test')
+    self.assertEqual(db_user.lastname, 'Hase')
+    self.assertIsNotNone(db_user.id)
+  
+  def test_sync_existing(self):
+    auth = self._setup_mock()
+    user = _create_user()
+
+    db_user = auth._sync_user({ 'attributes': { 'cn': user.username, 'mail': user.email, 'givenName': user.firstname, 'sn': user.lastname }})
+    self.assertEqual(db_user.id, user.id)
+    self.assertEqual(db_user.firstname, user.firstname)
+  
+  def test_sync_update(self):
+    auth = self._setup_mock()
+    user = _create_user()
+
+    db_user = auth._sync_user({ 'attributes': { 'cn': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
+    self.assertEqual(db_user.id, user.id)
+    self.assertEqual(db_user.firstname, user.firstname)
+    self.assertEqual(db_user.lastname, user.lastname)

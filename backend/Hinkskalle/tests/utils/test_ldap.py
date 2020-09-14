@@ -26,6 +26,22 @@ class TestLdap(ModelBase):
     auth = LDAPUsers()
     auth.ldap = self.svc
     return auth
+  
+  def test_config(self):
+    dummy_cfg = {
+      'HOST': 'dummy.serv.er',
+      'PORT': 461,
+      'BIND_DN': 'cn=oink, ou=grunz',
+      'BIND_PASSWORD': 'superS3cr3t',
+      'BASE_DN': 'ou=grunz'
+    }
+    self.app.config['LDAP'] = dummy_cfg
+    auth = LDAPUsers()
+    self.assertEqual(auth.ldap.host, dummy_cfg.get('HOST'))
+    self.assertEqual(auth.ldap.port, dummy_cfg.get('PORT'))
+    self.assertEqual(auth.ldap.bind_dn, dummy_cfg.get('BIND_DN'))
+    self.assertEqual(auth.ldap.bind_password, dummy_cfg.get('BIND_PASSWORD'))
+    self.assertEqual(auth.ldap.base_dn, dummy_cfg.get('BASE_DN'))
     
   def test_sync(self):
     auth = self._setup_mock()
@@ -83,6 +99,7 @@ class TestLdap(ModelBase):
     user = self._create_user()
 
     check_user = auth.check_password(user.get('cn'), user.get('userPassword'))
+    self.assertEqual(check_user.username, user.get('cn'))
 
   def test_check_existing(self):
     db_user = _create_user()

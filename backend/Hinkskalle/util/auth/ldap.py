@@ -39,7 +39,7 @@ class LDAPService:
 class LDAPUsers(PasswordCheckerBase):
 
   def __init__(self):
-    self.config = current_app.config.get('LDAP', {})
+    self.config = current_app.config.get('AUTH', {}).get('LDAP', {})
     self.ldap = LDAPService(host=self.config.get('HOST', ''), port=self.config.get('PORT', 389), bind_dn=self.config.get('BIND_DN'), bind_password=self.config.get('BIND_PASSWORD'), base_dn=self.config.get('BASE_DN'))
   
   def _sync_user(self, entry):

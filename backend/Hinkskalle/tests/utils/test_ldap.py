@@ -5,27 +5,29 @@ from ldap3 import Server, Connection, MOCK_SYNC, OFFLINE_AD_2012_R2
 from Hinkskalle.util.auth.ldap import LDAPUsers, LDAPService
 from Hinkskalle.util.auth.exceptions import *
 
-class TestLdap(ModelBase):
-  def setUp(self):
-    super().setUp()
-    self.svc = None
+class MockLDAP():
+  dummy_root = 'cn=root.hase,ou=test'
+  dummy_password = 'dummy'
+
+  def __init__(self):
+    self.svc = LDAPService(host='dummy', port=None, bind_dn=self.dummy_root, bind_password=self.dummy_password, base_dn='ou=test', get_info=OFFLINE_AD_2012_R2, client_strategy=MOCK_SYNC)
+    self.svc.connection.strategy.add_entry(f"cn=root.hase,ou=test", { 'cn': self.dummy_root, 'userPassword': self.dummy_password })
+
+    self.auth = LDAPUsers()
+    self.auth.ldap = self.svc
   
-  def _create_user(self, name='test.hase', password='supersecret', is_admin=False):
+  def create_user(self, name='test.hase', password='supersecret', is_admin=False):
     create_user = { 'cn': name, 'userPassword': password, 'mail': f"{name}@testha.se", 'sn': 'Oink', 'givenName': 'Grunz' }
     # add_entry seems to mutate the dict (all values turn to lists)
     self.svc.connection.strategy.add_entry(f"cn={name},ou=test", create_user.copy())
     return create_user
 
-  def _setup_mock(self):
-    dummy_root = 'cn=root.hase,ou=test'
-    dummy_password = 'dummy'
 
-    if not self.svc:
-      self.svc = LDAPService(host='dummy', port=None, bind_dn=dummy_root, bind_password=dummy_password, base_dn='ou=test', get_info=OFFLINE_AD_2012_R2, client_strategy=MOCK_SYNC)
-      self.svc.connection.strategy.add_entry(f"cn=root.hase,ou=test", { 'cn': dummy_root, 'userPassword': dummy_password })
-    auth = LDAPUsers()
-    auth.ldap = self.svc
-    return auth
+class TestLdap(ModelBase):
+
+  def _setup_mock(self):
+    self.mock = MockLDAP()
+    return self.mock.auth
   
   def test_config(self):
     dummy_cfg = {
@@ -35,7 +37,7 @@ class TestLdap(ModelBase):
       'BIND_PASSWORD': 'superS3cr3t',
       'BASE_DN': 'ou=grunz'
     }
-    self.app.config['LDAP'] = dummy_cfg
+    self.app.config['AUTH'] = { 'LDAP': dummy_cfg }
     auth = LDAPUsers()
     self.assertEqual(auth.ldap.host, dummy_cfg.get('HOST'))
     self.assertEqual(auth.ldap.port, dummy_cfg.get('PORT'))
@@ -96,7 +98,7 @@ class TestLdap(ModelBase):
 
   def test_check(self):
     auth = self._setup_mock()
-    user = self._create_user()
+    user = self.mock.create_user()
 
     check_user = auth.check_password(user.get('cn'), user.get('userPassword'))
     self.assertEqual(check_user.username, user.get('cn'))
@@ -106,36 +108,36 @@ class TestLdap(ModelBase):
     db_user.source = 'ldap'
     db.session.commit()
     auth = self._setup_mock()
-    user = self._create_user(name=db_user.username, password='supersecret')
+    user = self.mock.create_user(name=db_user.username, password='supersecret')
 
     check_user = auth.check_password(user.get('cn'), user.get('userPassword'))
     self.assertEqual(check_user.id, db_user.id)
 
   def test_check_twice(self):
     auth = self._setup_mock()
-    user = self._create_user()
-    other_user = self._create_user(name='oink.hase')
+    user = self.mock.create_user()
+    other_user = self.mock.create_user(name='oink.hase')
 
     check_user = auth.check_password(user.get('cn'), user.get('userPassword'))
     check_other_user = auth.check_password(other_user.get('cn'), other_user.get('userPassword'))
 
   def test_not_found(self):
     auth = self._setup_mock()
-    user = self._create_user()
+    user = self.mock.create_user()
 
     with self.assertRaises(UserNotFound):
       check_user = auth.check_password('someone', 'somesecret')
 
   def test_invalid_password(self):
     auth = self._setup_mock()
-    user = self._create_user()
+    user = self.mock.create_user()
 
     with self.assertRaises(InvalidPassword):
       check_user = auth.check_password(user.get('cn'), user.get('userPassword')+'oink')
 
   def test_invalid_password_recheck(self):
     auth = self._setup_mock()
-    user = self._create_user()
+    user = self.mock.create_user()
 
     with self.assertRaises(InvalidPassword):
       check_user = auth.check_password(user.get('cn'), user.get('userPassword')+'oink')
@@ -145,7 +147,7 @@ class TestLdap(ModelBase):
   
   def test_none_password(self):
     auth = self._setup_mock()
-    user = self._create_user()
+    user = self.mock.create_user()
 
     with self.assertRaises(InvalidPassword):
       check_user = auth.check_password(user.get('cn'), None)
@@ -159,7 +161,7 @@ class TestLdap(ModelBase):
     db_user.source = 'ldap'
     db_user.is_active = False
 
-    user = self._create_user(name=db_user.username, password='somesecret')
+    user = self.mock.create_user(name=db_user.username, password='somesecret')
 
     with self.assertRaises(UserDisabled):
       check_user = auth.check_password(user.get('cn'), user.get('userPassword'))

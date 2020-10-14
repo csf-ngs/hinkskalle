@@ -1,7 +1,7 @@
 from flask_rebar import HandlerRegistry
 from flask_rebar.swagger_generation import swagger_words as sw
 
-from .auth import TokenAuthenticator, ScopedTokenAuthenticator
+from .auth.token import TokenAuthenticator, ScopedTokenAuthenticator
 
 # this has very much been stolen from the auth0 authenticator
 

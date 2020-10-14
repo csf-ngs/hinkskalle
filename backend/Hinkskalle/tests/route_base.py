@@ -46,7 +46,7 @@ class RouteBase(unittest.TestCase):
 
   @contextmanager
   def fake_auth(self):
-    token_auth_mock = mock.patch('Hinkskalle.util.auth.TokenAuthenticator.authenticate')
+    token_auth_mock = mock.patch('Hinkskalle.util.auth.token.TokenAuthenticator.authenticate')
     token_auth_mock.start()
     with self.app.app_context():
       # re-read user from database to ensure that it is in the context db session
@@ -56,7 +56,7 @@ class RouteBase(unittest.TestCase):
 
   @contextmanager
   def fake_admin_auth(self):
-    token_auth_mock = mock.patch('Hinkskalle.util.auth.TokenAuthenticator.authenticate')
+    token_auth_mock = mock.patch('Hinkskalle.util.auth.token.TokenAuthenticator.authenticate')
     token_auth_mock.start()
     with self.app.app_context():
       # re-read user from database to ensure that it is in the context db session

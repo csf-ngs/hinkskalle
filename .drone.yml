@@ -25,7 +25,7 @@ steps:
   - name: dockersock
     path: /var/run/docker.sock
   - name: dockerauth
-    path: /root/.docker
+    path: /root/.docker/config.json
   commands:
   - >
     docker build 
@@ -40,7 +40,7 @@ steps:
   - name: dockersock
     path: /var/run/docker.sock
   - name: dockerauth
-    path: /root/.docker
+    path: /root/.docker/config.json
   commands:
   - TAG=$(cat .tags)
   - docker tag docker.ngs.vbcf.ac.at/hinkskalle docker.ngs.vbcf.ac.at/hinkskalle:$TAG
@@ -54,4 +54,4 @@ volumes:
     path: /var/run/docker.sock
 - name: dockerauth
   host:
-    path: /home/docker/.docker
+    path: /home/docker/drone/docker-config.json

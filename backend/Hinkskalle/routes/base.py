@@ -1,5 +1,5 @@
 from Hinkskalle import registry, authenticator, db
-from Hinkskalle.util.auth import Scopes
+from Hinkskalle.util.auth.token import Scopes
 from flask import current_app, jsonify, make_response, request, redirect, g
 from flask_rebar import RequestSchema, ResponseSchema
 from marshmallow import fields, Schema

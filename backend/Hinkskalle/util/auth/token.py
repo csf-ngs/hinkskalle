@@ -13,6 +13,8 @@ class Scopes(Enum):
 # the pattern with scopes is sort-of stolen from the auth0 authenticator
 class ScopedTokenAuthenticator(Authenticator):
   def __init__(self, auth, scope):
+    if not isinstance(scope, Scopes):
+      raise ValueError('Invalid scope')
     self.authenticator=auth
     self.scope=scope
   

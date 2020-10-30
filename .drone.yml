@@ -19,6 +19,12 @@ steps:
   - cd backend
   - pip3 install -e .
   - nose2
+- name: testhase-front
+  image: docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.4.0
+  commands:
+  - cd frontend
+  - yarn install
+  - yarn test:unit
 - name: bauhaus
   image: docker:dind
   volumes:

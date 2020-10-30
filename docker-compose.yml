@@ -1,7 +1,7 @@
 version: '3'
 services:
   api:
-    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.3.6"
+    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.4.0"
     volumes:
       - '.:/srv/hinkskalle/src'
       - './data/sqlite:/data/db'
@@ -15,3 +15,13 @@ services:
     ports:
       - '7660:5000'
     working_dir: '/srv/hinkskalle/src/backend'
+  build_frontend:
+    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.4.0"
+    volumes:
+      - '.:/srv/hinkskalle/src'
+    command: '../script/start-dev-frontend.sh'
+    ports:
+      - '7661:8080'
+    working_dir: '/srv/hinkskalle/src/frontend'
+    depends_on: 
+      - api

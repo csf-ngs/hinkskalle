@@ -42,6 +42,9 @@ export default new Vuex.Store({
   getters: {
     authStatus: state => state.authStatus,
     isLoggedIn: state => state.currentUser !== null,
+    currentUser: state => state.currentUser,
+    showSnackbar: state => state.snackbar.show,
+    snackbarMsg: state => state.snackbar.msg,
   },
   mutations: {
     openSnackbar(state: State, msg: string) {

@@ -23,6 +23,20 @@ describe('store getters', () => {
     store.state.currentUser = testUser;
     expect(store.getters.isLoggedIn).toBe(true);
   });
+  it('has currentUser getter', () => {
+    store.state.currentUser = testUser;
+    expect(store.getters.currentUser).toBe(testUser);
+  });
+  it('has showSnackbar getter', () => {
+    store.state.snackbar.show = false;
+    expect(store.getters.showSnackbar).toBe(false);
+    store.state.snackbar.show = true;
+    expect(store.getters.showSnackbar).toBe(true);
+  });
+  it('has snackbarMsg getter', () => {
+    store.state.snackbar.msg = 'oink';
+    expect(store.getters.snackbarMsg).toBe('oink');
+  });
 });
 
 describe('store mutations', () => {
@@ -87,13 +101,15 @@ describe('store actions', () => {
       expect(store.state.currentUser).toBe(testUser);
     });
 
+  });
+
+  it('has requestAuth fail handling', () => {
+    const postData = { username: 'test.hase', password: 'supersecret'};
     mockAxios.post.mockRejectedValue({ fail: 'fail' });
-    const failPromise = store.dispatch('requestAuth', postData);
-    failPromise.catch(err => {
+    store.dispatch('requestAuth', postData).catch(err => {
       expect(store.state.authStatus).toBe('failed');
       expect(store.state.currentUser).toBeNull();
     });
-
   });
 
 });

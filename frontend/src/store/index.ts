@@ -1,29 +1,30 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+import Vue from 'vue';
+import Vuex from 'vuex';
 
 import axios, {AxiosInstance} from 'axios';
 
-Vue.use(Vuex)
+Vue.use(Vuex);
 
 export interface User {
-  username: string,
-  email: string,
-  fullname: string,
-  role: "admin" | "user",
-  extra_data: any,
+  username: string;
+  email: string;
+  fullname: string;
+  role: "admin" | "user";
+  // eslint-disable-next-line
+  extra_data: any;
 }
 
 export interface SnackbarState {
-  show: boolean,
-  msg: string | null,
+  show: boolean;
+  msg: string | null;
 }
 
 interface State {
-  backend: AxiosInstance,
-  snackbar: SnackbarState,
-  authToken: string,
-  authStatus: string,
-  currentUser: User | null,
+  backend: AxiosInstance;
+  snackbar: SnackbarState;
+  authToken: string;
+  authStatus: string;
+  currentUser: User | null;
 }
 
 const state: State = {
@@ -35,7 +36,7 @@ const state: State = {
   authToken: '',
   authStatus: '',
   currentUser: null,
-}
+};
 
 export default new Vuex.Store({
   state: state,
@@ -58,7 +59,7 @@ export default new Vuex.Store({
     authRequested(state: State) {
       state.authStatus = 'loading';
     },
-    authSuccess(state: State, params: { token: string, user: User }) {
+    authSuccess(state: State, params: { token: string; user: User }) {
       state.authToken = params.token;
       state.currentUser = params.user;
       state.authStatus = 'success';
@@ -73,7 +74,7 @@ export default new Vuex.Store({
     },
   },
   actions: {
-    requestAuth: ({state, commit, dispatch}, user: {username: string, password: string}) => {
+    requestAuth: ({state, commit }, user: {username: string; password: string}) => {
       return new Promise((resolve, reject) => {
         commit('authRequested');
         state.backend.post('/api/v1/get-token', { username: user.username, password: user.password })
@@ -94,4 +95,4 @@ export default new Vuex.Store({
   },
   modules: {
   }
-})
+});

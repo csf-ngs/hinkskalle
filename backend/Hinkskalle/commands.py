@@ -11,6 +11,21 @@ db_cli = AppGroup('local_db', short_help='hinkskalle specific db commands')
 def init_db():
   db.create_all()
 
+@db_cli.command('add-user')
+@click.option('--username', '-u', help='Username', required=True)
+@click.option('--password', '-p', help='Password', required=True)
+@click.option('--email', '-e', help='Email', required=True)
+@click.option('--firstname', '-f', help='First Name', required=True)
+@click.option('--lastname', '-l', help='Last Name', required=True)
+@click.option('--admin/--no-admin', default=False, help='Admin Privs')
+def add_user(username, password, email, firstname, lastname, admin):
+  from Hinkskalle.models import User
+  user = User(username=username, email=email, firstname=firstname, lastname=lastname, is_admin=admin)
+  user.set_password(password)
+  db.session.add(user)
+  db.session.commit()
+
+
 @db_cli.command('migrate-mongo')
 @click.option('--mongodb-host', '-m', envvar='MONGODB_HOST', help='MongoDB URI (can also read from MONGDB_HOST env)')
 @click.confirmation_option(prompt='This will kill your database! Do it?')

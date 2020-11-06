@@ -1,9 +1,10 @@
-import Vue from 'vue'
-import VueRouter, { RouteConfig, NavigationGuard } from 'vue-router'
-import Home from '../views/Home.vue'
+import Vue from 'vue';
+import VueRouter, { RouteConfig, NavigationGuard } from 'vue-router';
+import Home from '../views/Home.vue';
+import Login from '../views/Login.vue';
 import store from '../store';
 
-Vue.use(VueRouter)
+Vue.use(VueRouter);
 
 export const isAuthenticated: NavigationGuard = (to, _, next) => {
   if (!store.getters.isLoggedIn) {
@@ -21,6 +22,11 @@ const routes: Array<RouteConfig> = [
     name: 'Home',
     component: Home
   },
+  { 
+    path: '/login',
+    name: 'Login',
+    component: Login,
+  }
 ];
 
 const router = new VueRouter({

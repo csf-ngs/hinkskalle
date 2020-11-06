@@ -12,8 +12,9 @@ store.state.backend = mockAxios;
 const testUser: User = {
       username: 'test.hase',
       email: 'test@ha.se',
-      fullname: 'Test Hase',
-      role: 'user',
+      firstname: 'Test',
+      lastname: 'Hase',
+      is_admin: false,
       extra_data: {},
     };
 
@@ -65,6 +66,8 @@ describe('store mutations', () => {
     expect(store.state.authStatus).toBe('success');
     expect(store.state.authToken).toBe('supersecret');
     expect(store.state.currentUser).toBe(testUser);
+    expect(store.state.currentUser!.fullname).toBe('Test Hase');
+    expect(store.state.currentUser!.role).toBe('user');
     expect(store.state.backend.defaults.headers.common['Authorization']).toBe(`Bearer supersecret`);
   });
 
@@ -84,31 +87,35 @@ describe('store mutations', () => {
 });
 
 describe('store actions', () => {
-  it('has requestAuth', () => {
+  it('has requestAuth', done => {
     mockAxios.post.mockResolvedValue({
       data: { 
-        token: 'superoink',
-        user: testUser,
+        data: {
+          token: 'superoink',
+          user: testUser,
+        },
       }
     });
     const postData = { username: 'test.hase', password: 'supersecret'};
     const promise = store.dispatch('requestAuth', postData);
-    expect(mockAxios.post).toBeCalledWith('/api/v1/get-token', postData);
+    expect(mockAxios.post).toBeCalledWith('/v1/get-token', postData);
     expect(store.state.authStatus).toBe('loading');
     promise.then(() => {
       expect(store.state.authStatus).toBe('success');
       expect(store.state.authToken).toBe('superoink');
       expect(store.state.currentUser).toBe(testUser);
+      done();
     });
 
   });
 
-  it('has requestAuth fail handling', () => {
+  it('has requestAuth fail handling', done => {
     const postData = { username: 'test.hase', password: 'supersecret'};
     mockAxios.post.mockRejectedValue({ fail: 'fail' });
     store.dispatch('requestAuth', postData).catch(err => {
       expect(store.state.authStatus).toBe('failed');
       expect(store.state.currentUser).toBeNull();
+      done();
     });
   });
 

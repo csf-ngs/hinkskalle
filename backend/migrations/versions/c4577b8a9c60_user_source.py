@@ -22,7 +22,6 @@ def upgrade():
         batch_op.create_unique_constraint(batch_op.f('uq_entity_name'), ['name'])
 
     with op.batch_alter_table('token', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('token', sa.String(), nullable=False))
         batch_op.create_unique_constraint(batch_op.f('uq_token_token'), ['token'])
 
     with op.batch_alter_table('user', schema=None) as batch_op:
@@ -38,7 +37,6 @@ def downgrade():
 
     with op.batch_alter_table('token', schema=None) as batch_op:
         batch_op.drop_constraint(batch_op.f('uq_token_token'), type_='unique')
-        batch_op.drop_column('token')
 
     with op.batch_alter_table('entity', schema=None) as batch_op:
         batch_op.drop_constraint(batch_op.f('uq_entity_name'), type_='unique')

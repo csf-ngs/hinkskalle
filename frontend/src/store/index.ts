@@ -8,10 +8,19 @@ Vue.use(Vuex);
 export interface User {
   username: string;
   email: string;
-  fullname: string;
-  role: "admin" | "user";
+  firstname: string;
+  lastname: string;
+  fullname?: string;
+  is_admin: boolean;
+  role?: "admin" | "user";
   // eslint-disable-next-line
-  extra_data: any;
+  extra_data?: any;
+}
+
+function prepareUser(user: User): User {
+  user.fullname = `${user.firstname} ${user.lastname}`;
+  user.role = user.is_admin ? 'admin' : 'user';
+  return user;
 }
 
 export interface SnackbarState {
@@ -41,11 +50,11 @@ const state: State = {
 export default new Vuex.Store({
   state: state,
   getters: {
-    authStatus: state => state.authStatus,
-    isLoggedIn: state => state.currentUser !== null,
-    currentUser: state => state.currentUser,
-    showSnackbar: state => state.snackbar.show,
-    snackbarMsg: state => state.snackbar.msg,
+    authStatus: (state): string => state.authStatus,
+    isLoggedIn: (state): boolean => state.currentUser !== null,
+    currentUser: (state): User | null => state.currentUser,
+    showSnackbar: (state): boolean => state.snackbar.show,
+    snackbarMsg: (state): string | null => state.snackbar.msg,
   },
   mutations: {
     openSnackbar(state: State, msg: string) {
@@ -61,7 +70,7 @@ export default new Vuex.Store({
     },
     authSuccess(state: State, params: { token: string; user: User }) {
       state.authToken = params.token;
-      state.currentUser = params.user;
+      state.currentUser = prepareUser(params.user);
       state.authStatus = 'success';
       state.backend.defaults.headers.common['Authorization']=`Bearer ${state.authToken}`;
     },
@@ -72,16 +81,19 @@ export default new Vuex.Store({
       state.authToken = '';
       delete state.backend.defaults.headers.common['Authorization'];
     },
+    setUser(state: State, user: User) {
+      state.currentUser = prepareUser(user);
+    },
   },
   actions: {
     requestAuth: ({state, commit }, user: {username: string; password: string}) => {
       return new Promise((resolve, reject) => {
         commit('authRequested');
-        state.backend.post('/api/v1/get-token', { username: user.username, password: user.password })
+        state.backend.post('/v1/get-token', { username: user.username, password: user.password })
           .then(response => {
-            const token = response.data.token;
+            const token = response.data.data.token;
             localStorage.setItem('token', token);
-            const user = response.data.user as User;
+            const user = response.data.data.user as User;
             commit('authSuccess', { token, user });
             resolve(response);
           })

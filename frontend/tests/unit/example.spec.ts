@@ -1,12 +1,9 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils'
+import { shallowMount } from '@vue/test-utils'
 import Vuetify from 'vuetify';
-import Vue from 'vue';
 
 import HelloWorld from '@/components/HelloWorld.vue'
 
-Vue.use(Vuetify);
-
-const localVue = createLocalVue();
+import { localVue } from '../setup';
 
 describe('HelloWorld.vue', () => {
   let vuetify: any;

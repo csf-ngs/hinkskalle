@@ -18,12 +18,12 @@
       </v-btn>
     </v-app-bar>
 
-    <v-content>
+    <v-main>
       <router-view></router-view>
-    </v-content>
+    </v-main>
     <v-snackbar v-model="showSnackbar" :timeout="1500" color="blue-grey lighten-1">
       {{snackbarMsg}}
-      <v-btn color="pink lighten-4" icon @click="hideSnackbar()">
+      <v-btn id="close-snackbar" color="pink lighten-4" icon @click="hideSnackbar()">
         <v-icon>mdi-close</v-icon>
       </v-btn>
     </v-snackbar>

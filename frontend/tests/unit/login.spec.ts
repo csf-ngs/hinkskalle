@@ -23,6 +23,23 @@ describe('Login.vue', () => {
     expect(wrapper.find('h4').text()).toBe('Login');
   });
 
+  it('checks required', async () => {
+    const wrapper = mount(Login, { localVue, store, vuetify, router });
+    expect(wrapper.find('button#login').attributes('disabled')).toBeTruthy();
+
+    await wrapper.setData({
+      state: {
+        user: {
+          username: 'oink',
+          password: 'hase',
+        }
+      }
+    });
+
+    expect(wrapper.find('button#login').attributes('disabled')).toBeFalsy();
+
+  });
+
 
 
 });

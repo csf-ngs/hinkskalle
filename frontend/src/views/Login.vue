@@ -14,7 +14,7 @@
               <v-text-field v-model="state.user.username" prepend-icon="mdi-account" name="Username" label="Username" required></v-text-field>
               <v-text-field v-model="state.user.password" prepend-icon="mdi-lock" name="Password" label="Password" type="password" required></v-text-field>
               <v-card-actions>
-                <v-btn primary large block @click="doLogin()" :disabled="!canSubmit">Login</v-btn>
+                <v-btn id="login" primary large block @click="doLogin()" :disabled="!canSubmit">Login</v-btn>
               </v-card-actions>
             </v-form>
           </v-card>

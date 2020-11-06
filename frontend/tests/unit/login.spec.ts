@@ -6,6 +6,7 @@ import VueRouter from 'vue-router';
 import Login from '@/views/Login.vue';
 
 import { localVue } from '../setup';
+import realStore from '@/store';
 
 describe('Login.vue', () => {
   let store: any;
@@ -74,8 +75,7 @@ describe('Login.vue', () => {
         });
       });
     });
-
-  })
+  });
 
 
 });

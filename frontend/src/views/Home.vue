@@ -15,12 +15,19 @@
           </v-card>
         </v-col>
       </v-row>
+      <v-row justify="center" v-if="isLoggedIn">
+        <v-col cols="8" id="latest-containers">
+          <latest-containers></latest-containers>
+        </v-col>
+      </v-row>
     </v-container>
   </div>
 </template>
 
 <script lang="ts">
 import Vue from 'vue';
+
+import LatestContainers from '@/components/LatestContainers.vue';
 
 export default Vue.extend({
   name: 'Home',
@@ -30,6 +37,7 @@ export default Vue.extend({
     },
   },
   components: {
+    LatestContainers,
   },
 });
 </script>

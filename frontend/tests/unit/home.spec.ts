@@ -29,6 +29,13 @@ describe('Home.vue', () => {
     expect(wrapper.text()).toContain('Not sure who you are');
     expect(wrapper.find('#login-msg a').attributes('href')).toBe('#/login');
   });
+
+
+  it('renders latest containers when logged in', () => {
+    isLoggedIn = true;
+    const wrapper = mount(Home, { localVue, vuetify, store, router, });
+    expect(wrapper.find('latest-containers')).not.toBeNull();
+  });
 });
 
 

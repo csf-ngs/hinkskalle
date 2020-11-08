@@ -42,7 +42,7 @@ interface LocalState {
 
 interface Data {
   state: LocalState;
-  rules: Array<(string) => boolean | string>;
+  rules: Array<(val: string) => boolean | string>;
 }
 
 export default Vue.extend({
@@ -63,7 +63,7 @@ export default Vue.extend({
   methods: {
     doLogin() {
       this.$store.dispatch('requestAuth', this.state.user)
-        .then((res) => {
+        .then(() => {
           this.$router.push('/');
         })
         .catch((err: AxiosError) => {

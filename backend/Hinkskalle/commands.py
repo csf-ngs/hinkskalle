@@ -2,8 +2,12 @@ import click
 from flask import current_app
 from flask.cli import AppGroup
 from Hinkskalle import db
+from Hinkskalle import registry
+from flask_rebar import SwaggerV2Generator
+from Hinkskalle.util.typescript import ModelRenderer
 import os
 import re
+
 
 db_cli = AppGroup('local_db', short_help='hinkskalle specific db commands')
 
@@ -101,7 +105,12 @@ def migrate_mongo(mongodb_host):
   db.session.commit()
 
 
-
-
-
 current_app.cli.add_command(db_cli)
+
+@current_app.cli.command()
+@click.option('--out', default='../frontend/src/store/models.ts', type=click.File(mode='wb'))
+def generate_typescript_models(out):
+  swagger = SwaggerV2Generator().generate(registry)
+  class_renderer = ModelRenderer()
+  models = class_renderer.render(swagger['definitions'])
+  out.write(models.encode('utf-8'))

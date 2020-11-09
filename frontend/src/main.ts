@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import VueClipboard from 'vue-clipboard2'
+import VueMoment from 'vue-moment';
 import App from './App.vue'
 import router from './router'
 import vuetify from './plugins/vuetify';
@@ -15,3 +16,4 @@ new Vue({
 }).$mount('#app')
 
 Vue.use(VueClipboard);
+Vue.use(VueMoment);

@@ -1,5 +1,6 @@
 import router, { isAuthenticated } from '@/router';
-import store, { User } from '@/store';
+import store from '@/store';
+import { User } from '@/store/models';
 import { Route } from 'vue-router';
 
 describe('AuthGuard', () => {

@@ -32,7 +32,7 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import { User } from './store';
+import { User } from './store/models';
 
 export default Vue.extend({
   name: 'App',

@@ -5,43 +5,21 @@ import axios, {AxiosInstance} from 'axios';
 
 Vue.use(Vuex);
 
-export interface User {
-  username: string;
-  email: string;
-  firstname: string;
-  lastname: string;
-  fullname?: string;
-  is_admin: boolean;
-  role?: "admin" | "user";
-  // eslint-disable-next-line
-  extra_data?: any;
-}
-
-function prepareUser(user: User): User {
-  user.fullname = `${user.firstname} ${user.lastname}`;
-  user.role = user.is_admin ? 'admin' : 'user';
-  return user;
-}
-
-export interface SnackbarState {
-  show: boolean;
-  msg: string | null;
-}
+import { User, plainToUser } from './models';
+import snackbarModule from './modules/snackbar';
+import containersModule from './modules/containers';
 
 interface State {
   backend: AxiosInstance;
-  snackbar: SnackbarState;
   authToken: string;
-  authStatus: string;
+  authStatus: '' | 'loading' | 'failed' | 'success';
   currentUser: User | null;
+  snackbar?: any;
+  containers?: any;
 }
 
 const state: State = {
   backend: axios.create({ baseURL: process.env.VUE_APP_BACKEND_URL }),
-  snackbar: {
-    show: false,
-    msg: '',
-  },
   authToken: '',
   authStatus: '',
   currentUser: null,
@@ -53,24 +31,14 @@ export default new Vuex.Store({
     authStatus: (state): string => state.authStatus,
     isLoggedIn: (state): boolean => state.currentUser !== null,
     currentUser: (state): User | null => state.currentUser,
-    showSnackbar: (state): boolean => state.snackbar.show,
-    snackbarMsg: (state): string | null => state.snackbar.msg,
   },
   mutations: {
-    openSnackbar(state: State, msg: string) {
-      state.snackbar.msg = msg;
-      state.snackbar.show = true;
-    },
-    closeSnackbar(state: State) {
-      state.snackbar.msg = '';
-      state.snackbar.show = false;
-    },
     authRequested(state: State) {
       state.authStatus = 'loading';
     },
     authSuccess(state: State, params: { token: string; user: User }) {
       state.authToken = params.token;
-      state.currentUser = prepareUser(params.user);
+      state.currentUser = params.user;
       state.authStatus = 'success';
       state.backend.defaults.headers.common['Authorization']=`Bearer ${state.authToken}`;
     },
@@ -82,7 +50,7 @@ export default new Vuex.Store({
       delete state.backend.defaults.headers.common['Authorization'];
     },
     setUser(state: State, user: User) {
-      state.currentUser = prepareUser(user);
+      state.currentUser = user;
     },
   },
   actions: {
@@ -93,7 +61,7 @@ export default new Vuex.Store({
           .then(response => {
             const token = response.data.data.token;
             localStorage.setItem('token', token);
-            const user = response.data.data.user as User;
+            const user = plainToUser(response.data.data.user);
             commit('authSuccess', { token, user });
             resolve(response);
           })
@@ -106,5 +74,7 @@ export default new Vuex.Store({
     },
   },
   modules: {
+    snackbar: snackbarModule,
+    containers: containersModule,
   }
 });

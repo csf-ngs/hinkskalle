@@ -15,7 +15,7 @@ class ModelRenderer(TypescriptRenderer):
     # since Agent inherits from User it must be declared after User!
     # XXX flask_rebar bug:
     # see https://github.com/plangrid/flask-rebar/issues/90
-    for classname in ['Collection', 'Container', 'Entity', 'Image', 'User', 'Group', ]:
+    for classname in ['Collection', 'Container', 'Entity', 'Image', 'Group', 'User', 'Token', ]:
       schema_name = f"{classname}Schema"
       if not schema_name in definitions:
         raise Exception(f"Schema {schema_name} for {classname} not in swagger defs")

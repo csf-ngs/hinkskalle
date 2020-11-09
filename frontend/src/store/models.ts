@@ -245,6 +245,42 @@ export function serializeImage(obj: Image, unroll=false): any {
 export { Image };
 
 
+class Group {
+  public createdAt!: Date | null
+  public createdBy!: string
+  public deleted!: boolean
+  public deletedAt!: Date | null
+  public email!: string
+  public id!: string
+  public name!: string
+  public updatedAt!: Date | null
+  
+}
+
+export function plainToGroup(json: any): Group {
+  const obj = new Group();
+  obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
+      obj.createdBy = json['createdBy'];
+    obj.deleted = json['deleted'];
+    obj.deletedAt = _isNil(json['deletedAt']) ? null : new Date(json['deletedAt']);
+      obj.email = json['email'];
+    obj.id = json['id'];
+    obj.name = json['name'];
+    obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
+      
+  return obj;
+}
+export function serializeGroup(obj: Group, unroll=false): any {
+  const json: any = {};
+  json['email'] = obj.email
+      json['name'] = obj.name
+      
+  return json;
+}
+
+export { Group };
+
+
 class User {
   public createdAt!: Date | null
   public createdBy!: string
@@ -307,40 +343,39 @@ export function serializeUser(obj: User, unroll=false): any {
 export { User };
 
 
-class Group {
+class Token {
   public createdAt!: Date | null
   public createdBy!: string
   public deleted!: boolean
   public deletedAt!: Date | null
-  public email!: string
   public id!: string
-  public name!: string
+  public token!: string
   public updatedAt!: Date | null
+  public user!: User
   
 }
 
-export function plainToGroup(json: any): Group {
-  const obj = new Group();
+export function plainToToken(json: any): Token {
+  const obj = new Token();
   obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
       obj.createdBy = json['createdBy'];
     obj.deleted = json['deleted'];
     obj.deletedAt = _isNil(json['deletedAt']) ? null : new Date(json['deletedAt']);
-      obj.email = json['email'];
-    obj.id = json['id'];
-    obj.name = json['name'];
+      obj.id = json['id'];
+    obj.token = json['token'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
+      if (!_isNil(json['user'])) obj.user = plainToUser(json['user']);
       
   return obj;
 }
-export function serializeGroup(obj: Group, unroll=false): any {
+export function serializeToken(obj: Token, unroll=false): any {
   const json: any = {};
-  json['email'] = obj.email
-      json['name'] = obj.name
-      
+  if (unroll) json['user'] = _isNil(obj.user) ? null : serializeUser(obj.user);
+        
   return json;
 }
 
-export { Group };
+export { Token };
 
 
 export interface Upload {

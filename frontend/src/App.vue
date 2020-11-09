@@ -21,9 +21,9 @@
     <v-main>
       <router-view></router-view>
     </v-main>
-    <v-snackbar v-model="showSnackbar" :timeout="1500" color="blue-grey lighten-1">
+    <v-snackbar v-model="showSnackbar" :timeout="1500" rounded="pill" color="blue-grey">
       {{snackbarMsg}}
-      <v-btn id="close-snackbar" color="pink lighten-4" icon @click="hideSnackbar()">
+      <v-btn id="close-snackbar" color="pink lighten-1" icon @click="hideSnackbar()">
         <v-icon>mdi-close</v-icon>
       </v-btn>
     </v-snackbar>
@@ -43,16 +43,23 @@ export default Vue.extend({
     currentUser(): User {
       return this.$store.getters.currentUser;
     },
-    showSnackbar(): boolean {
-      return this.$store.getters.showSnackbar;
+    showSnackbar: {
+      get: function(): boolean {
+        return this.$store.getters['snackbar/show'];
+      },
+      set: function(newValue: boolean) {
+        if (!newValue) {
+          this.$store.commit('snackbar/close');
+        }
+      },
     },
     snackbarMsg(): string {
-      return this.$store.getters.snackbarMsg;
+      return this.$store.getters['snackbar/msg'];
     },
   },
   methods: {
     hideSnackbar() {
-      this.$store.commit('closeSnackbar');
+      this.$store.commit('snackbar/close');
     },
   }
 });

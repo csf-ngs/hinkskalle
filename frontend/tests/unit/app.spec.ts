@@ -19,13 +19,13 @@ describe('App.vue', () => {
 
   beforeEach(() => {
     mutations = {
-      closeSnackbar: jest.fn()
+      'snackbar/close': jest.fn()
     };
     getters = {
       isLoggedIn: () => isLoggedIn,
       currentUser: () => { return { fullname: 'Test Hase' } },
-      showSnackbar: () => showSnackbar,
-      snackbarMsg: () => '',
+      'snackbar/show': () => showSnackbar,
+      'snackbar/msg': () => '',
     };
     store = new Vuex.Store({ getters, mutations });
     vuetify = new Vuetify();
@@ -52,6 +52,13 @@ describe('App.vue', () => {
     showSnackbar = true;
     const wrapper = mount(App, { localVue, store, vuetify, router });
     wrapper.find('#close-snackbar').trigger('click');
-    expect(mutations.closeSnackbar).toHaveBeenCalled();
+    expect(mutations['snackbar/close']).toHaveBeenCalled();
+  });
+
+  it('can hide the snackbar via computed prop', () => {
+    showSnackbar = true;
+    const wrapper = mount(App, { localVue, store, vuetify, router });
+    wrapper.setData({ showSnackbar: false });
+    expect(mutations['snackbar/close']).toHaveBeenCalled();
   });
 });

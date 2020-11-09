@@ -29,10 +29,8 @@ const containersModule: Module<State, any> = {
     latestLoadingFailed(state: State) {
       state.status = 'failed';
     },
-    latestLoadingSucceeded(state: State) {
+    latestLoadingSucceeded(state: State, uploads: any[]) {
       state.status = 'success';
-    },
-    setLatest(state: State, uploads: Upload[]) {
       state.latest = _map(uploads, plainToUpload);
     },
   },
@@ -42,9 +40,7 @@ const containersModule: Module<State, any> = {
         commit('latestLoading'),
         rootState.backend.get('/v1/latest')
           .then((response: AxiosResponse) => {
-            console.log(response.data);
-            commit('latestLoadingSucceeded');
-            commit('setLatest', response.data.data);
+            commit('latestLoadingSucceeded', response.data.data);
             resolve(response.data);
           })
           .catch((err: AxiosError) => {

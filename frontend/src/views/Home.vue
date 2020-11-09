@@ -1,17 +1,49 @@
 <template>
   <div class="home">
     <v-container>
-      <v-layout wrap>
         <v-row justify="center">
           <v-col cols="6">
-            <h1 class="display-1">Hello, Hinkskalle speaking!</h1>
+            <h1 class="display-1 text-center">Hello, Hinkskalle speaking!</h1>
           </v-col>
         </v-row>
-      </v-layout>
+        <v-row>
+          <v-col cols="6">
+            <h3>Configuration</h3>
+            <v-card tile>
+              <v-card-title>
+                Pull only:
+              </v-card-title>
+              <v-card-subtitle>No account necessary</v-card-subtitle>
+              <v-card-text>
+                <code class="grey white--text">
+                  singularity remote add --nologin hinkskalle {{backendUrl}}
+                  singularity remote use hinkskalle
+                </code>
+              </v-card-text>
+            </v-card>
+            <v-card tile>
+              <v-card-title>
+                Pull and push:
+              </v-card-title>
+              <v-card-subtitle>
+                <span v-show="!isLoggedIn">Log in and</span> get a token
+              </v-card-subtitle>
+              <v-card-text>
+                <code>
+                  singularity remote add hinkskalle {{backendUrl}}
+                  # paste token
+                  # or
+                  singularity remote login hinkskalle
+                  singularity remote use hinkskalle
+                </code>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
       <v-row justify="center" v-if="!isLoggedIn">
         <v-col cols="6" id="login-msg">
           <v-card elevation="1" color="warning" :to="'/login'">
-            <v-card-title>Not sure who you are! Please log in.</v-card-title>
+            <v-card-title><v-icon>mdi-login</v-icon> Not sure who you are! Please log in.</v-card-title>
           </v-card>
         </v-col>
       </v-row>
@@ -34,6 +66,9 @@ export default Vue.extend({
   computed: {
     isLoggedIn() {
       return this.$store.getters.isLoggedIn;
+    },
+    backendUrl() {
+      return process.env.VUE_APP_BACKEND_URL
     },
   },
   components: {

@@ -25,23 +25,23 @@ const testLatest = [
   { 
     tags: ['eins', 'zwei'], 
     container: {
-      name: 'testhase',
+      name: 'testhase', createdAt: new Date(),
     },
   },
   {
     tags: ['drei', 'vier'],
     container: {
-      name: 'testnilpferd',
+      name: 'testnilpferd', createdAt: new Date(),
     },
   }
 ];
 export const testLatestObj = _map(testLatest, plainToUpload);
 
 const testTokens = [
-  { token: 'supersecret', },
-  { token: 'auchgeheim', },
+  { token: 'supersecret', createdAt: new Date(), },
+  { token: 'auchgeheim', createdAt: new Date(), },
 ];
-const testTokenObj = _map(testTokens, plainToToken);
+export const testTokenObj = _map(testTokens, plainToToken);
 
 
 describe('store getters', () => {

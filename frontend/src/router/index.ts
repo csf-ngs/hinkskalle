@@ -2,6 +2,7 @@ import Vue from 'vue';
 import VueRouter, { RouteConfig, NavigationGuard } from 'vue-router';
 import Home from '../views/Home.vue';
 import Login from '../views/Login.vue';
+import Tokens from '../views/Tokens.vue';
 import store from '../store';
 
 Vue.use(VueRouter);
@@ -9,11 +10,13 @@ Vue.use(VueRouter);
 export const isAuthenticated: NavigationGuard = (to, _, next) => {
   if (!store.getters.isLoggedIn) {
     return next({
-      path: '/login',
+      name: 'Login',
       query: { redirect: to.fullPath },
     });
   }
-  return next();
+  else {
+    return next();
+  }
 };
 
 const routes: Array<RouteConfig> = [
@@ -26,7 +29,13 @@ const routes: Array<RouteConfig> = [
     path: '/login',
     name: 'Login',
     component: Login,
-  }
+  },
+  {
+    path: '/tokens',
+    name: 'Tokens',
+    component: Tokens,
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = new VueRouter({

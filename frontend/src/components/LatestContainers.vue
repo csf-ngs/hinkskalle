@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-row justify="center">
-          <v-col cols="6">
+          <v-col cols="12">
             <h3>Latest Uploads:</h3>
             <v-list nav>
               <v-list-item-group>
@@ -11,6 +11,9 @@
                     <v-list-item-title>
                       {{up.container.entityName}}/{{up.container.collectionName}}/{{up.container.name}}
                     </v-list-item-title>
+                    <v-list-item-subtitle>
+                      {{up.container.createdBy}} | {{(up.container.updatedAt || up.container.createdAt) | moment('YYYY-MM-DD HH:mm:ss')}}
+                    </v-list-item-subtitle>
                   </v-list-item-content>
                   <v-list-item-icon>
                       <v-chip color="light-green lighten-2" v-for="tag in up.tags" :key="tag" @click.stop.prevent="copyTag(up.container, tag)">{{tag}}</v-chip>

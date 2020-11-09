@@ -7,35 +7,43 @@
           </v-col>
         </v-row>
         <v-row>
+          <v-col cols="10">
+            <h3>How To Use Me</h3>
+          </v-col>
+        </v-row>
+        <v-row>
           <v-col cols="6">
-            <h3>Configuration</h3>
             <v-card tile>
               <v-card-title>
-                Pull only:
+                Pull Only:
               </v-card-title>
-              <v-card-subtitle>No account necessary</v-card-subtitle>
+              <v-card-subtitle>(no account necessary)</v-card-subtitle>
               <v-card-text>
-                <code class="grey white--text">
-                  singularity remote add --nologin hinkskalle {{backendUrl}}
-                  singularity remote use hinkskalle
-                </code>
+                <pre>
+singularity remote add --nologin \
+  hinkskalle {{backendUrl}}
+singularity remote use hinkskalle
+                </pre>
               </v-card-text>
             </v-card>
+          </v-col>
+          <v-col cols="6">
             <v-card tile>
               <v-card-title>
-                Pull and push:
+                Pull and Push:
               </v-card-title>
               <v-card-subtitle>
-                <span v-show="!isLoggedIn">Log in and</span> get a token
+                (<span v-show="!isLoggedIn">log in and </span>get a token)
               </v-card-subtitle>
               <v-card-text>
-                <code>
-                  singularity remote add hinkskalle {{backendUrl}}
-                  # paste token
-                  # or
-                  singularity remote login hinkskalle
-                  singularity remote use hinkskalle
-                </code>
+                <pre>
+singularity remote add \
+  hinkskalle {{backendUrl}}
+# paste token
+singularity remote use hinkskalle
+# or (can also be done later)
+singularity remote login hinkskalle
+                </pre>
               </v-card-text>
             </v-card>
           </v-col>
@@ -48,7 +56,7 @@
         </v-col>
       </v-row>
       <v-row justify="center" v-if="isLoggedIn">
-        <v-col cols="8" id="latest-containers">
+        <v-col cols="10" id="latest-containers">
           <latest-containers></latest-containers>
         </v-col>
       </v-row>

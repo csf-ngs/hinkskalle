@@ -11,6 +11,7 @@ describe('Home.vue', () => {
   let vuetify: any;
   let store: any;
   let getters: any;
+  let actions: any;
   let isLoggedIn = true;
   let router: any;
 
@@ -19,7 +20,10 @@ describe('Home.vue', () => {
     getters = {
       isLoggedIn: () => isLoggedIn,
     };
-    store = new Vuex.Store({ getters });
+    actions = {
+      'containers/latest': jest.fn(),
+    }
+    store = new Vuex.Store({ getters, actions });
     router = new VueRouter();
   });
 

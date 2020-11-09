@@ -1,6 +1,6 @@
 
 import store from '@/store';
-import { plainToUser, plainToUpload } from '@/store/models';
+import { plainToUser, plainToUpload, plainToToken } from '@/store/models';
 
 import axios from 'axios';
 
@@ -34,9 +34,15 @@ const testLatest = [
       name: 'testnilpferd',
     },
   }
-]
-
+];
 export const testLatestObj = _map(testLatest, plainToUpload);
+
+const testTokens = [
+  { token: 'supersecret', },
+  { token: 'auchgeheim', },
+];
+const testTokenObj = _map(testTokens, plainToToken);
+
 
 describe('store getters', () => {
   it('has isLoggedIn getter', () => {
@@ -71,7 +77,17 @@ describe('store getters', () => {
   it('has latest containers getter', () => {
     store.state.containers.latest = testLatestObj;
     expect(store.getters['containers/latest']).toStrictEqual(testLatestObj);
-  })
+  });
+
+  it('has tokens status getter', () => {
+    store.state.tokens.status = 'loading';
+    expect(store.getters['tokens/status']).toBe('loading');
+  });
+  it('has token list getter', () => {
+    store.state.tokens.tokens = testTokenObj;
+    expect(store.getters['tokens/tokens']).toStrictEqual(testTokenObj);
+  });
+
 });
 
 describe('store mutations', () => {
@@ -119,15 +135,26 @@ describe('store mutations', () => {
     
   });
 
-  it('has containers status mutation', () => {
+  it('has containers status mutations', () => {
     store.state.containers.status = '';
     store.commit('containers/latestLoading');
     expect(store.state.containers.status).toBe('loading');
-    store.commit('containers/latestLoadingSucceeded');
+    store.commit('containers/latestLoadingSucceeded', testLatest);
     expect(store.state.containers.status).toBe('success');
+    expect(store.state.containers.latest).toStrictEqual(testLatestObj);
     store.commit('containers/latestLoadingFailed');
     expect(store.state.containers.status).toBe('failed');
+  });
 
+  it('has token status mutations', () => {
+    store.state.tokens.status = '';
+    store.commit('tokens/tokensLoading');
+    expect(store.state.tokens.status).toBe('loading');
+    store.commit('tokens/tokensLoadingSucceeded', testTokens);
+    expect(store.state.tokens.status).toBe('success');
+    expect(store.state.tokens.tokens).toStrictEqual(testTokenObj);
+    store.commit('tokens/tokensLoadingFailed');
+    expect(store.state.tokens.status).toBe('failed');
   });
 });
 
@@ -185,5 +212,29 @@ describe('store actions', () => {
       done();
     });
   });
+
+  it('has load token list', done => {
+    mockAxios.get.mockResolvedValue({
+      data: { data: testTokens },
+    });
+    store.state.currentUser = testUserObj;
+    const promise = store.dispatch('tokens/list');
+    expect(mockAxios.get).toHaveBeenCalledWith(`/v1/users/${testUserObj.username}/tokens`);
+    expect(store.state.tokens.status).toBe('loading');
+    promise.then(() => {
+      expect(store.state.tokens.status).toBe('success');
+      expect(store.state.tokens.tokens).toStrictEqual(testTokenObj);
+      done();
+    });
+  });
+  it('has load token list fail handling', done => {
+    mockAxios.get.mockRejectedValue({ fail: 'fail' });
+    store.state.currentUser = testUserObj;
+    store.dispatch('tokens/list').catch(err => {
+      expect(store.state.tokens.status).toBe('failed');
+      done();
+    });
+  });
+
 
 });

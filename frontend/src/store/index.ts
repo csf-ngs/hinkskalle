@@ -8,6 +8,7 @@ Vue.use(Vuex);
 import { User, plainToUser } from './models';
 import snackbarModule from './modules/snackbar';
 import containersModule from './modules/containers';
+import tokensModule from './modules/tokens';
 
 interface State {
   backend: AxiosInstance;
@@ -16,6 +17,7 @@ interface State {
   currentUser: User | null;
   snackbar?: any;
   containers?: any;
+  tokens?: any;
 }
 
 const state: State = {
@@ -76,5 +78,6 @@ export default new Vuex.Store({
   modules: {
     snackbar: snackbarModule,
     containers: containersModule,
+    tokens: tokensModule,
   }
 });

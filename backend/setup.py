@@ -15,4 +15,8 @@ setup(
         'passlib',
         'ldap3',
     ],
+    extra_requires={
+      'dev': ['Jinja2'],
+      'test': ['nose2'],
+    },
 )

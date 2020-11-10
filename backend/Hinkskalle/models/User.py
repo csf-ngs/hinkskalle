@@ -132,6 +132,7 @@ class TokenSchema(Schema):
 class Token(db.Model):
   id = db.Column(db.Integer, primary_key=True)
   token = db.Column(db.String(), unique=True, nullable=False)
+  comment = db.Column(db.String())
   user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
   expiresAt = db.Column(db.DateTime)

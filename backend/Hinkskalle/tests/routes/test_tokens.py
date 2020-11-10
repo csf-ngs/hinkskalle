@@ -26,12 +26,24 @@ class TestTokens(RouteBase):
     self.assertEqual(ret.status_code, 401)
 
   def test_list(self):
+    self.user_token.source='manual'
+    db.session.commit()
     with self.fake_auth():
       ret = self.client.get(f"/v1/users/{self.username}/tokens")
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
     self.assertIsInstance(json, list)
     self.assertListEqual([ t['id'] for t in json ], [ str(self.user_token_id) ])
+
+  def test_list_no_auto(self):
+    self.user_token.source='auto'
+    db.session.commit()
+    with self.fake_auth():
+      ret = self.client.get(f"/v1/users/{self.username}/tokens")
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertIsInstance(json, list)
+    self.assertListEqual([ t['id'] for t in json ], [ ])
 
   def test_list_other(self):
     other_token = Token(token='geheimkatze', user=self.other_user)
@@ -55,6 +67,7 @@ class TestTokens(RouteBase):
 
     db_token = Token.query.filter(Token.token == json['token']).first()
     self.assertIsNotNone(db_token)
+    self.assertEqual(db_token.source, 'manual')
   
   def test_create_other(self):
     user = _create_user('schlumpf.hase')

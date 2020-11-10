@@ -43,6 +43,7 @@ class User(db.Model):
 
   groups = db.relationship('Group', secondary=user_groups_table, back_populates='users')
   tokens = db.relationship('Token', back_populates='user')
+  manual_tokens = db.relationship('Token', viewonly=True, primaryjoin="and_(User.id==Token.user_id, Token.source=='manual')")
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String())
@@ -60,7 +61,7 @@ class User(db.Model):
     self.tokens.append(token)
     db.session.commit()
     return token
-
+  
   def set_password(self, pw):
     self.password = sha512_crypt.hash(pw)
   

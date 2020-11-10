@@ -78,6 +78,20 @@ class TestUser(ModelBase):
     user.password = 'something'
     db.session.commit()
     self.assertFalse(user.check_password('something'))
+  
+  def test_user_tokens(self):
+    user = _create_user()
+    token1 = Token(token='geheim')
+    token2 = Token(token='auchgeheim')
+    user.tokens = [ token1, token2 ]
+
+    self.assertTrue(len(user.tokens)==2)
+    self.assertTrue(len(user.manual_tokens)==0)
+
+    token1.source='manual'
+    db.session.commit()
+    self.assertListEqual([ t.id for t in user.manual_tokens ], [ token1.id ])
+
 
   
   def test_schema(self):

@@ -39,7 +39,7 @@ def _get_user(username):
 )
 def list_tokens(username):
   user = _get_user(username)
-  return { 'data': user.tokens }
+  return { 'data': user.manual_tokens }
 
 @registry.handles(
   rule='/v1/users/<string:username>/tokens',
@@ -51,6 +51,8 @@ def list_tokens(username):
 def create_tokens(username):
   user = _get_user(username)
   token = user.create_token()
+  token.source = 'manual'
+  db.session.commit()
   return { 'data': token }
 
 @registry.handles(

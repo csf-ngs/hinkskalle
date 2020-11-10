@@ -344,11 +344,14 @@ export { User };
 
 
 class Token {
+  public comment!: string
   public createdAt!: Date | null
   public createdBy!: string
   public deleted!: boolean
   public deletedAt!: Date | null
+  public expiresAt!: Date | null
   public id!: string
+  public source!: string
   public token!: string
   public updatedAt!: Date | null
   public user!: User
@@ -357,11 +360,14 @@ class Token {
 
 export function plainToToken(json: any): Token {
   const obj = new Token();
-  obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
+  obj.comment = json['comment'];
+    obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
       obj.createdBy = json['createdBy'];
     obj.deleted = json['deleted'];
     obj.deletedAt = _isNil(json['deletedAt']) ? null : new Date(json['deletedAt']);
+      obj.expiresAt = _isNil(json['expiresAt']) ? null : new Date(json['expiresAt']);
       obj.id = json['id'];
+    obj.source = json['source'];
     obj.token = json['token'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
       if (!_isNil(json['user'])) obj.user = plainToUser(json['user']);
@@ -370,7 +376,9 @@ export function plainToToken(json: any): Token {
 }
 export function serializeToken(obj: Token, unroll=false): any {
   const json: any = {};
-  if (unroll) json['user'] = _isNil(obj.user) ? null : serializeUser(obj.user);
+  json['comment'] = obj.comment
+      json['expiresAt'] = _isNil(obj.expiresAt) ? null : obj.expiresAt.toJSON();
+        if (unroll) json['user'] = _isNil(obj.user) ? null : serializeUser(obj.user);
         
   return json;
 }

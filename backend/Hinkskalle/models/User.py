@@ -120,8 +120,12 @@ class Group(db.Model):
 class TokenSchema(Schema):
   id = fields.String(required=True, dump_only=True)
   token = fields.String(required=True, dump_only=True)
+  comment = fields.String(allow_none=True)
 
   user = fields.Nested('UserSchema')
+
+  expiresAt = fields.DateTime(allow_none=True)
+  source = fields.String(dump_only=True, allow_none=True)
 
   createdAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(dump_only=True)

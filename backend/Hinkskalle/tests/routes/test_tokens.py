@@ -5,6 +5,8 @@ from Hinkskalle.tests.model_base import _create_user
 from Hinkskalle.models import User, Token
 from Hinkskalle import db
 
+import datetime
+
 class TestTokens(RouteBase):
   def setUp(self):
     super().setUp()
@@ -68,6 +70,21 @@ class TestTokens(RouteBase):
     db_token = Token.query.filter(Token.token == json['token']).first()
     self.assertIsNotNone(db_token)
     self.assertEqual(db_token.source, 'manual')
+  
+  def test_create_attrs(self):
+    now = datetime.datetime.now()
+    post = { 'comment': 'This token will self-destruct in 60 seconds', 'expiresAt': now.isoformat() }
+    with self.fake_auth():
+      ret = self.client.post(f"/v1/users/{self.username}/tokens", json=post)
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertEqual(json['comment'], post['comment'])
+
+    db_token = Token.query.filter(Token.token == json['token']).first()
+    self.assertIsNotNone(db_token)
+    self.assertEqual(db_token.comment, post['comment'])
+    self.assertEqual(db_token.expiresAt, now)
+
   
   def test_create_other(self):
     user = _create_user('schlumpf.hase')

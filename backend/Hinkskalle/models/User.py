@@ -56,8 +56,8 @@ class User(db.Model):
   tags = db.relationship('Tag', back_populates='owner')
 
 
-  def create_token(self):
-    token = Token(token=secrets.token_urlsafe(48))
+  def create_token(self, **attrs):
+    token = Token(token=secrets.token_urlsafe(48), **attrs)
     self.tokens.append(token)
     db.session.commit()
     return token

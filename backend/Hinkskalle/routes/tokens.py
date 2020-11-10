@@ -14,7 +14,7 @@ class TokenResponseSchema(ResponseSchema):
 class TokenListResponseSchema(ResponseSchema):
   data = fields.Nested(TokenSchema, many=True)
 
-class TokenCreateSchema(RequestSchema):
+class TokenCreateSchema(TokenSchema, RequestSchema):
   pass
 
 class TokenDeleteResponseSchema(ResponseSchema):
@@ -49,8 +49,9 @@ def list_tokens(username):
   authenticators=authenticator.with_scope(Scopes.user)
 )
 def create_tokens(username):
+  body = rebar.validated_body
   user = _get_user(username)
-  token = user.create_token()
+  token = user.create_token(**body)
   token.source = 'manual'
   db.session.commit()
   return { 'data': token }

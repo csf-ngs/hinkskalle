@@ -134,8 +134,12 @@ class Token(db.Model):
   token = db.Column(db.String(), unique=True, nullable=False)
   user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
+  expiresAt = db.Column(db.DateTime)
+  source = db.Column(db.Enum('auto', 'manual'))
+
   user = db.relationship('User', back_populates='tokens')
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String())
   updatedAt = db.Column(db.DateTime)
+  deleted = db.Column(db.Boolean, default=False)

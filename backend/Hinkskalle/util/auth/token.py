@@ -2,6 +2,7 @@ from flask_rebar.authenticators import Authenticator
 from flask import g, request
 from flask_rebar import errors
 from enum import Enum
+import datetime
 
 _NO_TOKEN='No token found'
 
@@ -48,11 +49,13 @@ class TokenAuthenticator(Authenticator):
 
   def _get_identity(self, token):
     from Hinkskalle.models import Token
-    db_token = Token.query.filter(Token.token == token).first()
+    db_token = Token.query.filter(Token.token == token, Token.deleted == False).first()
     if not db_token:
       raise errors.Unauthorized('Invalid token')
     if not db_token.user.is_active:
       raise errors.Unauthorized('Account deactivated')
+    if db_token.expiresAt and db_token.expiresAt < datetime.datetime.now():
+      raise errors.Unauthorized('Token expired')
     return db_token.user
 
   def _get_token(self):

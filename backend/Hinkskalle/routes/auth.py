@@ -6,6 +6,8 @@ from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from flask import current_app, g
 
+import datetime
+
 class TokenResponseSchema(ResponseSchema):
   status = fields.String()
 
@@ -41,6 +43,8 @@ def get_token():
     raise errors.Unauthorized(err.message)
 
   token = user.create_token()
+  token.expiresAt = datetime.datetime.now() + datetime.timedelta(days=1)
+  token.source = 'auto'
   db.session.add(token)
   db.session.commit()
   return { 'data': token }

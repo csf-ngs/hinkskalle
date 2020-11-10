@@ -21,10 +21,13 @@ class TestPasswordAuth(RouteBase):
 
     data = ret.get_json().get('data')
     self.assertIn('id', data)
+    self.assertIn('expiresAt', data)
 
     self.assertEqual(len(user.tokens), 1)
-    db_token = Token.query.filter(Token.id==data['id'])
+    db_token = Token.query.filter(Token.id==data['id']).first()
     self.assertIsNotNone(db_token)
+    self.assertEqual(db_token.source, 'auto')
+    self.assertTrue(abs(db_token.expiresAt - (datetime.datetime.now()+datetime.timedelta(days=1))) < datetime.timedelta(minutes=1))
   
   def test_password_fail(self):
     user = _create_user(name='oink.hase')

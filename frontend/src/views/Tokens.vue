@@ -94,7 +94,6 @@ export default Vue.extend({
       { text: 'Token', value: 'token', sortable: false, },
       { text: 'Comment', value: 'comment', sortable: true, },
       { text: 'Expires', value: 'expiresAt', sortable: true, },
-      { text: 'Deleted', value: 'deleted', sortable: false, },
       { text: 'Actions', value: 'actions', sortable: false },
     ],
     localState: {
@@ -139,7 +138,7 @@ export default Vue.extend({
       this.localState.showDelete = true;
     },
     deleteTokenConfirm() {
-       console.log(this.localState.editItem);
+       this.$store.dispatch('tokens/delete', this.localState.editItem.id);
        this.closeDelete();
     },
     closeEdit() {
@@ -155,7 +154,9 @@ export default Vue.extend({
       });
     },
     save() {
-      console.log(this.localState.editItem);
+      const action = this.localState.editItem.id ?
+        'tokens/update' : 'tokens/create';
+      this.$store.dispatch(action, this.localState.editItem);
       this.closeEdit();
     }
   },

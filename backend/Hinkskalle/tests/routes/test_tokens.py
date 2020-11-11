@@ -97,6 +97,38 @@ class TestTokens(RouteBase):
       ret = self.client.post(f"/v1/users/{user.username}/tokens", json={})
     self.assertEqual(ret.status_code, 403)
   
+  def test_update(self):
+    now = datetime.datetime.now()
+    post = {
+      'comment': 'oink',
+      'expiresAt': now.isoformat(),
+    }
+    with self.fake_auth():
+      ret = self.client.post(f"/v1/users/{self.username}/tokens/{self.user_token_id}", json=post)
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertEqual(json['comment'], post['comment'])
+
+    db_token = Token.query.filter(Token.token == json['token']).first()
+    self.assertIsNotNone(db_token)
+    self.assertEqual(db_token.comment, post['comment'])
+    self.assertEqual(db_token.expiresAt, now)
+  
+  def test_update_other(self):
+    new_token = Token(token='auch geheim', user=self.other_user)
+    db.session.add(new_token)
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.post(f"/v1/users/{self.other_username}/tokens/{new_token.id}", json={"comment": "something"})
+    self.assertEqual(ret.status_code, 403)
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v1/users/{self.other_username}/tokens/{new_token.id}", json={"comment": "something"})
+    self.assertEqual(ret.status_code, 403)
+
+
+  
   def test_delete(self):
     new_token = Token(token='Ken sent me', user=self.user)
     db.session.add(new_token)

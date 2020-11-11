@@ -3,6 +3,7 @@ from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from sqlalchemy.orm.exc import NoResultFound
+import datetime
 
 from flask import current_app, g
 
@@ -15,6 +16,9 @@ class TokenListResponseSchema(ResponseSchema):
   data = fields.Nested(TokenSchema, many=True)
 
 class TokenCreateSchema(TokenSchema, RequestSchema):
+  pass
+
+class TokenUpdateSchema(TokenSchema, RequestSchema):
   pass
 
 class TokenDeleteResponseSchema(ResponseSchema):
@@ -54,6 +58,28 @@ def create_tokens(username):
   token = user.create_token(**body)
   token.source = 'manual'
   db.session.commit()
+  return { 'data': token }
+
+@registry.handles(
+  rule='/v1/users/<string:username>/tokens/<int:token_id>',
+  method='POST',
+  response_body_schema=TokenResponseSchema(),
+  request_body_schema=TokenUpdateSchema(),
+  authenticators=authenticator.with_scope(Scopes.user)
+)
+def update_token(username, token_id):
+  body = rebar.validated_body
+  user = _get_user(username)
+  try:
+    token = Token.query.filter(Token.id==token_id, Token.user_id==user.id).one()
+  except NoResultFound:
+    raise errors.NotFound(f"Invalid token id.")
+  
+  for key in body:
+    setattr(token, key, body[key])
+  token.updatedAt = datetime.datetime.now()
+  db.session.commit()
+
   return { 'data': token }
 
 @registry.handles(

@@ -5,7 +5,7 @@ import axios, {AxiosInstance} from 'axios';
 
 Vue.use(Vuex);
 
-import { User, plainToUser } from './models';
+import { User, plainToUser, serializeUser } from './models';
 import snackbarModule from './modules/snackbar';
 import containersModule from './modules/containers';
 import tokensModule from './modules/tokens';
@@ -20,11 +20,19 @@ interface State {
   tokens?: any;
 }
 
+const token = localStorage.getItem('token') || '';
+if (token !== '') {
+  axios.defaults.headers.common['Authorization']=`Bearer ${token}`;
+
+}
+const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+const currentUserObj: User | null = currentUser ? plainToUser(currentUser) : null;
+
 const state: State = {
   backend: axios.create({ baseURL: process.env.VUE_APP_BACKEND_URL }),
-  authToken: '',
+  authToken: token,
   authStatus: '',
-  currentUser: null,
+  currentUser: currentUserObj,
 };
 
 export default new Vuex.Store({
@@ -54,6 +62,12 @@ export default new Vuex.Store({
     setUser(state: State, user: User) {
       state.currentUser = user;
     },
+    logout(state: State) {
+      state.authToken = '';
+      state.currentUser = null;
+      state.authStatus = '';
+      delete(state.backend.defaults.headers.common['Authorization']);
+    },
   },
   actions: {
     requestAuth: ({state, commit }, user: {username: string; password: string}) => {
@@ -64,6 +78,7 @@ export default new Vuex.Store({
             const token = response.data.data.token;
             localStorage.setItem('token', token);
             const user = plainToUser(response.data.data.user);
+            localStorage.setItem('user', JSON.stringify(response.data.data.user));
             commit('authSuccess', { token, user });
             resolve(response);
           })
@@ -72,6 +87,13 @@ export default new Vuex.Store({
             localStorage.removeItem('token');
             reject(err);
           });
+      });
+    },
+    logout: ({ commit }) => {
+      return new Promise((resolve) => {
+        localStorage.removeItem('token');
+        commit('logout');
+        resolve();
       });
     },
   },

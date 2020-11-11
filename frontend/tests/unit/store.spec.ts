@@ -134,6 +134,19 @@ describe('store mutations', () => {
     expect(store.state.backend.defaults.headers.common).not.toHaveProperty('Authorization');
     
   });
+
+  it('has logout mutation', () => {
+    store.state.authStatus = 'success';
+    store.state.currentUser = testUserObj;
+    store.state.authToken = 'oink';
+    store.state.backend.defaults.headers.common['Authorization']='oink';
+
+    store.commit('logout');
+    expect(store.state.authStatus).toBe('');
+    expect(store.state.currentUser).toBeNull();
+    expect(store.state.authToken).toBe('');
+    expect(store.state.backend.defaults.headers.common).not.toHaveProperty('Authorization');
+  });
 });
 
 describe('container store mutations', () => {
@@ -213,6 +226,14 @@ describe('store actions', () => {
     store.dispatch('requestAuth', postData).catch(err => {
       expect(store.state.authStatus).toBe('failed');
       expect(store.state.currentUser).toBeNull();
+      done();
+    });
+  });
+
+  it('has logout action', done => {
+    store.state.authStatus='success';
+    store.dispatch('logout').then(() => {
+      expect(store.state.authStatus).toBe('');
       done();
     });
   });

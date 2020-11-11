@@ -102,7 +102,7 @@ te<template>
 import Vue from 'vue';
 import { Token } from '../store/models';
 import { clone as _clone } from 'lodash';
-import * as moment from 'moment';
+import moment from 'moment';
 import { DataTableHeader } from 'vuetify';
 
 interface State {

@@ -17,3 +17,7 @@ new Vue({
 
 Vue.use(VueClipboard);
 Vue.use(VueMoment);
+Vue.filter('abbreviate', function(value: string, maxlen: number): string {
+  if (isNaN(maxlen)) maxlen=20;
+  return value.substr(0, maxlen)+(value.length>maxlen ? '...' : '');
+});

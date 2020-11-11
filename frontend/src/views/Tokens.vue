@@ -7,10 +7,13 @@ te<template>
             id="tokens"
             :headers="headers"
             :items="tokens"
+            :search="localState.search"
             :loading="loading">
             <template v-slot:top>
               <v-toolbar flat>
                 <v-toolbar-title>Tokens</v-toolbar-title>
+                <v-spacer></v-spacer>
+                <v-text-field v-model="localState.search" prepend-icon="mdi-magnify" label="Search..." single-line hide-details></v-text-field>
                 <v-spacer></v-spacer>
                 <v-dialog v-model="localState.showEdit" max-width="500px">
                   <template v-slot:activator="{ on, attrs }">
@@ -21,11 +24,26 @@ te<template>
                     <v-card-text>
                       <v-container>
                         <v-row>
-                          <v-col cols="12" sm="6" md="4">
+                          <v-col cols="12">
                             <v-text-field v-model="localState.editItem.comment" label="Comment"></v-text-field>
                           </v-col>
-                          <v-col cols="12" sm="6" md="4">
-                            <v-text-field v-model="localState.editItem.expiresAt" label="Expiration"></v-text-field>
+                        </v-row>
+                        <v-row>
+                          <v-col cols="12">
+                            <v-menu v-model="localState.showExpiration"
+                              :close-on-content-click="false"
+                              offset-y min-width="200px">
+                              <template v-slot:activator="{ on, attrs }">
+                                <v-text-field v-model="editExpiration" 
+                                  prepend-icon="mdi-calendar"
+                                  readonly
+                                  v-bind="attrs"
+                                  v-on="on"
+                                  label="Expiration"></v-text-field>
+                              </template> 
+                              <v-date-picker v-model="editExpiration" @input="localState.showExpiration=false">
+                              </v-date-picker>
+                            </v-menu>
                           </v-col>
                         </v-row>
                       </v-container>
@@ -49,8 +67,16 @@ te<template>
                 </v-dialog>
               </v-toolbar>
             </template>
+            <template v-slot:item.token="{ item }">
+              <v-icon small @click="copyToken(item)">mdi-content-copy</v-icon> {{item.token | abbreviate(15) }}
+            </template>
             <template v-slot:item.expiresAt="{ item }">
-              {{item.expiresAt | moment('YYYY-MM-DD HH:mm:ss')}}
+              <span v-if="item.expiresAt">
+                {{item.expiresAt | moment('YYYY-MM-DD HH:mm:ss')}}
+              </span>
+              <span v-else>
+                <em>no expiration</em>
+              </span>
             </template>
             <template v-slot:item.actions="{ item }">
               <v-icon
@@ -76,10 +102,14 @@ te<template>
 import Vue from 'vue';
 import { Token } from '../store/models';
 import { clone as _clone } from 'lodash';
+import * as moment from 'moment';
+import { DataTableHeader } from 'vuetify';
 
 interface State {
+  search: string;
   showEdit: boolean;
   showDelete: boolean;
+  showExpiration: boolean;
   editItem: Token;
 }
 
@@ -88,17 +118,19 @@ export default Vue.extend({
   mounted() {
     this.loadTokens();
   },
-  data: (): { headers: any[]; localState: State } => ({
+  data: (): { headers: DataTableHeader[]; localState: State } => ({
     headers: [
-      { text: 'id', value: 'id', sortable: true, },
-      { text: 'Token', value: 'token', sortable: false, },
-      { text: 'Comment', value: 'comment', sortable: true, },
-      { text: 'Expires', value: 'expiresAt', sortable: true, },
-      { text: 'Actions', value: 'actions', sortable: false },
+      { text: 'id', value: 'id', sortable: true, filterable: false, width: '1%' },
+      { text: 'Token', value: 'token', sortable: false, width: '20%' },
+      { text: 'Comment', value: 'comment', sortable: true, width: '' },
+      { text: 'Expires', value: 'expiresAt', sortable: true, filterable: false, width: '20%' },
+      { text: 'Actions', value: 'actions', sortable: false, filterable: false, width: '1%' },
     ],
     localState: {
+      search: '',
       showEdit: false,
       showDelete: false,
+      showExpiration: false,
       editItem: new Token(),
     },
   }),
@@ -112,6 +144,16 @@ export default Vue.extend({
     editTitle() {
       return this.localState.editItem.id ? 'Edit Token' : 'New Token';
     },
+    editExpiration: {
+      get: function(): string {
+        return this.localState.editItem.expiresAt ? 
+          moment(this.localState.editItem.expiresAt).format('YYYY-MM-DD') :
+          "";
+      },
+      set: function(val: string) {
+        this.localState.editItem.expiresAt = new Date(val);
+      }
+    }
   },
   watch: {
     'localState.showEdit': function showEdit(val) {
@@ -158,7 +200,11 @@ export default Vue.extend({
         'tokens/update' : 'tokens/create';
       this.$store.dispatch(action, this.localState.editItem);
       this.closeEdit();
-    }
+    },
+    copyToken(item: Token) {
+      this.$copyText(item.token)
+        .then(() => this.$store.commit('snackbar/open', "Copied to clipboard."))
+    },
   },
 });
 </script>

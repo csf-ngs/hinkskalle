@@ -11,3 +11,4 @@ export const localVue = createLocalVue();
 localVue.use(Vuex);
 localVue.use(VueRouter);
 localVue.use(VueMoment);
+localVue.filter('abbreviate', (v: string) => v);

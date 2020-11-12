@@ -3,6 +3,8 @@ import store from '@/store';
 import { User } from '@/store/models';
 import { Route } from 'vue-router';
 
+import { each as _each } from 'lodash';
+
 describe('AuthGuard', () => {
   it('redirects when not logged in', () => {
     store.state.currentUser = null;
@@ -24,19 +26,21 @@ describe('AuthGuard', () => {
     expect(nextFn).toHaveBeenCalledWith();
   });
 
-  it('requires auth for tokens', async () => {
-    store.state.currentUser = null;
-    try {
-      await router.push('/tokens');
-    }
-    catch(err) {
-      // ignore
-    }
-    expect(router.currentRoute.fullPath).toBe('/login?redirect=%2Ftokens');
+  _each(['/tokens', '/account'], route => {
+    it(`requires auth for ${route}`, async () => {
+      store.state.currentUser = null;
+      try {
+        await router.push(route);
+      }
+      catch(err) {
+        // ignore
+      }
+      expect(router.currentRoute.fullPath).toBe(`/login?redirect=${encodeURIComponent(route)}`);
 
-    store.state.currentUser = { username: 'test.hase' } as User;
-    await router.push('/tokens');
-    expect(router.currentRoute.fullPath).toBe('/tokens');
+      store.state.currentUser = { username: 'test.hase' } as User;
+      await router.push(route);
+      expect(router.currentRoute.fullPath).toBe(route);
 
+    });
   });
 });

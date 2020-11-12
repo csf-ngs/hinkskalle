@@ -23,7 +23,6 @@ interface State {
 const token = localStorage.getItem('token') || '';
 if (token !== '') {
   axios.defaults.headers.common['Authorization']=`Bearer ${token}`;
-
 }
 const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 const currentUserObj: User | null = currentUser ? plainToUser(currentUser) : null;
@@ -43,6 +42,9 @@ export default new Vuex.Store({
     currentUser: (state): User | null => state.currentUser,
   },
   mutations: {
+    registerInterceptor(state: State, func: (err: any) => Promise<void>) {
+      state.backend.interceptors.response.use(undefined, func);  
+    },
     authRequested(state: State) {
       state.authStatus = 'loading';
     },
@@ -66,6 +68,8 @@ export default new Vuex.Store({
       state.authToken = '';
       state.currentUser = null;
       state.authStatus = '';
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       delete(state.backend.defaults.headers.common['Authorization']);
     },
   },
@@ -85,13 +89,13 @@ export default new Vuex.Store({
           .catch(err => {
             commit('authFailed', err);
             localStorage.removeItem('token');
+            localStorage.removeItem('user');
             reject(err);
           });
       });
     },
     logout: ({ commit }) => {
       return new Promise((resolve) => {
-        localStorage.removeItem('token');
         commit('logout');
         resolve();
       });

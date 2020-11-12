@@ -67,6 +67,18 @@ import { User } from './store/models';
 
 export default Vue.extend({
   name: 'App',
+  created: function () {
+    const { $store, $router } = this;
+    this.$store.commit('registerInterceptor', (err) => {
+      return new Promise((resolve, reject) => {
+        if (err.response && err.response.status === 401 && err.config && !err.config.__isRetryRequest) {
+          $store.dispatch('logout');
+          $router.push('/login');
+        }
+        throw err;
+      });
+    });
+  },
   computed: {
     isLoggedIn(): boolean {
       return this.$store.getters.isLoggedIn;

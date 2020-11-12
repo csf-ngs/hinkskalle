@@ -1,5 +1,5 @@
 import store from '@/store';
-import { plainToUser, plainToUpload, plainToToken, serializeToken, Token } from '@/store/models';
+import { plainToToken, serializeToken } from '@/store/models';
 
 import axios from 'axios';
 

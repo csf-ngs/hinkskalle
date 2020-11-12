@@ -5,7 +5,7 @@ import Vuex from 'vuex';
 import Tokens from '@/views/Tokens.vue';
 
 import { localVue } from '../setup';
-import { testTokenObj } from './store.spec';
+import { testTokenObj } from './token-store.spec';
 import { Token } from '@/store/models';
 
 describe('Tokens.vue', () => {

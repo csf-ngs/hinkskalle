@@ -7,7 +7,7 @@ import VueRouter from 'vue-router';
 import LatestContainers from '@/components/LatestContainers.vue';
 
 import { localVue } from '../setup';
-import { testLatestObj } from './store.spec';
+import { testLatestObj } from './container-store.spec';
 import { Upload } from '@/store/models';
 
 describe('LatestContainers.vue', () => {

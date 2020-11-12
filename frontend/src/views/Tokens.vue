@@ -1,4 +1,4 @@
-te<template>
+<template>
   <div class="tokens">
     <v-container>
       <v-row>

@@ -60,7 +60,7 @@ const tokenModule: Module<State, any> = {
     update: ({ commit, rootState }, update: Token): Promise<Token> => {
       return new Promise((resolve, reject) => {
         commit('tokensLoading');
-        rootState.backend.post(`/v1/users/${rootState.currentUser.username}/tokens/${update.id}`, serializeToken(update))
+        rootState.backend.put(`/v1/users/${rootState.currentUser.username}/tokens/${update.id}`, serializeToken(update))
           .then((response: AxiosResponse) => {
             const updated = plainToToken(response.data.data);
             commit('tokensLoadingSucceeded');

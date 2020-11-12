@@ -5,10 +5,11 @@ import axios, {AxiosInstance} from 'axios';
 
 Vue.use(Vuex);
 
-import { User, plainToUser, serializeUser } from './models';
+import { User, plainToUser } from './models';
 import snackbarModule from './modules/snackbar';
 import containersModule from './modules/containers';
 import tokensModule from './modules/tokens';
+import usersModule from './modules/users';
 
 interface State {
   backend: AxiosInstance;
@@ -18,6 +19,7 @@ interface State {
   snackbar?: any;
   containers?: any;
   tokens?: any;
+  users?: any;
 }
 
 const token = localStorage.getItem('token') || '';
@@ -104,5 +106,6 @@ export default new Vuex.Store({
     snackbar: snackbarModule,
     containers: containersModule,
     tokens: tokensModule,
+    users: usersModule,
   }
 });

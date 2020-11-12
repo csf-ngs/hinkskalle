@@ -3,6 +3,7 @@ import VueRouter, { RouteConfig, NavigationGuard } from 'vue-router';
 import Home from '../views/Home.vue';
 import Login from '../views/Login.vue';
 import Tokens from '../views/Tokens.vue';
+import Account from '../views/Account.vue';
 import store from '../store';
 
 Vue.use(VueRouter);
@@ -29,6 +30,12 @@ const routes: Array<RouteConfig> = [
     path: '/login',
     name: 'Login',
     component: Login,
+  },
+  {
+    path: '/account',
+    name: 'Account',
+    component: Account,
+    meta: { requiresAuth: true },
   },
   {
     path: '/tokens',

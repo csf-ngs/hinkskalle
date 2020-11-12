@@ -19,7 +19,8 @@ describe('App.vue', () => {
 
   beforeEach(() => {
     mutations = {
-      'snackbar/close': jest.fn()
+      'registerInterceptor': jest.fn(),
+      'snackbar/close': jest.fn(),
     };
     getters = {
       isLoggedIn: () => isLoggedIn,
@@ -35,6 +36,7 @@ describe('App.vue', () => {
   it('has title', () => {
     const wrapper = shallowMount(App, { localVue, store, vuetify });
     expect(wrapper.text()).toContain('Hinkskalle');
+    expect(mutations.registerInterceptor).toHaveBeenCalled();
   });
 
   it('shows user info', () => {

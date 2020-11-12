@@ -104,7 +104,7 @@ class TestTokens(RouteBase):
       'expiresAt': now.isoformat(),
     }
     with self.fake_auth():
-      ret = self.client.post(f"/v1/users/{self.username}/tokens/{self.user_token_id}", json=post)
+      ret = self.client.put(f"/v1/users/{self.username}/tokens/{self.user_token_id}", json=post)
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
     self.assertEqual(json['comment'], post['comment'])
@@ -120,11 +120,11 @@ class TestTokens(RouteBase):
     db.session.commit()
 
     with self.fake_auth():
-      ret = self.client.post(f"/v1/users/{self.other_username}/tokens/{new_token.id}", json={"comment": "something"})
+      ret = self.client.put(f"/v1/users/{self.other_username}/tokens/{new_token.id}", json={"comment": "something"})
     self.assertEqual(ret.status_code, 403)
 
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v1/users/{self.other_username}/tokens/{new_token.id}", json={"comment": "something"})
+      ret = self.client.put(f"/v1/users/{self.other_username}/tokens/{new_token.id}", json={"comment": "something"})
     self.assertEqual(ret.status_code, 403)
 
 

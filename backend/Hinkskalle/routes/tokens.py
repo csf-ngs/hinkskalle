@@ -62,7 +62,7 @@ def create_tokens(username):
 
 @registry.handles(
   rule='/v1/users/<string:username>/tokens/<int:token_id>',
-  method='POST',
+  method='PUT',
   response_body_schema=TokenResponseSchema(),
   request_body_schema=TokenUpdateSchema(),
   authenticators=authenticator.with_scope(Scopes.user)

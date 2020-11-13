@@ -4,6 +4,7 @@ import Home from '../views/Home.vue';
 import Login from '../views/Login.vue';
 import Tokens from '../views/Tokens.vue';
 import Account from '../views/Account.vue';
+import Collections from '../views/Collections.vue';
 import store from '../store';
 
 Vue.use(VueRouter);
@@ -41,6 +42,12 @@ const routes: Array<RouteConfig> = [
     path: '/tokens',
     name: 'Tokens',
     component: Tokens,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/collections',
+    name: 'Collections',
+    component: Collections,
     meta: { requiresAuth: true },
   },
 ];

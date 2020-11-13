@@ -26,7 +26,7 @@ describe('AuthGuard', () => {
     expect(nextFn).toHaveBeenCalledWith();
   });
 
-  _each(['/tokens', '/account'], route => {
+  _each(['/tokens', '/account', '/collections'], route => {
     it(`requires auth for ${route}`, async () => {
       store.state.currentUser = null;
       try {

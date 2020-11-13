@@ -12,6 +12,7 @@ const mockAxios = axios as jest.Mocked<typeof axios>;
 store.state.backend = mockAxios;
 
 export const testUser = {
+      id: 1,
       username: 'test.hase',
       email: 'test@ha.se',
       firstname: 'Test',

@@ -30,7 +30,7 @@
                   <v-btn type="submit" color="success" class="mr-4" @click.prevent="update()">Save</v-btn>
                   <v-dialog v-model="localState.confirmDelete" persistent max-width="250px">
                     <template v-slot:activator="{ on, attrs }">
-                      <v-btn id="delete" color="error" v-bind="attrs" v-on="on">Delete</v-btn>
+                      <v-btn disabled id="delete" color="error" v-bind="attrs" v-on="on">Delete</v-btn>
                     </template>
                     <v-card>
                       <v-card-title class="headline">Delete Account?</v-card-title>

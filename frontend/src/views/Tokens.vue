@@ -1,5 +1,6 @@
 <template>
   <div class="tokens">
+    <top-bar title="Tokens"></top-bar>
     <v-container>
       <v-row>
         <v-col cols="10">
@@ -11,8 +12,6 @@
             :loading="loading">
             <template v-slot:top>
               <v-toolbar flat>
-                <v-toolbar-title>Tokens</v-toolbar-title>
-                <v-spacer></v-spacer>
                 <v-text-field v-model="localState.search" prepend-icon="mdi-magnify" label="Search..." single-line hide-details></v-text-field>
                 <v-spacer></v-spacer>
                 <v-dialog v-model="localState.showEdit" max-width="500px">

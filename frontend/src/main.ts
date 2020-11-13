@@ -6,6 +6,8 @@ import router from './router'
 import vuetify from './plugins/vuetify';
 import store from './store'
 
+import TopBarComponent from './components/TopBar.vue';
+
 Vue.config.productionTip = false
 
 new Vue({
@@ -15,8 +17,10 @@ new Vue({
   render: h => h(App)
 }).$mount('#app')
 
+
 Vue.use(VueClipboard);
 Vue.use(VueMoment);
+Vue.component('top-bar', TopBarComponent);
 Vue.filter('abbreviate', function(value: string, maxlen: number): string {
   if (isNaN(maxlen)) maxlen=20;
   return value.substr(0, maxlen)+(value.length>maxlen ? '...' : '');

@@ -1,11 +1,7 @@
 <template>
   <div class="account">
+    <top-bar title="Account"></top-bar>
     <v-container>
-      <v-row justify="center">
-        <v-col cols="6">
-          <h1 class="display-1 text-center">Account</h1>
-        </v-col>
-      </v-row>
       <v-row v-if="localState.editUser">
         <v-col cols="12" md="8" offset-md="2">
           <v-form>

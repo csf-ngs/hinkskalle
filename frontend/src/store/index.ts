@@ -8,6 +8,7 @@ Vue.use(Vuex);
 import { User, plainToUser } from './models';
 import snackbarModule from './modules/snackbar';
 import containersModule from './modules/containers';
+import collectionsModule from './modules/collections';
 import tokensModule from './modules/tokens';
 import usersModule from './modules/users';
 
@@ -20,6 +21,7 @@ interface State {
   containers?: any;
   tokens?: any;
   users?: any;
+  collections?: any;
 }
 
 const token = localStorage.getItem('token') || '';
@@ -107,5 +109,6 @@ export default new Vuex.Store({
     containers: containersModule,
     tokens: tokensModule,
     users: usersModule,
+    collections: collectionsModule,
   }
 });

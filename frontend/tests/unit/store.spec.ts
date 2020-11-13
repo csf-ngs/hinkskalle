@@ -1,6 +1,6 @@
 
 import store from '@/store';
-import { plainToUser, plainToUpload, } from '@/store/models';
+import { plainToUser, } from '@/store/models';
 
 import axios from 'axios';
 
@@ -37,30 +37,9 @@ describe('store getters', () => {
     expect(store.getters.currentUser.role).toBe('user');
   });
   
-  it('has showSnackbar getter', () => {
-    store.state.snackbar.show = false;
-    expect(store.getters['snackbar/show']).toBe(false);
-    store.state.snackbar.show = true;
-    expect(store.getters['snackbar/show']).toBe(true);
-  });
-  it('has snackbarMsg getter', () => {
-    store.state.snackbar.msg = 'oink';
-    expect(store.getters['snackbar/msg']).toBe('oink');
-  });
-
 });
 
 describe('store mutations', () => {
-  it('has snackbar mutations', () => {
-    store.commit('snackbar/open', 'Oink!');
-    expect(store.state.snackbar.msg).toBe('Oink!');
-    expect(store.state.snackbar.show).toBe(true);
-
-    store.commit('snackbar/close');
-    expect(store.state.snackbar.msg).toBe('');
-    expect(store.state.snackbar.show).toBe(false);
-  });
-
   it('has authRequested mutation', () => {
     store.state.authStatus='';
     store.commit('authRequested');

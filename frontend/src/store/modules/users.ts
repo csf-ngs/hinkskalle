@@ -31,11 +31,25 @@ const userModule: Module<State, any> = {
     update: ({ commit, rootState }, update: User): Promise<User> => {
       return new Promise((resolve, reject) => {
         commit('loading');
-        rootState.backend.put(`/v1/users/${update.id}`, serializeUser(update))
+        rootState.backend.put(`/v1/users/${update.username}`, serializeUser(update))
           .then((response: AxiosResponse) => {
             const updated = plainToUser(response.data.data);
             commit('succeeded');
             resolve(updated);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
+    delete: ({ commit, rootState }, toDelete: User): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        commit('loading');
+        rootState.backend.delete(`/v1/users/${toDelete.username}`)
+          .then((response: AxiosResponse) => {
+            commit('succeeded');
+            resolve();
           })
           .catch((err: AxiosError) => {
             commit('failed', err);

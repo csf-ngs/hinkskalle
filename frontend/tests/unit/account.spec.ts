@@ -9,7 +9,6 @@ import Account from '@/views/Account.vue';
 import { localVue } from '../setup';
 
 import { testUserObj } from './store.spec';
-import {User} from '@/store/models';
 
 describe('Account.vue', () => {
   let vuetify: any;
@@ -40,8 +39,6 @@ describe('Account.vue', () => {
       'users/delete': mockDeleteUser,
     };
     store = new Vuex.Store({ getters, actions, mutations });
-    router = new VueRouter();
-
   });
 
   it('renders something', done => {

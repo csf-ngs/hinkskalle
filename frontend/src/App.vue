@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-navigation-drawer app expand-on-hover class="blue-grey lighten-4">
+    <v-navigation-drawer app expand-on-hover dark class="green darken-3">
       <v-list-item>
         <v-list-item-content>
           <v-list-item-title class="title text-uppercase">

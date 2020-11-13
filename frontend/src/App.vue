@@ -52,11 +52,13 @@
     <v-main>
       <router-view></router-view>
     </v-main>
-    <v-snackbar v-model="showSnackbar" :timeout="1500" rounded="pill" color="blue-grey">
+    <v-snackbar v-model="showSnackbar" :timeout="snackbarTimeout" rounded="pill" :color="snackbarColor">
+      <template v-slot:action="{ attrs }">
+        <v-btn id="close-snackbar" icon @click="hideSnackbar()" v-bind="attrs">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </template>
       {{snackbarMsg}}
-      <v-btn id="close-snackbar" color="pink lighten-1" icon @click="hideSnackbar()">
-        <v-icon>mdi-close</v-icon>
-      </v-btn>
     </v-snackbar>
   </v-app>
 </template>
@@ -98,6 +100,19 @@ export default Vue.extend({
     },
     snackbarMsg(): string {
       return this.$store.getters['snackbar/msg'];
+    },
+    snackbarColor(): string {
+      const type = this.$store.getters['snackbar/type'];
+      const map = {
+        '': 'blue-grey',
+        'info': 'blue-grey',
+        'success': 'success',
+        'error': 'error',
+      };
+      return map[type];
+    },
+    snackbarTimeout(): number {
+      return this.$store.getters['snackbar/type'] === 'error' ? -1 : 5000;
     },
   },
   methods: {

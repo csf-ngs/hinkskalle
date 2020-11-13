@@ -31,7 +31,7 @@ class UserUpdateSchema(UserSchema, RequestSchema):
     super(UserUpdateSchema, self).__init__(partial=partial_arg, **super_kwargs)
 
 class UserDeleteResponseSchema(ResponseSchema):
-  stats = fields.String()
+  status = fields.String()
 
 @registry.handles(
   rule='/v1/users',

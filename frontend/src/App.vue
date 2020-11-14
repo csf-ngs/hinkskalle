@@ -64,16 +64,19 @@
 </template>
 
 <script lang="ts">
+import { AxiosError } from 'axios';
 import Vue from 'vue';
 import { User } from './store/models';
+
+import { SnackbarType } from './store/modules/snackbar';
 
 export default Vue.extend({
   name: 'App',
   created: function () {
     const { $store, $router } = this;
-    this.$store.commit('registerInterceptor', (err) => {
+    this.$store.commit('registerInterceptor', (err: AxiosError) => {
       return new Promise((resolve, reject) => {
-        if (err.response && err.response.status === 401 && err.config && !err.config.__isRetryRequest) {
+        if (err.response && err.response.status === 401 && err.config) {
           $store.dispatch('logout');
           $router.push('/login');
         }
@@ -102,8 +105,8 @@ export default Vue.extend({
       return this.$store.getters['snackbar/msg'];
     },
     snackbarColor(): string {
-      const type = this.$store.getters['snackbar/type'];
-      const map = {
+      const type: SnackbarType = this.$store.getters['snackbar/type'];
+      const map: { [key: string]: string } = {
         '': 'blue-grey',
         'info': 'blue-grey',
         'success': 'success',

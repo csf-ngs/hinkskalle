@@ -3,9 +3,11 @@ import { Module } from 'vuex';
 import { has as _has } from 'lodash';
 import { AxiosError } from 'axios';
 
+export type SnackbarType = '' | 'info' | 'success' | 'error';
+
 interface State {
   show: boolean;
-  type: '' | 'info' | 'success' | 'error';
+  type: SnackbarType;
   msg: string;
 }
 

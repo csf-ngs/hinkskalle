@@ -14,10 +14,10 @@ store.state.backend = mockAxios;
 
 const testCollections = [
   {
-    name: 'esel', 
+    id: 1, name: 'esel', description: 'eyore', createdAt: new Date(),
   },
   {
-    name: 'schaf',
+    id: 2, name: 'schaf', description: 'shawn', createdAt: new Date(),
   }
 ];
 

@@ -12,11 +12,11 @@
             :loading="loading">
             <template v-slot:top>
               <v-toolbar flat>
-                <v-text-field v-model="localState.search" prepend-icon="mdi-magnify" label="Search..." single-line hide-details></v-text-field>
+                <v-text-field id="search" v-model="localState.search" prepend-icon="mdi-magnify" label="Search..." single-line hide-details></v-text-field>
                 <v-spacer></v-spacer>
-                <v-dialog v-model="localState.showEdit" max-width="500px">
+                <v-dialog v-model="localState.showEdit" max-width="700px">
                   <template v-slot:activator="{ on, attrs }">
-                    <v-btn color="primary" text v-bind="attrs" v-on="on">Create Collection</v-btn>
+                    <v-btn id="create-collection" color="primary" text v-bind="attrs" v-on="on">Create Collection</v-btn>
                   </template>
                   <v-card>
                     <v-card-title class="headline">{{editTitle}}</v-card-title>
@@ -24,13 +24,49 @@
                       <v-container>
                         <v-row>
                           <v-col cols="12">
-                            <v-text-field v-model="localState.editItem.name" label="Name" required></v-text-field>
+                            <v-text-field 
+                              id="name"
+                              v-model="localState.editItem.name" 
+                              label="Name" 
+                              required></v-text-field>
                           </v-col>
                           <v-col cols="12">
-                            <v-text-field v-model="localState.editItem.description" label="Description"></v-text-field>
+                            <v-text-field 
+                              id="description"
+                              v-model="localState.editItem.description" 
+                              label="Description"></v-text-field>
                           </v-col>
                           <v-col cols="12">
-                            <v-checkbox v-model="localState.editItem.private" label="Private"></v-checkbox>
+                            <v-checkbox 
+                              id="private"
+                              v-model="localState.editItem.private" 
+                              label="Private"></v-checkbox>
+                          </v-col>
+                        </v-row>
+                        <v-row>
+                          <v-col cols="12" md="4">
+                            <v-text-field 
+                              dense
+                              readonly 
+                              append-outer-icon="mdi-lock"
+                              :value="localState.editItem.createdAt | moment('YYYY-MM-DD HH:mm')" 
+                              label="Created At"></v-text-field>
+                          </v-col>
+                          <v-col cols="12" md="4">
+                            <v-text-field 
+                              dense
+                              readonly 
+                              append-outer-icon="mdi-lock"
+                              :value="localState.editItem.createdBy" 
+                              label="Created By"></v-text-field>
+                          </v-col>
+                          <v-col cols="12" md="4">
+                            <v-text-field 
+                              dense
+                              readonly 
+                              append-outer-icon="mdi-lock"
+                              :value="updatedAt" 
+                              label="Updated At"></v-text-field>
                           </v-col>
                         </v-row>
                       </v-container>
@@ -63,7 +99,7 @@
               <v-icon small @click="deleteCollection(item)">mdi-delete</v-icon>
             </template>
             <template v-slot:item.createdAt="{ item }">
-              {{item.createdAt | moment('YYYY-MM-DD HH:mm:ss')}}
+              {{item.createdAt | moment('YYYY-MM-DD HH:mm')}}
             </template>
           </v-data-table>
         </v-col>
@@ -77,13 +113,19 @@ import Vue from 'vue';
 import { DataTableHeader } from 'vuetify';
 
 import { clone as _clone } from 'lodash';
-import About from './About.vue';
+import moment from 'moment';
 
 interface State {
   search: string;
   editItem: Collection;
   showEdit: boolean;
   showDelete: boolean;
+}
+
+function defaultItem(): Collection {
+  const item = new Collection();
+  item.createdAt = new Date();
+  return item;
 }
 
 export default Vue.extend({
@@ -104,7 +146,7 @@ export default Vue.extend({
       search: '',
       showEdit: false,
       showDelete: false,
-      editItem: new Collection(),
+      editItem: defaultItem(),
     },
   }),
   computed: {
@@ -117,6 +159,11 @@ export default Vue.extend({
     editTitle(): string {
       return this.localState.editItem.id ? 'Edit Collection' : 'New Collection';
     },
+    updatedAt(): string {
+      return this.localState.editItem.updatedAt ?
+        moment(this.localState.editItem.updatedAt).format('YYYY-MM-DD HH:mm') :
+        '-';
+    }
   },
   watch: {
     'localState.showEdit': function showEdit(val) {
@@ -149,7 +196,7 @@ export default Vue.extend({
     closeEdit() {
       this.localState.showEdit = false;
       this.$nextTick(() => {
-        this.localState.editItem = new Collection();
+        this.localState.editItem = defaultItem();
       });
     },
     closeDelete() {

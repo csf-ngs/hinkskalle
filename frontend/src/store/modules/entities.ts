@@ -1,6 +1,6 @@
 import { Module } from 'vuex';
 
-import { Collection, plainToCollection } from '../models';
+import { Entity, plainToEntity } from '../models';
 
 import { AxiosError, AxiosResponse } from 'axios';
 
@@ -8,10 +8,10 @@ import { map as _map } from 'lodash';
 
 export interface State {
   status: '' | 'loading' | 'failed' | 'success';
-  list: Collection[];
+  list: Entity[];
 }
 
-const collectionsModule: Module<State, any> = {
+const entitiesModule: Module<State, any> = {
   namespaced: true,
   state: {
     status: '',
@@ -19,7 +19,7 @@ const collectionsModule: Module<State, any> = {
   },
   getters: {
     status: (state): string => state.status,
-    list: (state): Collection[] => state.list,
+    list: (state): Entity[] => state.list,
   },
   mutations: {
     loading(state: State) {
@@ -31,17 +31,17 @@ const collectionsModule: Module<State, any> = {
     failed(state: State) {
       state.status = 'failed';
     },
-    setList(state: State, list: Collection[]) {
+    setList(state: State, list: Entity[]) {
       state.list = list;
     }
   },
   actions: {
-    list: ({ commit, rootState }, entity=null): Promise<Collection[]> => {
+    list: ({ commit, rootState }): Promise<Entity[]> => {
       return new Promise((resolve, reject) => {
         commit('loading');
-        rootState.backend.get(`/v1/collections/${entity ? entity : rootState.currentUser.username}`)
+        rootState.backend.get(`/v1/entities`)
           .then((response: AxiosResponse) => {
-            const list = _map(response.data.data, plainToCollection);
+            const list = _map(response.data.data, plainToEntity);
             commit('succeeded');
             commit('setList', list);
             resolve(list);
@@ -55,4 +55,4 @@ const collectionsModule: Module<State, any> = {
   },
 };
 
-export default collectionsModule;
+export default entitiesModule;

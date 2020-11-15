@@ -7,7 +7,7 @@ import { AxiosError, AxiosResponse } from 'axios';
 import { map as _map } from 'lodash';
 
 
-interface State {
+export interface State {
   status: '' | 'loading' | 'failed' | 'success';
   latest: Upload[];
 }

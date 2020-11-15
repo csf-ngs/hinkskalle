@@ -4,7 +4,7 @@ import { User, plainToUser, serializeUser } from '../models';
 
 import { AxiosError, AxiosResponse } from 'axios';
 
-interface State {
+export interface State {
   status: '' | 'loading' | 'failed' | 'success';
 }
 

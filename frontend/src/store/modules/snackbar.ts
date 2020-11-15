@@ -5,7 +5,7 @@ import { AxiosError } from 'axios';
 
 export type SnackbarType = '' | 'info' | 'success' | 'error';
 
-interface State {
+export interface State {
   show: boolean;
   type: SnackbarType;
   msg: string;

@@ -6,22 +6,24 @@ import axios, {AxiosInstance} from 'axios';
 Vue.use(Vuex);
 
 import { User, plainToUser } from './models';
-import snackbarModule from './modules/snackbar';
-import containersModule from './modules/containers';
-import collectionsModule from './modules/collections';
-import tokensModule from './modules/tokens';
-import usersModule from './modules/users';
+import snackbarModule, { State as SnackbarState } from './modules/snackbar';
+import entitiesModule, { State as EntitiesState } from './modules/entities';
+import containersModule, { State as ContainersState } from './modules/containers';
+import collectionsModule, { State as CollectionsState }  from './modules/collections';
+import tokensModule, { State as TokensState } from './modules/tokens';
+import usersModule, { State as UsersState } from './modules/users';
 
 interface State {
   backend: AxiosInstance;
   authToken: string;
   authStatus: '' | 'loading' | 'failed' | 'success';
   currentUser: User | null;
-  snackbar?: any;
-  containers?: any;
-  tokens?: any;
-  users?: any;
-  collections?: any;
+  snackbar?: SnackbarState;
+  containers?: ContainersState;
+  tokens?: TokensState;
+  users?: UsersState;
+  collections?: CollectionsState;
+  entities?: EntitiesState;
 }
 
 const token = localStorage.getItem('token') || '';
@@ -110,5 +112,6 @@ export default new Vuex.Store({
     tokens: tokensModule,
     users: usersModule,
     collections: collectionsModule,
+    entities: entitiesModule,
   }
 });

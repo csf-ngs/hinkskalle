@@ -5,7 +5,7 @@ import { Token, plainToToken, serializeToken } from '../models';
 import { map as _map, filter as _filter, concat as _concat } from 'lodash';
 import {AxiosError, AxiosResponse} from 'axios';
 
-interface State {
+export interface State {
   status: '' | 'loading' | 'failed' | 'success';
   tokens: Token[];
 }

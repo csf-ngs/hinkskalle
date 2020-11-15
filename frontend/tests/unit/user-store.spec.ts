@@ -14,7 +14,7 @@ store.state.backend = mockAxios;
 
 describe('user store getters', () => {
   it('has status getter', () => {
-    store.state.users.status = 'loading';
+    store.state.users!.status = 'loading';
     expect(store.getters['users/status']).toBe('loading');
   });
 });
@@ -31,9 +31,9 @@ describe('user store actions', () => {
     });
     const promise = store.dispatch('users/update', updateUserObj);
     expect(mockAxios.put).toHaveBeenLastCalledWith(`/v1/users/${updateUserObj.username}`, serializeUser(updateUserObj));
-    expect(store.state.users.status).toBe('loading');
+    expect(store.state.users!.status).toBe('loading');
     promise.then(user => {
-      expect(store.state.users.status).toBe('success');
+      expect(store.state.users!.status).toBe('success');
       expect(user).toStrictEqual(updateUserObj);
       done();
     });
@@ -41,7 +41,7 @@ describe('user store actions', () => {
   it('has update user fail handling', done => {
     mockAxios.put.mockRejectedValue({ fail: 'fail' });
     store.dispatch('users/update', testUserObj).catch(err => {
-      expect(store.state.users.status).toBe('failed');
+      expect(store.state.users!.status).toBe('failed');
       done();
     });
   });
@@ -53,16 +53,16 @@ describe('user store actions', () => {
 
     const promise = store.dispatch('users/delete', testUserObj);
     expect(mockAxios.delete).toHaveBeenLastCalledWith(`/v1/users/${testUserObj.username}`);
-    expect(store.state.users.status).toBe('loading');
+    expect(store.state.users!.status).toBe('loading');
     promise.then(ret => {
-      expect(store.state.users.status).toBe('success');
+      expect(store.state.users!.status).toBe('success');
       done();
     });
   });
   it('has delete user fail handling', done => {
     mockAxios.delete.mockRejectedValue({ fail: 'fail' });
     store.dispatch('users/delete', testUser).catch(err => {
-      expect(store.state.users.status).toBe('failed');
+      expect(store.state.users!.status).toBe('failed');
       done();
     });
   });

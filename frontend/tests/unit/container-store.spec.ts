@@ -28,26 +28,26 @@ export const testLatestObj = _map(testLatest, plainToUpload);
 
 describe('container store getters', () => {
   it('has containers status getter', () => {
-    store.state.containers.status = 'loading';
+    store.state.containers!.status = 'loading';
     expect(store.getters['containers/status']).toBe('loading');
   });
 
   it('has latest containers getter', () => {
-    store.state.containers.latest = testLatestObj;
+    store.state.containers!.latest = testLatestObj;
     expect(store.getters['containers/latest']).toStrictEqual(testLatestObj);
   });
 });
 
 describe('container store mutations', () => {
   it('has containers status mutations', () => {
-    store.state.containers.status = '';
+    store.state.containers!.status = '';
     store.commit('containers/latestLoading');
-    expect(store.state.containers.status).toBe('loading');
+    expect(store.state.containers!.status).toBe('loading');
     store.commit('containers/latestLoadingSucceeded', testLatest);
-    expect(store.state.containers.status).toBe('success');
-    expect(store.state.containers.latest).toStrictEqual(testLatestObj);
+    expect(store.state.containers!.status).toBe('success');
+    expect(store.state.containers!.latest).toStrictEqual(testLatestObj);
     store.commit('containers/latestLoadingFailed');
-    expect(store.state.containers.status).toBe('failed');
+    expect(store.state.containers!.status).toBe('failed');
   });
 });
 
@@ -58,10 +58,10 @@ describe('container store actions', () => {
     });
     const promise = store.dispatch('containers/latest');
     expect(mockAxios.get).toHaveBeenLastCalledWith('/v1/latest');
-    expect(store.state.containers.status).toBe('loading');
+    expect(store.state.containers!.status).toBe('loading');
     promise.then(() => {
-      expect(store.state.containers.status).toBe('success');
-      expect(store.state.containers.latest).toStrictEqual(testLatestObj);
+      expect(store.state.containers!.status).toBe('success');
+      expect(store.state.containers!.latest).toStrictEqual(testLatestObj);
       done();
     });
   });
@@ -69,7 +69,7 @@ describe('container store actions', () => {
   it('has load latest containers fail handling', done => {
     mockAxios.get.mockRejectedValue({ fail: 'fail' });
     store.dispatch('containers/latest').catch(err => {
-      expect(store.state.containers.status).toBe('failed');
+      expect(store.state.containers!.status).toBe('failed');
       done();
     });
   });

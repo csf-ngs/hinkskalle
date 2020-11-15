@@ -20,36 +20,36 @@ export const testTokenObj = _map(testTokens, plainToToken);
 
 describe('token store getters', () => {
   it('has tokens status getter', () => {
-    store.state.tokens.status = 'loading';
+    store.state.tokens!.status = 'loading';
     expect(store.getters['tokens/status']).toBe('loading');
   });
   it('has token list getter', () => {
-    store.state.tokens.tokens = _clone(testTokenObj);
+    store.state.tokens!.tokens = _clone(testTokenObj);
     expect(store.getters['tokens/tokens']).toStrictEqual(testTokenObj);
   });
 });
 
 describe('token store mutations', () => {
   it('has token status mutations', () => {
-    store.state.tokens.status = '';
+    store.state.tokens!.status = '';
     store.commit('tokens/tokensLoading');
-    expect(store.state.tokens.status).toBe('loading');
+    expect(store.state.tokens!.status).toBe('loading');
 
     store.commit('tokens/tokensLoadingSucceeded', testTokens);
-    expect(store.state.tokens.status).toBe('success');
+    expect(store.state.tokens!.status).toBe('success');
 
     store.commit('tokens/tokensLoadingFailed');
-    expect(store.state.tokens.status).toBe('failed');
+    expect(store.state.tokens!.status).toBe('failed');
   });
 
   it('has list update mutation', () => {
-    store.state.tokens.tokens = [];
+    store.state.tokens!.tokens = [];
     store.commit('tokens/setList', _clone(testTokenObj));
-    expect(store.state.tokens.tokens).toStrictEqual(testTokenObj);
+    expect(store.state.tokens!.tokens).toStrictEqual(testTokenObj);
   });
 
   it('has replace mutation', () => {
-    store.state.tokens.tokens = _clone(testTokenObj);
+    store.state.tokens!.tokens = _clone(testTokenObj);
 
     const updateToken = _clone(_find(testTokenObj, t => t.id === '1'));
     if (!updateToken) {
@@ -58,7 +58,7 @@ describe('token store mutations', () => {
     updateToken.comment = 'changed me';
 
     store.commit('tokens/updateToken', updateToken);
-    const updated = _find(store.state.tokens.tokens, t => t.id === updateToken.id);
+    const updated = _find(store.state.tokens!.tokens, t => t.id === updateToken.id);
     expect(updated).toStrictEqual(updateToken);
   });
 
@@ -72,10 +72,10 @@ describe('token store actions', () => {
     store.state.currentUser = testUserObj;
     const promise = store.dispatch('tokens/list');
     expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/users/${testUserObj.username}/tokens`);
-    expect(store.state.tokens.status).toBe('loading');
+    expect(store.state.tokens!.status).toBe('loading');
     promise.then(() => {
-      expect(store.state.tokens.status).toBe('success');
-      expect(store.state.tokens.tokens).toStrictEqual(testTokenObj);
+      expect(store.state.tokens!.status).toBe('success');
+      expect(store.state.tokens!.tokens).toStrictEqual(testTokenObj);
       done();
     });
   });
@@ -83,7 +83,7 @@ describe('token store actions', () => {
     mockAxios.get.mockRejectedValue({ fail: 'fail' });
     store.state.currentUser = testUserObj;
     store.dispatch('tokens/list').catch(err => {
-      expect(store.state.tokens.status).toBe('failed');
+      expect(store.state.tokens!.status).toBe('failed');
       done();
     });
   });
@@ -101,10 +101,13 @@ describe('token store actions', () => {
 
     const promise = store.dispatch('tokens/create', createTokenObj);
     expect(mockAxios.post).toHaveBeenLastCalledWith(`/v1/users/${testUserObj.username}/tokens`, serializeToken(createTokenObj));
-    expect(store.state.tokens.status).toBe('loading');
+    expect(store.state.tokens!.status).toBe('loading');
     promise.then(() => {
-      expect(store.state.tokens.status).toBe('success');
-      const created = _find(store.state.tokens.tokens, t => t.id==="666");
+      expect(store.state.tokens!.status).toBe('success');
+      const created = _find(store.state.tokens!.tokens, t => t.id==="666");
+      if (!created) {
+        throw Error('id 666 not found in test token store');
+      }
       createTokenObj.id = created.id;
       expect(created).toStrictEqual(createTokenObj);
       done();
@@ -114,7 +117,7 @@ describe('token store actions', () => {
     mockAxios.post.mockRejectedValue({ fail: 'fail' });
     store.state.currentUser = testUserObj;
     store.dispatch('tokens/create', testTokenObj[0]).catch(err => {
-      expect(store.state.tokens.status).toBe('failed');
+      expect(store.state.tokens!.status).toBe('failed');
       done();
     });
   });
@@ -131,15 +134,15 @@ describe('token store actions', () => {
       data: { data: updateToken }
     });
     store.state.currentUser = testUserObj;
-    store.state.tokens.tokens = _clone(testTokenObj);
+    store.state.tokens!.tokens = _clone(testTokenObj);
 
     const promise = store.dispatch('tokens/update', updateTokenObj);
     expect(mockAxios.put).toHaveBeenLastCalledWith(`/v1/users/${testUserObj.username}/tokens/${updateToken.id}`, serializeToken(updateTokenObj));
-    expect(store.state.tokens.status).toBe('loading');
+    expect(store.state.tokens!.status).toBe('loading');
     promise.then(() => {
-      expect(store.state.tokens.status).toBe('success');
-      expect(store.state.tokens.tokens).toHaveLength(2);
-      const updated = _find(store.state.tokens.tokens, t => t.id===updateToken.id);
+      expect(store.state.tokens!.status).toBe('success');
+      expect(store.state.tokens!.tokens).toHaveLength(2);
+      const updated = _find(store.state.tokens!.tokens, t => t.id===updateToken.id);
       expect(updated).toStrictEqual(updateTokenObj);
       done();
     });
@@ -148,25 +151,25 @@ describe('token store actions', () => {
     mockAxios.put.mockRejectedValue({ fail: 'fail' });
     store.state.currentUser = testUserObj;
     store.dispatch('tokens/update', testTokenObj[0]).catch(err => {
-      expect(store.state.tokens.status).toBe('failed');
+      expect(store.state.tokens!.status).toBe('failed');
       done();
     });
   });
 
   it('has delete token', done => {
     store.state.currentUser = testUserObj;
-    store.state.tokens.tokens = _clone(testTokenObj);
+    store.state.tokens!.tokens = _clone(testTokenObj);
 
     mockAxios.delete.mockResolvedValue({
       data: { status: 'ok' },
     });
     const promise = store.dispatch('tokens/delete', testTokenObj[0].id);
     expect(mockAxios.delete).toHaveBeenLastCalledWith(`/v1/users/${testUserObj.username}/tokens/${testTokenObj[0].id}`);
-    expect(store.state.tokens.status).toBe('loading');
+    expect(store.state.tokens!.status).toBe('loading');
     promise.then(() => {
-      expect(store.state.tokens.status).toBe('success');
-      expect(store.state.tokens.tokens).toHaveLength(1);
-      const deleted = _find(store.state.tokens.tokens, t => t.id === testTokenObj[0].id);
+      expect(store.state.tokens!.status).toBe('success');
+      expect(store.state.tokens!.tokens).toHaveLength(1);
+      const deleted = _find(store.state.tokens!.tokens, t => t.id === testTokenObj[0].id);
       expect(deleted).toBeUndefined();
       done();
     });
@@ -175,7 +178,7 @@ describe('token store actions', () => {
     mockAxios.delete.mockRejectedValue({ fail: 'fail' });
     store.state.currentUser = testUserObj;
     store.dispatch('tokens/delete', '1').catch(err => {
-      expect(store.state.tokens.status).toBe('failed');
+      expect(store.state.tokens!.status).toBe('failed');
       done();
     });
   });

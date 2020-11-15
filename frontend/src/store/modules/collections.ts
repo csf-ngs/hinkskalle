@@ -1,10 +1,10 @@
 import { Module } from 'vuex';
 
-import { Collection, plainToCollection } from '../models';
+import { Collection, plainToCollection, serializeCollection } from '../models';
 
 import { AxiosError, AxiosResponse } from 'axios';
 
-import { map as _map } from 'lodash';
+import { map as _map, isNil as _isNil, concat as _concat, filter as _filter } from 'lodash';
 
 export interface State {
   status: '' | 'loading' | 'failed' | 'success';
@@ -33,11 +33,14 @@ const collectionsModule: Module<State, any> = {
     },
     setList(state: State, list: Collection[]) {
       state.list = list;
+    },
+    update(state: State, collection: Collection) {
+      state.list = _concat(_filter(state.list, t => t.id !== collection.id), collection);
     }
   },
   actions: {
     list: ({ commit, rootState }, entity=null): Promise<Collection[]> => {
-      return new Promise((resolve, reject) => {
+      return new Promise<Collection[]>((resolve, reject) => {
         commit('loading');
         rootState.backend.get(`/v1/collections/${entity ? entity : rootState.currentUser.username}`)
           .then((response: AxiosResponse) => {
@@ -50,6 +53,35 @@ const collectionsModule: Module<State, any> = {
             commit('failed');
             reject(err);
           });
+      });
+    },
+    create: ({ commit, rootState, dispatch }, collection: Collection): Promise<Collection> => {
+      return new Promise<Collection>((resolve, reject) => {
+        let getEntity: Promise<string>;
+        if (!_isNil(collection.entity)) {
+          getEntity = Promise.resolve(collection.entity);
+        }
+        else {
+          if (_isNil(collection.entityName)) {
+            collection.entityName = rootState.currentUser.username;
+          }
+          getEntity = dispatch('entities/get', collection.entityName, { root: true });
+        }
+        commit('loading');
+        //getEntity.then(entityId => {
+          //collection.entity = entityId;
+          rootState.backend.post(`/v1/collections`, serializeCollection(collection))
+            .then((response: AxiosResponse) => {
+              const created = plainToCollection(response.data.data);
+              commit('succeeded');
+              commit('update', created);
+              resolve(created);
+            })
+            .catch((err: AxiosError) => {
+              commit('failed', err);
+              reject(err);
+            });
+        //});
       });
     },
   },

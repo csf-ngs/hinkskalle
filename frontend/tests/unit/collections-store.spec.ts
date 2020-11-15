@@ -1,9 +1,9 @@
 import store from '@/store';
-import {plainToCollection} from '@/store/models';
+import {Collection, plainToCollection, serializeCollection} from '@/store/models';
 
 import axios from 'axios';
 
-import { map as _map } from 'lodash';
+import { map as _map, clone as _clone, concat as _concat, find as _find } from 'lodash';
 
 jest.mock('axios');
 const mockAxios = axios as jest.Mocked<typeof axios>;
@@ -14,10 +14,10 @@ store.state.backend = mockAxios;
 
 const testCollections = [
   {
-    id: 1, name: 'esel', description: 'eyore', createdAt: new Date(),
+    id: '1', name: 'esel', description: 'eyore', createdAt: new Date(),
   },
   {
-    id: 2, name: 'schaf', description: 'shawn', createdAt: new Date(),
+    id: '2', name: 'schaf', description: 'shawn', createdAt: new Date(),
   }
 ];
 
@@ -50,6 +50,30 @@ describe('collection store mutations', () => {
     store.state.collections!.list = [];
     store.commit('collections/setList', testCollectionsObj);
     expect(store.state.collections!.list).toStrictEqual(testCollectionsObj);
+  });
+
+  it('has update mutation', () => {
+    store.state.collections!.list = _clone(testCollectionsObj);
+    const update = _clone(_find(testCollectionsObj, c => c.id === '1'));
+    if (!update) {
+      throw 'update collection test not found';
+    }
+    update.description = 'Woof';
+    store.commit('collections/update', update);
+
+    const updated = _find(store.state.collections!.list, c => c.id === update.id);
+    expect(updated).toStrictEqual(update);
+    expect(store.state.collections!.list).toHaveLength(2);
+
+    const create = new Collection();
+    create.id="999";
+    create.name="supercow";
+    create.createdAt = new Date();
+
+    store.commit('collections/update', create);
+    expect(store.state.collections!.list).toHaveLength(3);
+    const added = _find(store.state.collections!.list, c => c.id === create.id);
+    expect(added).toStrictEqual(create);
   });
 
 });
@@ -95,18 +119,30 @@ describe('collection store actions', () => {
 
   it('has create collection', done => {
     const collection = {
-      name: 'testilein'
+      name: 'testilein',
+      entity: "777",
     };
     const createCollectionObj = plainToCollection(collection);
 
     mockAxios.post.mockResolvedValue({
-      data: { data: { id: 666, name: collection.name }}
+      data: { data: { id: '666', entity: "777", name: collection.name }}
     });
     store.state.currentUser = testUserObj;
 
     const promise = store.dispatch('collections/create', createCollectionObj);
-    //expect(mockAxios.post).toHaveBeenLastCalledWith(`/v1/collections`)
-    done();
+    expect(store.state.collections!.status).toBe('loading');
+    promise.then(collection => {
+      expect(mockAxios.post).toHaveBeenLastCalledWith(`/v1/collections`, serializeCollection(createCollectionObj));
+      expect(store.state.collections!.status).toBe('success');
+      const created = _find(store.state.collections!.list, c => c.id==='666');
+      if (!created) {
+        throw Error('created id 666 not found in test token store');
+      }
+      createCollectionObj.id = created.id;
+      expect(created).toStrictEqual(createCollectionObj);
+      expect(collection).toStrictEqual(createCollectionObj);
+      done();
+    });
   });
 
 });

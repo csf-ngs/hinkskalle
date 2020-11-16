@@ -1,6 +1,6 @@
 import { Module } from 'vuex';
 
-import { Collection, plainToCollection, serializeCollection } from '../models';
+import { Collection, Entity, plainToCollection, serializeCollection } from '../models';
 
 import { AxiosError, AxiosResponse } from 'axios';
 
@@ -57,9 +57,11 @@ const collectionsModule: Module<State, any> = {
     },
     create: ({ commit, rootState, dispatch }, collection: Collection): Promise<Collection> => {
       return new Promise<Collection>((resolve, reject) => {
-        let getEntity: Promise<string>;
+        let getEntity: Promise<Entity>;
         if (!_isNil(collection.entity)) {
-          getEntity = Promise.resolve(collection.entity);
+          const fakeEntity = new Entity();
+          fakeEntity.id=collection.entity;
+          getEntity = Promise.resolve(fakeEntity);
         }
         else {
           if (_isNil(collection.entityName)) {
@@ -68,8 +70,8 @@ const collectionsModule: Module<State, any> = {
           getEntity = dispatch('entities/get', collection.entityName, { root: true });
         }
         commit('loading');
-        //getEntity.then(entityId => {
-          //collection.entity = entityId;
+        getEntity.then(entity => {
+          collection.entity = entity.id;
           rootState.backend.post(`/v1/collections`, serializeCollection(collection))
             .then((response: AxiosResponse) => {
               const created = plainToCollection(response.data.data);
@@ -81,7 +83,7 @@ const collectionsModule: Module<State, any> = {
               commit('failed', err);
               reject(err);
             });
-        //});
+        });
       });
     },
   },

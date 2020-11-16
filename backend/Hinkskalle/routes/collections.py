@@ -22,6 +22,9 @@ class CollectionUpdateSchema(CollectionSchema, RequestSchema):
   name = fields.String(dump_only=True)
   entity = fields.String(dump_only=True)
 
+class CollectionDeleteResponseSchema(ResponseSchema):
+  status = fields.String()
+
 def _get_collection(entity_id, collection_id):
   try:
     entity = Entity.query.filter(Entity.name==entity_id).one()
@@ -32,6 +35,46 @@ def _get_collection(entity_id, collection_id):
   except NoResultFound:
     raise errors.NotFound(f"collection {entity.id}/{collection_id} not found")
   return collection
+
+# POST needs to come first, otherwise OPTIONS will
+# redirect to /v1/collections/ and CORS fails.
+@registry.handles(
+  rule='/v1/collections',
+  method='POST',
+  request_body_schema=CollectionCreateSchema(),
+  response_body_schema=CollectionResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user),
+)
+def create_collection():
+  body = rebar.validated_body
+  try:
+    entity = Entity.query.filter(Entity.id==body['entity']).one()
+  except NoResultFound:
+    raise errors.NotFound(f"entity {body['entity']} not found")
+
+  if not entity.check_update_access(g.authenticated_user):
+    raise errors.Forbidden("access denied")
+  body.pop('entity')
+  if not body['name']:
+    body['name']='default'
+  
+  if entity.name == 'default' and not g.authenticated_user.is_admin:
+    if body['name'] == 'default' or body['name'] == 'pipeline':
+      raise errors.Forbidden("Trying to use a reserved name in the default namespace.")
+  new_collection = Collection(**body)
+  new_collection.entity_ref=entity
+  if entity.defaultPrivate:
+    new_collection.private=True
+  new_collection.owner=g.authenticated_user
+
+  try:
+    db.session.add(new_collection)
+    db.session.commit()
+  except IntegrityError as err:
+    raise errors.PreconditionFailed(f"Collection {new_collection.id} already exists")
+
+  return { 'data': new_collection }
+
 
 @registry.handles(
   rule='/v1/collections/<string:entity_id>',
@@ -86,43 +129,6 @@ def get_default_collection_default_entity():
 
 
 @registry.handles(
-  rule='/v1/collections',
-  method='POST',
-  request_body_schema=CollectionCreateSchema(),
-  response_body_schema=CollectionResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
-)
-def create_collection():
-  body = rebar.validated_body
-  try:
-    entity = Entity.query.filter(Entity.id==body['entity']).one()
-  except NoResultFound:
-    raise errors.NotFound(f"entity {body['entity']} not found")
-
-  if not entity.check_update_access(g.authenticated_user):
-    raise errors.Forbidden("access denied")
-  body.pop('entity')
-  if not body['name']:
-    body['name']='default'
-  
-  if entity.name == 'default' and not g.authenticated_user.is_admin:
-    if body['name'] == 'default' or body['name'] == 'pipeline':
-      raise errors.Forbidden("Trying to use a reserved name in the default namespace.")
-  new_collection = Collection(**body)
-  new_collection.entity_ref=entity
-  if entity.defaultPrivate:
-    new_collection.private=True
-  new_collection.owner=g.authenticated_user
-
-  try:
-    db.session.add(new_collection)
-    db.session.commit()
-  except IntegrityError as err:
-    raise errors.PreconditionFailed(f"Collection {new_collection.id} already exists")
-
-  return { 'data': new_collection }
-
-@registry.handles(
   rule='/v1/collections/<string:entity_id>/<string:collection_id>',
   method='PUT',
   request_body_schema=CollectionUpdateSchema(),
@@ -141,3 +147,21 @@ def update_collection(entity_id, collection_id):
   db.session.commit()
 
   return { 'data': collection }
+
+@registry.handles(
+  rule='/v1/collections/<string:entity_id>/<string:collection_id>',
+  method='DELETE',
+  response_body_schema=CollectionDeleteResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user),
+)
+def delete_collection(entity_id, collection_id):
+  collection = _get_collection(entity_id, collection_id)
+  if not collection.check_update_access(g.authenticated_user):
+    raise errors.Forbidden("Access denied to collection")
+
+  if collection.size() > 0:
+    raise errors.PreconditionFailed(f"Collection {collection.name} still has containers.")
+
+  db.session.delete(collection)
+  db.session.commit()
+  return { 'status': 'ok' }

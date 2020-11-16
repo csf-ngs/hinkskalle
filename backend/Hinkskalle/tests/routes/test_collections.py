@@ -4,7 +4,7 @@ import os
 import json
 import datetime
 from Hinkskalle.tests.route_base import RouteBase
-from Hinkskalle.models import Entity, Collection
+from Hinkskalle.models import Entity, Collection, Container
 from Hinkskalle.tests.models.test_Collection import _create_collection
 from Hinkskalle import db
 
@@ -401,3 +401,50 @@ class TestCollections(RouteBase):
         'customData': 'hot drei Eckn',
       })
     self.assertEqual(ret.status_code, 403)
+
+  def test_delete(self):
+    coll, entity = _create_collection()
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/collections/{entity.name}/{coll.name}")
+    self.assertEqual(ret.status_code, 200)
+
+    self.assertIsNone(Collection.query.filter(Collection.name==coll.name).first())
+  
+  def test_delete_not_empty(self):
+    coll, entity = _create_collection()
+    container = Container(name="test-conti1", collection_id=coll.id)
+    db.session.add(container)
+    db.session.commit()
+
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/collections/{entity.name}/{coll.name}")
+    self.assertEqual(ret.status_code, 412)
+
+  def test_delete_user(self):
+    coll, entity = _create_collection()
+    entity.owner=self.user
+    coll.owner=self.user
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.delete(f"/v1/collections/{entity.name}/{coll.name}")
+    self.assertEqual(ret.status_code, 200)
+
+    self.assertIsNone(Collection.query.filter(Collection.name==coll.name).first())
+
+  def test_delete_user_other(self):
+    coll, entity = _create_collection()
+    entity.owner=self.user
+    db.session.commit()
+    coll.owner=self.other_user
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.delete(f"/v1/collections/{entity.name}/{coll.name}")
+    self.assertEqual(ret.status_code, 403)
+
+  def test_delete_noauth(self):
+    ret = self.client.delete("/v1/collections/oi/nk")
+    self.assertEqual(ret.status_code, 401)

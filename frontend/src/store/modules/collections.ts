@@ -35,7 +35,10 @@ const collectionsModule: Module<State, any> = {
       state.list = list;
     },
     update(state: State, collection: Collection) {
-      state.list = _concat(_filter(state.list, t => t.id !== collection.id), collection);
+      state.list = _concat(_filter(state.list, c => c.id !== collection.id), collection);
+    },
+    remove(state: State, id: string) {
+      state.list = _filter(state.list, c => c.id !== id);
     }
   },
   actions: {
@@ -70,22 +73,60 @@ const collectionsModule: Module<State, any> = {
           getEntity = dispatch('entities/get', collection.entityName, { root: true });
         }
         commit('loading');
-        getEntity.then(entity => {
-          collection.entity = entity.id;
-          rootState.backend.post(`/v1/collections`, serializeCollection(collection))
-            .then((response: AxiosResponse) => {
-              const created = plainToCollection(response.data.data);
-              commit('succeeded');
-              commit('update', created);
-              resolve(created);
-            })
-            .catch((err: AxiosError) => {
-              commit('failed', err);
-              reject(err);
-            });
-        });
+        getEntity
+          .then(entity => {
+            collection.entity = entity.id;
+            rootState.backend.post(`/v1/collections`, serializeCollection(collection))
+              .then((response: AxiosResponse) => {
+                const created = plainToCollection(response.data.data);
+                commit('succeeded');
+                commit('update', created);
+                resolve(created);
+              })
+              .catch((err: AxiosError) => {
+                commit('failed', err);
+                reject(err);
+              });
+          })
+          .catch(err => {
+            commit('failed', err);
+            reject(err);
+          });
       });
     },
+    update: ({ commit, rootState }, collection: Collection): Promise<Collection> => {
+      return new Promise<Collection>((resolve, reject) => {
+        commit('loading');
+        rootState.backend.put(`/v1/collections/${collection.id}`, serializeCollection(collection))
+          .then((response: AxiosResponse) => {
+            const updated = plainToCollection(response.data.data);
+            commit('succeeded');
+            commit('update', updated);
+            resolve(updated);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
+    delete: ({ commit, rootState }, id: string): Promise<void> => {
+      return new Promise<void>((resolve, reject) => {
+        commit('loading');
+        rootState.backend.delete(`/v1/collections/${id}`)
+          .then((response: AxiosResponse) => {
+            commit('succeeded');
+            commit('remove', id);
+            resolve();
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+
+      })
+
+    }
   },
 };
 

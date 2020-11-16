@@ -97,7 +97,7 @@ const collectionsModule: Module<State, any> = {
     update: ({ commit, rootState }, collection: Collection): Promise<Collection> => {
       return new Promise<Collection>((resolve, reject) => {
         commit('loading');
-        rootState.backend.put(`/v1/collections/${collection.id}`, serializeCollection(collection))
+        rootState.backend.put(`/v1/collections/${collection.entityName}/${collection.name}`, serializeCollection(collection))
           .then((response: AxiosResponse) => {
             const updated = plainToCollection(response.data.data);
             commit('succeeded');
@@ -110,13 +110,13 @@ const collectionsModule: Module<State, any> = {
           });
       });
     },
-    delete: ({ commit, rootState }, id: string): Promise<void> => {
+    delete: ({ commit, rootState }, collection: Collection): Promise<void> => {
       return new Promise<void>((resolve, reject) => {
         commit('loading');
-        rootState.backend.delete(`/v1/collections/${id}`)
+        rootState.backend.delete(`/v1/collections/${collection.entityName}/${collection.name}`)
           .then((response: AxiosResponse) => {
             commit('succeeded');
-            commit('remove', id);
+            commit('remove', collection.id);
             resolve();
           })
           .catch((err: AxiosError) => {

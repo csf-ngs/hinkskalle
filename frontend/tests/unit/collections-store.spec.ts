@@ -17,10 +17,10 @@ store.state.backend = mockAxios;
 
 const testCollections = [
   {
-    id: '1', name: 'esel', description: 'eyore', createdAt: new Date(),
+    id: '1', name: 'esel', description: 'eyore', createdAt: new Date(), entityName: 'oinktity',
   },
   {
-    id: '2', name: 'schaf', description: 'shawn', createdAt: new Date(),
+    id: '2', name: 'schaf', description: 'shawn', createdAt: new Date(), entityName: 'wooftity',
   }
 ];
 
@@ -269,7 +269,7 @@ describe('collection store actions', () => {
     const promise = store.dispatch('collections/update', updateObj);
     expect(store.state.collections!.status).toBe('loading');
     promise.then(() => {
-      expect(mockAxios.put).toHaveBeenLastCalledWith(`/v1/collections/${update.id}`, serializeCollection(updateObj));
+      expect(mockAxios.put).toHaveBeenLastCalledWith(`/v1/collections/${updateObj.entityName}/${updateObj.name}`, serializeCollection(updateObj));
       expect(store.state.collections!.status).toBe('success');
       expect(store.state.collections!.list).toHaveLength(2);
       const updated = _find(store.state.collections!.list, c => c.id===update.id);
@@ -291,10 +291,10 @@ describe('collection store actions', () => {
     mockAxios.delete.mockResolvedValue({
       data: { status: 'ok' },
     });
-    const promise = store.dispatch('collections/delete', testCollectionsObj[0].id);
+    const promise = store.dispatch('collections/delete', testCollectionsObj[0]);
     expect(store.state.collections!.status).toBe('loading');
     promise.then(() => {
-      expect(mockAxios.delete).toHaveBeenLastCalledWith(`/v1/collections/${testCollectionsObj[0].id}`)
+      expect(mockAxios.delete).toHaveBeenLastCalledWith(`/v1/collections/${testCollectionsObj[0].entityName}/${testCollectionsObj[0].name}`)
       expect(store.state.collections!.status).toBe('success');
       expect(store.state.collections!.list).toHaveLength(1);
       const deleted = _find(store.state.collections!.list, c => c.id === testCollectionsObj[0].id);
@@ -304,7 +304,7 @@ describe('collection store actions', () => {
   });
   it('has delete fail', done => {
     mockAxios.delete.mockRejectedValue({ fail: 'fail' });
-    store.dispatch(`collections/delete`, testCollectionsObj[0].id)
+    store.dispatch(`collections/delete`, testCollectionsObj[0])
       .catch(err => {
         expect(store.state.collections!.status).toBe('failed');
         expect(err).toStrictEqual({ fail: 'fail' });

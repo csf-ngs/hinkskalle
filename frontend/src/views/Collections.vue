@@ -190,7 +190,9 @@ export default Vue.extend({
       this.localState.showDelete = true;
     },
     deleteCollectionConfirm() {
-      console.log('delete');
+      this.$store.dispatch('collections/delete', this.localState.editItem)
+        .then(() => this.$store.commit('snackbar/showSuccess', "It's gone!"))
+        .catch(err => this.$store.commit('snackbar/showError', err));
       this.closeDelete();
     },
     closeEdit() {
@@ -206,7 +208,15 @@ export default Vue.extend({
       });
     },
     save() {
-      console.log('save');
+      const action = this.localState.editItem.id ?
+        'collections/update' : 'collections/create';
+      this.$store.dispatch(action, this.localState.editItem)
+        .then(upd => {
+          this.$store.commit('snackbar/showSuccess', 'Yay!');
+        })
+        .catch(err => {
+          this.$store.commit('snackbar/showError', err);
+        });
       this.closeEdit();
     },
   }

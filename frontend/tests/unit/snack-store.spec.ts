@@ -4,13 +4,13 @@ import { AxiosError } from 'axios';
 
 describe('snackbar store getters', () => {
   it('has showSnackbar getter', () => {
-    store.state.snackbar.show = false;
+    store.state.snackbar!.show = false;
     expect(store.getters['snackbar/show']).toBe(false);
-    store.state.snackbar.show = true;
+    store.state.snackbar!.show = true;
     expect(store.getters['snackbar/show']).toBe(true);
   });
   it('has snackbarMsg getter', () => {
-    store.state.snackbar.msg = 'oink';
+    store.state.snackbar!.msg = 'oink';
     expect(store.getters['snackbar/msg']).toBe('oink');
   });
 });
@@ -18,28 +18,28 @@ describe('snackbar store getters', () => {
 describe('snackbar store mutations', () => {
   it('has open', () => {
     store.commit('snackbar/open', 'Oink!');
-    expect(store.state.snackbar.msg).toBe('Oink!');
-    expect(store.state.snackbar.show).toBe(true);
+    expect(store.state.snackbar!.msg).toBe('Oink!');
+    expect(store.state.snackbar!.show).toBe(true);
   });
 
   it('has close', () => {
     store.commit('snackbar/close');
-    expect(store.state.snackbar.msg).toBe('');
-    expect(store.state.snackbar.show).toBe(false);
+    expect(store.state.snackbar!.msg).toBe('');
+    expect(store.state.snackbar!.show).toBe(false);
   });
 
   it('has showSuccess', () => {
     store.commit('snackbar/showSuccess', 'Yeehaw');
-    expect(store.state.snackbar.type).toBe('success');
-    expect(store.state.snackbar.msg).toBe('Yeehaw');
-    expect(store.state.snackbar.show).toBe(true);
+    expect(store.state.snackbar!.type).toBe('success');
+    expect(store.state.snackbar!.msg).toBe('Yeehaw');
+    expect(store.state.snackbar!.show).toBe(true);
   });
 
   it('has showError string', () => {
     store.commit('snackbar/showError', 'Onoz!');
-    expect(store.state.snackbar.type).toBe('error');
-    expect(store.state.snackbar.show).toBe(true);
-    expect(store.state.snackbar.msg).toBe('Onoz!');
+    expect(store.state.snackbar!.type).toBe('error');
+    expect(store.state.snackbar!.show).toBe(true);
+    expect(store.state.snackbar!.msg).toBe('Onoz!');
   });
 
   const createError = (): AxiosError => ({
@@ -61,9 +61,9 @@ describe('snackbar store mutations', () => {
       }
     };
     store.commit('snackbar/showError', err);
-    expect(store.state.snackbar.type).toBe('error');
-    expect(store.state.snackbar.show).toBe(true);
-    expect(store.state.snackbar.msg).toBe('Code 500: EFAIL');
+    expect(store.state.snackbar!.type).toBe('error');
+    expect(store.state.snackbar!.show).toBe(true);
+    expect(store.state.snackbar!.msg).toBe('Code 500: EFAIL');
   });
 
   it('has showError Axios error message response', () => {
@@ -78,9 +78,9 @@ describe('snackbar store mutations', () => {
       }
     };
     store.commit('snackbar/showError', err);
-    expect(store.state.snackbar.type).toBe('error');
-    expect(store.state.snackbar.show).toBe(true);
-    expect(store.state.snackbar.msg).toBe('Code 500: EFAIL');
+    expect(store.state.snackbar!.type).toBe('error');
+    expect(store.state.snackbar!.show).toBe(true);
+    expect(store.state.snackbar!.msg).toBe('Code 500: EFAIL');
   });
 
   it('has showError Axios error unauthorized response', () => {
@@ -93,9 +93,9 @@ describe('snackbar store mutations', () => {
       data: {},
     };
     store.commit('snackbar/showError', err);
-    expect(store.state.snackbar.type).toBe('error');
-    expect(store.state.snackbar.show).toBe(true);
-    expect(store.state.snackbar.msg).toBe('Code 401: Unauthorized! Go away');
+    expect(store.state.snackbar!.type).toBe('error');
+    expect(store.state.snackbar!.show).toBe(true);
+    expect(store.state.snackbar!.msg).toBe('Code 401: Unauthorized! Go away');
   });
 
   it('has showError Axios error other response', () => {
@@ -108,9 +108,9 @@ describe('snackbar store mutations', () => {
       data: {},
     };
     store.commit('snackbar/showError', err);
-    expect(store.state.snackbar.type).toBe('error');
-    expect(store.state.snackbar.show).toBe(true);
-    expect(store.state.snackbar.msg).toBe('Code 500: Something is broken');
+    expect(store.state.snackbar!.type).toBe('error');
+    expect(store.state.snackbar!.show).toBe(true);
+    expect(store.state.snackbar!.msg).toBe('Code 500: Something is broken');
   });
 
   it('has showError Axios request error', () => {
@@ -119,17 +119,17 @@ describe('snackbar store mutations', () => {
       something: 'does not matter',
     };
     store.commit('snackbar/showError', err);
-    expect(store.state.snackbar.type).toBe('error');
-    expect(store.state.snackbar.show).toBe(true);
-    expect(store.state.snackbar.msg).toBe('Upstream may have died, or your network sucks.');
+    expect(store.state.snackbar!.type).toBe('error');
+    expect(store.state.snackbar!.show).toBe(true);
+    expect(store.state.snackbar!.msg).toBe('Upstream may have died, or your network sucks.');
   });
 
   it('has showError Axios message fallback', () => {
     const err = createError();
     err.message = "Wuff Zack";
     store.commit('snackbar/showError', err);
-    expect(store.state.snackbar.type).toBe('error');
-    expect(store.state.snackbar.show).toBe(true);
-    expect(store.state.snackbar.msg).toBe('Wuff Zack');
+    expect(store.state.snackbar!.type).toBe('error');
+    expect(store.state.snackbar!.show).toBe(true);
+    expect(store.state.snackbar!.msg).toBe('Wuff Zack');
   });
 });

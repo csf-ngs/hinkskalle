@@ -179,7 +179,8 @@ export default Vue.extend({
   },
   methods: {
     loadCollections() {
-      this.$store.dispatch('collections/list');
+      this.$store.dispatch('collections/list')
+        .catch(err => this.$store.commit('snackbar/showError', err));
     },
     editCollection(collection: Collection) {
       this.localState.editItem = _clone(collection);
@@ -211,12 +212,8 @@ export default Vue.extend({
       const action = this.localState.editItem.id ?
         'collections/update' : 'collections/create';
       this.$store.dispatch(action, this.localState.editItem)
-        .then(upd => {
-          this.$store.commit('snackbar/showSuccess', 'Yay!');
-        })
-        .catch(err => {
-          this.$store.commit('snackbar/showError', err);
-        });
+        .then(upd => this.$store.commit('snackbar/showSuccess', 'Yay!'))
+        .catch(err => this.$store.commit('snackbar/showError', err));
       this.closeEdit();
     },
   }

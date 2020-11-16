@@ -78,11 +78,11 @@ export default Vue.extend({
     update() {
       this.$store.dispatch('users/update', this.localState.editUser)
         .then(user => {
-          console.log(user);
           this.$store.commit('setUser', user);
           this.localState.editUser = _clone(this.$store.getters.currentUser);
           this.$store.commit('snackbar/showSuccess', "Hooray!");
-        });
+        })
+        .catch(err => this.$store.commit('snackbar/showError', err));
     },
     deleteAccount() {
       this.$store.dispatch('users/delete', this.localState.editUser)

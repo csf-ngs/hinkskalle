@@ -168,7 +168,8 @@ export default Vue.extend({
   },
   methods: {
     loadTokens() {
-      this.$store.dispatch('tokens/list');
+      this.$store.dispatch('tokens/list')
+        .catch(err => this.$store.commit('snackbar/showError', err));
     },
     editToken(token: Token) {
       this.localState.editItem = _clone(token);
@@ -179,7 +180,9 @@ export default Vue.extend({
       this.localState.showDelete = true;
     },
     deleteTokenConfirm() {
-       this.$store.dispatch('tokens/delete', this.localState.editItem.id);
+       this.$store.dispatch('tokens/delete', this.localState.editItem.id)
+        .then(() => this.$store.commit('snackbar/showSuccess', 'Gone!'))
+        .catch(err => this.$store.commit('snackbar/showError', err))
        this.closeDelete();
     },
     closeEdit() {
@@ -197,7 +200,9 @@ export default Vue.extend({
     save() {
       const action = this.localState.editItem.id ?
         'tokens/update' : 'tokens/create';
-      this.$store.dispatch(action, this.localState.editItem);
+      this.$store.dispatch(action, this.localState.editItem)
+        .then(() => this.$store.commit('snackbar/showSuccess', 'Saved!'))
+        .catch(err => this.$store.commit('snackbar/showError', err))
       this.closeEdit();
     },
     copyToken(item: Token) {

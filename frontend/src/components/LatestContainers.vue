@@ -42,7 +42,8 @@ export default Vue.extend({
   },
   methods: {
     loadLatest() {
-      this.$store.dispatch('containers/latest');
+      this.$store.dispatch('containers/latest')
+        .catch(err => this.$store.commit('snackbar/showError', err));
     },
     copyTag: function(container: Container, tag: string) {
       this.$copyText(`library://${container.entityName}/${container.collectionName}/${container.name}:${tag}`)

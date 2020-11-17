@@ -56,13 +56,15 @@ class TestCollections(RouteBase):
     db.session.add(coll2)
     db.session.commit()
     coll1_id = coll1.id
+    coll2_id = coll2.id
 
     with self.fake_auth():
       ret = self.client.get(f"/v1/collections/default")
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
     read_coll1 = Collection.query.get(coll1_id)
-    self.assertListEqual([ c['name'] for c in json ], [ read_coll1.name ])
+    read_coll2 = Collection.query.get(coll2_id)
+    self.assertListEqual([ c['name'] for c in json ], [ read_coll1.name, read_coll2.name ])
   
   def test_list_user_other(self):
     coll1, entity = _create_collection('coll1')

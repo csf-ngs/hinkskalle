@@ -90,10 +90,9 @@ def list_collections(entity_id):
   if not entity.check_access(g.authenticated_user):
     raise errors.Forbidden(f"access denied.")
 
-  if g.authenticated_user.is_admin:
-    objs = Collection.query.filter(Collection.entity_id == entity.id).all()
-  else:
-    objs = Collection.query.filter(Collection.entity_id == entity.id, Collection.owner==g.authenticated_user).all()
+  # do not restrict for users; assume that read access to entity means 
+  # listing collections should also be allowed
+  objs = Collection.query.filter(Collection.entity_id == entity.id).all()
   
   return { 'data': list(objs) }
 

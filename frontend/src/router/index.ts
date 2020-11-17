@@ -5,6 +5,7 @@ import Login from '../views/Login.vue';
 import Tokens from '../views/Tokens.vue';
 import Account from '../views/Account.vue';
 import Collections from '../views/Collections.vue';
+import Entities from '../views/Entities.vue';
 import store from '../store';
 
 Vue.use(VueRouter);
@@ -50,6 +51,12 @@ const routes: Array<RouteConfig> = [
     component: Collections,
     meta: { requiresAuth: true },
   },
+  {
+    path: '/entities',
+    name: 'Entities',
+    component: Entities,
+    meta: { requiresAuth: true },
+  }
 ];
 
 const router = new VueRouter({

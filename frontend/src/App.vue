@@ -18,7 +18,7 @@
             </v-list-item-content>
           </v-list-item>
           <v-list-item link :to="'/tokens'">
-            <v-list-item-icon><v-icon>mdi-lock-open</v-icon></v-list-item-icon>
+            <v-list-item-icon><v-icon>mdi-key-chain-variant</v-icon></v-list-item-icon>
             <v-list-item-content>
               <v-list-item-title>Tokens</v-list-item-title>
             </v-list-item-content>
@@ -40,11 +40,17 @@
             <v-list-item-title>Home</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item link :to="'/entities'">
+          <v-list-item-icon><v-icon>mdi-account-group</v-icon></v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Entities</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
         <v-list-item link :to="'/collections'">
-        <v-list-item-icon><v-icon>mdi-view-list</v-icon></v-list-item-icon>
-        <v-list-item-content>
-          <v-list-item-title>Collections</v-list-item-title>
-        </v-list-item-content>
+          <v-list-item-icon><v-icon>mdi-cards</v-icon></v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Collections</v-list-item-title>
+          </v-list-item-content>
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
@@ -69,10 +75,11 @@ import Vue from 'vue';
 import { User } from './store/models';
 
 import { SnackbarType } from './store/modules/snackbar';
+import About from './views/About.vue';
 
 export default Vue.extend({
   name: 'App',
-  created: function () {
+    created: function () {
     const { $store, $router } = this;
     this.$store.commit('registerInterceptor', (err: AxiosError) => {
       return new Promise((resolve, reject) => {

@@ -1,6 +1,6 @@
 import store from '@/store';
 
-import {Entity, plainToEntity} from '@/store/models';
+import {Entity, plainToEntity, serializeEntity} from '@/store/models';
 
 import axios from 'axios';
 
@@ -8,8 +8,6 @@ import { map as _map, clone as _clone, find as _find } from 'lodash';
 
 jest.mock('axios');
 const mockAxios = axios as jest.Mocked<typeof axios>;
-
-import { testUser, testUserObj } from './store.spec';
 
 store.state.backend = mockAxios;
 
@@ -82,6 +80,15 @@ describe('entity store mutations', () => {
     expect(added).toStrictEqual(create);
   });
 
+  it('has remove mutation', () => {
+    store.state.entities!.list = _clone(testEntitiesObj);
+    const toRemove = testEntitiesObj[0];
+    store.commit('entities/remove', toRemove.id);
+    expect(store.state.entities!.list).toHaveLength(1);
+    const removed = _find(store.state.entities!.list, e => e.id === toRemove.id);
+    expect(removed).toBeUndefined();
+  })
+
 });
 
 describe('entity store actions', () => {
@@ -125,4 +132,107 @@ describe('entity store actions', () => {
       done();
     });
   });
+
+  it('has create entity', done => {
+    const entity = {
+      name: 'testilein',
+    };
+    const createEntityObj = plainToEntity(entity);
+
+    mockAxios.post.mockResolvedValue({
+      data: { data: { id: '666', name: entity.name }}
+    });
+    
+    const promise = store.dispatch('entities/create', createEntityObj);
+    expect(store.state.entities!.status).toBe('loading');
+    promise.then(entity => {
+      expect(mockAxios.post).toHaveBeenLastCalledWith(`/v1/entities`, serializeEntity(createEntityObj));
+      expect(store.state.entities!.status).toBe('success');
+      const created = _find(store.state.entities!.list, e => e.id === '666');
+      if (!created) {
+        throw Error('created id 666 not found in test entity store');
+      }
+      createEntityObj.id = created.id;
+      expect(created).toStrictEqual(createEntityObj);
+      expect(entity).toStrictEqual(createEntityObj);
+      done();
+    });
+  });
+
+  it('has create entity fail handling', done => {
+    const entity = {
+      name: "testilein",
+    };
+    const createEntityObj = plainToEntity(entity);
+    mockAxios.post.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('entities/create', createEntityObj)
+      .catch(err => {
+        expect(err).toStrictEqual({ fail: 'fail' });
+        expect(store.state.entities!.status).toBe('failed');
+        done();
+      });
+  });
+
+  it('has update', done => {
+    const update = _clone(_find(testEntitiesObj, e => e.id==="1"));
+    if (!update) {
+      throw 'test entity not found';
+    }
+    update.description = 'tohuwabohu';
+    const updateObj = plainToEntity(update);
+
+    mockAxios.put.mockResolvedValue({
+      data: { data: update } 
+    });
+
+    store.state.entities!.list = _clone(testEntitiesObj);
+
+    const promise = store.dispatch('entities/update', updateObj);
+    expect(store.state.entities!.status).toBe('loading');
+    promise.then(() => {
+      expect(mockAxios.put).toHaveBeenLastCalledWith(`/v1/entities/${updateObj.name}`, serializeEntity(updateObj));
+      expect(store.state.entities!.status).toBe('success');
+      expect(store.state.entities!.list).toHaveLength(2);
+      const updated = _find(store.state.entities!.list, e => e.id===update.id);
+      expect(updated).toStrictEqual(updateObj);
+      done();
+    });
+  });
+  it('has update fail handling', done => {
+    mockAxios.put.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('entities/update', testEntitiesObj[0]).catch(err => {
+      expect(store.state.entities!.status).toBe('failed');
+      expect(err).toStrictEqual({ fail: 'fail' });
+      done();
+    });
+  });
+
+  it('has delete', done => {
+    store.state.entities!.list = _clone(testEntitiesObj);
+    mockAxios.delete.mockResolvedValue({
+      data: { status: 'ok' },
+    });
+    const promise = store.dispatch('entities/delete', testEntitiesObj[0]);
+    expect(store.state.entities!.status).toBe('loading');
+    promise.then(() => {
+      expect(mockAxios.delete).toHaveBeenLastCalledWith(`/v1/entities/${testEntitiesObj[0].name}`)
+      expect(store.state.entities!.status).toBe('success');
+      expect(store.state.entities!.list).toHaveLength(1);
+      const deleted = _find(store.state.entities!.list, e => e.id === testEntitiesObj[0].id);
+      expect(deleted).toBeUndefined();
+      done();
+    });
+  });
+  it('has delete fail', done => {
+    mockAxios.delete.mockRejectedValue({ fail: 'fail' });
+    store.dispatch(`entities/delete`, testEntitiesObj[0])
+      .catch(err => {
+        expect(store.state.entities!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
+  })
+
+
+
 });

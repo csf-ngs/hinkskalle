@@ -148,7 +148,7 @@ describe('collection store actions', () => {
       expect(store.state.collections!.status).toBe('success');
       const created = _find(store.state.collections!.list, c => c.id==='666');
       if (!created) {
-        throw Error('created id 666 not found in test token store');
+        throw Error('created id 666 not found in test collection store');
       }
       createCollectionObj.id = created.id;
       expect(created).toStrictEqual(createCollectionObj);

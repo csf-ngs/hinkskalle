@@ -56,6 +56,12 @@ const routes: Array<RouteConfig> = [
     name: 'Entities',
     component: Entities,
     meta: { requiresAuth: true },
+  },
+  {
+    path: '/entities/:entity/collections',
+    name: 'EntityCollections',
+    component: Collections,
+    meta: { requiresAuth: true },
   }
 ];
 

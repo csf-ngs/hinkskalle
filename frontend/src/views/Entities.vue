@@ -96,11 +96,11 @@
                 <v-col v-for="item in props.items" :key="item.id" 
                   cols="12" md="6">
                   <v-card class="entity">
-                    <router-link :to="'/collections'" style="text-decoration: none; color: inherit;">
+                    <router-link :to="{ name: 'EntityCollections', params: { entity: item.name } }" style="text-decoration: none; color: inherit;">
                       <v-card-title class="headline">
                         <v-icon v-if="item.defaultPrivate">mdi-lock</v-icon>
                         {{item.name}}
-                        ({{item.size}} collections)
+                        ({{item.size}} {{item.size | pluralize('collection')}})
                       </v-card-title>
                     </router-link>
                     <v-divider></v-divider>
@@ -115,10 +115,10 @@
                       <v-list-item two-lines>
                         <v-list-item-content>
                           <v-list-item-title>
-                            {{item.createdAt | moment('YYYY-MM-DD HH:mm')}}
+                            {{item.createdAt | moment('YYYY-MM-DD HH:mm')}} | {{item.createdBy}}
                           </v-list-item-title>
                           <v-list-item-subtitle>
-                            Created At
+                            Created
                           </v-list-item-subtitle>
                         </v-list-item-content>
                       </v-list-item>

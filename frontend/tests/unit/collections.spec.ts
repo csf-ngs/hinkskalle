@@ -1,23 +1,28 @@
-import { mount } from '@vue/test-utils';
+import { mount, createLocalVue } from '@vue/test-utils';
 import Vuetify from 'vuetify';
-import Vuex from 'vuex';
+import Vuex, { Store } from 'vuex';
 import Vue from 'vue';
 import VueRouter from 'vue-router';
+import VueMoment from 'vue-moment';
 
 import Collections from '@/views/Collections.vue';
 
-import { localVue } from '../setup';
+import { localVue, localVueNoRouter } from '../setup';
 
 import { testCollectionsObj } from './collections-store.spec';
 import {Collection} from '@/store/models';
 
+// needed to silence vuetify dialog warnings
+document.body.setAttribute('data-app', 'true');
+
 describe('Collections.vue', () => {
   let vuetify: any;
-  let store: any;
+  let store: Store<any>;
   let router: VueRouter;
 
   let getters: any;
   let actions: any;
+  let mutations: any;
 
   beforeEach(() => {
     vuetify = new Vuetify();
@@ -26,10 +31,14 @@ describe('Collections.vue', () => {
     getters = {
       'collections/list': () => testCollectionsObj,
     };
+    mutations = {
+      'snackbar/showSuccess': jest.fn(),
+      'snackbar/showError': jest.fn(),
+    };
     actions = {
       'collections/list': jest.fn(),
     };
-    store = new Vuex.Store({ getters, actions });
+    store = new Vuex.Store({ getters, actions, mutations });
   });
 
   it('renders something', () => {
@@ -88,6 +97,28 @@ describe('Collections.vue', () => {
 
     expect(wrapper.find('div.v-dialog.v-dialog--active div.headline').text()).toBe('Edit Collection');
 
+    done();
+  });
+
+  it('uses route params for default entity name', async done => {
+    const $route = {
+      path: '/test', params: { entity: 'oinkhase' }
+    };
+    actions['collections/create']=jest.fn();
+    store = new Vuex.Store({ getters, actions, mutations });
+    const expectCollection = new Collection();
+    expectCollection.name='tintifax';
+    expectCollection.createdAt=expect.anything();
+    expectCollection.entityName=$route.params.entity;
+
+    const wrapper = mount(Collections, { localVue: localVueNoRouter, vuetify, store, router, mocks: { $route } });
+    expect(actions['collections/list']).toHaveBeenLastCalledWith(expect.anything(), $route.params.entity);
+    wrapper.find('button#create-collection').trigger('click');
+    await Vue.nextTick();
+    wrapper.find('input#name').setValue(expectCollection.name);
+    wrapper.find('button#save').trigger('click');
+    expect(actions['collections/create']).toHaveBeenLastCalledWith(expect.anything(), expectCollection);
+    
     done();
   });
 });

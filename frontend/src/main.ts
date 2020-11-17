@@ -25,3 +25,6 @@ Vue.filter('abbreviate', function(value: string, maxlen: number): string {
   if (isNaN(maxlen)) maxlen=20;
   return value.substr(0, maxlen)+(value.length>maxlen ? '...' : '');
 });
+Vue.filter('pluralize', function(value: number, word: string): string {
+  return value === 1 ? word : `${word}s`;
+});

@@ -10,6 +10,9 @@ import { localVue } from '../setup';
 
 import { testEntitiesObj } from './entities-store.spec';
 
+// needed to silence vuetify dialog warnings
+document.body.setAttribute('data-app', 'true');
+
 describe('Entities.vue', () => {
   let vuetify: any;
   let store: any;
@@ -20,7 +23,9 @@ describe('Entities.vue', () => {
 
   beforeEach(() => {
     vuetify = new Vuetify();
-    router = new VueRouter();
+    router = new VueRouter({
+      routes: [ { path: '/oink/:entity/oink', name: 'EntityCollections' } ]
+    });
 
     getters = {
       'entities/list': () => testEntitiesObj,

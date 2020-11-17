@@ -74,7 +74,7 @@
                     <v-card-actions>
                       <v-spacer></v-spacer>
                       <v-btn color="warning accent-1" text @click="closeEdit">Mabye not today.</v-btn>
-                      <v-btn color="primary darken-1" text @click="save">Save It!</v-btn>
+                      <v-btn id="save" color="primary darken-1" text @click="save">Save It!</v-btn>
                     </v-card-actions>
                   </v-card>
                 </v-dialog>
@@ -179,7 +179,7 @@ export default Vue.extend({
   },
   methods: {
     loadCollections() {
-      this.$store.dispatch('collections/list')
+      this.$store.dispatch('collections/list', this.$route.params.entity)
         .catch(err => this.$store.commit('snackbar/showError', err));
     },
     editCollection(collection: Collection) {
@@ -205,12 +205,15 @@ export default Vue.extend({
     closeDelete() {
       this.localState.showDelete = false;
       this.$nextTick(() => {
-        this.localState.editItem = new Collection();
+        this.localState.editItem = defaultItem();
       });
     },
     save() {
       const action = this.localState.editItem.id ?
         'collections/update' : 'collections/create';
+      if (this.$route.params.entity) {
+        this.localState.editItem.entityName = this.$route.params.entity;
+      }
       this.$store.dispatch(action, this.localState.editItem)
         .then(upd => this.$store.commit('snackbar/showSuccess', 'Yay!'))
         .catch(err => this.$store.commit('snackbar/showError', err));

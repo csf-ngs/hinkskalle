@@ -1,9 +1,8 @@
-import { mount, createLocalVue } from '@vue/test-utils';
+import { mount } from '@vue/test-utils';
 import Vuetify from 'vuetify';
 import Vuex, { Store } from 'vuex';
 import Vue from 'vue';
 import VueRouter from 'vue-router';
-import VueMoment from 'vue-moment';
 
 import Collections from '@/views/Collections.vue';
 
@@ -11,6 +10,7 @@ import { localVue, localVueNoRouter } from '../setup';
 
 import { testCollectionsObj } from './collections-store.spec';
 import {Collection} from '@/store/models';
+import {testUserObj} from './store.spec';
 
 // needed to silence vuetify dialog warnings
 document.body.setAttribute('data-app', 'true');
@@ -26,10 +26,15 @@ describe('Collections.vue', () => {
 
   beforeEach(() => {
     vuetify = new Vuetify();
-    router = new VueRouter();
+    router = new VueRouter({
+      routes: [
+        { name: 'Containers', path: '/:entity/:collection' },
+      ]
+    });
 
     getters = {
       'collections/list': () => testCollectionsObj,
+      'currentUser': () => testUserObj,
     };
     mutations = {
       'snackbar/showSuccess': jest.fn(),
@@ -111,7 +116,7 @@ describe('Collections.vue', () => {
     expectCollection.createdAt=expect.anything();
     expectCollection.entityName=$route.params.entity;
 
-    const wrapper = mount(Collections, { localVue: localVueNoRouter, vuetify, store, router, mocks: { $route } });
+    const wrapper = mount(Collections, { localVue: localVueNoRouter, vuetify, store, router, stubs: ['router-link'], mocks: { $route } });
     expect(actions['collections/list']).toHaveBeenLastCalledWith(expect.anything(), $route.params.entity);
     wrapper.find('button#create-collection').trigger('click');
     await Vue.nextTick();

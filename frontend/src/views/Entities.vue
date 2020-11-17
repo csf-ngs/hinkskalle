@@ -212,7 +212,7 @@ export default Vue.extend({
       this.localState.showDelete = true;
     },
     deleteEntityConfirm() {
-      this.$store.dispatch('entity/delete', this.localState.editItem)
+      this.$store.dispatch('entities/delete', this.localState.editItem)
         .then(() => this.$store.commit('snackbar/showSuccess', "It's gone!"))
         .catch(err => this.$store.commit('snackbar/showError', err));
     },

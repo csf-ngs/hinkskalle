@@ -4,7 +4,7 @@ import json
 import datetime
 from Hinkskalle.tests.route_base import RouteBase
 
-from Hinkskalle.models import Entity
+from Hinkskalle.models import Entity, Collection
 from Hinkskalle import db
 
 class TestEntities(RouteBase):
@@ -263,3 +263,46 @@ class TestEntities(RouteBase):
         'defaultPrivate': True,
       })
     self.assertEqual(ret.status_code, 403)
+  
+  def test_delete(self):
+    entity = Entity(name='testhase')
+    db.session.add(entity)
+    db.session.commit()
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/entities/{entity.name}")
+    self.assertEqual(ret.status_code, 200)
+    self.assertIsNone(Entity.query.filter(Entity.name==entity.name).first())
+  
+  def test_delete_not_empty(self):
+    entity = Entity(name='testhase')
+    db.session.add(entity)
+    collection = Collection(name='test-coll1', entity_ref=entity)
+    db.session.add(collection)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/entities/{entity.name}")
+    self.assertEqual(ret.status_code, 412)
+  
+  def test_delete_user(self):
+    entity = Entity(name='testhase', owner=self.user)
+    db.session.add(entity)
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.delete(f"/v1/entities/{entity.name}")
+    self.assertEqual(ret.status_code, 200)
+    self.assertIsNone(Entity.query.filter(Entity.name==entity.name).first())
+
+  def test_delete_user_other(self):
+    entity = Entity(name='testhase', owner=self.other_user)
+    db.session.add(entity)
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.delete(f"/v1/entities/{entity.name}")
+    self.assertEqual(ret.status_code, 403)
+  
+  def test_delete_noauth(self):
+    ret = self.client.delete("/v1/entities/oink")
+    self.assertEqual(ret.status_code, 401)

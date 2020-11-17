@@ -22,6 +22,9 @@ class EntityCreateSchema(EntitySchema, RequestSchema):
 class EntityUpdateSchema(EntitySchema, RequestSchema):
   name = fields.String(dump_only=True)
 
+class EntityDeleteResponseSchema(ResponseSchema):
+  status = fields.String()
+
 @registry.handles(
   rule='/v1/entities',
   method='GET',
@@ -111,4 +114,25 @@ def update_entity(entity_id):
 
   return { 'data': entity }
 
+@registry.handles(
+  rule='/v1/entities/<string:entity_id>',
+  method='DELETE',
+  response_body_schema=EntityDeleteResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user)
+) 
+def delete_entity(entity_id):
+  try:
+    entity = Entity.query.filter(Entity.name==entity_id).one()
+  except NoResultFound:
+    raise errors.NotFound(f"entity {entity_id} not found")
+
+  if not entity.check_update_access(g.authenticated_user):
+    raise errors.Forbidden("Access denied to entity.")
   
+  if entity.size() > 0:
+    raise errors.PreconditionFailed(f"Entity {entity.name} still has collections.")
+  
+  db.session.delete(entity)
+  db.session.commit()
+
+  return { 'status': 'ok' }

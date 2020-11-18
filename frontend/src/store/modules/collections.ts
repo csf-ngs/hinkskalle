@@ -58,6 +58,21 @@ const collectionsModule: Module<State, any> = {
           });
       });
     },
+    get: ({ commit, rootState }, path: { entity: string; collection: string }): Promise<Collection> => {
+      return new Promise<Collection>((resolve, reject) => {
+        commit('loading');
+        rootState.backend.get(`/v1/collections/${path.entity}/${path.collection}`)
+          .then((response: AxiosResponse) => {
+            const collection = plainToCollection(response.data.data);
+            commit('succeeded');
+            resolve(collection);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed');
+            reject(err);
+          });
+      });
+    },
     create: ({ commit, rootState, dispatch }, collection: Collection): Promise<Collection> => {
       return new Promise<Collection>((resolve, reject) => {
         let getEntity: Promise<Entity>;

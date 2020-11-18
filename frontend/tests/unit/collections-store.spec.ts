@@ -129,6 +129,30 @@ describe('collection store actions', () => {
     });
   });
 
+  it('has get collection', done => {
+    const testColl = { id: '666', name: 'testente', createdAt: new Date() };
+    mockAxios.get.mockResolvedValue({
+      data: { data: testColl }
+    });
+    const promise = store.dispatch('collections/get', { entity: 'oinktity', collection: 'testente' });
+    expect(store.state.collections!.status).toBe('loading');
+    promise.then(collection => {
+      expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/collections/oinktity/testente`);
+      expect(store.state.collections!.status).toBe('success');
+      expect(collection).toStrictEqual(plainToCollection(testColl));
+      done();
+    });
+  });
+  it('has get collection fail handling', done => {
+    mockAxios.get.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('collections/get', { entity: 'oinktity', collection: 'testente' })
+      .catch(err => {
+        expect(store.state.collections!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
+  });
+
   it('has create collection with known entity id', done => {
     const collection = {
       name: 'testilein',
@@ -180,7 +204,7 @@ describe('collection store actions', () => {
       expect(store.state.collections!.status).toBe('success');
       const created = _find(store.state.collections!.list, c => c.id==='666');
       if (!created) {
-        throw Error('created id 666 not found in test token store');
+        throw Error('created id 666 not found in test store');
       }
       createCollectionObj.id = created.id;
       expect(created).toStrictEqual(createCollectionObj);

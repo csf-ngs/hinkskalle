@@ -75,7 +75,7 @@ class TestCollection(ModelBase):
     coll.owner=user
     self.assertTrue(coll.check_access(user))
     coll.owner=other_user
-    self.assertFalse(coll.check_access(user))
+    self.assertTrue(coll.check_access(user))
   
   def test_update_access(self):
     admin = _create_user(name='admin.oink', is_admin=True)

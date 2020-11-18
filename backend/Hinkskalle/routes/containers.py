@@ -22,6 +22,9 @@ class ContainerUpdateSchema(ContainerSchema, RequestSchema):
   name = fields.String(dump_only=True)
   collection = fields.String(dump_only=True)
 
+class ContainerDeleteResponseSchema(ResponseSchema):
+  status = fields.String()
+
 def _get_container(entity_id, collection_id, container_id):
   try:
     entity = Entity.query.filter(Entity.name==entity_id).one()
@@ -60,10 +63,7 @@ def list_containers(entity_id, collection_id):
   if not collection.check_access(g.authenticated_user):
     raise errors.Forbidden(f"access denied.")
 
-  if g.authenticated_user.is_admin:
-    objs = collection.containers_ref.all()
-  else:
-    objs = collection.containers_ref.filter(Container.owner==g.authenticated_user)
+  objs = collection.containers_ref.all()
 
   return { 'data': list(objs) }
 
@@ -142,3 +142,21 @@ def update_container(entity_id, collection_id, container_id):
   db.session.commit()
 
   return { 'data': container }
+
+@registry.handles(
+  rule='/v1/containers/<string:entity_id>/<string:collection_id>/<string:container_id>',
+  method='DELETE',
+  response_body_schema=ContainerDeleteResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user),
+)
+def delete_container(entity_id, collection_id, container_id):
+  container = _get_container(entity_id, collection_id, container_id)
+  if not container.check_update_access(g.authenticated_user):
+    raise errors.Forbidden("Access denied to container")
+
+  if container.size() > 0:
+    raise errors.PreconditionFailed(f"Container {container.name} still has images.")
+  
+  db.session.delete(container)
+  db.session.commit()
+  return { 'status': 'ok' }

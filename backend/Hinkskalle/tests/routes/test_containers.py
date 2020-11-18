@@ -7,7 +7,7 @@ import datetime
 from Hinkskalle.tests.route_base import RouteBase
 from Hinkskalle.tests.models.test_Container import _create_container
 from Hinkskalle.tests.models.test_Collection import _create_collection
-from Hinkskalle.models import Container
+from Hinkskalle.models import Container, Image
 from Hinkskalle import db
 
 class TestContainers(RouteBase):
@@ -312,3 +312,52 @@ class TestContainers(RouteBase):
       })
     
     self.assertEqual(ret.status_code, 403)
+
+  def test_delete(self):
+    container, coll, entity = _create_container()
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
+    self.assertEqual(ret.status_code, 200)
+
+    self.assertIsNone(Container.query.filter(Container.name==container.name).first())
+  
+  def test_delete_not_empty(self):
+    container, coll, entity = _create_container()
+    image = Image(hash="test-conti1", container_id=coll.id)
+    db.session.add(image)
+    db.session.commit()
+
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
+    self.assertEqual(ret.status_code, 412)
+
+  def test_delete_user(self):
+    container, coll, entity = _create_container()
+    entity.owner=self.user
+    coll.owner=self.user
+    container.owner=self.user
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.delete(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
+    self.assertEqual(ret.status_code, 200)
+
+    self.assertIsNone(Container.query.filter(Container.name==container.name).first())
+
+  def test_delete_user_other(self):
+    container, coll, entity = _create_container()
+    entity.owner=self.user
+    db.session.commit()
+    coll.owner=self.other_user
+    db.session.commit()
+    container.owner=self.other_user
+
+    with self.fake_auth():
+      ret = self.client.delete(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
+    self.assertEqual(ret.status_code, 403)
+
+  def test_delete_noauth(self):
+    ret = self.client.delete("/v1/containers/oi/nk/grunz")
+    self.assertEqual(ret.status_code, 401)

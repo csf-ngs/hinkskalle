@@ -49,8 +49,8 @@ const containersModule: Module<State, any> = {
     },
   },
   actions: {
-    latest: ({ commit, rootState }) => {
-      return new Promise((resolve, reject) => {
+    latest: ({ commit, rootState }): Promise<Upload[]> => {
+      return new Promise<Upload[]>((resolve, reject) => {
         commit('loading'),
         rootState.backend.get(`/v1/latest`)
           .then((response: AxiosResponse) => {
@@ -65,8 +65,8 @@ const containersModule: Module<State, any> = {
           });
       });
     },
-    list: ({ commit, rootState }, path: { entity: string; collection: string }) => {
-      return new Promise((resolve, reject) => {
+    list: ({ commit, rootState }, path: { entity: string; collection: string }): Promise<Container[]> => {
+      return new Promise<Container[]>((resolve, reject) => {
         commit('loading'),
         rootState.backend.get(`/v1/containers/${path.entity}/${path.collection}`)
           .then((response: AxiosResponse) => {
@@ -74,6 +74,21 @@ const containersModule: Module<State, any> = {
             commit('succeeded');
             commit('setList', list);
             resolve(list);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
+    get: ({ commit, rootState }, path: { entity: string; collection: string; container: string }): Promise<Container> => {
+      return new Promise<Container>((resolve, reject) => {
+        commit('loading');
+        rootState.backend.get(`/v1/containers/${path.entity}/${path.collection}/${path.container}`)
+          .then((response: AxiosResponse) => {
+            const container = plainToContainer(response.data.data);
+            commit('succeeded');
+            resolve(container);
           })
           .catch((err: AxiosError) => {
             commit('failed', err);

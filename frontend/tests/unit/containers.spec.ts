@@ -25,7 +25,11 @@ describe('Containers.vue', () => {
 
   beforeEach(() => {
     vuetify = new Vuetify();
-    router = new VueRouter();
+    router = new VueRouter({
+      routes: [
+        { name: 'ContainerDetails', path: '/:entity/:collection/:container' }
+      ]
+    });
 
     getters = {
       'containers/list': () => testContainersObj,
@@ -50,7 +54,7 @@ describe('Containers.vue', () => {
     const $route = {
       path: '/something', params: { entity: 'testgiraffe', collection: 'testcapybara' }
     }
-    const wrapper = mount(Containers, { localVue: localVueNoRouter, vuetify, store, router, mocks: { $route } });
+    const wrapper = mount(Containers, { localVue: localVueNoRouter, vuetify, store, router, mocks: { $route }, stubs: [ 'router-link' ] });
     expect(actions['containers/list']).toHaveBeenLastCalledWith(expect.anything(), { entity: $route.params.entity, collection: $route.params.collection });
   });
 

@@ -24,13 +24,13 @@ const testLatest = [
   { 
     tags: ['eins', 'zwei'], 
     container: {
-      name: 'testhase', createdAt: new Date(),
+      name: 'testhase', createdAt: new Date(), collectionName: 'oinkton', entityName: 'oinktity',
     },
   },
   {
     tags: ['drei', 'vier'],
     container: {
-      name: 'testnilpferd', createdAt: new Date(),
+      name: 'testnilpferd', createdAt: new Date(), collectionName: 'muhton', entityName: 'muhtity',
     },
   }
 ];
@@ -141,6 +141,30 @@ describe('container store actions', () => {
       expect(store.state.containers!.status).toBe('failed');
       done();
     });
+  });
+
+  it('has get container', done => {
+    mockAxios.get.mockResolvedValue({
+      data: { data: testContainers[0] },
+    });
+
+    const promise = store.dispatch('containers/get', { entity: testContainers[0].entityName, collection: testContainers[0].collectionName, container: testContainers[0].name });
+    expect(store.state.containers!.status).toBe('loading');
+    promise.then(container => {
+      expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/containers/${testContainers[0].entityName}/${testContainers[0].collectionName}/${testContainers[0].name}`);
+      expect(store.state.containers!.status).toBe('success');
+      expect(container).toStrictEqual(testContainersObj[0]);
+      done();
+    });
+  });
+  it('has get container fail handling', done => {
+    mockAxios.get.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('containers/get', { entity: 'e', collection: 'c', container: 'c' })
+      .catch(err => {
+        expect(store.state.containers!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
   });
 
   it('has create container with known collection id', done => {

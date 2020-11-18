@@ -7,6 +7,7 @@ import Account from '../views/Account.vue';
 import Collections from '../views/Collections.vue';
 import Entities from '../views/Entities.vue';
 import Containers from '../views/Containers.vue';
+import ContainerDetails from '../views/ContainerDetails.vue';
 import store from '../store';
 
 Vue.use(VueRouter);
@@ -68,6 +69,12 @@ const routes: Array<RouteConfig> = [
     path: '/entities/:entity/collections/:collection/containers',
     name: 'Containers',
     component: Containers,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/entities/:entity/collections/:collection/containers/:container',
+    name: 'ContainerDetails',
+    component: ContainerDetails,
     meta: { requiresAuth: true },
   },
 ];

@@ -21,7 +21,11 @@ describe('LatestContainers.vue', () => {
 
   beforeEach(() => {
     vuetify = new Vuetify();
-    router = new VueRouter();
+    router = new VueRouter({
+      routes: [
+        { name: 'ContainerDetails', path: '/:entity/:collection/:container' }
+      ]
+    });
     mockLoadLatest = jest.fn();
     getters = {
       'containers/latest': () => latest,

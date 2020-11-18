@@ -6,7 +6,7 @@
             <v-list nav>
               <v-list-item-group>
                 <v-list-item link v-for="(up, i) in latest" :key="i"
-                    :to="{name: 'singularityDetail', params: { entity: up.container.entityName, collection: up.container.collectionName, container: up.container.name }}">
+                    :to="{name: 'ContainerDetails', params: { entity: up.container.entityName, collection: up.container.collectionName, container: up.container.name }}">
                   <v-list-item-content>
                     <v-list-item-title>
                       {{up.container.entityName}}/{{up.container.collectionName}}/{{up.container.name}}

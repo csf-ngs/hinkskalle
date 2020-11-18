@@ -112,17 +112,19 @@
                 <v-col v-for="item in props.items" :key="item.id"
                     cols="12" md="6">
                   <v-card class="container">
-                    <v-card-title class="text-h6">
-                      <v-icon v-if="item.private">mdi-lock</v-icon>
-                      <v-icon v-if="item.readOnly">mdi-shield-key-outline</v-icon>
-                      {{item.name}}
-                      <template v-if="item.vcsUrl">
-                        <v-spacer></v-spacer>
-                        <a :href="item.vcsUrl" class="text-decoration-none">
-                          <v-icon>mdi-source-repository</v-icon>
-                        </a>
-                      </template>
-                    </v-card-title>
+                    <router-link class="text-decoration-none" :to="{ name: 'ContainerDetails', params: { entity: $route.params.entity, collection: $route.params.collection, container: item.name } }">
+                      <v-card-title class="text-h6">
+                        <v-icon v-if="item.private">mdi-lock</v-icon>
+                        <v-icon v-if="item.readOnly">mdi-shield-key-outline</v-icon>
+                        {{item.name}}
+                        <template v-if="item.vcsUrl">
+                          <v-spacer></v-spacer>
+                          <a :href="item.vcsUrl" @click="follow($event)" class="text-decoration-none">
+                            <v-icon>mdi-source-repository</v-icon>
+                          </a>
+                        </template>
+                      </v-card-title>
+                    </router-link>
                     <v-divider></v-divider>
                     <v-list dense>
                       <v-list-item two-line>
@@ -279,6 +281,9 @@ export default Vue.extend({
         .then(upd => this.$store.commit('snackbar/showSuccess', 'Yay!'))
         .catch(err => this.$store.commit('snackbar/showError', err));
       this.closeEdit();
+    },
+    follow($event: MouseEvent) {
+      $event.stopPropagation();
     },
   },
 });

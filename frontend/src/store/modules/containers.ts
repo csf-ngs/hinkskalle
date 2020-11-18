@@ -1,10 +1,10 @@
 import { Module } from 'vuex';
 
-import { Upload, plainToUpload, Container, plainToContainer } from '../models';
+import { Upload, plainToUpload, Container, plainToContainer, Collection, serializeContainer } from '../models';
 
 import { AxiosError, AxiosResponse } from 'axios';
 
-import { map as _map } from 'lodash';
+import { map as _map, isNil as _isNil, concat as _concat, filter as _filter } from 'lodash';
 
 
 export interface State {
@@ -41,6 +41,12 @@ const containersModule: Module<State, any> = {
     setList(state: State, containers: Container[]) {
       state.list = containers;
     },
+    update(state: State, container: Container) {
+      state.list = _concat(_filter(state.list, c => c.id !== container.id), container);
+    },
+    remove(state: State, id: string) {
+      state.list = _filter(state.list, c => c.id !== id);
+    },
   },
   actions: {
     latest: ({ commit, rootState }) => {
@@ -75,6 +81,73 @@ const containersModule: Module<State, any> = {
           });
       });
     },
+    create: ({ commit, rootState, dispatch }, container: Container): Promise<Container> => {
+      return new Promise<Container>((resolve, reject) => {
+        let getCollection: Promise<Collection>;
+        if (!_isNil(container.collection)) {
+          const fakeCollection = new Collection();
+          fakeCollection.id=container.collection;
+          getCollection = Promise.resolve(fakeCollection);
+        }
+        else {
+          getCollection = dispatch('collections/get', { entity: container.entityName, collection: container.collectionName }, { root: true });
+        }
+        commit('loading');
+        getCollection
+          .then(collection => {
+            container.collection = collection.id;
+            rootState.backend.post(`/v1/containers`, serializeContainer(container))
+              .then((response: AxiosResponse) => {
+                const created = plainToContainer(response.data.data);
+                commit('succeeded');
+                commit('update', created);
+                resolve(created);
+              })
+              .catch((err: AxiosError) => {
+                commit('failed', err);
+                reject(err);
+              });
+          })
+          .catch(err => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
+    update: ({ commit, rootState }, container: Container): Promise<Container> => {
+      return new Promise<Container>((resolve, reject) => {
+        commit('loading');
+        rootState.backend.put(`/v1/containers/${container.entityName}/${container.collectionName}/${container.name}`, serializeContainer(container))
+          .then((response: AxiosResponse) => {
+            const updated = plainToContainer(response.data.data);
+            commit('succeeded');
+            commit('update', updated);
+            resolve(updated);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
+    delete: ({ commit, rootState }, container: Container): Promise<void> => {
+      return new Promise<void>((resolve, reject) => {
+        commit('loading');
+        rootState.backend.delete(`/v1/containers/${container.entityName}/${container.collectionName}/${container.name}`)
+          .then((response: AxiosResponse) => {
+            commit('succeeded');
+            commit('remove', container.id);
+            resolve();
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+
+      })
+
+    }
+
   },
 };
 

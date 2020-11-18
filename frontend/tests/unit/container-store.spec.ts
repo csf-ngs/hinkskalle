@@ -1,18 +1,22 @@
 import store from '@/store';
-import { plainToUser, plainToUpload, plainToContainer, } from '@/store/models';
+import { plainToUpload, plainToContainer, serializeContainer, Entity, Collection, Container, } from '@/store/models';
 
 import axios from 'axios';
 
-import { map as _map, clone as _clone, find as _find } from 'lodash';
+import { map as _map, clone as _clone, find as _find, create } from 'lodash';
 
 jest.mock('axios');
 const mockAxios = axios as jest.Mocked<typeof axios>;
 
+import collectionsModule from '@/store/modules/collections';
+jest.mock('@/store/modules/collections');
+const mockCollections = collectionsModule as jest.Mocked<typeof collectionsModule>;
+
 store.state.backend = mockAxios;
 
 export const testContainers = [
-  { id: "1", name: "testhippo", description: 'Nilpferd', createdAt: new Date(), },
-  { id: "2", name: "testzebra", description: 'Streifig', createdAt: new Date(), },
+  { id: "1", name: "testhippo", collectionName: "oinktion", entityName: "oinktity", description: 'Nilpferd', createdAt: new Date(), },
+  { id: "2", name: "testzebra", collectionName: "muhtion", entityName: "muhtity", description: 'Streifig', createdAt: new Date(), },
 ];
 export const testContainersObj = _map(testContainers, plainToContainer);
 
@@ -60,6 +64,39 @@ describe('container store mutations', () => {
     store.commit('containers/failed');
     expect(store.state.containers!.status).toBe('failed');
   });
+
+  it('has update mutation', () => {
+    store.state.containers!.list = _clone(testContainersObj);
+    const update = _clone(_find(testContainersObj, c => c.id === '1'));
+    if (!update) {
+      throw 'update test not found';
+    }
+    update.description = 'Woof';
+    store.commit('containers/update', update);
+
+    const updated = _find(store.state.containers!.list, c => c.id === update.id);
+    expect(updated).toStrictEqual(update);
+    expect(store.state.containers!.list).toHaveLength(2);
+
+    const create = new Container();
+    create.id="999";
+    create.name="supercow";
+    create.createdAt = new Date();
+
+    store.commit('containers/update', create);
+    expect(store.state.containers!.list).toHaveLength(3);
+    const added = _find(store.state.containers!.list, c => c.id === create.id);
+    expect(added).toStrictEqual(create);
+  });
+
+  it('has remove mutation', () => {
+    const toRemove = testContainersObj[0];
+    store.state.containers!.list = _clone(testContainersObj);
+    store.commit('containers/remove', toRemove.id);
+    expect(store.state.containers!.list).toHaveLength(1);
+    const removed = _find(store.state.containers!.list, c => c.id === toRemove.id);
+    expect(removed).toBeUndefined();
+  });
 });
 
 describe('container store actions', () => {
@@ -105,4 +142,162 @@ describe('container store actions', () => {
       done();
     });
   });
+
+  it('has create container with known collection id', done => {
+    const container = {
+      name: 'testilein',
+      collection: "1234",
+    };
+    const createContainerObj = plainToContainer(container);
+
+    mockAxios.post.mockResolvedValue({
+      data: { data: { id: '666', collection: "1234", name: container.name }}
+    });
+
+    const promise = store.dispatch('containers/create', createContainerObj);
+    expect(store.state.containers!.status).toBe('loading');
+    promise.then(container => {
+      expect(mockAxios.post).toHaveBeenLastCalledWith(`/v1/containers`, serializeContainer(createContainerObj));
+      expect(store.state.containers!.status).toBe('success');
+      const created = _find(store.state.containers!.list, c => c.id==='666');
+      if (!created) {
+        throw Error('created id 666 not found in test store');
+      }
+      createContainerObj.id = created.id;
+      expect(created).toStrictEqual(createContainerObj);
+      expect(container).toStrictEqual(createContainerObj);
+      done();
+    });
+  });
+
+  it('has create container with entity/collection name', done => {
+    const container = {
+      name: 'testilein',
+      entityName: 'oinktity',
+      collectionName: 'oinktion',
+    };
+    const createContainerObj = plainToContainer(container);
+
+    const fakeEntity = new Entity();
+    fakeEntity.id = "111";
+    fakeEntity.name = "oinktity";
+    const fakeCollection = new Collection();
+    fakeCollection.name = "oinktion";
+    fakeCollection.id = "222";
+
+    mockAxios.post.mockResolvedValue({
+      data: { data: { id: '666', entity: fakeEntity.id, entityName: fakeEntity.name, collection: fakeCollection.id, collectionName: fakeCollection.name, name: container.name }}
+    });
+    (mockCollections as any).actions.get.mockResolvedValue(fakeCollection);
+    const promise = store.dispatch('containers/create', createContainerObj);
+    expect(store.state.containers!.status).toBe('loading');
+    promise.then(container => {
+      expect(mockCollections!.actions!.get).toHaveBeenLastCalledWith(expect.anything(), { entity: "oinktity", collection: "oinktion" });
+      expect(mockAxios.post).toHaveBeenLastCalledWith(`/v1/containers`, serializeContainer(createContainerObj));
+      expect(store.state.containers!.status).toBe('success');
+      const created = _find(store.state.containers!.list, c => c.id==='666');
+      if (!created) {
+        throw Error('created id 666 not found in test store');
+      }
+      createContainerObj.id = created.id;
+      createContainerObj.entity = fakeEntity.id;
+      expect(created).toStrictEqual(createContainerObj);
+      expect(container).toStrictEqual(createContainerObj);
+      done();
+    });
+
+  });
+
+  it('has create container/get collection failed fallback', done => {
+    (mockCollections as any).actions.get.mockRejectedValue({ fail: 'fail' });
+    const container = {
+      name: 'testilein',
+      entityName: 'oinktity',
+      collectionName: 'oinktion',
+    };
+    const createContainerObj = plainToContainer(container);
+    store.dispatch('containers/create', createContainerObj)
+      .catch(err => {
+        expect(err).toStrictEqual({ fail: 'fail' });
+        expect(store.state.containers!.status).toBe('failed');
+        done();
+      });
+  });
+
+  it('has create container failed fallback', done => {
+    const container = {
+      name: 'testilein',
+      entityName: 'oinktity',
+      collectionName: 'oinktion',
+    };
+    const createContainerObj = plainToContainer(container);
+    mockAxios.post.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('containers/create', createContainerObj)
+      .catch(err => {
+        expect(err).toStrictEqual({ fail: 'fail' });
+        expect(store.state.containers!.status).toBe('failed');
+        done();
+      });
+  });
+
+  it('has update', done => {
+    const update = _clone(_find(testContainers, c => c.id==="1"));
+    if (!update) {
+      throw 'test container not found';
+    }
+    update.description = 'tohuwabohu';
+    const updateObj = plainToContainer(update);
+
+    mockAxios.put.mockResolvedValue({
+      data: { data: update } 
+    });
+
+    store.state.containers!.list = _clone(testContainersObj);
+
+    const promise = store.dispatch('containers/update', updateObj);
+    expect(store.state.containers!.status).toBe('loading');
+    promise.then(() => {
+      expect(mockAxios.put).toHaveBeenLastCalledWith(`/v1/containers/${updateObj.entityName}/${updateObj.collectionName}/${updateObj.name}`, serializeContainer(updateObj));
+      expect(store.state.containers!.status).toBe('success');
+      expect(store.state.containers!.list).toHaveLength(2);
+      const updated = _find(store.state.containers!.list, c => c.id===update.id);
+      expect(updated).toStrictEqual(updateObj);
+      done();
+    });
+  });
+  it('has update fail handling', done => {
+    mockAxios.put.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('containers/update', testContainersObj[0]).catch(err => {
+      expect(store.state.containers!.status).toBe('failed');
+      expect(err).toStrictEqual({ fail: 'fail' });
+      done();
+    });
+  });
+
+  it('has delete', done => {
+    store.state.containers!.list = _clone(testContainersObj);
+    mockAxios.delete.mockResolvedValue({
+      data: { status: 'ok' },
+    });
+    const promise = store.dispatch('containers/delete', testContainersObj[0]);
+    expect(store.state.containers!.status).toBe('loading');
+    promise.then(() => {
+      expect(mockAxios.delete).toHaveBeenLastCalledWith(`/v1/containers/${testContainersObj[0].entityName}/${testContainersObj[0].collectionName}/${testContainersObj[0].name}`)
+      expect(store.state.containers!.status).toBe('success');
+      expect(store.state.containers!.list).toHaveLength(1);
+      const deleted = _find(store.state.containers!.list, c => c.id === testContainersObj[0].id);
+      expect(deleted).toBeUndefined();
+      done();
+    });
+  });
+  it('has delete fail', done => {
+    mockAxios.delete.mockRejectedValue({ fail: 'fail' });
+    store.dispatch(`containers/delete`, testContainersObj[0])
+      .catch(err => {
+        expect(store.state.containers!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
+  })
+
 });

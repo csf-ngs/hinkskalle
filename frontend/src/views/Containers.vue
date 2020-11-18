@@ -109,14 +109,57 @@
             </template>
             <template v-slot:default="props">
               <v-row>
-                <v-col v-for="item in props.items" :key="item.id">
+                <v-col v-for="item in props.items" :key="item.id"
+                    cols="12" md="6">
                   <v-card class="container">
-                    <v-card-title class="headline">
+                    <v-card-title class="text-h6">
                       <v-icon v-if="item.private">mdi-lock</v-icon>
+                      <v-icon v-if="item.readOnly">mdi-shield-key-outline</v-icon>
                       {{item.name}}
-                      ({{item.size}} {{item.size | pluralize('image')}})
                     </v-card-title>
                     <v-divider></v-divider>
+                    <v-list dense>
+                      <v-list-item two-line>
+                        <v-list-item-content>
+                          <v-list-item-title>
+                            {{item.description}}
+                          </v-list-item-title>
+                          <v-list-item-subtitle>
+                            {{item.fullDescription}}
+                          </v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+                      <v-list-item two-line>
+                        <v-list-item-content>
+                          <v-list-item-title class="d-flex">
+                            <span>
+                              {{item.size}} {{item.size | pluralize('image')}}
+                            </span>
+                            <v-spacer></v-spacer>
+                            <span>
+                              {{item.stars}} <v-icon>mdi-star</v-icon>
+                              |
+                              {{item.downloadCount}} <v-icon>mdi-download</v-icon>
+                            </span>
+                          </v-list-item-title>
+                        </v-list-item-content>
+                      </v-list-item>
+                      <v-list-item two-lines>
+                        <v-list-item-content>
+                          <v-list-item-title>
+                            {{item.createdAt | moment('YYYY-MM-DD HH:mm')}} | {{item.createdBy}}
+                          </v-list-item-title>
+                          <v-list-item-subtitle>
+                            Created
+                          </v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+                    </v-list>
+                    <v-card-actions>
+                      <v-spacer></v-spacer>
+                      <v-icon small class="mr-1" @click="editContainer(item)">mdi-pencil</v-icon>
+                      <v-icon small @click="deleteContainer(item)">mdi-delete</v-icon>
+                    </v-card-actions>
                   </v-card>
                 </v-col>
               </v-row>

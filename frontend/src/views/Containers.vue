@@ -116,6 +116,12 @@
                       <v-icon v-if="item.private">mdi-lock</v-icon>
                       <v-icon v-if="item.readOnly">mdi-shield-key-outline</v-icon>
                       {{item.name}}
+                      <template v-if="item.vcsUrl">
+                        <v-spacer></v-spacer>
+                        <a :href="item.vcsUrl" class="text-decoration-none">
+                          <v-icon>mdi-source-repository</v-icon>
+                        </a>
+                      </template>
                     </v-card-title>
                     <v-divider></v-divider>
                     <v-list dense>

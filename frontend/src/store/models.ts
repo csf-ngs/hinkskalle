@@ -19,6 +19,10 @@ class Collection {
   public size!: number
   public updatedAt!: Date | null
   
+
+  public get collectionName(): string {
+    return this.name;
+  }
 }
 
 export function plainToCollection(json: any): Collection {
@@ -81,6 +85,9 @@ class Container {
   public vcsUrl!: string
   
 
+  public get containerName(): string {
+    return this.name;
+  }
   public get fullPath(): string {
     return `${this.entityName}/${this.collectionName}/${this.name}`
   }

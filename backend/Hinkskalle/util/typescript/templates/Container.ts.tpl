@@ -3,6 +3,9 @@
 class {{classname}} {
   {{utils.auto_attributes(fields)}}
 
+  public get containerName(): string {
+    return this.name;
+  }
   public get fullPath(): string {
     return `${this.entityName}/${this.collectionName}/${this.name}`
   }

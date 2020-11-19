@@ -2,6 +2,10 @@
 
 class {{classname}} {
   {{utils.auto_attributes(fields)}}
+
+  public get collectionName(): string {
+    return this.name;
+  }
 }
 
 export function plainTo{{classname}}(json: any): {{classname}} {

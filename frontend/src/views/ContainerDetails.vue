@@ -1,6 +1,6 @@
 <template>
   <div class="container-details">
-    <top-bar title="Container Details"></top-bar>
+    <top-bar :title="title"></top-bar>
   </div>
 </template>
 <script lang="ts">
@@ -8,7 +8,7 @@ import Vue from 'vue';
 import { Container } from '../store/models';
 
 interface State {
-  container: Container;
+  container: Container | null;
 }
 
 export default Vue.extend({
@@ -21,6 +21,11 @@ export default Vue.extend({
       container: null,
     }
   }),
+  computed: {
+    title(): string {
+      return `Container Details for ${this.localState.container ? this.localState.container.fullPath : '...'}`
+    }
+  },
   methods: {
     loadContainer() {
       this.$store.dispatch('containers/get', { entity: this.$route.params.entity, collection: this.$route.params.collection, container: this.$route.params.container })

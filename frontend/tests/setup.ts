@@ -16,6 +16,7 @@ localVue.use(VueMoment);
 localVue.component('top-bar', TopBarComponent);
 localVue.filter('abbreviate', (v: string) => v);
 localVue.filter('pluralize', (v: number, w: string) => w);
+localVue.filter('prettyBytes', (v: number): string => v.toString())
 
 export const localVueNoRouter = createLocalVue();
 localVueNoRouter.use(Vuex);
@@ -23,3 +24,4 @@ localVueNoRouter.use(VueMoment);
 localVueNoRouter.component('top-bar', TopBarComponent);
 localVueNoRouter.filter('abbreviate', (v: string) => v);
 localVueNoRouter.filter('pluralize', (v: number, w: string) => w);
+localVueNoRouter.filter('prettyBytes', (v: number): string => v.toString())

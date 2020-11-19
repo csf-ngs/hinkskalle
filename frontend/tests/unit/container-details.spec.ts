@@ -35,14 +35,42 @@ describe('ContainerDetails.vue', () => {
       'snackbar/showError': jest.fn(),
     };
     actions = {
-      'containers/get': jest.fn(),
+      'containers/get': jest.fn(() => testContainersObj[0]),
+      'images/list': jest.fn(() => []), 
     };
     store = new Vuex.Store({ getters, actions, mutations });
   });
 
-  it('renders something', () => {
+  it('renders something', async done => {
     const wrapper = mount(ContainerDetails, { localVue, vuetify, store, router });
     expect(wrapper.text()).toContain('Container Details');
     expect(actions['containers/get']).toHaveBeenCalledTimes(1);
+    await Vue.nextTick();
+    await Vue.nextTick();
+    expect(actions['images/list']).toHaveBeenCalledTimes(1);
+    done();
+  });
+
+  it('shows error on get container fail', async done => {
+    actions['containers/get'].mockRejectedValue("fail");
+    const wrapper = mount(ContainerDetails, { localVue, vuetify, store, router });
+    expect(actions['containers/get']).toHaveBeenCalledTimes(1);
+    await Vue.nextTick();
+    await Vue.nextTick();
+    await Vue.nextTick();
+    expect(mutations['snackbar/showError']).toHaveBeenCalledWith(expect.anything(), "fail");
+    done();
+  });
+
+  it('shows error on get images fail', async done => {
+    actions['images/list'].mockRejectedValue("fail");
+    const wrapper = mount(ContainerDetails, { localVue, vuetify, store, router });
+    expect(actions['containers/get']).toHaveBeenCalledTimes(1);
+    await Vue.nextTick();
+    await Vue.nextTick();
+    await Vue.nextTick();
+    await Vue.nextTick();
+    expect(mutations['snackbar/showError']).toHaveBeenCalledWith(expect.anything(), "fail");
+    done();
   });
 });

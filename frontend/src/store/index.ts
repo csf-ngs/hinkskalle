@@ -10,6 +10,7 @@ import snackbarModule, { State as SnackbarState } from './modules/snackbar';
 import entitiesModule, { State as EntitiesState } from './modules/entities';
 import containersModule, { State as ContainersState } from './modules/containers';
 import collectionsModule, { State as CollectionsState }  from './modules/collections';
+import imagesModule, { State as ImagesState } from './modules/images';
 import tokensModule, { State as TokensState } from './modules/tokens';
 import usersModule, { State as UsersState } from './modules/users';
 
@@ -19,9 +20,10 @@ interface State {
   authStatus: '' | 'loading' | 'failed' | 'success';
   currentUser: User | null;
   snackbar?: SnackbarState;
-  containers?: ContainersState;
   tokens?: TokensState;
   users?: UsersState;
+  images?: ImagesState;
+  containers?: ContainersState;
   collections?: CollectionsState;
   entities?: EntitiesState;
 }
@@ -108,9 +110,10 @@ export default new Vuex.Store({
   },
   modules: {
     snackbar: snackbarModule,
-    containers: containersModule,
     tokens: tokensModule,
     users: usersModule,
+    images: imagesModule,
+    containers: containersModule,
     collections: collectionsModule,
     entities: entitiesModule,
   }

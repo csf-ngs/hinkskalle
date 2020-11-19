@@ -55,7 +55,7 @@ describe('Containers.vue', () => {
       path: '/something', params: { entity: 'testgiraffe', collection: 'testcapybara' }
     }
     const wrapper = mount(Containers, { localVue: localVueNoRouter, vuetify, store, router, mocks: { $route }, stubs: [ 'router-link' ] });
-    expect(actions['containers/list']).toHaveBeenLastCalledWith(expect.anything(), { entity: $route.params.entity, collection: $route.params.collection });
+    expect(actions['containers/list']).toHaveBeenLastCalledWith(expect.anything(), { entityName: $route.params.entity, collectionName: $route.params.collection });
   });
 
   it('renders containers', () => {

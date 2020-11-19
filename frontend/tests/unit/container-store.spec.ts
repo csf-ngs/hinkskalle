@@ -3,7 +3,7 @@ import { plainToUpload, plainToContainer, serializeContainer, Entity, Collection
 
 import axios from 'axios';
 
-import { map as _map, clone as _clone, find as _find, create } from 'lodash';
+import { map as _map, clone as _clone, find as _find } from 'lodash';
 
 jest.mock('axios');
 const mockAxios = axios as jest.Mocked<typeof axios>;
@@ -58,9 +58,8 @@ describe('container store mutations', () => {
     store.state.containers!.status = '';
     store.commit('containers/loading');
     expect(store.state.containers!.status).toBe('loading');
-    store.commit('containers/succeeded', testLatest);
+    store.commit('containers/succeeded');
     expect(store.state.containers!.status).toBe('success');
-    expect(store.state.containers!.latest).toStrictEqual(testLatestObj);
     store.commit('containers/failed');
     expect(store.state.containers!.status).toBe('failed');
   });
@@ -104,7 +103,7 @@ describe('container store actions', () => {
     mockAxios.get.mockResolvedValue({
       data: { data: testContainersObj },
     });
-    const promise = store.dispatch('containers/list', { entity: 'test', collection: 'hase' });
+    const promise = store.dispatch('containers/list', { entityName: 'test', collectionName: 'hase' });
     expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/containers/test/hase`);
     expect(store.state.containers!.status).toBe('loading');
     promise.then(() => {
@@ -115,7 +114,7 @@ describe('container store actions', () => {
   });
   it('has load container list fail handling', done => {
     mockAxios.get.mockRejectedValue({ fail: 'fail' });
-    store.dispatch('containers/list', { entity: 'test', collection: 'hase' }).catch(err => {
+    store.dispatch('containers/list', { entityName: 'test', collectionName: 'hase' }).catch(err => {
       expect(store.state.containers!.status).toBe('failed');
       done();
     });
@@ -148,7 +147,7 @@ describe('container store actions', () => {
       data: { data: testContainers[0] },
     });
 
-    const promise = store.dispatch('containers/get', { entity: testContainers[0].entityName, collection: testContainers[0].collectionName, container: testContainers[0].name });
+    const promise = store.dispatch('containers/get', testContainersObj[0]);
     expect(store.state.containers!.status).toBe('loading');
     promise.then(container => {
       expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/containers/${testContainers[0].entityName}/${testContainers[0].collectionName}/${testContainers[0].name}`);
@@ -159,7 +158,7 @@ describe('container store actions', () => {
   });
   it('has get container fail handling', done => {
     mockAxios.get.mockRejectedValue({ fail: 'fail' });
-    store.dispatch('containers/get', { entity: 'e', collection: 'c', container: 'c' })
+    store.dispatch('containers/get', testContainersObj[0])
       .catch(err => {
         expect(store.state.containers!.status).toBe('failed');
         expect(err).toStrictEqual({ fail: 'fail' });
@@ -216,7 +215,7 @@ describe('container store actions', () => {
     const promise = store.dispatch('containers/create', createContainerObj);
     expect(store.state.containers!.status).toBe('loading');
     promise.then(container => {
-      expect(mockCollections!.actions!.get).toHaveBeenLastCalledWith(expect.anything(), { entity: "oinktity", collection: "oinktion" });
+      expect(mockCollections!.actions!.get).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ entityName: "oinktity", collectionName: "oinktion" }));
       expect(mockAxios.post).toHaveBeenLastCalledWith(`/v1/containers`, serializeContainer(createContainerObj));
       expect(store.state.containers!.status).toBe('success');
       const created = _find(store.state.containers!.list, c => c.id==='666');

@@ -134,7 +134,7 @@ describe('collection store actions', () => {
     mockAxios.get.mockResolvedValue({
       data: { data: testColl }
     });
-    const promise = store.dispatch('collections/get', { entity: 'oinktity', collection: 'testente' });
+    const promise = store.dispatch('collections/get', { entityName: 'oinktity', collectionName: 'testente' });
     expect(store.state.collections!.status).toBe('loading');
     promise.then(collection => {
       expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/collections/oinktity/testente`);
@@ -145,7 +145,7 @@ describe('collection store actions', () => {
   });
   it('has get collection fail handling', done => {
     mockAxios.get.mockRejectedValue({ fail: 'fail' });
-    store.dispatch('collections/get', { entity: 'oinktity', collection: 'testente' })
+    store.dispatch('collections/get', { entityName: 'oinktity', collectionName: 'testente' })
       .catch(err => {
         expect(store.state.collections!.status).toBe('failed');
         expect(err).toStrictEqual({ fail: 'fail' });

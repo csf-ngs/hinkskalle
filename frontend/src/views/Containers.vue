@@ -242,7 +242,7 @@ export default Vue.extend({
   },
   methods: {
     loadContainers() {
-      this.$store.dispatch('containers/list', { entity: this.$route.params.entity, collection: this.$route.params.collection })
+      this.$store.dispatch('containers/list', { entityName: this.$route.params.entity, collectionName: this.$route.params.collection })
         .catch(err => this.$store.commit('snackbar/showError', err));
     },
     editContainer(container: Container) {

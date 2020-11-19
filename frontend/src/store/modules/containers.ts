@@ -65,10 +65,10 @@ const containersModule: Module<State, any> = {
           });
       });
     },
-    list: ({ commit, rootState }, path: { entity: string; collection: string }): Promise<Container[]> => {
+    list: ({ commit, rootState }, path: { entityName: string; collectionName: string }): Promise<Container[]> => {
       return new Promise<Container[]>((resolve, reject) => {
         commit('loading'),
-        rootState.backend.get(`/v1/containers/${path.entity}/${path.collection}`)
+        rootState.backend.get(`/v1/containers/${path.entityName}/${path.collectionName}`)
           .then((response: AxiosResponse) => {
             const list = _map(response.data.data, plainToContainer);
             commit('succeeded');
@@ -81,10 +81,10 @@ const containersModule: Module<State, any> = {
           });
       });
     },
-    get: ({ commit, rootState }, path: { entity: string; collection: string; container: string }): Promise<Container> => {
+    get: ({ commit, rootState }, path: { entityName: string; collectionName: string; containerName: string }): Promise<Container> => {
       return new Promise<Container>((resolve, reject) => {
         commit('loading');
-        rootState.backend.get(`/v1/containers/${path.entity}/${path.collection}/${path.container}`)
+        rootState.backend.get(`/v1/containers/${path.entityName}/${path.collectionName}/${path.containerName}`)
           .then((response: AxiosResponse) => {
             const container = plainToContainer(response.data.data);
             commit('succeeded');
@@ -105,7 +105,7 @@ const containersModule: Module<State, any> = {
           getCollection = Promise.resolve(fakeCollection);
         }
         else {
-          getCollection = dispatch('collections/get', { entity: container.entityName, collection: container.collectionName }, { root: true });
+          getCollection = dispatch('collections/get', container, { root: true });
         }
         commit('loading');
         getCollection

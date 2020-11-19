@@ -58,10 +58,10 @@ const collectionsModule: Module<State, any> = {
           });
       });
     },
-    get: ({ commit, rootState }, path: { entity: string; collection: string }): Promise<Collection> => {
+    get: ({ commit, rootState }, path: { entityName: string; collectionName: string }): Promise<Collection> => {
       return new Promise<Collection>((resolve, reject) => {
         commit('loading');
-        rootState.backend.get(`/v1/collections/${path.entity}/${path.collection}`)
+        rootState.backend.get(`/v1/collections/${path.entityName}/${path.collectionName}`)
           .then((response: AxiosResponse) => {
             const collection = plainToCollection(response.data.data);
             commit('succeeded');

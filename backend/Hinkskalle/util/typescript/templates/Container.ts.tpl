@@ -2,6 +2,10 @@
 
 class {{classname}} {
   {{utils.auto_attributes(fields)}}
+
+  public get fullPath(): string {
+    return `${this.entityName}/${this.collectionName}/${this.name}`
+  }
 }
 
 export function plainTo{{classname}}(json: any): {{classname}} {

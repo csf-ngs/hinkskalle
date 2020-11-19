@@ -80,6 +80,10 @@ class Container {
   public updatedAt!: Date | null
   public vcsUrl!: string
   
+
+  public get fullPath(): string {
+    return `${this.entityName}/${this.collectionName}/${this.name}`
+  }
 }
 
 export function plainToContainer(json: any): Container {

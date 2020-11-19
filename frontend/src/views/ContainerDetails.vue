@@ -51,19 +51,31 @@
           </v-row>
         </v-col>
       </v-row>
+      <v-row>
+        <v-col cols="12" md="10" offset-md="1">
+          <h2 class="text-center mb-2">Images</h2>
+          <v-expansion-panels inset>
+            <image-details 
+              v-for="image in images"
+              :key="image.id"
+              :image="image"></image-details>
+          </v-expansion-panels>
+        </v-col>
+      </v-row>
     </v-container>
   </div>
 </template>
 <script lang="ts">
+import ImageDetails from '@/components/ImageDetails.vue';
 import Vue from 'vue';
 import { Container, Image } from '../store/models';
 
 interface State {
   container: Container | null;
-  images: Image[];
 }
 
 export default Vue.extend({
+  components: { ImageDetails },
   name: 'ContainerDetails',
   mounted() {
     this.loadContainer();
@@ -71,7 +83,6 @@ export default Vue.extend({
   data: (): { localState: State } => ({
     localState: {
       container: null,
-      images: [],
     }
   }),
   computed: {
@@ -81,16 +92,16 @@ export default Vue.extend({
     loading(): boolean {
       return this.$store.getters['container/status']==='loading';
     },
+    images(): Image[] {
+      return this.$store.getters['images/list'];
+    }
   },
   methods: {
     loadContainer() {
-      this.$store.dispatch('containers/get', { entity: this.$route.params.entity, collection: this.$route.params.collection, container: this.$route.params.container })
+      this.$store.dispatch('containers/get', { entityName: this.$route.params.entity, collectionName: this.$route.params.collection, containerName: this.$route.params.container })
         .then((container: Container) => {
           this.localState.container = container;
           return this.$store.dispatch('images/list', container);
-        })
-        .then((images: Image[]) => {
-          this.localState.images = images;
         })
         .catch(err => {
           this.$store.commit('snackbar/showError', err);

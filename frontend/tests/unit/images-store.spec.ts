@@ -14,7 +14,7 @@ export const testImages = [
   { id: "1", hash: "eins", entityName: "oinktity", collectionName: "oinktion", containerName: "oinktainer", createdAt: new Date(), tags: [ "latest", "v3" ] },
   { id: "2", hash: "zwei", entityName: "oinktity", collectionName: "oinktion", containerName: "oinktainer", createdAt: new Date(), tags: [ "v2" ] },
 ];
-const testImagesObj = _map(testImages, plainToImage);
+export const testImagesObj = _map(testImages, plainToImage);
 
 describe('image store getters', () => {
   it('has status getter', () => {

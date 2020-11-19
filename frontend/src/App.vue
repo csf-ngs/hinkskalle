@@ -75,7 +75,6 @@ import Vue from 'vue';
 import { User } from './store/models';
 
 import { SnackbarType } from './store/modules/snackbar';
-import About from './views/About.vue';
 
 export default Vue.extend({
   name: 'App',

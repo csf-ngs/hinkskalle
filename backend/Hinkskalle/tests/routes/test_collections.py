@@ -154,8 +154,6 @@ class TestCollections(RouteBase):
     coll, entity = _create_collection()
     entity.name='default'
     db.session.commit()
-    coll.owner=self.user
-    db.session.commit()
 
     with self.fake_auth():
       ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
@@ -172,9 +170,17 @@ class TestCollections(RouteBase):
       ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
     self.assertEqual(ret.status_code, 200)
 
-  def test_get_user_other(self):
+  def test_get_user_other_own_entity(self):
     coll, entity = _create_collection()
     entity.owner=self.user
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
+    self.assertEqual(ret.status_code, 200)
+
+  def test_get_user_other(self):
+    coll, entity = _create_collection()
     db.session.commit()
 
     with self.fake_auth():

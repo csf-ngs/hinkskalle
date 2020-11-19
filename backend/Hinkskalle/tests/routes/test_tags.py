@@ -48,10 +48,22 @@ class TestTags(RouteBase):
       ret = self.client.get(f"/v1/tags/{container.id}")
     self.assertEqual(ret.status_code, 200)
 
-  def test_get_user_other(self):
+  def test_get_user_other_own_collection(self):
     image, container, coll, entity = _create_image()
     entity.owner=self.user
     coll.owner=self.user
+    container.owner=self.other_user
+    db.session.commit()
+
+    container.tag_image('v1.0', image.id)
+    with self.fake_auth():
+      ret = self.client.get(f"/v1/tags/{container.id}")
+    self.assertEqual(ret.status_code, 200)
+
+  def test_get_user_other(self):
+    image, container, coll, entity = _create_image()
+    entity.owner=self.other_user
+    coll.owner=self.other_user
     container.owner=self.other_user
     db.session.commit()
 

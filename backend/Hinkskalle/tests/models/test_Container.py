@@ -160,7 +160,7 @@ class TestContainer(ModelBase):
     self.assertTrue(container.check_access(user))
 
     container.owner=other_user
-    self.assertFalse(container.check_access(user))
+    self.assertTrue(container.check_access(user))
 
     container, collection, entity = _create_container('default')
     entity.name='default'
@@ -169,7 +169,7 @@ class TestContainer(ModelBase):
     self.assertTrue(container.check_access(user))
 
     container.owner=other_user
-    self.assertFalse(container.check_access(user))
+    self.assertTrue(container.check_access(user))
   
   def test_update_access(self):
     admin = _create_user(name='admin.oink', is_admin=True)

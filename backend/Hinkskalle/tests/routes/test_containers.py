@@ -163,10 +163,21 @@ class TestContainers(RouteBase):
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(container.id))
 
-  def test_get_user_other(self):
+  def test_get_user_other_own_collection(self):
     container, coll, entity = _create_container()
     entity.owner=self.user
     coll.owner=self.user
+    container.owner=self.other_user
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
+    self.assertEqual(ret.status_code, 200)
+
+  def test_get_user_other(self):
+    container, coll, entity = _create_container()
+    entity.owner=self.other_user
+    coll.owner=self.other_user
     container.owner=self.other_user
     db.session.commit()
 

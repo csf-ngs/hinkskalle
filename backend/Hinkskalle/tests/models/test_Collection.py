@@ -63,7 +63,7 @@ class TestCollection(ModelBase):
     coll.owner=user
     self.assertTrue(coll.check_access(user))
     coll.owner=other_user
-    self.assertFalse(coll.check_access(user))
+    self.assertTrue(coll.check_access(user))
 
     coll, entity = _create_collection('own-default')
     entity.owner=other_user

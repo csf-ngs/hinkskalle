@@ -42,7 +42,7 @@ def update_tag(container_id):
     container = Container.query.filter(Container.id==container_id).one()
   except NoResultFound:
     raise errors.NotFound(f"container {container_id} not found")
-  if not container.check_access(g.authenticated_user):
+  if not container.check_update_access(g.authenticated_user):
     raise errors.Forbidden('access denied.')
 
   tag = request.get_json(force=True)

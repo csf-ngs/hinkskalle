@@ -101,7 +101,7 @@ class Container(db.Model):
     elif self.owner == user:
       return True
     else:
-      return False
+      return self.collection_ref.check_access(user)
   
   def check_update_access(self, user):
     if user.is_admin:

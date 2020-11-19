@@ -42,7 +42,9 @@ class Entity(db.Model):
   def check_access(self, user):
     if user.is_admin:
       return True
-    elif self.owner==user or self.name=='default':
+    elif self.owner == user:
+      return True
+    elif self.name == 'default':
       return True
     else:
       return False

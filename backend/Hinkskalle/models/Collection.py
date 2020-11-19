@@ -53,10 +53,10 @@ class Collection(db.Model):
   def check_access(self, user):
     if user.is_admin:
       return True
-    elif self.owner == user or self.entityName() == 'default':
+    elif self.owner == user:
       return True
     else:
-      return False
+      return self.entity_ref.check_access(user)
   
   def check_update_access(self, user):
     if user.is_admin:

@@ -40,7 +40,7 @@ class TestImages(RouteBase):
     json = ret.get_json().get('data')
     self.assertListEqual([ c['id'] for c in json ], [ str(image1.id), str(image2.id) ] )
   
-  def test_list_user_other(self):
+  def test_list_user_other_own_collection(self):
     image1, container, collection, entity = _create_image('img1')
     container.owner=self.other_user
     collection.owner=self.user
@@ -49,8 +49,18 @@ class TestImages(RouteBase):
 
     with self.fake_auth():
       ret = self.client.get(f"/v1/containers/{entity.name}/{collection.name}/{container.name}/images")
-    self.assertEqual(ret.status_code, 403)
+    self.assertEqual(ret.status_code, 200)
 
+  def test_list_user_other(self):
+    image1, container, collection, entity = _create_image('img1')
+    container.owner=self.other_user
+    collection.owner=self.other_user
+    entity.owner=self.other_user
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.get(f"/v1/containers/{entity.name}/{collection.name}/{container.name}/images")
+    self.assertEqual(ret.status_code, 403)
 
   def test_get_latest(self):
     image = _create_image()[0]

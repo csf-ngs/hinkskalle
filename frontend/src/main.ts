@@ -7,10 +7,12 @@ import vuetify from './plugins/vuetify';
 import store from './store'
 
 import TopBarComponent from './components/TopBar.vue';
+import TextInputComponent from './components/TextInput.vue';
 
 Vue.config.productionTip = false
 
 Vue.component('top-bar', TopBarComponent);
+Vue.component('hsk-text-input', TextInputComponent);
 Vue.use(VueClipboard);
 Vue.use(VueMoment);
 Vue.filter('abbreviate', function(value: string, maxlen: number): string {

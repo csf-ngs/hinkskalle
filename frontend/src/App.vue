@@ -131,3 +131,9 @@ export default Vue.extend({
   }
 });
 </script>
+
+<style>
+span.v-badge--inline i.v-icon {
+  margin-right: -5px;
+}
+</style>

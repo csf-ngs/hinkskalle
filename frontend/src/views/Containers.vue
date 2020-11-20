@@ -139,16 +139,18 @@
                       </v-list-item>
                       <v-list-item two-line>
                         <v-list-item-content>
-                          <v-list-item-title class="d-flex">
-                            <span>
+                          <v-list-item-title class="d-flex justify-space-between">
+                            <div>
                               {{item.size}} {{item.size | pluralize('image')}}
-                            </span>
-                            <v-spacer></v-spacer>
-                            <span>
-                              {{item.stars}} <v-icon>mdi-star</v-icon>
-                              |
-                              {{item.downloadCount}} <v-icon>mdi-download</v-icon>
-                            </span>
+                            </div>
+                            <div>
+                              <v-badge :content="item.downloadCount || '0'" inline color="blue-grey lighten-1">
+                                <v-icon>mdi-download</v-icon>
+                              </v-badge>
+                              <v-badge :content="item.stars || '0'" inline class="mx-1" color="blue-grey lighten-1">
+                                <v-icon>mdi-star</v-icon>
+                              </v-badge>
+                            </div>
                           </v-list-item-title>
                         </v-list-item-content>
                       </v-list-item>

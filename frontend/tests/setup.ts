@@ -6,6 +6,7 @@ import VueMoment from 'vue-moment';
 import Vue from 'vue';
 
 import TopBarComponent from '@/components/TopBar.vue';
+import TextInput from '@/components/TextInput.vue';
 
 Vue.use(Vuetify);
 
@@ -16,6 +17,7 @@ localVue.use(Vuex);
 localVue.use(VueRouter);
 localVue.use(VueMoment);
 localVue.component('top-bar', TopBarComponent);
+localVue.component('hsk-text-input', TextInput);
 localVue.filter('abbreviate', (v: string) => v);
 localVue.filter('pluralize', (v: number, w: string) => w);
 localVue.filter('prettyBytes', prettyBytes);

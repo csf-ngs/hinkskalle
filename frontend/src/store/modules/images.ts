@@ -1,6 +1,6 @@
 import { Module } from 'vuex';
 import {AxiosError, AxiosResponse} from 'axios';
-import {Image, plainToImage} from '../models';
+import {Image, plainToImage, InspectAttributes} from '../models';
 import { map as _map } from 'lodash';
 
 export interface State {
@@ -42,6 +42,20 @@ const imagesModule: Module<State, any> = {
             commit('succeeded');
             commit('setList', list);
             resolve(list);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
+    inspect: ({ commit, rootState }, image: { fullPath: string }): Promise<InspectAttributes> => {
+      return new Promise<InspectAttributes>((resolve, reject) => {
+        commit('loading');
+        rootState.backend.get(`/v1/images/${image.fullPath}/inspect`)
+          .then((response: AxiosResponse) => {
+            commit('succeeded');
+            resolve(response.data.data.attributes as InspectAttributes);
           })
           .catch((err: AxiosError) => {
             commit('failed', err);

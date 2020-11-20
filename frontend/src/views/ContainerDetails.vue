@@ -1,52 +1,88 @@
 <template>
   <div class="container-details">
-    <top-bar :title="title">
-      <template v-if="localState.container">
-        <v-badge :content="localState.container.stars" overlap>
-          <v-icon large>mdi-star</v-icon>
-        </v-badge>
-        <v-badge :content="localState.container.downloadCount" overlap>
-          <v-icon large>mdi-download</v-icon>
-        </v-badge>
-      </template>
+    <top-bar title="Container Details">
     </top-bar>
     <v-container v-if="localState.container">
       <v-row>
         <v-col cols="12" md="10" offset-md="1">
           <v-row>
             <v-col>
-              <v-text-field :value="localState.container.name" label="Name" outlined readonly append-icon="mdi-lock-outline"></v-text-field>
+              <h1 class="justify-center d-flex">
+                {{title}}
+                <v-badge :content="localState.container.stars || '0'" inline color="blue-grey lighten-1" class="px-1">
+                  <v-icon>mdi-star</v-icon>
+                </v-badge>
+                <v-badge :content="localState.container.downloadCount || '0'" inline color="blue-grey lighten-1" class="px-1">
+                  <v-icon>mdi-download</v-icon>
+                </v-badge>
+                <a v-if="localState.container.vcsUrl" :href="localState.container.vcsUrl" class="text-decoration-none d-flex align-center">
+                  <v-icon>mdi-source-repository</v-icon>
+                </a>
+              </h1>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <hsk-text-input label="Name" :static-value="localState.container.name"></hsk-text-input>
             </v-col>
           </v-row>
           <v-row dense>
             <v-col>
-              <v-text-field :value="localState.container.createdAt | moment('YYYY-MM-DD HH:mm:ss')" label="Created" outlined readonly append-icon="mdi-lock-outline"></v-text-field>
+              <hsk-text-input label="Created" :static-value="localState.container.createdAt | moment('YYYY-MM-DD HH:mm:ss')"></hsk-text-input>
             </v-col>
             <v-col>
-              <v-text-field :value="localState.container.createdBy" label="Created By" outlined readonly append-icon="mdi-lock-outline"></v-text-field>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col>
-              <v-text-field v-model="localState.container.vcsUrl" label="Git/CVS URL" outlined></v-text-field>
+              <hsk-text-input label="Created By" :static-value="localState.container.createdBy"></hsk-text-input>
             </v-col>
           </v-row>
           <v-row>
             <v-col>
-              <v-text-field v-model="localState.container.description" label="Description" outlined></v-text-field>
+              <hsk-text-input 
+                label="Git/VCS URL" 
+                field="vcsUrl" 
+                :obj="localState.container" 
+                action="containers/update"
+                @updated="localState.container=$event"></hsk-text-input>
             </v-col>
           </v-row>
           <v-row>
             <v-col>
-              <v-textarea v-model="localState.container.fullDescription" label="Full Description" outlined></v-textarea>
+              <hsk-text-input 
+                label="Description" 
+                field="description" 
+                :obj="localState.container" 
+                action="containers/update"
+                @updated="localState.container=$event"></hsk-text-input>
             </v-col>
           </v-row>
           <v-row>
             <v-col>
-              <v-select v-model="localState.container.private" label="Private" outlined :items="[ { value: false, text: 'no' }, { value: true, text: 'yes' } ]"></v-select>
+              <hsk-text-input 
+                type="textarea"
+                label="Full Description" 
+                field="fullDescription" 
+                :obj="localState.container" 
+                action="containers/update"
+                @updated="localState.container=$event"></hsk-text-input>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <hsk-text-input
+                type="yesno"
+                label="Private"
+                field="private"
+                :obj="localState.container"
+                action="containers/update"
+                @updated="localState.container=$event"></hsk-text-input>
             </v-col>
             <v-col>
-              <v-select v-model="localState.container.readOnly" label="Readonly" outlined :items="[ { value: false, text: 'no' }, { value: true, text: 'yes' } ]"></v-select>
+              <hsk-text-input
+                type="yesno"
+                label="Readonly"
+                field="readOnly"
+                :obj="localState.container"
+                action="containers/update"
+                @updated="localState.container=$event"></hsk-text-input>
             </v-col>
           </v-row>
         </v-col>
@@ -75,7 +111,7 @@ interface State {
 }
 
 export default Vue.extend({
-  components: { ImageDetails },
+  components: { ImageDetails, },
   name: 'ContainerDetails',
   mounted() {
     this.loadContainer();
@@ -87,7 +123,7 @@ export default Vue.extend({
   }),
   computed: {
     title(): string {
-      return `Container Details for ${this.localState.container ? this.localState.container.fullPath : '...'}`
+      return `${this.localState.container ? this.localState.container.fullPath : '...'}`
     },
     loading(): boolean {
       return this.$store.getters['container/status']==='loading';
@@ -106,7 +142,7 @@ export default Vue.extend({
         .catch(err => {
           this.$store.commit('snackbar/showError', err);
         });
-    }
-  }
+    },
+  },
 });
 </script>

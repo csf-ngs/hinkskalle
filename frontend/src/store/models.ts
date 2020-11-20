@@ -23,6 +23,9 @@ class Collection {
   public get collectionName(): string {
     return this.name;
   }
+  public get fullPath(): string {
+    return `${this.entityName}/${this.name}`
+  }
 }
 
 export function plainToCollection(json: any): Collection {
@@ -212,6 +215,10 @@ class Image {
   public updatedAt!: Date | null
   public uploaded!: boolean
   
+
+  public get fullPath(): string {
+    return `${this.entityName}/${this.collectionName}/${this.containerName}:${this.hash}`
+  }
 }
 
 export function plainToImage(json: any): Image {
@@ -251,6 +258,10 @@ export function serializeImage(obj: Image, unroll=false): any {
       json['uploaded'] = obj.uploaded
       
   return json;
+}
+
+export interface InspectAttributes {
+  deffile: string;
 }
 
 export { Image };

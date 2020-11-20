@@ -69,4 +69,27 @@ describe('actions', () => {
       });
   });
 
+  it('has inspect', done => {
+    mockAxios.get.mockResolvedValue({
+      data: { data: { attributes: { deffile: 'testhase' } } }
+    });
+    const promise = store.dispatch('images/inspect', testImagesObj[0]);
+    expect(store.state.images!.status).toBe('loading');
+    promise.then(attributes => {
+      expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/images/${testImagesObj[0].fullPath}/inspect`);
+      expect(store.state.images!.status).toBe('success');
+      expect(attributes).toStrictEqual({ deffile: 'testhase' });
+      done();
+    });
+  });
+  it('has inspect fail handling', done => {
+    mockAxios.get.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('images/inspect', testImagesObj[0])
+      .catch(err => {
+        expect(store.state.images!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
+  });
+
 });

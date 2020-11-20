@@ -6,6 +6,9 @@ class {{classname}} {
   public get collectionName(): string {
     return this.name;
   }
+  public get fullPath(): string {
+    return `${this.entityName}/${this.name}`
+  }
 }
 
 export function plainTo{{classname}}(json: any): {{classname}} {

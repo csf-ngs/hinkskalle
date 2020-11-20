@@ -2,6 +2,10 @@
 
 class {{classname}} {
   {{utils.auto_attributes(fields)}}
+
+  public get fullPath(): string {
+    return `${this.entityName}/${this.collectionName}/${this.containerName}:${this.hash}`
+  }
 }
 
 export function plainTo{{classname}}(json: any): {{classname}} {
@@ -13,6 +17,10 @@ export function serialize{{classname}}(obj: {{classname}}, unroll=false): any {
   const json: any = {};
   {{utils.serialize(fields)}}
   return json;
+}
+
+export interface InspectAttributes {
+  deffile: string;
 }
 
 export { {{classname}} };

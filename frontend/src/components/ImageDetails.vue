@@ -40,7 +40,12 @@
       </v-row>
     </v-expansion-panel-header> 
     <v-expansion-panel-content>
-      <hsk-text-input v-for="tag in image.tags" :key="tag" :label="'Pull '+tag" :static-value="pullURL(tag)"></hsk-text-input>
+      <v-row v-for="tag in image.tags" :key="tag">
+        <v-col>
+          <hsk-text-input :label="'Pull '+tag" :static-value="pullURL(tag)"></hsk-text-input>
+        </v-col>
+      </v-row>
+
       <v-row>
         <v-col>
           <hsk-text-input label="Created" :static-value="image.createdAt | moment('YYYY-MM-DD HH:mm:ss')"></hsk-text-input>
@@ -49,14 +54,26 @@
           <hsk-text-input label="Created By" :static-value="image.createdBy"></hsk-text-input>
         </v-col>
       </v-row>
-      <hsk-text-input 
-        label="Description" 
-        field="description" 
-        :obj="image" 
-        action="images/update"
-        @updated="image=$event"></hsk-text-input>
-      <hsk-text-input label="Hash" :static-value="image.hash"></hsk-text-input>
-      <hsk-text-input label="Size" :static-value="image.size | prettyBytes()"></hsk-text-input>
+      <v-row>
+        <v-col>
+          <hsk-text-input 
+            label="Description" 
+            field="description" 
+            :obj="image" 
+            action="images/update"
+            @updated="image=$event"></hsk-text-input>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col>
+          <hsk-text-input label="Hash" :static-value="image.hash"></hsk-text-input>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col>
+          <hsk-text-input label="Size" :static-value="image.size | prettyBytes()"></hsk-text-input>
+        </v-col>
+      </v-row>
       <v-row>
         <v-col>
           <hsk-text-input type="yesno" label="Uploaded" :static-value="image.uploaded"></hsk-text-input>

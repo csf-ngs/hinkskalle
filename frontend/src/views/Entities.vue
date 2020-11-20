@@ -23,51 +23,50 @@
                       <v-container>
                         <v-row>
                           <v-col cols="12">
-                            <v-text-field
+                            <hsk-text-input 
                               id="name"
-                              v-model="localState.editItem.name"
                               label="Name"
-                              required></v-text-field>
+                              field="name"
+                              :obj="localState.editItem"
+                              :readonly="!!localState.editItem.id"
+                              @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                           <v-col cols="12">
-                            <v-text-field
+                            <hsk-text-input 
                               id="description"
-                              v-model="localState.editItem.description"
-                              label="Description"></v-text-field>
+                              label="Description"
+                              field="description"
+                              :obj="localState.editItem"
+                              @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                         </v-row>
                         <v-row>
                           <v-col cols="12">
-                            <v-checkbox 
-                              id="default-private"
-                              v-model="localState.editItem.defaultPrivate" 
-                              label="Private"></v-checkbox>
+                            <hsk-text-input 
+                              type="yesno"
+                              label="Default Private"
+                              field="defaultPrivate"
+                              :obj="localState.editItem"
+                              @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                         </v-row>
                         <v-row>
                           <v-col cols="12" md="4">
-                            <v-text-field 
-                              dense
-                              readonly 
-                              append-outer-icon="mdi-lock"
-                              :value="localState.editItem.createdAt | moment('YYYY-MM-DD HH:mm')" 
-                              label="Created At"></v-text-field>
+                            <hsk-text-input
+                              label="Created"
+                              :static-value="localState.editItem.createdAt | moment('YYYY-MM-DD HH:mm')"
+                              ></hsk-text-input>
                           </v-col>
                           <v-col cols="12" md="4">
-                            <v-text-field 
-                              dense
-                              readonly 
-                              append-outer-icon="mdi-lock"
-                              :value="localState.editItem.createdBy" 
-                              label="Created By"></v-text-field>
+                            <hsk-text-input
+                              label="Created By"
+                              :static-value="localState.editItem.createdBy"></hsk-text-input>
                           </v-col>
                           <v-col cols="12" md="4">
-                            <v-text-field 
-                              dense
-                              readonly 
-                              append-outer-icon="mdi-lock"
-                              :value="updatedAt" 
-                              label="Updated At"></v-text-field>
+                            <hsk-text-input
+                              label="Updated"
+                              :static-value="updatedAt"
+                              ></hsk-text-input>
                           </v-col>
                         </v-row>
                       </v-container>
@@ -96,9 +95,9 @@
                 <v-col v-for="item in props.items" :key="item.id" 
                   cols="12" md="6">
                   <v-card class="entity">
-                    <router-link :to="{ name: 'EntityCollections', params: { entity: item.name } }" style="text-decoration: none; color: inherit;">
+                    <router-link :to="{ name: 'EntityCollections', params: { entity: item.name } }" class="text-decoration-none">
                       <v-card-title class="headline">
-                        <v-icon v-if="item.defaultPrivate">mdi-lock</v-icon>
+                        <v-icon v-if="item.defaultPrivate">mdi-eye-off</v-icon>
                         {{item.name}}
                         ({{item.size}} {{item.size | pluralize('collection')}})
                       </v-card-title>

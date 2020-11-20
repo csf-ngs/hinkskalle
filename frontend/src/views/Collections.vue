@@ -3,14 +3,13 @@
     <top-bar title="Collections"></top-bar>
     <v-container>
       <v-row>
-        <v-col cols="12" md="10">
-          <v-data-table
+        <v-col cols="12" md="10" offset-md="1">
+          <v-data-iterator
             id="collections"
-            :headers="headers"
             :items="collections"
             :search="localState.search"
-            :loading="loading">
-            <template v-slot:top>
+            :loading="Loading">
+            <template v-slot:header>
               <v-toolbar flat>
                 <v-text-field id="search" v-model="localState.search" prepend-icon="mdi-magnify" label="Search..." single-line hide-details></v-text-field>
                 <v-spacer></v-spacer>
@@ -24,49 +23,48 @@
                       <v-container>
                         <v-row>
                           <v-col cols="12">
-                            <v-text-field 
+                            <hsk-text-input 
                               id="name"
-                              v-model="localState.editItem.name" 
-                              label="Name" 
-                              required></v-text-field>
+                              label="Name"
+                              field="name"
+                              :obj="localState.editItem"
+                              :readonly="!!localState.editItem.id"
+                              @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                           <v-col cols="12">
-                            <v-text-field 
+                            <hsk-text-input 
                               id="description"
-                              v-model="localState.editItem.description" 
-                              label="Description"></v-text-field>
+                              label="Description"
+                              field="description"
+                              :obj="localState.editItem"
+                              @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                           <v-col cols="12">
-                            <v-checkbox 
-                              id="private"
-                              v-model="localState.editItem.private" 
-                              label="Private"></v-checkbox>
+                            <hsk-text-input 
+                              type="yesno"
+                              label="Private"
+                              field="private"
+                              :obj="localState.editItem"
+                              @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                         </v-row>
                         <v-row>
                           <v-col cols="12" md="4">
-                            <v-text-field 
-                              dense
-                              readonly 
-                              append-outer-icon="mdi-lock"
-                              :value="localState.editItem.createdAt | moment('YYYY-MM-DD HH:mm')" 
-                              label="Created At"></v-text-field>
+                            <hsk-text-input
+                              label="Created"
+                              :static-value="localState.editItem.createdAt | moment('YYYY-MM-DD HH:mm')"
+                              ></hsk-text-input>
                           </v-col>
                           <v-col cols="12" md="4">
-                            <v-text-field 
-                              dense
-                              readonly 
-                              append-outer-icon="mdi-lock"
-                              :value="localState.editItem.createdBy" 
-                              label="Created By"></v-text-field>
+                            <hsk-text-input
+                              label="Created By"
+                              :static-value="localState.editItem.createdBy"></hsk-text-input>
                           </v-col>
                           <v-col cols="12" md="4">
-                            <v-text-field 
-                              dense
-                              readonly 
-                              append-outer-icon="mdi-lock"
-                              :value="updatedAt" 
-                              label="Updated At"></v-text-field>
+                            <hsk-text-input
+                              label="Updated"
+                              :static-value="updatedAt"
+                              ></hsk-text-input>
                           </v-col>
                         </v-row>
                       </v-container>
@@ -90,20 +88,48 @@
                 </v-dialog>
               </v-toolbar>
             </template>
-            <template v-slot:item.name="{ item }">
-              <router-link :to="{ name: 'Containers', params: { entity: entity, collection: item.name } }">
-              <v-icon v-if="item.private">mdi-lock</v-icon>
-              {{item.name}}
-              </router-link>
+            <template v-slot:default="props">
+              <v-row>
+                <v-col v-for="item in props.items" :key="item.id"
+                  cols="12" md="6">
+                  <v-card class="collection">
+                    <router-link :to="{ name: 'Containers', params: { entity: entity, collection: item.name } }" class="text-decoration-none">
+                      <v-card-title class="headline">
+                        <v-icon v-if="item.private">mdi-eye-off</v-icon>
+                        {{item.name}}
+                        ({{item.size}} {{item.size | pluralize('container')}})
+                      </v-card-title>
+                    </router-link>
+                    <v-divider></v-divider>
+                    <v-list dense>
+                      <v-list-item two-lines>
+                        <v-list-item-content>
+                          <v-list-item-title>
+                            {{item.description}}
+                          </v-list-item-title>
+                        </v-list-item-content>
+                      </v-list-item>
+                      <v-list-item two-lines>
+                        <v-list-item-content>
+                          <v-list-item-title>
+                            {{item.createdAt | moment('YYYY-MM-DD HH:mm')}} | {{item.createdBy}}
+                          </v-list-item-title>
+                          <v-list-item-subtitle>
+                            Created
+                          </v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+                    </v-list>
+                    <v-card-actions>
+                      <v-spacer></v-spacer>
+                      <v-icon small class="mr-1" @click="editCollection(item)">mdi-pencil</v-icon>
+                      <v-icon small @click="deleteCollection(item)">mdi-delete</v-icon>
+                    </v-card-actions>
+                  </v-card>
+                </v-col>
+              </v-row>
             </template>
-            <template v-slot:item.actions="{ item }">
-              <v-icon small class="mr-1" @click="editCollection(item)">mdi-pencil</v-icon>
-              <v-icon small @click="deleteCollection(item)">mdi-delete</v-icon>
-            </template>
-            <template v-slot:item.createdAt="{ item }">
-              {{item.createdAt | moment('YYYY-MM-DD HH:mm')}}
-            </template>
-          </v-data-table>
+          </v-data-iterator>
         </v-col>
       </v-row>
     </v-container>

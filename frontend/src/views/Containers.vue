@@ -23,67 +23,72 @@
                       <v-container>
                         <v-row>
                           <v-col cols="12">
-                            <v-text-field 
+                            <hsk-text-input 
                               id="name"
-                              v-model="localState.editItem.name" 
-                              label="Name" 
-                              required></v-text-field>
+                              label="Name"
+                              field="name"
+                              :obj="localState.editItem"
+                              :readonly="!!localState.editItem.id"
+                              @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                           <v-col cols="12">
-                            <v-text-field 
+                            <hsk-text-input 
                               id="description"
-                              v-model="localState.editItem.description" 
-                              label="Description"></v-text-field>
+                              label="Description"
+                              field="description"
+                              :obj="localState.editItem"
+                              @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                           <v-col cols="12">
-                            <v-text-field 
+                            <hsk-text-input 
                               id="full-description"
-                              v-model="localState.editItem.fullDescription" 
-                              label="Full Description"></v-text-field>
+                              label="Full Description"
+                              field="fullDescription"
+                              :obj="localState.editItem"
+                              @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                           <v-col cols="12">
-                            <v-text-field 
+                            <hsk-text-input 
                               id="vcs-url"
-                              v-model="localState.editItem.vcsUrl" 
-                              label="Git/VCS URL"></v-text-field>
+                              label="Git/VCS URL"
+                              field="vcsUrl"
+                              :obj="localState.editItem"
+                              @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                           <v-col cols="6">
-                            <v-checkbox 
-                              id="private"
-                              v-model="localState.editItem.private" 
-                              label="Private"></v-checkbox>
+                            <hsk-text-input 
+                              type="yesno"
+                              label="Private"
+                              field="private"
+                              :obj="localState.editItem"
+                              @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                           <v-col cols="6">
-                            <v-checkbox 
-                              id="readonly"
-                              v-model="localState.editItem.readOnly" 
-                              label="Read Only"></v-checkbox>
+                            <hsk-text-input 
+                              type="yesno"
+                              label="Readonly"
+                              field="readOnly"
+                              :obj="localState.editItem"
+                              @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                         </v-row>
                         <v-row>
                           <v-col cols="12" md="4">
-                            <v-text-field 
-                              dense
-                              readonly 
-                              append-outer-icon="mdi-lock"
-                              :value="localState.editItem.createdAt | moment('YYYY-MM-DD HH:mm')" 
-                              label="Created At"></v-text-field>
+                            <hsk-text-input
+                              label="Created"
+                              :static-value="localState.editItem.createdAt | moment('YYYY-MM-DD HH:mm')"
+                              ></hsk-text-input>
                           </v-col>
                           <v-col cols="12" md="4">
-                            <v-text-field 
-                              dense
-                              readonly 
-                              append-outer-icon="mdi-lock"
-                              :value="localState.editItem.createdBy" 
-                              label="Created By"></v-text-field>
+                            <hsk-text-input
+                              label="Created By"
+                              :static-value="localState.editItem.createdBy"></hsk-text-input>
                           </v-col>
                           <v-col cols="12" md="4">
-                            <v-text-field 
-                              dense
-                              readonly 
-                              append-outer-icon="mdi-lock"
-                              :value="updatedAt" 
-                              label="Updated At"></v-text-field>
+                            <hsk-text-input
+                              label="Updated"
+                              :static-value="updatedAt"
+                              ></hsk-text-input>
                           </v-col>
                         </v-row>
                       </v-container>
@@ -114,8 +119,8 @@
                   <v-card class="container">
                     <router-link class="text-decoration-none" :to="{ name: 'ContainerDetails', params: { entity: $route.params.entity, collection: $route.params.collection, container: item.name } }">
                       <v-card-title class="text-h6">
-                        <v-icon v-if="item.private">mdi-lock</v-icon>
-                        <v-icon v-if="item.readOnly">mdi-shield-key-outline</v-icon>
+                        <v-icon v-if="item.private">mdi-eye-off</v-icon>
+                        <v-icon v-if="item.readOnly">mdi-lock</v-icon>
                         {{item.name}}
                         <template v-if="item.vcsUrl">
                           <v-spacer></v-spacer>

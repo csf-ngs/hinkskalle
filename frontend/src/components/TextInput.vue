@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-text-field v-if="type=='text'"
-      outlined
+      outlined hide-details="auto"
       v-model="localState.value"
       :label="label"
       :loading="localState.status=='saving'"
@@ -12,7 +12,7 @@
       @change="saveValue()"
     ></v-text-field>
     <v-textarea v-if="type=='textarea'"
-      outlined
+      outlined hide-details="auto"
       v-model="localState.value"
       :label="label"
       :loading="localState.status=='saving'"
@@ -23,7 +23,7 @@
       @change="saveValue()"
     ></v-textarea>
     <v-select v-if="type=='yesno'"
-      outlined
+      outlined hide-details="auto"
       v-model="localState.value"
       :label="label"
       :loading="localState.status=='saving'"

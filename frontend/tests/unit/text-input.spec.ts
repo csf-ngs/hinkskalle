@@ -32,8 +32,9 @@ describe('TextInput.vue', () => {
       label: 'Testhase',
       staticValue: 'Squeak'
     };
-    const wrapper = mount(TextInput, { localVue, vuetify, store, propsData });
+    const wrapper = mount(TextInput, { localVue, vuetify, store, propsData, attrs: { id: 'oink' } });
     expect(wrapper.find('label').text()).toBe('Testhase');
+    expect(wrapper.findAll('div#oink input')).toHaveLength(1);
   });
 
   allTypes.forEach(type => {

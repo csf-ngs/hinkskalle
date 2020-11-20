@@ -26,6 +26,7 @@ export const localVueNoRouter = createLocalVue();
 localVueNoRouter.use(Vuex);
 localVueNoRouter.use(VueMoment);
 localVueNoRouter.component('top-bar', TopBarComponent);
+localVueNoRouter.component('hsk-text-input', TextInput);
 localVueNoRouter.filter('abbreviate', (v: string) => v);
 localVueNoRouter.filter('pluralize', (v: number, w: string) => w);
 localVueNoRouter.filter('prettyBytes', prettyBytes);

@@ -54,15 +54,15 @@ describe('Collections.vue', () => {
 
   it('renders collections', () => {
     const wrapper = mount(Collections, { localVue, vuetify, store, router });
-    expect(wrapper.findAll('div#collections tbody tr')).toHaveLength(2);
+    expect(wrapper.findAll('div#collections .collection')).toHaveLength(2);
   });
 
   it('searches collection names', async done => {
     const wrapper = mount(Collections, { localVue, vuetify, store, router });
     wrapper.find('input#search').setValue('esel');
     await Vue.nextTick();
-    expect(wrapper.findAll('div#collections tbody tr')).toHaveLength(1);
-    expect(wrapper.find('div#collections tbody tr').text()).toContain('esel');
+    expect(wrapper.findAll('div#collections .collection')).toHaveLength(1);
+    expect(wrapper.find('div#collections .collection').text()).toContain('esel');
     done();
   });
 
@@ -70,8 +70,8 @@ describe('Collections.vue', () => {
     const wrapper = mount(Collections, { localVue, vuetify, store, router });
     wrapper.find('input#search').setValue('shawn');
     await Vue.nextTick();
-    expect(wrapper.findAll('div#collections tbody tr')).toHaveLength(1);
-    expect(wrapper.find('div#collections tbody tr').text()).toContain('schaf');
+    expect(wrapper.findAll('div#collections .collection')).toHaveLength(1);
+    expect(wrapper.find('div#collections .collection').text()).toContain('schaf');
     done();
   });
 
@@ -83,24 +83,19 @@ describe('Collections.vue', () => {
     expect(wrapper.find('div.v-dialog.v-dialog--active div.headline').text()).toBe('New Collection');
     expect(wrapper.vm.$data.localState.editItem.name).toBeUndefined();
 
-    wrapper.find('input#name').setValue('tintifax');
-    expect(wrapper.vm.$data.localState.editItem.name).toBe('tintifax');
-
+    expect(wrapper.find('div#name input').attributes()['readonly']).toBeFalsy();
     done();
   });
 
-  it('clones edit item', async done => {
+  it('shows edit dialog', async done => {
     const wrapper = mount(Collections, { localVue, vuetify, store, router });
-    wrapper.find('div#collections tbody tr button.mdi-pencil').trigger('click');
+    wrapper.find('div#collections .collection button.mdi-pencil').trigger('click');
     await Vue.nextTick();
     expect(wrapper.vm.$data.localState.editItem.name).toBe(testCollectionsObj[0].name);
     expect(wrapper.vm.$data.localState.showEdit).toBeTruthy();
-
-    wrapper.find('input#name').setValue('tintifax');
-    expect(wrapper.vm.$data.localState.editItem.name).toBe('tintifax');
-    expect(wrapper.vm.$data.localState.editItem.name).not.toBe(testCollectionsObj[0].name);
-
     expect(wrapper.find('div.v-dialog.v-dialog--active div.headline').text()).toBe('Edit Collection');
+
+    expect(wrapper.find('div#name input').attributes()['readonly']).toBeTruthy();
 
     done();
   });
@@ -120,7 +115,7 @@ describe('Collections.vue', () => {
     expect(actions['collections/list']).toHaveBeenLastCalledWith(expect.anything(), $route.params.entity);
     wrapper.find('button#create-collection').trigger('click');
     await Vue.nextTick();
-    wrapper.find('input#name').setValue(expectCollection.name);
+    wrapper.vm.$data.localState.editItem.name=expectCollection.name;
     wrapper.find('button#save').trigger('click');
     expect(actions['collections/create']).toHaveBeenLastCalledWith(expect.anything(), expectCollection);
     

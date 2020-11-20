@@ -73,24 +73,20 @@ describe('Entities.vue', () => {
     expect(wrapper.find('div.v-dialog.v-dialog--active div.headline').text()).toBe('New Entity');
     expect(wrapper.vm.$data.localState.editItem.name).toBeUndefined();
 
-    wrapper.find('input#name').setValue('tintifax');
-    expect(wrapper.vm.$data.localState.editItem.name).toBe('tintifax');
+    expect(wrapper.find('div#name input').attributes()['readonly']).toBeFalsy();
 
     done();
   });
 
-  it('clones edit item', async done => {
+  it('shows edit dialog', async done => {
     const wrapper = mount(Entities, { localVue, vuetify, store, router });
     wrapper.find('div#entities .entity button.mdi-pencil').trigger('click');
     await Vue.nextTick();
     expect(wrapper.vm.$data.localState.editItem.name).toBe(testEntitiesObj[0].name);
     expect(wrapper.vm.$data.localState.showEdit).toBeTruthy();
-
-    wrapper.find('input#name').setValue('tintifax');
-    expect(wrapper.vm.$data.localState.editItem.name).toBe('tintifax');
-    expect(wrapper.vm.$data.localState.editItem.name).not.toBe(testEntitiesObj[0].name);
-
     expect(wrapper.find('div.v-dialog.v-dialog--active div.headline').text()).toBe('Edit Entity');
+
+    expect(wrapper.find('div#name input').attributes()['readonly']).toBeTruthy();
 
     done();
   });

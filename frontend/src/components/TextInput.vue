@@ -32,6 +32,7 @@
       :disabled="disabled"
       :readonly="localState.static || readonly" :append-icon="readonly || localState.static ? 'mdi-lock-outline' : ''"
       :items="[ { value: false, text: 'No' }, { value: true, text: 'Yes' } ]"
+      @change="saveValue()"
     ></v-select>
   </div>
   
@@ -97,9 +98,12 @@ export default Vue.extend({
   },
   methods: {
     saveValue() {
-      this.localState.status='saving';
       const obj = _clone(this.obj);
       obj[this.field] = this.localState.value;
+      if (!this.action) {
+        return this.$emit('updated', obj);
+      }
+      this.localState.status='saving';
       this.$store.dispatch(this.action, obj)
         .then(updated => {
           this.localState.status='success';

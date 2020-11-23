@@ -9,6 +9,7 @@ import ImageDetails from '@/components/ImageDetails.vue';
 
 import { localVue } from '../setup';
 import { testImagesObj } from './images-store.spec';
+import Vue from 'vue';
 
 describe('LatestContainers.vue', () => {
   let vuetify: any;
@@ -22,8 +23,16 @@ describe('LatestContainers.vue', () => {
   });
 
   it('renders something', () => {
-    const wrapper = mount(ImageDetails, { localVue, vuetify, store, router });
-    wrapper.setProps({ image: testImagesObj[0] });
-    expect(wrapper.text()).toBe('');
+    const propsData = { image: testImagesObj[0] };
+    const wrapper = mount(ImageDetails, { localVue, vuetify, store, router, propsData });
+    expect(wrapper.find('button.v-expansion-panel-header .v-chip').text()).toContain('latest');
   });
+
+  it('renders tag chips', () => {
+    const propsData = { image: testImagesObj[0] };
+    const wrapper = mount(ImageDetails, { localVue, vuetify, store, router, propsData });
+    expect(wrapper.findAll('button.v-expansion-panel-header .v-chip')).toHaveLength(2);
+  });
+
+
 });

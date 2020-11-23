@@ -1,7 +1,7 @@
 import { Module } from 'vuex';
 import {AxiosError, AxiosResponse} from 'axios';
 import {Image, plainToImage, InspectAttributes} from '../models';
-import { map as _map } from 'lodash';
+import { map as _map, concat as _concat, filter as _filter } from 'lodash';
 
 export interface State {
   status: '' | 'loading' | 'failed' | 'success';
@@ -31,6 +31,12 @@ const imagesModule: Module<State, any> = {
     setList(state: State, list: Image[]) {
       state.list = list;
     },
+    update(state: State, upd: Image) {
+      state.list = _concat(_filter(state.list, i => i.id !== upd.id ), upd);
+    },
+    remove(state: State, toRemove: { id: string }) {
+      state.list = _filter(state.list, i => i.id !== toRemove.id);
+    },
   },
   actions: {
     list: ({ commit, rootState }, container: { entityName: string; collectionName: string; containerName: string }): Promise<Image[]> => {
@@ -56,6 +62,53 @@ const imagesModule: Module<State, any> = {
           .then((response: AxiosResponse) => {
             commit('succeeded');
             resolve(response.data.data.attributes as InspectAttributes);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
+    update: ({ commit, rootState }, image: Image): Promise<Image> => {
+      return new Promise<Image>((resolve, reject) => {
+        commit('loading');
+        rootState.backend.put(`/v1/images/${image.fullPath}`, image)
+          .then((response: AxiosResponse) => {
+            commit('succeeded');
+            const upd = plainToImage(response.data.data);
+            commit('update', upd);
+            resolve(upd);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
+    updateTags: ({ commit, rootState }, image: { fullPath: string; tags: string[] }): Promise<string[]> => {
+      return new Promise<string[]>((resolve, reject) => {
+        commit('loading');
+        rootState.backend.put(`/v1/images/${image.fullPath}/tags`, { tags: image.tags })
+          .then((response: AxiosResponse) => {
+            commit('succeeded');
+            image.tags = response.data.data.tags;
+            commit('update', image);
+            resolve(image.tags);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
+    delete: ({ commit, rootState }, image: { id: string; fullPath: string }): Promise<void> => {
+      return new Promise<void>((resolve, reject) => {
+        commit('loading');
+        rootState.backend.delete(`/v1/images/${image.fullPath}`)
+          .then((response: AxiosResponse) => {
+            commit('succeeded');
+            commit('remove', { id: image.id });
+            resolve();
           })
           .catch((err: AxiosError) => {
             commit('failed', err);

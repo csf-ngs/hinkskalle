@@ -8,7 +8,7 @@
             id="collections"
             :items="collections"
             :search="localState.search"
-            :loading="Loading">
+            :loading="loading">
             <template v-slot:header>
               <v-toolbar flat>
                 <v-text-field id="search" v-model="localState.search" prepend-icon="mdi-magnify" label="Search..." single-line hide-details></v-text-field>

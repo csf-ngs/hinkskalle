@@ -1,10 +1,11 @@
 import unittest
 import os.path
 import os
+from warnings import warn
 from tempfile import mkdtemp
 
 from Hinkskalle import db
-from Hinkskalle.models import Container
+from Hinkskalle.models import Container, Tag, Image
 from Hinkskalle.tests.route_base import RouteBase
 from Hinkskalle.tests.models.test_Image import _create_image
 
@@ -91,6 +92,37 @@ class TestTags(RouteBase):
     self.assertDictEqual(data, { 'v1.0': str(image.id), 'oink': str(image.id) })
     db_container=Container.query.get(container_id)
     self.assertDictEqual(db_container.imageTags(), { 'v1.0': str(image.id), 'oink': str(image.id) })
+  
+  def test_remove_tag(self):
+    image, container, _, _ = _create_image()
+    container_id=container.id
+    latest_tag = Tag(name='oink', image_ref=image)
+    db.session.add(latest_tag)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v1/tags/{container.id}", json={'oink': None })
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertDictEqual(data, {});
+    db_container = Container.query.get(container_id)
+    self.assertDictEqual(db_container.imageTags(), {})
+  
+  def test_multiple(self):
+    image, container, _, _ = _create_image()
+    container_id = container.id
+    latest_tag = Tag(name='v2', image_ref=image)
+    db.session.add(latest_tag)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v1/tags/{container.id}", json={"v3": str(image.id), "latest": str(image.id), "v2": None })
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertDictEqual(data, { "v3": str(image.id), "latest": str(image.id) })
+
+    db_container = Container.query.get(container_id)
+    self.assertDictEqual(db_container.imageTags(), { "v3": str(image.id), "latest": str(image.id) })
 
   def test_update_user(self):
     image, container, coll, entity = _create_image()
@@ -116,15 +148,17 @@ class TestTags(RouteBase):
   
   def test_symlinks(self):
     image, container, _, _ = _create_image()
+    image_id = image.id
     self._fake_uploaded_image(image)
 
     with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
     
-    link_location = os.path.join(self.app.config['IMAGE_PATH'], image.entityName(), image.collectionName(), f"{image.containerName()}_v1.0.sif")
+    db_image = Image.query.get(image_id)
+    link_location = os.path.join(self.app.config['IMAGE_PATH'], db_image.entityName(), db_image.collectionName(), f"{db_image.containerName()}_v1.0.sif")
     self.assertTrue(os.path.exists(link_location))
-    self.assertTrue(os.path.samefile(link_location, image.location))
+    self.assertTrue(os.path.samefile(link_location, db_image.location))
   
   def test_symlinks_existing(self):
     image, container, _, _ = _create_image()

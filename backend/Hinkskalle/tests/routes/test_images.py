@@ -1,6 +1,8 @@
 import unittest
 import json
 import datetime
+import os
+from tempfile import mkdtemp
 from Hinkskalle.tests.route_base import RouteBase
 
 from Hinkskalle.models import Image, Tag, Container
@@ -428,3 +430,56 @@ class TestImages(RouteBase):
         'customData': 'hot drei Eckn',
       })
     self.assertEqual(ret.status_code, 403)
+  
+  def test_delete(self):
+    image = _create_image()[0]
+    self._fake_uploaded_image(image)
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+    self.assertEqual(ret.status_code, 200)
+    self.assertIsNone(Image.query.get(image.id))
+    self.assertFalse(os.path.exists(image.location))
+  
+  def test_delete_with_tags(self):
+    image = _create_image()[0]
+    latest_tag = Tag(name='oink', image_ref=image)
+    db.session.add(latest_tag)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+    self.assertEqual(ret.status_code, 200)
+    self.assertIsNone(Image.query.get(image.id))
+
+  def test_delete_user(self):
+    image = _create_image()[0]
+    image.container_ref.owner=self.user
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.delete(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+    self.assertEqual(ret.status_code, 200)
+    self.assertIsNone(Image.query.get(image.id))
+
+  def test_delete_user_other(self):
+    image = _create_image()[0]
+    image.container_ref.owner=self.other_user
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.delete(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+    self.assertEqual(ret.status_code, 403)
+
+  def _fake_uploaded_image(self, image):
+    self.app.config['IMAGE_PATH']=mkdtemp()
+    img_base = os.path.join(self.app.config['IMAGE_PATH'], '_imgs')
+    os.makedirs(img_base, exist_ok=True)
+    image.uploaded = True
+    image.location = os.path.join(img_base, 'testhase.sif')
+    db.session.commit()
+    with open(image.location, 'w') as outfh:
+      outfh.write('I am Testhase!')
+
+
+

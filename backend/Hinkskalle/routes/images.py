@@ -6,6 +6,7 @@ from flask import request, current_app, safe_join, send_file, g
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
 
+import os
 import os.path
 import subprocess
 import json
@@ -35,6 +36,9 @@ class ImageInspectSchema(Schema):
 
 class ImageInspectResponseSchema(ResponseSchema):
   data = fields.Nested(ImageInspectSchema)
+
+class ImageDeleteResponseSchema(ResponseSchema):
+  status = fields.String()
 
 def _parse_tag(tagged_container_id):
   tokens = tagged_container_id.split(":", maxsplit=1)
@@ -195,6 +199,22 @@ def update_image(entity_id, collection_id, tagged_container_id):
   db.session.commit()
 
   return { 'data': image }
+
+@registry.handles(
+  rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
+  method='DELETE',
+  response_body_schema=ImageDeleteResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user)
+)
+def delete_image(entity_id, collection_id, tagged_container_id):
+  image = _get_image(entity_id, collection_id, tagged_container_id)
+  if not image.check_update_access(g.authenticated_user):
+    raise errors.Forbidden('access denied')
+  db.session.delete(image)
+  db.session.commit()
+  if image.uploaded and image.location and os.path.exists(image.location):
+    os.remove(image.location)
+  return { 'status': 'ok' }
 
 
 @registry.handles(

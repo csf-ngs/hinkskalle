@@ -29,6 +29,14 @@ class ImageUpdateSchema(ImageSchema, RequestSchema):
   uploaded = fields.String(dump_only=True)
   container = fields.String(dump_only=True)
 
+class TagDataSchema(Schema):
+  tags = fields.List(fields.String())
+
+class ImageTagUpdateSchema(TagDataSchema, RequestSchema):
+  pass
+
+class ImageTagResponseSchema(ResponseSchema):
+  data = fields.Nested(TagDataSchema)
 
 class ImageInspectSchema(Schema):
   attributes = fields.Dict()
@@ -178,6 +186,35 @@ def create_image():
     container.tag_image('latest', new_image.id)
 
   return { 'data': new_image }
+
+@registry.handles(
+  rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>/tags',
+  method='PUT',
+  request_body_schema=ImageTagUpdateSchema(),
+  response_body_schema=ImageTagResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user),
+)
+def update_image_tags(entity_id, collection_id, tagged_container_id):
+  body = rebar.validated_body
+  image = _get_image(entity_id, collection_id, tagged_container_id)
+
+  if not image.check_update_access(g.authenticated_user):
+    raise errors.Forbidden('access denied')
+  
+  existing = image.tags()
+  for tag in body.get('tags', []):
+    current_app.logger.debug(f"image {image.id} add tag {tag}")
+    image.container_ref.tag_image(tag, image.id)
+    existing = [ t for t in existing if t != tag ] 
+  
+  for toRemove in existing:
+    current_app.logger.debug(f"image {image.id} remove tag {toRemove}")
+    for tag in image.tags_ref:
+      if tag.name == toRemove:
+        db.session.delete(tag)
+  
+  db.session.commit()
+  return { 'data': { 'tags': image.tags() }}
 
 @registry.handles(
   rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',

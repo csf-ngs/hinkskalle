@@ -3,6 +3,7 @@ import json
 import datetime
 import os
 from tempfile import mkdtemp
+from warnings import warn
 from Hinkskalle.tests.route_base import RouteBase
 
 from Hinkskalle.models import Image, Tag, Container
@@ -384,6 +385,85 @@ class TestImages(RouteBase):
         'container': str(container.id),
       })
     self.assertEqual(ret.status_code, 403)
+
+  def test_update_tags(self):
+    image = _create_image()[0]
+    latest_tag = Tag(name='oink', image_ref=image)
+    db.session.add(latest_tag)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}/tags", json={
+        'tags': [ 'oink', 'grunz' ]
+      })
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertDictEqual(data, { 'tags': [ 'oink', 'grunz' ]})
+
+    dbImage = Image.query.get(image.id)
+    self.assertListEqual(dbImage.tags(), ['oink', 'grunz'])
+  
+  def test_udpate_tags_remove(self):
+    image = _create_image()[0]
+    latest_tag = Tag(name='oink', image_ref=image)
+    db.session.add(latest_tag)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}/tags", json={
+        'tags': [ 'grunz' ]
+      })
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertDictEqual(data, { 'tags': [ 'grunz' ]})
+
+    dbImage = Image.query.get(image.id)
+    self.assertListEqual(dbImage.tags(), ['grunz'])
+  
+  def test_update_tags_existing(self):
+    image, container, _, _ = _create_image()
+
+    other_image = Image(container_ref=container, hash='otherhash')
+    db.session.add(other_image)
+    latest_tag = Tag(name='oink', image_ref=other_image)
+    db.session.add(latest_tag)
+    db.session.commit()
+    other_image_id = other_image.id
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}/tags", json={
+        'tags': [ 'oink' ]
+      })
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertDictEqual(data, { 'tags': [ 'oink' ]})
+
+    dbImage = Image.query.get(image.id)
+    self.assertListEqual(dbImage.tags(), ['oink'])
+
+    otherDbImage = Image.query.get(other_image_id)
+    self.assertListEqual(otherDbImage.tags(), [])
+  
+  def test_update_tags_user(self):
+    image = _create_image()[0]
+    image.container_ref.owner=self.user
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}/tags", json={
+        "tags": [ 'oink' ]
+      })
+    self.assertEqual(ret.status_code, 200)
+
+  def test_update_tags_user_other(self):
+    image = _create_image()[0]
+
+    with self.fake_auth():
+      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}/tags", json={
+        "tags": [ 'oink' ]
+      })
+    self.assertEqual(ret.status_code, 403)
+
 
   def test_update(self):
     image = _create_image()[0]

@@ -8,16 +8,32 @@
             <v-container>
               <v-row>
                 <v-col cols="12" md="6">
-                  <v-text-field id="firstname" v-model="localState.editUser.firstname" label="Firstname" required></v-text-field>
+                  <hsk-text-input id="firstname" 
+                    label="Firstname"
+                    field="firstname"
+                    :obj="localState.editUser"
+                    @updated="localState.editUser=$event"></hsk-text-input>
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-text-field id="lastname" v-model="localState.editUser.lastname" label="Lastname" required></v-text-field>
+                  <hsk-text-input id="lastname" 
+                    label="Lastname"
+                    field="lastname"
+                    :obj="localState.editUser"
+                    @updated="localState.editUser=$event"></hsk-text-input>
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-text-field id="username" v-model="localState.editUser.username" label="Username" required></v-text-field>
+                  <hsk-text-input id="username" 
+                    label="Username"
+                    field="username"
+                    :obj="localState.editUser"
+                    @updated="localState.editUser=$event"></hsk-text-input>
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-text-field id="email" v-model="localState.editUser.email" label="Email" required></v-text-field>
+                  <hsk-text-input id="email" 
+                    label="Email"
+                    field="email"
+                    :obj="localState.editUser"
+                    @updated="localState.editUser=$event"></hsk-text-input>
                 </v-col>
               </v-row>
               <v-row>

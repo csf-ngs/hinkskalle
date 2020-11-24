@@ -65,7 +65,7 @@
               <v-card>
                 <v-card-title class="headline">Add Tag</v-card-title>
                 <v-card-text>
-                  <v-text-field v-model="localState.newTag" label="New Tag" outlined required></v-text-field>
+                  <v-text-field v-model="localState.newTag" label="New Tag" solo required></v-text-field>
                 </v-card-text>
                 <v-card-actions>
                   <v-spacer></v-spacer>

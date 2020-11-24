@@ -41,40 +41,41 @@ describe('Account.vue', () => {
     store = new Vuex.Store({ getters, actions, mutations });
   });
 
-  it('renders something', done => {
+  it('renders something', async done => {
     const wrapper = mount(Account, { localVue, vuetify, store });
     expect(wrapper.text()).toContain('Account');
-    wrapper.vm.$nextTick(() => {
-      expect((wrapper.find("input#firstname").element as HTMLInputElement).value)
-        .toBe(testUserObj.firstname);
-      done();
-    });
+    await Vue.nextTick();
+    expect((wrapper.find("#firstname input").element as HTMLInputElement).value)
+      .toBe(testUserObj.firstname);
+    done();
   });
 
-  it('clones currentUser', () => {
+  it('clones currentUser', async done => {
     const wrapper = mount(Account, { localVue, store, vuetify });
     expect(wrapper.vm.$data.localState.editUser.firstname).toBe(testUserObj.firstname);
+    await Vue.nextTick();
 
     wrapper.setData({ localState: { editUser: { firstname: 'Oink' }}});
+    await Vue.nextTick();
     expect(wrapper.vm.$data.localState.editUser.firstname).not.toBe(testUserObj.firstname);
+    done();
   });
 
-  it('can reset editUser', done => {
+  it('can reset editUser', async done => {
     const wrapper = mount(Account, { localVue, store, vuetify });
-    wrapper.vm.$nextTick(() => {
-      wrapper.find('input#firstname').setValue('Oink');
-      expect(wrapper.vm.$data.localState.editUser.firstname).not.toBe(testUserObj.firstname);
-      wrapper.find('button[type="reset"]').trigger('click');
-      expect(wrapper.vm.$data.localState.editUser.firstname).toBe(testUserObj.firstname);
-      done();
-    });
+    wrapper.setData({ localState: { editUser: { firstname: 'Oink' }}});
+    await Vue.nextTick();
+    expect(wrapper.vm.$data.localState.editUser.firstname).not.toBe(testUserObj.firstname);
+    wrapper.find('button[type="reset"]').trigger('click');
+    expect(wrapper.vm.$data.localState.editUser.firstname).toBe(testUserObj.firstname);
+    done();
   });
 
   it('saves user', async done => {
     const wrapper = mount(Account, { localVue, store, vuetify });
     await Vue.nextTick();
 
-    wrapper.find("input#firstname").setValue('Oink');
+    wrapper.find("#firstname input").setValue('Oink');
     wrapper.find('button[type="submit"]').trigger('click');
     mockUpdateUser.mockResolvedValue(wrapper.vm.$data.localState.editUser);
     expect(mockUpdateUser).toHaveBeenCalledWith(expect.anything(), wrapper.vm.$data.localState.editUser);

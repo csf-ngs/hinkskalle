@@ -219,6 +219,10 @@ class Image {
   public get fullPath(): string {
     return `${this.entityName}/${this.collectionName}/${this.containerName}:${this.hash}`
   }
+
+  public canEdit(user: User): boolean {
+    return this.createdBy===user.username;
+  }
 }
 
 export function plainToImage(json: any): Image {

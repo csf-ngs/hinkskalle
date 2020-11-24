@@ -1,14 +1,16 @@
 <template>
   <div>
     <v-text-field v-if="type=='text'"
-      outlined hide-details="auto"
+      :outlined="!(localState.static || readonly || disabled)" 
+      hide-details="auto"
       v-model="localState.value"
       :label="label"
       :loading="localState.status=='saving'"
       :success="localState.status=='success'"
       :error="localState.status=='failed'"
       :disabled="disabled"
-      :readonly="localState.static || readonly" :append-icon="readonly || localState.static ? 'mdi-lock-outline' : ''"
+      :readonly="localState.static || readonly" 
+      :append-icon="readonly || localState.static ? 'mdi-lock-outline' : ''"
       @change="saveValue()"
     >
       <template v-slot:append-outer>
@@ -16,25 +18,29 @@
       </template>
     </v-text-field>
     <v-textarea v-if="type=='textarea'"
-      outlined hide-details="auto"
+      :outlined="!(localState.static || readonly || disabled)" 
+      hide-details="auto"
       v-model="localState.value"
       :label="label"
       :loading="localState.status=='saving'"
       :success="localState.status=='success'"
       :error="localState.status=='failed'"
       :disabled="disabled"
-      :readonly="localState.static || readonly" :append-icon="readonly || localState.static ? 'mdi-lock-outline' : ''"
+      :readonly="localState.static || readonly" 
+      :append-icon="readonly || localState.static ? 'mdi-lock-outline' : ''"
       @change="saveValue()"
     ></v-textarea>
     <v-select v-if="type=='yesno'"
-      outlined hide-details="auto"
+      :outlined="!(localState.static || readonly || disabled)" 
+      hide-details="auto"
       v-model="localState.value"
       :label="label"
       :loading="localState.status=='saving'"
       :success="localState.status=='success'"
       :error="localState.status=='failed'"
       :disabled="disabled"
-      :readonly="localState.static || readonly" :append-icon="readonly || localState.static ? 'mdi-lock-outline' : ''"
+      :readonly="localState.static || readonly" 
+      :append-icon="readonly || localState.static ? 'mdi-lock-outline' : ''"
       :items="[ { value: false, text: 'No' }, { value: true, text: 'Yes' } ]"
       @change="saveValue()"
     ></v-select>

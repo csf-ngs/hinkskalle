@@ -2,6 +2,10 @@
 
 class {{classname}} {
   {{utils.auto_attributes(fields)}}
+
+  public canEdit(user: User | null): boolean {
+    return !!user && this.createdBy===user.username;
+  }
 }
 
 export function plainTo{{classname}}(json: any): {{classname}} {

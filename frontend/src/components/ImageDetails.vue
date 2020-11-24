@@ -48,13 +48,13 @@
       <v-row v-for="tag in image.tags" :key="tag">
         <v-col>
           <hsk-text-input :label="'Pull '+tag" :static-value="pullURL(tag)">
-            <template v-slot:append>
+            <template v-slot:append v-if="canEdit">
               <v-icon color="error" @click="deleteTag(tag)">mdi-delete-outline</v-icon>
             </template>
           </hsk-text-input>
         </v-col>
       </v-row>
-      <v-row>
+      <v-row v-if="canEdit">
         <v-col class="text-center">
             <v-dialog v-model="localState.showAddTag" max-width="300px">
               <template v-slot:activator="{ on, attrs }">
@@ -93,6 +93,7 @@
             field="description" 
             :obj="image" 
             action="images/update"
+            :readonly="!canEdit"
             @updated="image=$event"></hsk-text-input>
         </v-col>
       </v-row>
@@ -118,7 +119,7 @@
    </v-expansion-panel>
 </template>
 <script lang="ts">
-import { Image, InspectAttributes } from '@/store/models';
+import { Image, InspectAttributes, User } from '@/store/models';
 import { clone as _clone, filter as _filter, concat as _concat } from 'lodash';
 import Vue from 'vue';
 
@@ -131,7 +132,16 @@ interface State {
 
 export default Vue.extend({
   name: 'ImageDetails',
-  props: [ 'image' ],
+  props: {
+    image: {
+      type: Image,
+      required: true,
+    },
+    readonly: {
+      type: Boolean,
+      default: false,
+    },
+  },
   data: (): { localState: State } => ({
     localState: {
       meta: {
@@ -142,6 +152,14 @@ export default Vue.extend({
       showAddTag: false,
     },
   }),
+  computed: {
+    currentUser(): User {
+      return this.$store.getters.currentUser;
+    },
+    canEdit(): boolean {
+      return !this.readonly && this.image.canEdit(this.currentUser);
+    },
+  },
   watch: {
     'localState.showAddTag': function showAddTag(val) {
       if (!val) {

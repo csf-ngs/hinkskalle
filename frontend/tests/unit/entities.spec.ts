@@ -8,7 +8,16 @@ import Entities from '@/views/Entities.vue';
 
 import { localVue } from '../setup';
 
-import { testEntitiesObj } from './entities-store.spec';
+import { testEntitiesObj as testEntitiesObjTpl } from './entities-store.spec';
+import { testUserObj as testUserObjTpl } from './store.spec';
+
+import { each as _each, cloneDeep as _cloneDeep } from 'lodash';
+
+const testUserObj = _cloneDeep(testUserObjTpl);
+const testEntitiesObj = _cloneDeep(testEntitiesObjTpl);
+_each(testEntitiesObj, e => e.createdBy=testUserObj.username);
+
+
 
 // needed to silence vuetify dialog warnings
 document.body.setAttribute('data-app', 'true');
@@ -29,6 +38,7 @@ describe('Entities.vue', () => {
 
     getters = {
       'entities/list': () => testEntitiesObj,
+      'currentUser': () => testUserObj,
     };
     actions = {
       'entities/list': jest.fn(),
@@ -67,6 +77,8 @@ describe('Entities.vue', () => {
 
   it('shows create dialog', async done => {
     const wrapper = mount(Entities, { localVue, vuetify, store, router });
+    testUserObj.isAdmin = true;
+    await Vue.nextTick();
     wrapper.find('button#create-entity').trigger('click');
     await Vue.nextTick();
     expect(wrapper.vm.$data.localState.showEdit).toBeTruthy();

@@ -26,6 +26,10 @@ class Collection {
   public get fullPath(): string {
     return `${this.entityName}/${this.name}`
   }
+  
+  public canEdit(user: User): boolean {
+    return this.createdBy===user.username;
+  }
 }
 
 export function plainToCollection(json: any): Collection {
@@ -94,6 +98,10 @@ class Container {
   public get fullPath(): string {
     return `${this.entityName}/${this.collectionName}/${this.name}`
   }
+
+  public canEdit(user: User | null): boolean {
+    return !!user && this.createdBy===user.username;
+  }
 }
 
 export function plainToContainer(json: any): Container {
@@ -157,6 +165,10 @@ class Entity {
   public size!: number
   public updatedAt!: Date | null
   
+
+  public canEdit(user: User): boolean {
+    return this.createdBy===user.username;
+  }
 }
 
 export function plainToEntity(json: any): Entity {
@@ -220,8 +232,8 @@ class Image {
     return `${this.entityName}/${this.collectionName}/${this.containerName}:${this.hash}`
   }
 
-  public canEdit(user: User): boolean {
-    return this.createdBy===user.username;
+  public canEdit(user: User | null): boolean {
+    return !!user && this.createdBy===user.username;
   }
 }
 

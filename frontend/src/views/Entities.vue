@@ -15,7 +15,7 @@
                 <v-spacer></v-spacer>
                 <v-dialog v-model="localState.showEdit" max-width="700px">
                   <template v-slot:activator="{ on, attrs }">
-                    <v-btn id="create-entity" color="primary" text v-bind="attrs" v-on="on">Create Entity</v-btn>
+                    <v-btn v-if="currentUser.isAdmin" id="create-entity" color="primary" text v-bind="attrs" v-on="on">Create Entity</v-btn>
                   </template>
                   <v-card>
                     <v-card-title class="headline">{{editTitle}}</v-card-title>
@@ -124,8 +124,13 @@
                     </v-list>
                     <v-card-actions>
                       <v-spacer></v-spacer>
-                      <v-icon small class="mr-1" @click="editEntity(item)">mdi-pencil</v-icon>
-                      <v-icon small @click="deleteEntity(item)">mdi-delete</v-icon>
+                      <template v-if="item.canEdit(currentUser)">
+                        <v-icon small class="mr-1" @click="editEntity(item)">mdi-pencil</v-icon>
+                        <v-icon small @click="deleteEntity(item)">mdi-delete</v-icon>
+                      </template>
+                      <template v-else>
+                        <v-icon small>mdi-cancel</v-icon>
+                      </template>
                     </v-card-actions>
                   </v-card>
                 </v-col>
@@ -139,7 +144,7 @@
 </template>
 <script lang="ts">
 import Vue from 'vue';
-import { Entity } from '../store/models';
+import { Entity, User } from '../store/models';
 import moment from 'moment';
 import { clone as _clone } from 'lodash';
 
@@ -183,7 +188,10 @@ export default Vue.extend({
       return this.localState.editItem.updatedAt ?
         moment(this.localState.editItem.updatedAt).format('YYYY-MM-DD HH:mm') :
         '-';
-    }
+    },
+    currentUser(): User {
+      return this.$store.getters.currentUser;
+    },
   },
   watch: {
     'localState.showEdit': function showEdit(val) {

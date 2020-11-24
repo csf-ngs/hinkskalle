@@ -15,7 +15,7 @@
                 <v-spacer></v-spacer>
                 <v-dialog v-model="localState.showEdit" max-width="700px">
                   <template v-slot:activator="{ on, attrs }">
-                    <v-btn id="create-container" color="primary" text v-bind="attrs" v-on="on">Create Container</v-btn>
+                    <v-btn v-if="collection && collection.canEdit(currentUser)" id="create-container" color="primary" text v-bind="attrs" v-on="on">Create Container</v-btn>
                   </template>
                   <v-card>
                     <v-card-title class="headline">{{editTitle}}</v-card-title>
@@ -117,7 +117,7 @@
                 <v-col v-for="item in props.items" :key="item.id"
                     cols="12" md="6">
                   <v-card class="container">
-                    <router-link class="text-decoration-none" :to="{ name: 'ContainerDetails', params: { entity: $route.params.entity, collection: $route.params.collection, container: item.name } }">
+                    <router-link class="text-decoration-none" :to="{ name: 'ContainerDetails', params: { entity: item.entityName, collection: item.collectionName, container: item.name } }">
                       <v-card-title class="text-h6">
                         <v-icon v-if="item.private">mdi-eye-off</v-icon>
                         <v-icon v-if="item.readOnly">mdi-lock</v-icon>
@@ -172,8 +172,13 @@
                     </v-list>
                     <v-card-actions>
                       <v-spacer></v-spacer>
-                      <v-icon small class="mr-1" @click="editContainer(item)">mdi-pencil</v-icon>
-                      <v-icon small @click="deleteContainer(item)">mdi-delete</v-icon>
+                      <template v-if="item.canEdit(currentUser)">
+                        <v-icon small class="mr-1" @click="editContainer(item)">mdi-pencil</v-icon>
+                        <v-icon small @click="deleteContainer(item)">mdi-delete</v-icon>
+                      </template>
+                      <template v-else>
+                        <v-icon small>mdi-cancel</v-icon>
+                      </template>
                     </v-card-actions>
                   </v-card>
                 </v-col>
@@ -190,7 +195,7 @@ import Vue from 'vue';
 import moment from 'moment';
 import { clone as _clone } from 'lodash';
 
-import { Container } from '../store/models';
+import { Container, Collection, User } from '../store/models';
 
 interface State {
   search: string;
@@ -223,6 +228,9 @@ export default Vue.extend({
     containers(): Container[] {
       return this.$store.getters['containers/list'];
     },
+    collection(): Collection {
+      return this.$store.getters['containers/currentCollection'];
+    },
     loading(): boolean {
       return this.$store.getters['containers/status']==='loading';
     },
@@ -233,7 +241,10 @@ export default Vue.extend({
       return this.localState.editItem.updatedAt ?
         moment(this.localState.editItem.updatedAt).format('YYYY-MM-DD HH:mm') :
         '-';
-    }
+    },
+    currentUser(): User {
+      return this.$store.getters.currentUser;
+    },
   },
   watch: {
     'localState.showEdit': function showEdit(val) {

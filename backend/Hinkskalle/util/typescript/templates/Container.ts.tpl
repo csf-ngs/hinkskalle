@@ -9,6 +9,10 @@ class {{classname}} {
   public get fullPath(): string {
     return `${this.entityName}/${this.collectionName}/${this.name}`
   }
+
+  public canEdit(user: User): boolean {
+    return this.createdBy===user.username;
+  }
 }
 
 export function plainTo{{classname}}(json: any): {{classname}} {

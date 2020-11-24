@@ -8,8 +8,9 @@ import Containers from '@/views/Containers.vue';
 
 import { localVue, localVueNoRouter } from '../setup';
 
+import { clone as _clone } from 'lodash';
+
 import { testContainersObj } from './container-store.spec';
-import {Container} from '@/store/models';
 
 // needed to silence vuetify dialog warnings
 document.body.setAttribute('data-app', 'true');
@@ -44,27 +45,38 @@ describe('Containers.vue', () => {
     store = new Vuex.Store({ getters, actions, mutations });
   });
 
-  it('renders something', () => {
+  it('renders something', async done => {
     const wrapper = mount(Containers, { localVue, vuetify, store, router });
     expect(wrapper.text()).toContain('Containers');
+    await Vue.nextTick();
+    await Vue.nextTick();
     expect(actions['containers/list']).toHaveBeenCalledTimes(1);
+    done();
   });
 
-  it('passes route params to container list', () => {
+  it('passes route params to container list', async done => {
     const $route = {
       path: '/something', params: { entity: 'testgiraffe', collection: 'testcapybara' }
     }
     const wrapper = mount(Containers, { localVue: localVueNoRouter, vuetify, store, router, mocks: { $route }, stubs: [ 'router-link' ] });
-    expect(actions['containers/list']).toHaveBeenLastCalledWith(expect.anything(), { entityName: $route.params.entity, collectionName: $route.params.collection });
+    await Vue.nextTick();
+    await Vue.nextTick();
+    expect(actions['containers/list']).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ entityName: $route.params.entity, collectionName: $route.params.collection }));
+    done();
   });
 
-  it('renders containers', () => {
+  it('renders containers', async done => {
     const wrapper = mount(Containers, { localVue, vuetify, store, router });
+    await Vue.nextTick();
+    await Vue.nextTick();
     expect(wrapper.findAll('div#containers .container')).toHaveLength(2);
+    done();
   });
 
   it('searches container names', async done => {
     const wrapper = mount(Containers, { localVue, vuetify, store, router });
+    await Vue.nextTick();
+    await Vue.nextTick();
     wrapper.find('input#search').setValue('zebra');
     await Vue.nextTick();
     expect(wrapper.findAll('div#containers .container')).toHaveLength(1);
@@ -74,6 +86,8 @@ describe('Containers.vue', () => {
 
   it('searches container descriptions', async done => {
     const wrapper = mount(Containers, { localVue, vuetify, store, router });
+    await Vue.nextTick();
+    await Vue.nextTick();
     wrapper.find('input#search').setValue('Nilpf');
     await Vue.nextTick();
     expect(wrapper.findAll('div#containers .container')).toHaveLength(1);

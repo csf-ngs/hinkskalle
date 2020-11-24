@@ -41,6 +41,7 @@
                 field="vcsUrl" 
                 :obj="localState.container" 
                 action="containers/update"
+                :readonly="!canEdit"
                 @updated="localState.container=$event"></hsk-text-input>
             </v-col>
           </v-row>
@@ -51,6 +52,7 @@
                 field="description" 
                 :obj="localState.container" 
                 action="containers/update"
+                :readonly="!canEdit"
                 @updated="localState.container=$event"></hsk-text-input>
             </v-col>
           </v-row>
@@ -62,6 +64,7 @@
                 field="fullDescription" 
                 :obj="localState.container" 
                 action="containers/update"
+                :readonly="!canEdit"
                 @updated="localState.container=$event"></hsk-text-input>
             </v-col>
           </v-row>
@@ -73,6 +76,7 @@
                 field="private"
                 :obj="localState.container"
                 action="containers/update"
+                :readonly="!canEdit"
                 @updated="localState.container=$event"></hsk-text-input>
             </v-col>
             <v-col>
@@ -82,6 +86,7 @@
                 field="readOnly"
                 :obj="localState.container"
                 action="containers/update"
+                :readonly="!localState.container.canEdit(currentUser)"
                 @updated="localState.container=$event"></hsk-text-input>
             </v-col>
           </v-row>
@@ -94,6 +99,7 @@
             <image-details 
               v-for="image in images"
               :key="image.id"
+              :readonly="localState.container.readOnly"
               :image="image"></image-details>
           </v-expansion-panels>
         </v-col>
@@ -104,7 +110,7 @@
 <script lang="ts">
 import ImageDetails from '@/components/ImageDetails.vue';
 import Vue from 'vue';
-import { Container, Image } from '../store/models';
+import { Container, Image, User } from '../store/models';
 
 interface State {
   container: Container | null;
@@ -130,6 +136,12 @@ export default Vue.extend({
     },
     images(): Image[] {
       return this.$store.getters['images/list'];
+    },
+    currentUser(): User {
+      return this.$store.getters.currentUser;
+    },
+    canEdit(): boolean {
+      return !this.localState.container?.readOnly && this.localState.container!.canEdit(this.currentUser)
     }
   },
   methods: {

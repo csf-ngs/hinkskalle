@@ -9,6 +9,7 @@ import { map as _map, isNil as _isNil, concat as _concat, filter as _filter } fr
 export interface State {
   status: '' | 'loading' | 'failed' | 'success';
   list: Collection[];
+  currentEntity: Entity | null;
 }
 
 const collectionsModule: Module<State, any> = {
@@ -16,10 +17,12 @@ const collectionsModule: Module<State, any> = {
   state: {
     status: '',
     list: [],
+    currentEntity: null,
   },
   getters: {
     status: (state): string => state.status,
     list: (state): Collection[] => state.list,
+    currentEntity: (state): Entity | null => state.currentEntity,
   },
   mutations: {
     loading(state: State) {
@@ -39,13 +42,20 @@ const collectionsModule: Module<State, any> = {
     },
     remove(state: State, id: string) {
       state.list = _filter(state.list, c => c.id !== id);
-    }
+    },
+    setEntity(state: State, entity: Entity) {
+      state.currentEntity = entity;
+    },
   },
   actions: {
-    list: ({ commit, rootState }, entity=null): Promise<Collection[]> => {
+    list: ({ commit, rootState, dispatch }, entity=null): Promise<Collection[]> => {
       return new Promise<Collection[]>((resolve, reject) => {
         commit('loading');
-        rootState.backend.get(`/v1/collections/${entity ? entity : rootState.currentUser.username}`)
+        dispatch('entities/get', entity ? entity : rootState.currentUser.username, { root: true })
+          .then(entity => {
+            commit('setEntity', entity);
+            return rootState.backend.get(`/v1/collections/${entity.name}`);
+          })
           .then((response: AxiosResponse) => {
             const list = _map(response.data.data, plainToCollection);
             commit('succeeded');
@@ -91,17 +101,13 @@ const collectionsModule: Module<State, any> = {
         getEntity
           .then(entity => {
             collection.entity = entity.id;
-            rootState.backend.post(`/v1/collections`, serializeCollection(collection))
-              .then((response: AxiosResponse) => {
+            return rootState.backend.post(`/v1/collections`, serializeCollection(collection));
+          })
+          .then((response: AxiosResponse) => {
                 const created = plainToCollection(response.data.data);
                 commit('succeeded');
                 commit('update', created);
                 resolve(created);
-              })
-              .catch((err: AxiosError) => {
-                commit('failed', err);
-                reject(err);
-              });
           })
           .catch(err => {
             commit('failed', err);

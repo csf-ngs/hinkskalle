@@ -12,6 +12,12 @@ import collectionsModule from '@/store/modules/collections';
 jest.mock('@/store/modules/collections');
 const mockCollections = collectionsModule as jest.Mocked<typeof collectionsModule>;
 
+const fakeCollection = new Collection();
+fakeCollection.name = "oinktion";
+fakeCollection.entityName = "oinktity";
+fakeCollection.id = "222";
+(mockCollections as any).actions.get.mockResolvedValue(fakeCollection);
+
 store.state.backend = mockAxios;
 
 export const testContainers = [
@@ -103,10 +109,10 @@ describe('container store actions', () => {
     mockAxios.get.mockResolvedValue({
       data: { data: testContainersObj },
     });
-    const promise = store.dispatch('containers/list', { entityName: 'test', collectionName: 'hase' });
-    expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/containers/test/hase`);
+    const promise = store.dispatch('containers/list', { entityName: 'oinktity', collectionName: 'oinktion' });
     expect(store.state.containers!.status).toBe('loading');
     promise.then(() => {
+      expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/containers/oinktity/oinktion`);
       expect(store.state.containers!.status).toBe('success');
       expect(store.state.containers!.list).toStrictEqual(testContainersObj);
       done();
@@ -204,14 +210,10 @@ describe('container store actions', () => {
     const fakeEntity = new Entity();
     fakeEntity.id = "111";
     fakeEntity.name = "oinktity";
-    const fakeCollection = new Collection();
-    fakeCollection.name = "oinktion";
-    fakeCollection.id = "222";
 
     mockAxios.post.mockResolvedValue({
       data: { data: { id: '666', entity: fakeEntity.id, entityName: fakeEntity.name, collection: fakeCollection.id, collectionName: fakeCollection.name, name: container.name }}
     });
-    (mockCollections as any).actions.get.mockResolvedValue(fakeCollection);
     const promise = store.dispatch('containers/create', createContainerObj);
     expect(store.state.containers!.status).toBe('loading');
     promise.then(container => {

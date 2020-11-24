@@ -10,8 +10,13 @@ import entitiesModule from '@/store/modules/entities';
 jest.mock('@/store/modules/entities');
 const mockEntities = entitiesModule as jest.Mocked<typeof entitiesModule>;
 
-import { testUser, testUserObj } from './store.spec';
-import collectionsModule from '@/store/modules/collections';
+const fakeEntity = new Entity();
+fakeEntity.id = "877";
+fakeEntity.name = "oinktity";
+
+(mockEntities as any).actions.get.mockResolvedValue(fakeEntity);
+
+import { testUserObj } from './store.spec';
 
 store.state.backend = mockAxios;
 
@@ -97,9 +102,10 @@ describe('collection store actions', () => {
     });
     store.state.currentUser = testUserObj;
     const promise = store.dispatch('collections/list');
-    expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/collections/${testUserObj.username}`);
     expect(store.state.collections!.status).toBe('loading');
     promise.then(() => {
+      expect((mockEntities.actions as any).get).toHaveBeenLastCalledWith(expect.anything(), testUserObj.username);
+      expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/collections/oinktity`);
       expect(store.state.collections!.status).toBe('success');
       expect(store.state.collections!.list).toStrictEqual(testCollectionsObj);
       done();
@@ -110,10 +116,10 @@ describe('collection store actions', () => {
       data: { data: testCollections },
     });
     store.state.currentUser = testUserObj;
-    const promise = store.dispatch('collections/list', 'oi.nk');
-    expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/collections/oi.nk`);
+    const promise = store.dispatch('collections/list', 'oinktity');
     expect(store.state.collections!.status).toBe('loading');
     promise.then(() => {
+      expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/collections/oinktity`);
       expect(store.state.collections!.status).toBe('success');
       expect(store.state.collections!.list).toStrictEqual(testCollectionsObj);
       done();
@@ -188,14 +194,9 @@ describe('collection store actions', () => {
     };
     const createCollectionObj = plainToCollection(collection);
 
-    const fakeEntity = new Entity();
-    fakeEntity.id = "877";
-    fakeEntity.name = "oinktity";
-
     mockAxios.post.mockResolvedValue({
       data: { data: { id: '666', entity: fakeEntity.id, entityName: fakeEntity.name, name: collection.name }}
     });
-    (mockEntities as any).actions.get.mockResolvedValue(fakeEntity);
     const promise = store.dispatch('collections/create', createCollectionObj);
     expect(store.state.collections!.status).toBe('loading');
     promise.then(collection => {

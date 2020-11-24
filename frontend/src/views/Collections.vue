@@ -15,7 +15,7 @@
                 <v-spacer></v-spacer>
                 <v-dialog v-model="localState.showEdit" max-width="700px">
                   <template v-slot:activator="{ on, attrs }">
-                    <v-btn id="create-collection" color="primary" text v-bind="attrs" v-on="on">Create Collection</v-btn>
+                    <v-btn v-if="entity && entity.canEdit(currentUser)" id="create-collection" color="primary" text v-bind="attrs" v-on="on">Create Collection</v-btn>
                   </template>
                   <v-card>
                     <v-card-title class="headline">{{editTitle}}</v-card-title>
@@ -93,7 +93,7 @@
                 <v-col v-for="item in props.items" :key="item.id"
                   cols="12" md="6">
                   <v-card class="collection">
-                    <router-link :to="{ name: 'Containers', params: { entity: entity, collection: item.name } }" class="text-decoration-none">
+                    <router-link :to="{ name: 'Containers', params: { entity: item.entityName, collection: item.name } }" class="text-decoration-none">
                       <v-card-title class="headline">
                         <v-icon v-if="item.private">mdi-eye-off</v-icon>
                         {{item.name}}
@@ -122,8 +122,13 @@
                     </v-list>
                     <v-card-actions>
                       <v-spacer></v-spacer>
-                      <v-icon small class="mr-1" @click="editCollection(item)">mdi-pencil</v-icon>
-                      <v-icon small @click="deleteCollection(item)">mdi-delete</v-icon>
+                      <template v-if="item.canEdit(currentUser)">
+                        <v-icon small class="mr-1" @click="editCollection(item)">mdi-pencil</v-icon>
+                        <v-icon small @click="deleteCollection(item)">mdi-delete</v-icon>
+                      </template>
+                      <template v-else>
+                        <v-icon small>mdi-cancel</v-icon>
+                      </template>
                     </v-card-actions>
                   </v-card>
                 </v-col>
@@ -136,7 +141,7 @@
   </div>
 </template>
 <script lang="ts">
-import { Collection } from '../store/models';
+import { Collection, Entity, User } from '../store/models';
 import Vue from 'vue';
 import { DataTableHeader } from 'vuetify';
 
@@ -192,11 +197,12 @@ export default Vue.extend({
         moment(this.localState.editItem.updatedAt).format('YYYY-MM-DD HH:mm') :
         '-';
     },
-    entity(): string {
-      return this.$route.params.entity ? 
-        this.$route.params.entity : 
-        this.$store.getters.currentUser.username;
+    entity(): Entity {
+      return this.$store.getters['collections/currentEntity'];
     },
+    currentUser(): User {
+      return this.$store.getters.currentUser;
+    }
   },
   watch: {
     'localState.showEdit': function showEdit(val) {

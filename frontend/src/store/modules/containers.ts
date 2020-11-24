@@ -11,6 +11,7 @@ export interface State {
   status: '' | 'loading' | 'failed' | 'success';
   latest: Upload[];
   list: Container[];
+  currentCollection: Collection | null;
 }
 
 const containersModule: Module<State, any> = {
@@ -19,11 +20,13 @@ const containersModule: Module<State, any> = {
     status: '',
     latest: [],
     list: [],
+    currentCollection: null,
   },
   getters: {
     status: (state): string => state.status,
     latest: (state): Upload[] => state.latest,
     list: (state): Container[] => state.list,
+    currentCollection: (state): Collection | null => state.currentCollection,
   },
   mutations: {
     loading(state: State) {
@@ -47,6 +50,9 @@ const containersModule: Module<State, any> = {
     remove(state: State, id: string) {
       state.list = _filter(state.list, c => c.id !== id);
     },
+    setCollection(state: State, collection: Collection) {
+      state.currentCollection = collection;
+    },
   },
   actions: {
     latest: ({ commit, rootState }): Promise<Upload[]> => {
@@ -65,15 +71,19 @@ const containersModule: Module<State, any> = {
           });
       });
     },
-    list: ({ commit, rootState }, path: { entityName: string; collectionName: string }): Promise<Container[]> => {
+    list: ({ commit, rootState, dispatch }, path: { entityName: string; collectionName: string }): Promise<Container[]> => {
       return new Promise<Container[]>((resolve, reject) => {
         commit('loading'),
-        rootState.backend.get(`/v1/containers/${path.entityName}/${path.collectionName}`)
+        dispatch('collections/get', path, { root: true })
+          .then(collection => {
+            commit('setCollection', collection);
+            return rootState.backend.get(`/v1/containers/${collection.entityName}/${collection.collectionName}`);
+          })
           .then((response: AxiosResponse) => {
-            const list = _map(response.data.data, plainToContainer);
-            commit('succeeded');
-            commit('setList', list);
-            resolve(list);
+                const list = _map(response.data.data, plainToContainer);
+                commit('succeeded');
+                commit('setList', list);
+                resolve(list);
           })
           .catch((err: AxiosError) => {
             commit('failed', err);
@@ -111,17 +121,13 @@ const containersModule: Module<State, any> = {
         getCollection
           .then(collection => {
             container.collection = collection.id;
-            rootState.backend.post(`/v1/containers`, serializeContainer(container))
-              .then((response: AxiosResponse) => {
+            return rootState.backend.post(`/v1/containers`, serializeContainer(container));
+          })
+          .then((response: AxiosResponse) => {
                 const created = plainToContainer(response.data.data);
                 commit('succeeded');
                 commit('update', created);
                 resolve(created);
-              })
-              .catch((err: AxiosError) => {
-                commit('failed', err);
-                reject(err);
-              });
           })
           .catch(err => {
             commit('failed', err);

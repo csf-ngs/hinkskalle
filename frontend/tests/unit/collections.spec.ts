@@ -8,12 +8,21 @@ import Collections from '@/views/Collections.vue';
 
 import { localVue, localVueNoRouter } from '../setup';
 
-import { testCollectionsObj } from './collections-store.spec';
-import {Collection} from '@/store/models';
+import { testCollectionsObj as testCollectionsObjTpl } from './collections-store.spec';
+import {Collection, Entity} from '@/store/models';
 import {testUserObj} from './store.spec';
+
+import { cloneDeep as _cloneDeep, each as _each } from 'lodash';
+
+const testCollectionsObj = _cloneDeep(testCollectionsObjTpl);
+_each(testCollectionsObj, c => c.createdBy = testUserObj.username );
+
 
 // needed to silence vuetify dialog warnings
 document.body.setAttribute('data-app', 'true');
+
+const testEntityObj = new Entity();
+testEntityObj.createdBy = testUserObj.username;
 
 describe('Collections.vue', () => {
   let vuetify: any;
@@ -34,6 +43,7 @@ describe('Collections.vue', () => {
 
     getters = {
       'collections/list': () => testCollectionsObj,
+      'collections/currentEntity': () => testEntityObj,
       'currentUser': () => testUserObj,
     };
     mutations = {

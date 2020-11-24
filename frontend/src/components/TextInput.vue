@@ -10,7 +10,11 @@
       :disabled="disabled"
       :readonly="localState.static || readonly" :append-icon="readonly || localState.static ? 'mdi-lock-outline' : ''"
       @change="saveValue()"
-    ></v-text-field>
+    >
+      <template v-slot:append-outer>
+        <slot name="append"></slot>
+      </template>
+    </v-text-field>
     <v-textarea v-if="type=='textarea'"
       outlined hide-details="auto"
       v-model="localState.value"

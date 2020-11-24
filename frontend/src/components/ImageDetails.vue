@@ -1,6 +1,6 @@
 <template>
    <v-expansion-panel v-if="image">
-    <v-expansion-panel-header v-slot:default="{ open }">
+    <v-expansion-panel-header>
       <v-row no-gutters>
         <v-col>
           <span v-if="image.tags.length==0">
@@ -15,29 +15,7 @@
               v-for="tag in image.tags" :key="tag" 
               @click.stop="copyTag(tag)">
                 {{tag}}
-                <v-icon v-if="open" right @click.stop="deleteTag(tag)">mdi-delete-outline</v-icon>
             </v-chip>
-            <v-dialog v-if="open" v-model="localState.showAddTag" max-width="300px">
-              <template v-slot:activator="{ on, attrs }">
-                <v-chip
-                  color="grey lighten-1"
-                  v-bind="attrs" v-on="on">
-                  Add
-                  <v-icon right>mdi-tag-plus</v-icon>
-                </v-chip>
-              </template>
-              <v-card>
-                <v-card-title class="headline">Add Tag</v-card-title>
-                <v-card-text>
-                  <v-text-field v-model="localState.newTag" label="New Tag" outlined required></v-text-field>
-                </v-card-text>
-                <v-card-actions>
-                  <v-spacer></v-spacer>
-                  <v-btn color="warning accent-1" text @click="closeShowAddTag()">Nej, tack</v-btn>
-                  <v-btn color="success darken-1" text @click="addTag()" :disabled="!localState.newTag">Do it!</v-btn>
-                </v-card-actions>
-              </v-card>
-            </v-dialog>
           </span>
         </v-col>
         <v-col class="d-flex align-center">
@@ -69,7 +47,34 @@
     <v-expansion-panel-content>
       <v-row v-for="tag in image.tags" :key="tag">
         <v-col>
-          <hsk-text-input :label="'Pull '+tag" :static-value="pullURL(tag)"></hsk-text-input>
+          <hsk-text-input :label="'Pull '+tag" :static-value="pullURL(tag)">
+            <template v-slot:append>
+              <v-icon color="error" @click="deleteTag(tag)">mdi-delete-outline</v-icon>
+            </template>
+          </hsk-text-input>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col class="text-center">
+            <v-dialog v-model="localState.showAddTag" max-width="300px">
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn color="primary" text v-bind="attrs" v-on="on">
+                  <v-icon>mdi-tag-plus</v-icon> Add Tag
+                </v-btn>
+              </template>
+              <v-card>
+                <v-card-title class="headline">Add Tag</v-card-title>
+                <v-card-text>
+                  <v-text-field v-model="localState.newTag" label="New Tag" outlined required></v-text-field>
+                </v-card-text>
+                <v-card-actions>
+                  <v-spacer></v-spacer>
+                  <v-btn color="warning accent-1" text @click="closeShowAddTag()">Nej, tack</v-btn>
+                  <v-btn color="success darken-1" text @click="addTag()" :disabled="!localState.newTag">Do it!</v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
+
         </v-col>
       </v-row>
 

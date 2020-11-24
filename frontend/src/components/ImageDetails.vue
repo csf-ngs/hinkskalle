@@ -115,6 +115,25 @@
           <hsk-text-input label="Downloads" :static-value="image.downloadCount"></hsk-text-input>
         </v-col>
       </v-row>
+      <v-row v-if="canEdit">
+        <v-col class="text-center">
+          <v-dialog v-model="localState.showDelete" max-width="500px">
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn text v-bind="attrs" v-on="on" color="error">
+                <v-icon>mdi-trash</v-icon> Delete Image
+              </v-btn>
+            </template>
+            <v-card>
+              <v-card-title class="headline">You sure you won't miss it?</v-card-title>
+              <v-card-action>
+                <v-spacer></v-spacer>
+                <v-btn color="primary darken-1" text @click="localState.showDelete=false">Let's keep it for now.</v-btn>
+                <v-btn color="warning accent-1" text @click="deleteImage()">Get it out of my sight!</v-btn>
+              </v-card-action>
+            </v-card>
+          </v-dialog>
+        </v-col>
+      </v-row>
     </v-expansion-panel-content>
    </v-expansion-panel>
 </template>
@@ -128,6 +147,7 @@ interface State {
   showDef: boolean;
   newTag: string;
   showAddTag: boolean;
+  showDelete: boolean;
 }
 
 export default Vue.extend({
@@ -150,6 +170,7 @@ export default Vue.extend({
       showDef: false,
       newTag: '',
       showAddTag: false,
+      showDelete: false,
     },
   }),
   computed: {
@@ -193,6 +214,12 @@ export default Vue.extend({
     saveTags(updateImage: Image): Promise<any> {
       return this.$store.dispatch('images/updateTags', updateImage)
         .catch(err => this.$store.commit('snackbar/showError', err));
+    },
+    deleteImage() {
+      this.$store.dispatch('images/delete', this.image)
+        .catch(err => {
+          this.$store.commit('snackbar/showError', err);
+        });
     },
     inspect() {
       this.$store.dispatch('images/inspect', this.image)

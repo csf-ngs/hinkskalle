@@ -91,6 +91,14 @@ class User(db.Model):
     else:
       return False
   
+  def check_sub_access(self, user):
+    if user.is_admin:
+      return True
+    elif self.id == user.id:
+      return True
+    else:
+      return False
+
   def check_update_access(self, user):
     if user.is_admin:
       return True

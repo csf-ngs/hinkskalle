@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
 from flask import request, current_app, g
 
-from Hinkskalle.models import UserSchema, User, ContainerSchema
+from Hinkskalle.models import UserSchema, User, ContainerSchema, Container
 
 import datetime
 
@@ -74,7 +74,36 @@ def get_stars(username):
     raise errors.NotFound(f"user {username} not found")
   if not user.check_sub_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to user.")
-  return { 'data': user.starred }
+  containers = [ c for c in user.starred if c.check_access(g.authenticated_user) ]
+  return { 'data': containers }
+
+@registry.handles(
+  rule='/v1/users/<string:username>/stars/<string:container_id>',
+  method='POST',
+  response_body_schema=UserStarsResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user)
+)
+def add_star(username, container_id):
+  try:
+    user = User.query.filter(User.username == username).one()
+  except NoResultFound:
+    raise errors.NotFound(f"user {username} not found")
+  if not user.check_update_access(g.authenticated_user):
+    raise errors.Forbidden("Access denied to user.")
+
+  try:
+    container = Container.query.filter(Container.id == container_id).one()
+  except NoResultFound:
+    raise errors.NotFound(f"container {container_id} not found")
+  if not container.check_access(g.authenticated_user):
+    raise errors.Forbidden("Access denied to container.")
+
+  user.starred.append(container)
+  db.session.commit()
+  containers = [ c for c in user.starred if c.check_access(g.authenticated_user) ]
+  return { 'data': containers }
+
+
 
 
 @registry.handles(

@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
 from flask import request, current_app, g
 
-from Hinkskalle.models import UserSchema, User
+from Hinkskalle.models import UserSchema, User, ContainerSchema
 
 import datetime
 
@@ -21,6 +21,9 @@ class UserListResponseSchema(ResponseSchema):
 class UserCreateSchema(UserSchema, RequestSchema):
   password = fields.String()
   pass
+
+class UserStarsResponseSchema(ResponseSchema):
+  data = fields.Nested(ContainerSchema, many=True)
 
 # taken from https://flask-rebar.readthedocs.io/en/latest/recipes.html#marshmallow-partial-schemas
 # to allow partial updates
@@ -57,6 +60,22 @@ def get_user(username):
   if not user.check_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to user.")
   return { 'data': user }
+
+@registry.handles(
+  rule='/v1/users/<string:username>/stars',
+  method='GET',
+  response_body_schema=UserStarsResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user)
+)
+def get_stars(username):
+  try:
+    user = User.query.filter(User.username == username).one()
+  except NoResultFound:
+    raise errors.NotFound(f"user {username} not found")
+  if not user.check_sub_access(g.authenticated_user):
+    raise errors.Forbidden("Access denied to user.")
+  return { 'data': user.starred }
+
 
 @registry.handles(
   rule='/v1/users',

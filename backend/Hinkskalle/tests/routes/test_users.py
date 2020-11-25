@@ -1,6 +1,7 @@
 import unittest
 from Hinkskalle.tests.route_base import RouteBase
 from Hinkskalle.tests.model_base import _create_user
+from Hinkskalle.tests.models.test_Container import _create_container
 
 from Hinkskalle.models import User
 from Hinkskalle import db
@@ -95,6 +96,34 @@ class TestUsers(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(db_user.id))
+  
+  def test_get_stars(self):
+    user1 = _create_user('test.hasee')
+    container = _create_container()[0]
+    user1.starred.append(container)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/users/{user1.username}/stars")
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertListEqual([ c['name'] for c in json ], [ container.name ])
+  
+  def test_get_stars_user_self(self):
+    db_user = User.query.filter(User.username==self.username).one()
+
+    with self.fake_auth():
+      ret = self.client.get(f"/v1/users/{db_user.username}/stars")
+    self.assertEqual(ret.status_code, 200)
+  
+  def test_get_stars_user_other(self):
+    db_user = User.query.filter(User.username==self.other_username).one()
+
+    with self.fake_auth():
+      ret = self.client.get(f"/v1/users/{db_user.username}/stars")
+    self.assertEqual(ret.status_code, 403)
+
+
     
   def test_create(self):
     user_data = {

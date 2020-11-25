@@ -6,6 +6,11 @@ from flask import current_app
 from passlib.hash import sha512_crypt
 import secrets
 
+user_stars = db.Table('user_stars', db.metadata,
+  db.Column('user_id', db.Integer, db.ForeignKey('user.id'), nullable=False),
+  db.Column('container_id', db.Integer, db.ForeignKey('container.id'), nullable=False),
+)
+
 user_groups_table = db.Table('users_groups', db.metadata,
   db.Column('user_id', db.Integer, db.ForeignKey('user.id'), nullable=False),
   db.Column('group_id', db.Integer, db.ForeignKey('group.id'), nullable=False),
@@ -44,6 +49,7 @@ class User(db.Model):
   groups = db.relationship('Group', secondary=user_groups_table, back_populates='users')
   tokens = db.relationship('Token', back_populates='user')
   manual_tokens = db.relationship('Token', viewonly=True, primaryjoin="and_(User.id==Token.user_id, Token.source=='manual')")
+  starred = db.relationship('Container', secondary=user_stars, back_populates='starred')
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String())
@@ -92,6 +98,7 @@ class User(db.Model):
       return True
     else:
       return False
+
 
 class GroupSchema(Schema):
   id = fields.String(required=True, dump_only=True)

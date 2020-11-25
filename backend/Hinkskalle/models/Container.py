@@ -41,7 +41,7 @@ class Container(db.Model):
   private = db.Column(db.Boolean, default=False)
   readOnly = db.Column(db.Boolean, default=False)
   downloadCount = db.Column(db.Integer, default=0)
-  stars = db.Column(db.Integer, default=0)
+  #stars = db.Column(db.Integer, default=0)
   customData = db.Column(db.String())
   vcsUrl = db.Column(db.String())
 
@@ -54,6 +54,13 @@ class Container(db.Model):
   collection_ref = db.relationship('Collection', back_populates='containers_ref')
   images_ref = db.relationship('Image', back_populates='container_ref', lazy='dynamic')
   owner = db.relationship('User', back_populates='containers')
+
+  starred = db.relationship('User', secondary='user_stars', back_populates='starred')
+  starred_sth = db.relationship('User', viewonly=True, secondary='user_stars', lazy='dynamic')
+
+  @property
+  def stars(self):
+    return self.starred_sth.count()
 
   __table_args__ = (db.UniqueConstraint('name', 'collection_id', name='name_collection_id_idx'),)
 

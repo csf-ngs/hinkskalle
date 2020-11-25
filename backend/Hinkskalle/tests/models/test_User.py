@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 from Hinkskalle.tests.model_base import ModelBase, _create_group, _create_user
+from Hinkskalle.tests.models.test_Container import _create_container
 
-from Hinkskalle.models import User, UserSchema, Group, Token, TokenSchema
+from Hinkskalle.models import User, UserSchema, Group, Token, TokenSchema, Container
 
 from Hinkskalle import db
 
@@ -38,6 +39,37 @@ class TestUser(ModelBase):
     read_group = Group.query.filter_by(name=group1.name).one()
     self.assertListEqual(read_user.groups, [])
     self.assertListEqual(read_group.users, [])
+  
+  def test_stars(self):
+    user = _create_user()
+    container = _create_container()[0]
+
+    user.starred.append(container)
+    db.session.commit()
+
+    read_user = User.query.filter_by(username=user.username).one()
+    read_container = Container.query.filter_by(id=container.id).one()
+    self.assertListEqual(read_user.starred, [read_container])
+    self.assertListEqual(read_container.starred, [read_user])
+
+    self.assertEqual(read_container.stars, 1)
+
+    user.starred.append(read_container)
+    db.session.commit()
+    read_user = User.query.filter_by(username=user.username).one()
+    read_container = Container.query.filter_by(id=container.id).one()
+    self.assertListEqual(read_user.starred, [read_container])
+    self.assertEqual(read_container.stars, 1)
+
+    read_user.starred.remove(read_container)
+    db.session.commit()
+
+    read_user = User.query.filter_by(username=user.username).one()
+    read_container = Container.query.filter_by(id=container.id).one()
+    self.assertListEqual(read_user.starred, [])
+    self.assertListEqual(read_container.starred, [])
+    self.assertEqual(read_container.stars, 0)
+
   
   def test_token(self):
     user = _create_user()

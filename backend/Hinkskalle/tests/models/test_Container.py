@@ -204,6 +204,7 @@ class TestContainer(ModelBase):
     self.assertEqual(serialized.data['readOnly'], False)
     self.assertIsNone(serialized.data['deletedAt'])
     self.assertFalse(serialized.data['deleted'])
+    self.assertEqual(serialized.data['stars'], 0)
 
     serialized = schema.dump(container)
     self.assertEqual(serialized.data['collection'], str(coll.id))

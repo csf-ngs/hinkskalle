@@ -50,6 +50,7 @@ class User(db.Model):
   tokens = db.relationship('Token', back_populates='user')
   manual_tokens = db.relationship('Token', viewonly=True, primaryjoin="and_(User.id==Token.user_id, Token.source=='manual')")
   starred = db.relationship('Container', secondary=user_stars, back_populates='starred')
+  starred_sth = db.relationship('Container', viewonly=True, secondary=user_stars, lazy='dynamic')
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String())

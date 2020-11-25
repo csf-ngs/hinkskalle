@@ -103,6 +103,30 @@ def add_star(username, container_id):
   containers = [ c for c in user.starred if c.check_access(g.authenticated_user) ]
   return { 'data': containers }
 
+@registry.handles(
+  rule='/v1/users/<string:username>/stars/<string:container_id>',
+  method='DELETE',
+  response_body_schema=UserStarsResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user)
+)
+def remove_star(username, container_id):
+  try:
+    user = User.query.filter(User.username == username).one()
+  except NoResultFound:
+    raise errors.NotFound(f"user {username} not found")
+  if not user.check_update_access(g.authenticated_user):
+    raise errors.Forbidden("Access denied to user.")
+
+  try:
+    container = user.starred_sth.filter(Container.id==container_id).one()
+  except NoResultFound:
+    raise errors.NotFound(f"container {container_id} not found")
+
+  user.starred.remove(container)
+  db.session.commit()
+  containers = [ c for c in user.starred if c.check_access(g.authenticated_user) ]
+  return { 'data': containers }
+
 
 
 

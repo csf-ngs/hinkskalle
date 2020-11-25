@@ -159,6 +159,26 @@ class TestUsers(RouteBase):
     json = ret.get_json().get('data')
     self.assertListEqual([ c['name'] for c in json ], [ container.name ])
   
+  def test_unstar_container(self):
+    user1 = _create_user()
+    container = _create_container()[0]
+    user1.starred.append(container)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/users/{user1.username}/stars/{container.id}")
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertEqual(len(json), 0)
+
+  def test_unstar_container_not_starred(self):
+    user1 = _create_user()
+    container = _create_container()[0]
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/users/{user1.username}/stars/{container.id}")
+    self.assertEqual(ret.status_code, 404)
+  
   def test_star_container_user_self(self):
     db_user = User.query.filter(User.username==self.username).one()
     container = _create_container()[0]
@@ -171,19 +191,45 @@ class TestUsers(RouteBase):
     json = ret.get_json().get('data')
     self.assertListEqual([ c['name'] for c in json ], [ container.name ])
 
-  def test_star_container_user_self_other(self):
+  def test_unstar_container_user_self(self):
     db_user = User.query.filter(User.username==self.username).one()
     container = _create_container()[0]
+    container.owner = db_user
+    db_user.starred.append(container)
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.delete(f"/v1/users/{db_user.username}/stars/{container.id}")
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertEqual(len(json), 0)
+
+  def test_unstar_container_user_self_other(self):
+    db_user = User.query.filter(User.username==self.username).one()
+    container = _create_container()[0]
+    db_user.starred.append(container)
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.delete(f"/v1/users/{db_user.username}/stars/{container.id}")
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertEqual(len(json), 0)
+
+  def test_star_user_other(self):
+    db_user = User.query.filter(User.username==self.other_username).one()
+    self_user = User.query.filter(User.username==self.username).one()
+    container = _create_container()[0]
+    container.owner = self_user
+    db.session.commit()
 
     with self.fake_auth():
       ret = self.client.post(f"/v1/users/{db_user.username}/stars/{container.id}")
     self.assertEqual(ret.status_code, 403)
 
-  def test_get_stars_user_other(self):
+  def test_unstar_user_other(self):
     db_user = User.query.filter(User.username==self.other_username).one()
-    self_user = User.query.filter(User.username==self.username).one()
     container = _create_container()[0]
-    container.owner = self_user
     db.session.commit()
 
     with self.fake_auth():

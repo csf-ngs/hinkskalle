@@ -7,7 +7,7 @@ import VueRouter from 'vue-router';
 import LatestContainers from '@/components/LatestContainers.vue';
 
 import { localVue } from '../setup';
-import { testLatestObj } from './container-store.spec';
+import { makeTestLatestObj } from '../_data';
 import { Upload } from '@/store/models';
 
 describe('LatestContainers.vue', () => {
@@ -43,7 +43,7 @@ describe('LatestContainers.vue', () => {
   });
 
   it('renders uploads', () => {
-    latest = testLatestObj;
+    latest = makeTestLatestObj();
     const wrapper = mount(LatestContainers, { localVue, vuetify, store, router });
     expect(wrapper.findAll('a.v-list-item')).toHaveLength(2);
 

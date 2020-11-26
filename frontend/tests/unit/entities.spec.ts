@@ -8,16 +8,18 @@ import Entities from '@/views/Entities.vue';
 
 import { localVue } from '../setup';
 
-import { testEntitiesObj as testEntitiesObjTpl } from './entities-store.spec';
-import { testUserObj as testUserObjTpl } from './store.spec';
-
 import { each as _each, cloneDeep as _cloneDeep } from 'lodash';
+import {Entity, User} from '@/store/models';
+import {makeTestEntitiesObj, makeTestUserObj} from '../_data';
 
-const testUserObj = _cloneDeep(testUserObjTpl);
-const testEntitiesObj = _cloneDeep(testEntitiesObjTpl);
-_each(testEntitiesObj, e => e.createdBy=testUserObj.username);
+let testUserObj: User;
+let testEntitiesObj: Entity[];
 
-
+beforeAll(() => {
+  testUserObj = makeTestUserObj();
+  testEntitiesObj = makeTestEntitiesObj();
+  _each(testEntitiesObj, e => e.createdBy=testUserObj.username);
+});
 
 // needed to silence vuetify dialog warnings
 document.body.setAttribute('data-app', 'true');

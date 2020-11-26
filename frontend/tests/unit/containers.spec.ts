@@ -10,10 +10,17 @@ import { localVue, localVueNoRouter } from '../setup';
 
 import { clone as _clone } from 'lodash';
 
-import { testContainersObj } from './container-store.spec';
+import { makeTestContainersObj } from '../_data';
+import {Container} from '@/store/models';
 
 // needed to silence vuetify dialog warnings
 document.body.setAttribute('data-app', 'true');
+
+let testContainersObj: Container[];
+beforeAll(() => {
+  testContainersObj = makeTestContainersObj();
+})
+
 
 describe('Containers.vue', () => {
   let vuetify: any;

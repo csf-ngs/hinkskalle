@@ -8,8 +8,7 @@ import ContainerDetails from '@/views/ContainerDetails.vue';
 
 import { localVue, localVueNoRouter } from '../setup';
 
-import { testContainersObj } from './container-store.spec';
-import {Container} from '@/store/models';
+import { makeTestContainersObj } from '../_data';
 
 // needed to silence vuetify dialog warnings
 document.body.setAttribute('data-app', 'true');
@@ -27,15 +26,17 @@ describe('ContainerDetails.vue', () => {
     vuetify = new Vuetify();
     router = new VueRouter();
 
+    const tests = makeTestContainersObj();
+
     getters = {
-      'containers/list': () => testContainersObj,
+      'containers/list': () => tests,
     };
     mutations = {
       'snackbar/showSuccess': jest.fn(),
       'snackbar/showError': jest.fn(),
     };
     actions = {
-      'containers/get': jest.fn(() => testContainersObj[0]),
+      'containers/get': jest.fn(() => tests[0]),
       'images/list': jest.fn(() => []), 
     };
     store = new Vuex.Store({ getters, actions, mutations });

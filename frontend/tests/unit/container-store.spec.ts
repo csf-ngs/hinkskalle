@@ -1,12 +1,9 @@
 import store from '@/store';
-import { plainToUpload, plainToContainer, serializeContainer, Entity, Collection, Container, } from '@/store/models';
+import { plainToContainer, serializeContainer, Entity, Collection, Container, Upload } from '@/store/models';
 
-import axios from 'axios';
+import { makeTestLatest, makeTestLatestObj, makeTestContainers, makeTestContainersObj } from '../_data';
 
 import { map as _map, clone as _clone, find as _find } from 'lodash';
-
-jest.mock('axios');
-const mockAxios = axios as jest.Mocked<typeof axios>;
 
 import collectionsModule from '@/store/modules/collections';
 jest.mock('@/store/modules/collections');
@@ -18,29 +15,23 @@ fakeCollection.entityName = "oinktity";
 fakeCollection.id = "222";
 (mockCollections as any).actions.get.mockResolvedValue(fakeCollection);
 
+import axios from 'axios';
+jest.mock('axios');
+const mockAxios = axios as jest.Mocked<typeof axios>;
 store.state.backend = mockAxios;
 
-export const testContainers = [
-  { id: "1", name: "testhippo", collectionName: "oinktion", entityName: "oinktity", description: 'Nilpferd', createdAt: new Date(), },
-  { id: "2", name: "testzebra", collectionName: "muhtion", entityName: "muhtity", description: 'Streifig', createdAt: new Date(), },
-];
-export const testContainersObj = _map(testContainers, plainToContainer);
+let testContainers: any;
+let testContainersObj: Container[];
+let testLatest: any;
+let testLatestObj: Upload[];
 
-const testLatest = [
-  { 
-    tags: ['eins', 'zwei'], 
-    container: {
-      name: 'testhase', createdAt: new Date(), collectionName: 'oinkton', entityName: 'oinktity',
-    },
-  },
-  {
-    tags: ['drei', 'vier'],
-    container: {
-      name: 'testnilpferd', createdAt: new Date(), collectionName: 'muhton', entityName: 'muhtity',
-    },
-  }
-];
-export const testLatestObj = _map(testLatest, plainToUpload);
+beforeAll(() => {
+  testContainers = makeTestContainers();
+  testContainersObj = makeTestContainersObj(testContainers);
+
+  testLatest = makeTestLatest();
+  testLatestObj = makeTestLatestObj(testLatest);
+})
 
 describe('container store getters', () => {
   it('has containers status getter', () => {
@@ -71,7 +62,7 @@ describe('container store mutations', () => {
   });
 
   it('has update mutation', () => {
-    store.state.containers!.list = _clone(testContainersObj);
+    store.state.containers!.list = testContainersObj;
     const update = _clone(_find(testContainersObj, c => c.id === '1'));
     if (!update) {
       throw 'update test not found';
@@ -96,7 +87,7 @@ describe('container store mutations', () => {
 
   it('has remove mutation', () => {
     const toRemove = testContainersObj[0];
-    store.state.containers!.list = _clone(testContainersObj);
+    store.state.containers!.list = testContainersObj;
     store.commit('containers/remove', toRemove.id);
     expect(store.state.containers!.list).toHaveLength(1);
     const removed = _find(store.state.containers!.list, c => c.id === toRemove.id);
@@ -150,13 +141,13 @@ describe('container store actions', () => {
 
   it('has get container', done => {
     mockAxios.get.mockResolvedValue({
-      data: { data: testContainers[0] },
+      data: { data: testContainersObj[0] },
     });
 
     const promise = store.dispatch('containers/get', testContainersObj[0]);
     expect(store.state.containers!.status).toBe('loading');
     promise.then(container => {
-      expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/containers/${testContainers[0].entityName}/${testContainers[0].collectionName}/${testContainers[0].name}`);
+      expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/containers/${testContainersObj[0].entityName}/${testContainersObj[0].collectionName}/${testContainersObj[0].name}`);
       expect(store.state.containers!.status).toBe('success');
       expect(container).toStrictEqual(testContainersObj[0]);
       done();
@@ -277,7 +268,7 @@ describe('container store actions', () => {
       data: { data: update } 
     });
 
-    store.state.containers!.list = _clone(testContainersObj);
+    store.state.containers!.list = testContainersObj;
 
     const promise = store.dispatch('containers/update', updateObj);
     expect(store.state.containers!.status).toBe('loading');
@@ -300,7 +291,7 @@ describe('container store actions', () => {
   });
 
   it('has delete', done => {
-    store.state.containers!.list = _clone(testContainersObj);
+    store.state.containers!.list = testContainersObj;
     mockAxios.delete.mockResolvedValue({
       data: { status: 'ok' },
     });
@@ -323,6 +314,6 @@ describe('container store actions', () => {
         expect(err).toStrictEqual({ fail: 'fail' });
         done();
       });
-  })
+  });
 
 });

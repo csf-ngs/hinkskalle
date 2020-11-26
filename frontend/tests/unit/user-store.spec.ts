@@ -1,27 +1,47 @@
 import store from '@/store';
-import {plainToUser, serializeUser} from '@/store/models';
+import {User, plainToUser, serializeUser} from '@/store/models';
 
 import axios from 'axios';
 
 import { clone as _clone } from 'lodash';
 
-import { testUser, testUserObj } from './store.spec';
+import { makeTestUser, makeTestUserObj } from '../_data';
+import { makeTestContainers, makeTestContainersObj } from '../_data';
 
 jest.mock('axios');
 const mockAxios = axios as jest.Mocked<typeof axios>;
 
 store.state.backend = mockAxios;
 
+let testUserObj: User;
+beforeAll(() => {
+  testUserObj = makeTestUserObj();
+});
+
 describe('user store getters', () => {
   it('has status getter', () => {
     store.state.users!.status = 'loading';
     expect(store.getters['users/status']).toBe('loading');
   });
+  it('has starred getter', () => {
+    const test = makeTestContainersObj();
+    store.state.users!.starred = test;
+    expect(store.getters['users/starred']).toStrictEqual(test);
+  });
+});
+
+describe('user mutations', () => {
+  it('has set starred', () => {
+    const test = makeTestContainersObj();
+    store.state.users!.starred = [];
+    store.commit('users/setStarred', test);
+    expect(store.state.users!.starred).toStrictEqual(test);
+  });
 });
 
 describe('user store actions', () => {
   it('has update user', done => {
-    const updateUser = _clone(testUser);
+    const updateUser = makeTestUser();
     updateUser.firstname = 'Oink!';
 
     const updateUserObj = plainToUser(updateUser);
@@ -61,9 +81,88 @@ describe('user store actions', () => {
   });
   it('has delete user fail handling', done => {
     mockAxios.delete.mockRejectedValue({ fail: 'fail' });
-    store.dispatch('users/delete', testUser).catch(err => {
+    store.dispatch('users/delete', makeTestUser()).catch(err => {
       expect(store.state.users!.status).toBe('failed');
       done();
     });
   });
+
+  it('can list starred containers', done => {
+    const test = makeTestContainers();
+    const testObj = makeTestContainersObj(test);
+    mockAxios.get.mockResolvedValue({ data: { data: test }});
+    const promise = store.dispatch('users/getStarred', testUserObj);
+    expect(store.state.users!.status).toBe('loading');
+    promise.then(ret => {
+      expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/users/${testUserObj.username}/stars`);
+      expect(store.state.users!.status).toBe('success');
+      expect(store.state.users!.starred).toStrictEqual(testObj);
+      expect(ret).toStrictEqual(testObj);
+      done();
+    });
+  });
+  it('has list starred fail handling', done => {
+    mockAxios.get.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('users/getStarred', testUserObj)
+      .catch(err => {
+        expect(store.state.users!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
+  });
+
+  it('can star a container', done => {
+    const test = makeTestContainers();
+    const testObj = makeTestContainersObj(test);
+
+    mockAxios.post.mockResolvedValue({
+      data: { data: test }
+    });
+    const promise = store.dispatch('users/addStar', { user: testUserObj, container: testObj[0] });
+    expect(store.state.users!.status).toBe('loading');
+    promise.then(ret => {
+      expect(store.state.users!.status).toBe('success');
+      expect(mockAxios.post).toHaveBeenLastCalledWith(`/v1/users/${testUserObj.username}/stars/${testObj[0].id}`);
+      expect(store.state.users!.starred).toStrictEqual(testObj);
+      expect(ret).toStrictEqual(testObj);
+      done();
+    });
+  });
+
+  it('has star container fail handling', done => {
+    mockAxios.post.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('users/addStar', { user: testUserObj, container: makeTestContainersObj()[0]})
+      .catch(err => {
+        expect(err).toStrictEqual({ fail: 'fail' });
+        expect(store.state.users!.status).toBe('failed');
+        done();
+      });
+  });
+
+  it('can remove star', done => {
+    const test = makeTestContainers();
+    const testObj = makeTestContainersObj(test);
+
+    mockAxios.delete.mockResolvedValue({
+      data: { data: test }
+    });
+    const promise = store.dispatch('users/removeStar', { user: testUserObj, container: testObj[0] });
+    promise.then(ret => {
+      expect(store.state.users!.status).toBe('success');
+      expect(mockAxios.delete).toHaveBeenLastCalledWith(`/v1/users/${testUserObj.username}/stars/${testObj[0].id}`);
+      expect(store.state.users!.starred).toStrictEqual(testObj);
+      expect(ret).toStrictEqual(testObj);
+      done();
+    });
+  });
+  it('has remove star fail handling', done => {
+    mockAxios.delete.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('users/removeStar', { user: testUserObj, container: makeTestContainersObj()[0]})
+      .catch(err => {
+        expect(err).toStrictEqual({ fail: 'fail' });
+        expect(store.state.users!.status).toBe('failed');
+        done();
+      });
+  });
+    
 });

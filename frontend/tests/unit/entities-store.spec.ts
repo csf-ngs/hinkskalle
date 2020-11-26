@@ -5,22 +5,20 @@ import {Entity, plainToEntity, serializeEntity} from '@/store/models';
 import axios from 'axios';
 
 import { map as _map, clone as _clone, find as _find } from 'lodash';
+import {makeTestEntities, makeTestEntitiesObj} from '../_data';
 
 jest.mock('axios');
 const mockAxios = axios as jest.Mocked<typeof axios>;
 
 store.state.backend = mockAxios;
 
-const testEntities = [
-  {
-    id: '1', name: 'esel', description: 'eyore', createdAt: new Date(),
-  },
-  {
-    id: '2', name: 'schaf', description: 'shawn', createdAt: new Date(),
-  }
-];
+let testEntities: any;
+let testEntitiesObj: Entity[];
 
-export const testEntitiesObj = _map(testEntities, plainToEntity);
+beforeAll(() => {
+  testEntities = makeTestEntities();
+  testEntitiesObj = makeTestEntitiesObj(testEntities);
+});
 
 describe('entity store getters', () => {
   it('has entity status getter', () => {

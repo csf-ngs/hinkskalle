@@ -1,5 +1,5 @@
 import store from '@/store';
-import {Collection, plainToCollection, serializeCollection, Entity} from '@/store/models';
+import {Collection, plainToCollection, serializeCollection, Entity, User} from '@/store/models';
 import { map as _map, clone as _clone, concat as _concat, find as _find } from 'lodash';
 
 import axios from 'axios';
@@ -16,20 +16,22 @@ fakeEntity.name = "oinktity";
 
 (mockEntities as any).actions.get.mockResolvedValue(fakeEntity);
 
-import { testUserObj } from './store.spec';
+import { makeTestUserObj, makeTestCollections, makeTestCollectionsObj } from '../_data';
+
+let testUserObj: User;
+beforeAll(() => {
+  testUserObj = makeTestUserObj();
+})
 
 store.state.backend = mockAxios;
 
-const testCollections = [
-  {
-    id: '1', name: 'esel', description: 'eyore', createdAt: new Date(), entityName: 'oinktity',
-  },
-  {
-    id: '2', name: 'schaf', description: 'shawn', createdAt: new Date(), entityName: 'wooftity',
-  }
-];
+let testCollections: any;
+let testCollectionsObj: Collection[];
+beforeAll(() => {
+  testCollections = makeTestCollections();
+  testCollectionsObj = makeTestCollectionsObj(testCollections);
+});
 
-export const testCollectionsObj = _map(testCollections, plainToCollection);
 
 describe('collection store getters', () => {
   it('has collections status getter', () => {
@@ -61,7 +63,7 @@ describe('collection store mutations', () => {
   });
 
   it('has update mutation', () => {
-    store.state.collections!.list = _clone(testCollectionsObj);
+    store.state.collections!.list = testCollectionsObj;
     const update = _clone(_find(testCollectionsObj, c => c.id === '1'));
     if (!update) {
       throw 'update collection test not found';
@@ -86,7 +88,7 @@ describe('collection store mutations', () => {
 
   it('has remove mutation', () => {
     const toRemove = testCollectionsObj[0];
-    store.state.collections!.list = _clone(testCollectionsObj);
+    store.state.collections!.list = testCollectionsObj;
     store.commit('collections/remove', toRemove.id);
     expect(store.state.collections!.list).toHaveLength(1);
     const removed = _find(store.state.collections!.list, c => c.id === toRemove.id);
@@ -289,7 +291,7 @@ describe('collection store actions', () => {
       data: { data: update } 
     });
 
-    store.state.collections!.list = _clone(testCollectionsObj);
+    store.state.collections!.list = testCollectionsObj;
 
     const promise = store.dispatch('collections/update', updateObj);
     expect(store.state.collections!.status).toBe('loading');
@@ -312,7 +314,7 @@ describe('collection store actions', () => {
   });
 
   it('has delete', done => {
-    store.state.collections!.list = _clone(testCollectionsObj);
+    store.state.collections!.list = testCollectionsObj;
     mockAxios.delete.mockResolvedValue({
       data: { status: 'ok' },
     });

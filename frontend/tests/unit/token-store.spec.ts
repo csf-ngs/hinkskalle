@@ -1,5 +1,5 @@
 import store from '@/store';
-import { plainToToken, serializeToken } from '@/store/models';
+import { plainToToken, serializeToken, User } from '@/store/models';
 
 import axios from 'axios';
 
@@ -8,7 +8,12 @@ import { map as _map, clone as _clone, find as _find } from 'lodash';
 jest.mock('axios');
 const mockAxios = axios as jest.Mocked<typeof axios>;
 
-import { testUserObj } from './store.spec';
+import { makeTestUserObj } from '../_data';
+
+let testUserObj: User;
+beforeAll(() => {
+  testUserObj = makeTestUserObj();
+});
 
 store.state.backend = mockAxios;
 

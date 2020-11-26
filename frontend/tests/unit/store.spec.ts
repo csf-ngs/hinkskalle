@@ -1,29 +1,25 @@
 
 import store from '@/store';
-import { plainToUser, } from '@/store/models';
+
+import { makeTestUser, makeTestUserObj } from '../_data';
 
 import axios from 'axios';
 
 import { map as _map, clone as _clone, find as _find } from 'lodash';
+import {User} from '@/store/models';
 
 jest.mock('axios');
 const mockAxios = axios as jest.Mocked<typeof axios>;
-
 store.state.backend = mockAxios;
 
-export const testUser = {
-      id: 1,
-      username: 'test.hase',
-      email: 'test@ha.se',
-      firstname: 'Test',
-      lastname: 'Hase',
-      isAdmin: false,
-    };
-  
-export const testUserObj = plainToUser(testUser);
+let testUserObj: User;
 
+beforeAll(() => {
+  testUserObj = makeTestUserObj();
+});
 
 describe('store getters', () => {
+
   it('has isLoggedIn getter', () => {
     expect(store.getters.isLoggedIn).toBe(false);
     store.state.currentUser = testUserObj;
@@ -89,6 +85,7 @@ describe('store mutations', () => {
 });
 
 describe('store actions', () => {
+  const testUser = makeTestUser();
   it('has requestAuth', done => {
     mockAxios.post.mockResolvedValue({
       data: { 
@@ -105,7 +102,7 @@ describe('store actions', () => {
     promise.then(() => {
       expect(store.state.authStatus).toBe('success');
       expect(store.state.authToken).toBe('superoink');
-      expect(store.state.currentUser).toStrictEqual(testUserObj);
+      expect(store.state.currentUser).toStrictEqual(makeTestUserObj(testUser));
       done();
     });
 

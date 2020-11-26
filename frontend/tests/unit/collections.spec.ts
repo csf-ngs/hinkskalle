@@ -8,21 +8,29 @@ import Collections from '@/views/Collections.vue';
 
 import { localVue, localVueNoRouter } from '../setup';
 
-import { testCollectionsObj as testCollectionsObjTpl } from './collections-store.spec';
-import {Collection, Entity} from '@/store/models';
-import {testUserObj} from './store.spec';
+import {Collection, Entity, User} from '@/store/models';
+
+import { makeTestCollectionsObj, makeTestUserObj } from '../_data';
 
 import { cloneDeep as _cloneDeep, each as _each } from 'lodash';
 
-const testCollectionsObj = _cloneDeep(testCollectionsObjTpl);
-_each(testCollectionsObj, c => c.createdBy = testUserObj.username );
+let testUserObj: User;
+let testCollectionsObj: Collection[];
+let testEntityObj: Entity;
+
+beforeAll(() => {
+  testUserObj = makeTestUserObj();
+  testCollectionsObj = makeTestCollectionsObj();
+  _each(testCollectionsObj, c => c.createdBy = testUserObj.username );
+
+  testEntityObj = new Entity();
+  testEntityObj.createdBy = testUserObj.username;
+});
 
 
 // needed to silence vuetify dialog warnings
 document.body.setAttribute('data-app', 'true');
 
-const testEntityObj = new Entity();
-testEntityObj.createdBy = testUserObj.username;
 
 describe('Collections.vue', () => {
   let vuetify: any;

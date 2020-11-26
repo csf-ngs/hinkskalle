@@ -8,7 +8,13 @@ import Account from '@/views/Account.vue';
 
 import { localVue } from '../setup';
 
-import { testUserObj } from './store.spec';
+import { makeTestUserObj } from '../_data';
+import {User} from '@/store/models';
+
+let testUserObj: User;
+beforeAll(() => {
+  testUserObj = makeTestUserObj();
+});
 
 describe('Account.vue', () => {
   let vuetify: any;

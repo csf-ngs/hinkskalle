@@ -1,20 +1,25 @@
 import { Module } from 'vuex';
 
-import { User, plainToUser, serializeUser } from '../models';
+import { User, plainToUser, serializeUser, Container, plainToContainer } from '../models';
 
 import { AxiosError, AxiosResponse } from 'axios';
 
+import { map as _map } from 'lodash';
+
 export interface State {
   status: '' | 'loading' | 'failed' | 'success';
+  starred: Container[];
 }
 
 const userModule: Module<State, any> = {
   namespaced: true,
   state: {
     status: '',
+    starred: [],
   },
   getters: {
     status: (state): string => state.status,
+    starred: (state): Container[] => state.starred,
   },
   mutations: {
     loading(state: State) {
@@ -26,6 +31,9 @@ const userModule: Module<State, any> = {
     succeeded(state: State) {
       state.status = 'success';
     },
+    setStarred(state: State, containers: Container[]) {
+      state.starred = containers;
+    }
   },
   actions: {
     update: ({ commit, rootState }, update: User): Promise<User> => {
@@ -57,6 +65,54 @@ const userModule: Module<State, any> = {
           });
       });
     },
+    getStarred: ({ commit, rootState }, user: User): Promise<Container[]> => {
+      return new Promise((resolve, reject) => {
+        commit('loading');
+        rootState.backend.get(`/v1/users/${user.username}/stars`)
+          .then((response: AxiosResponse) => {
+            const containers = _map(response.data.data, plainToContainer);
+            commit('succeeded');
+            commit('setStarred', containers);
+            resolve(containers);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
+    addStar: ({ commit, rootState }, payload: { user: User; container: Container }): Promise<Container[]> => {
+      return new Promise((resolve, reject) => {
+        commit('loading');
+        rootState.backend.post(`/v1/users/${payload.user.username}/stars/${payload.container.id}`)
+          .then((response: AxiosResponse) => {
+            const containers = _map(response.data.data, plainToContainer);
+            commit('succeeded');
+            commit('setStarred', containers);
+            resolve(containers);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
+    removeStar: ({ commit, rootState }, payload: { user: User; container: Container }): Promise<Container[]> => {
+      return new Promise((resolve, reject) => {
+        commit('loading');
+        rootState.backend.delete(`/v1/users/${payload.user.username}/stars/${payload.container.id}`)
+          .then((response: AxiosResponse) => {
+            const containers = _map(response.data.data, plainToContainer);
+            commit('succeeded');
+            commit('setStarred', containers);
+            resolve(containers);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    }
   },
 };
 

@@ -152,9 +152,7 @@
                               <v-badge :content="item.downloadCount || '0'" inline color="blue-grey lighten-1">
                                 <v-icon>mdi-download</v-icon>
                               </v-badge>
-                              <v-badge :content="item.stars || '0'" inline class="mx-1" color="blue-grey lighten-1">
-                                <v-icon>mdi-star</v-icon>
-                              </v-badge>
+                              <container-stars :container="item"></container-stars>
                             </div>
                           </v-list-item-title>
                         </v-list-item-content>
@@ -193,7 +191,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import moment from 'moment';
-import { clone as _clone } from 'lodash';
+import { clone as _clone, find as _find } from 'lodash';
 
 import { Container, Collection, User } from '../store/models';
 
@@ -261,6 +259,9 @@ export default Vue.extend({
   methods: {
     loadContainers() {
       this.$store.dispatch('containers/list', { entityName: this.$route.params.entity, collectionName: this.$route.params.collection })
+        .then(() => {
+          return this.$store.dispatch('users/getStarred');
+        })
         .catch(err => this.$store.commit('snackbar/showError', err));
     },
     editContainer(container: Container) {

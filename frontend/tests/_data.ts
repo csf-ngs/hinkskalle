@@ -21,8 +21,8 @@ export function makeTestUserObj(from:any=null): User {
 
 export function makeTestContainers() {
   return [
-    { id: "1", name: "testhippo", collectionName: "oinktion", entityName: "oinktity", description: 'Nilpferd', createdAt: new Date(), },
-    { id: "2", name: "testzebra", collectionName: "muhtion", entityName: "muhtity", description: 'Streifig', createdAt: new Date(), },
+    { id: "1", name: "testhippo", collectionName: "oinktion", entityName: "oinktity", description: 'Nilpferd', createdAt: new Date(), stars: 0 },
+    { id: "2", name: "testzebra", collectionName: "muhtion", entityName: "muhtity", description: 'Streifig', createdAt: new Date(), stars: 0 },
   ]
 }
 

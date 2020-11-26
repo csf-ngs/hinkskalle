@@ -8,11 +8,13 @@ import store from './store'
 
 import TopBarComponent from './components/TopBar.vue';
 import TextInputComponent from './components/TextInput.vue';
+import ContainerStarsComponent from './components/ContainerStars.vue';
 
 Vue.config.productionTip = false
 
 Vue.component('top-bar', TopBarComponent);
 Vue.component('hsk-text-input', TextInputComponent);
+Vue.component('container-stars', ContainerStarsComponent);
 Vue.use(VueClipboard);
 Vue.use(VueMoment);
 Vue.filter('abbreviate', function(value: string, maxlen: number): string {

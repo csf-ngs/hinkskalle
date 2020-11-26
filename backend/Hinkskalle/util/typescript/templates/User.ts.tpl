@@ -10,6 +10,8 @@ class {{classname}} {
   public get role(): 'admin' | 'user' {
     return this.isAdmin ? 'admin' : 'user';
   }
+
+  public stars: Container[] = []
 }
 
 export function plainTo{{classname}}(json: any): {{classname}} {

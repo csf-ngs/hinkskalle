@@ -6,6 +6,7 @@ class {{classname}} {
   public canEdit(user: User | null): boolean {
     return !!user && this.createdBy===user.username;
   }
+  
 }
 
 export function plainTo{{classname}}(json: any): {{classname}} {

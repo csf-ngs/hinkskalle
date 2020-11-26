@@ -9,9 +9,7 @@
             <v-col>
               <h1 class="justify-center d-flex">
                 {{title}}
-                <v-badge :content="localState.container.stars || '0'" inline color="blue-grey lighten-1" class="px-1">
-                  <v-icon>mdi-star</v-icon>
-                </v-badge>
+                <container-stars :container="localState.container"></container-stars>
                 <v-badge :content="localState.container.downloadCount || '0'" inline color="blue-grey lighten-1" class="px-1">
                   <v-icon>mdi-download</v-icon>
                 </v-badge>

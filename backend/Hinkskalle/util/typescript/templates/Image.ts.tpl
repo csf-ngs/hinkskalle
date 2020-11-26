@@ -7,8 +7,8 @@ class {{classname}} {
     return `${this.entityName}/${this.collectionName}/${this.containerName}:${this.hash}`
   }
 
-  public canEdit(user: User): boolean {
-    return this.createdBy===user.username;
+  public canEdit(user: User | null): boolean {
+    return !!user && this.createdBy===user.username;
   }
 }
 

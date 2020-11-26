@@ -27,8 +27,8 @@ class Collection {
     return `${this.entityName}/${this.name}`
   }
   
-  public canEdit(user: User): boolean {
-    return this.createdBy===user.username;
+  public canEdit(user: User | null): boolean {
+    return !!user && this.createdBy===user.username;
   }
 }
 
@@ -166,9 +166,10 @@ class Entity {
   public updatedAt!: Date | null
   
 
-  public canEdit(user: User): boolean {
-    return this.createdBy===user.username;
+  public canEdit(user: User | null): boolean {
+    return !!user && this.createdBy===user.username;
   }
+  
 }
 
 export function plainToEntity(json: any): Entity {
@@ -343,6 +344,8 @@ class User {
   public get role(): 'admin' | 'user' {
     return this.isAdmin ? 'admin' : 'user';
   }
+
+  public stars: Container[] = []
 }
 
 export function plainToUser(json: any): User {

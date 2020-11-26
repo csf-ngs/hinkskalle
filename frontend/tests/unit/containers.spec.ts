@@ -41,13 +41,15 @@ describe('Containers.vue', () => {
 
     getters = {
       'containers/list': () => testContainersObj,
+      'users/starred': () => [ testContainersObj[0] ],
     };
     mutations = {
       'snackbar/showSuccess': jest.fn(),
       'snackbar/showError': jest.fn(),
     };
     actions = {
-      'containers/list': jest.fn(),
+      'containers/list': jest.fn().mockResolvedValue('any'),
+      'users/getStarred': jest.fn(),
     };
     store = new Vuex.Store({ getters, actions, mutations });
   });
@@ -58,6 +60,7 @@ describe('Containers.vue', () => {
     await Vue.nextTick();
     await Vue.nextTick();
     expect(actions['containers/list']).toHaveBeenCalledTimes(1);
+    expect(actions['users/getStarred']).toHaveBeenCalledTimes(1);
     done();
   });
 
@@ -79,6 +82,7 @@ describe('Containers.vue', () => {
     expect(wrapper.findAll('div#containers .container')).toHaveLength(2);
     done();
   });
+
 
   it('searches container names', async done => {
     const wrapper = mount(Containers, { localVue, vuetify, store, router });

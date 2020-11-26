@@ -7,6 +7,7 @@ import Vue from 'vue';
 
 import TopBarComponent from '@/components/TopBar.vue';
 import TextInput from '@/components/TextInput.vue';
+import ContainerStars from '@/components/ContainerStars.vue';
 
 Vue.use(Vuetify);
 
@@ -18,6 +19,7 @@ localVue.use(VueRouter);
 localVue.use(VueMoment);
 localVue.component('top-bar', TopBarComponent);
 localVue.component('hsk-text-input', TextInput);
+localVue.component('container-stars', ContainerStars);
 localVue.filter('abbreviate', (v: string) => v);
 localVue.filter('pluralize', (v: number, w: string) => w);
 localVue.filter('prettyBytes', prettyBytes);
@@ -27,6 +29,7 @@ localVueNoRouter.use(Vuex);
 localVueNoRouter.use(VueMoment);
 localVueNoRouter.component('top-bar', TopBarComponent);
 localVueNoRouter.component('hsk-text-input', TextInput);
+localVueNoRouter.component('container-stars', ContainerStars);
 localVueNoRouter.filter('abbreviate', (v: string) => v);
 localVueNoRouter.filter('pluralize', (v: number, w: string) => w);
 localVueNoRouter.filter('prettyBytes', prettyBytes);

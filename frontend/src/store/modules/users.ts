@@ -65,10 +65,10 @@ const userModule: Module<State, any> = {
           });
       });
     },
-    getStarred: ({ commit, rootState }, user: User): Promise<Container[]> => {
+    getStarred: ({ commit, rootState }): Promise<Container[]> => {
       return new Promise((resolve, reject) => {
         commit('loading');
-        rootState.backend.get(`/v1/users/${user.username}/stars`)
+        rootState.backend.get(`/v1/users/${rootState.currentUser.username}/stars`)
           .then((response: AxiosResponse) => {
             const containers = _map(response.data.data, plainToContainer);
             commit('succeeded');
@@ -81,10 +81,10 @@ const userModule: Module<State, any> = {
           });
       });
     },
-    addStar: ({ commit, rootState }, payload: { user: User; container: Container }): Promise<Container[]> => {
+    addStar: ({ commit, rootState }, container: Container): Promise<Container[]> => {
       return new Promise((resolve, reject) => {
         commit('loading');
-        rootState.backend.post(`/v1/users/${payload.user.username}/stars/${payload.container.id}`)
+        rootState.backend.post(`/v1/users/${rootState.currentUser.username}/stars/${container.id}`)
           .then((response: AxiosResponse) => {
             const containers = _map(response.data.data, plainToContainer);
             commit('succeeded');
@@ -97,10 +97,10 @@ const userModule: Module<State, any> = {
           });
       });
     },
-    removeStar: ({ commit, rootState }, payload: { user: User; container: Container }): Promise<Container[]> => {
+    removeStar: ({ commit, rootState }, container: Container): Promise<Container[]> => {
       return new Promise((resolve, reject) => {
         commit('loading');
-        rootState.backend.delete(`/v1/users/${payload.user.username}/stars/${payload.container.id}`)
+        rootState.backend.delete(`/v1/users/${rootState.currentUser.username}/stars/${container.id}`)
           .then((response: AxiosResponse) => {
             const containers = _map(response.data.data, plainToContainer);
             commit('succeeded');

@@ -182,7 +182,6 @@ class TestContainer(ModelBase):
     container.owner = user
     self.assertTrue(container.check_update_access(user))
 
-
   def test_schema(self):
     entity = Entity(name='test-hase')
     db.session.add(entity)

@@ -9,6 +9,7 @@ import { map as _map } from 'lodash';
 export interface State {
   status: '' | 'loading' | 'failed' | 'success';
   starred: Container[];
+  starsLoaded: boolean;
 }
 
 const userModule: Module<State, any> = {
@@ -16,6 +17,7 @@ const userModule: Module<State, any> = {
   state: {
     status: '',
     starred: [],
+    starsLoaded: false,
   },
   getters: {
     status: (state): string => state.status,
@@ -65,11 +67,15 @@ const userModule: Module<State, any> = {
           });
       });
     },
-    getStarred: ({ commit, rootState }): Promise<Container[]> => {
+    getStarred: ({ state, commit, rootState }): Promise<Container[]> => {
       return new Promise((resolve, reject) => {
+        if (state.starsLoaded) {
+          return resolve(state.starred);
+        }
         commit('loading');
         rootState.backend.get(`/v1/users/${rootState.currentUser.username}/stars`)
           .then((response: AxiosResponse) => {
+            state.starsLoaded=true;
             const containers = _map(response.data.data, plainToContainer);
             commit('succeeded');
             commit('setStarred', containers);
@@ -77,6 +83,7 @@ const userModule: Module<State, any> = {
           })
           .catch((err: AxiosError) => {
             commit('failed', err);
+            state.starsLoaded=false;
             reject(err);
           });
       });

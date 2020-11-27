@@ -15,6 +15,9 @@ import { find as _find } from 'lodash';
 
 export default Vue.extend({
   name: 'ContainerStars',
+  mounted() {
+    this.loadStars();
+  },
   props: {
     container: {
       type: Container,
@@ -39,6 +42,10 @@ export default Vue.extend({
         })
         .catch(err => this.$store.commit('snackbar/showError', err));
     },
+    loadStars() {
+      this.$store.dispatch('users/getStarred')
+        .catch(err => this.$store.commit('snackbar/showError', err));
+    }
   },
 })
 </script>

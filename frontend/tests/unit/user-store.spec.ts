@@ -88,12 +88,14 @@ describe('user store actions', () => {
 
   it('can list starred containers', done => {
     store.state.currentUser = testUserObj;
+    store.state.users!.starsLoaded = false;
     const test = makeTestContainers();
     const testObj = makeTestContainersObj(test);
     mockAxios.get.mockResolvedValue({ data: { data: test }});
     const promise = store.dispatch('users/getStarred');
     expect(store.state.users!.status).toBe('loading');
     promise.then(ret => {
+      expect(store.state.users!.starsLoaded).toBeTruthy();
       expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/users/${testUserObj.username}/stars`);
       expect(store.state.users!.status).toBe('success');
       expect(store.state.users!.starred).toStrictEqual(testObj);
@@ -101,11 +103,26 @@ describe('user store actions', () => {
       done();
     });
   });
+  it('does not reload starred containers', done => {
+    store.state.users!.starsLoaded = true;
+    const testObj = makeTestContainersObj();
+    store.state.users!.starred = testObj;
+    mockAxios.get.mockReset();
+    mockAxios.get.mockResolvedValue({});
+    store.dispatch('users/getStarred')
+      .then(ret => {
+        expect(ret).toStrictEqual(testObj);
+        expect(mockAxios.get).toHaveBeenCalledTimes(0);
+        done();
+      });
+  });
   it('has list starred fail handling', done => {
+    store.state.users!.starsLoaded=false;
     mockAxios.get.mockRejectedValue({ fail: 'fail' });
     store.dispatch('users/getStarred')
       .catch(err => {
         expect(store.state.users!.status).toBe('failed');
+        expect(store.state.users!.starsLoaded).toBeFalsy();
         expect(err).toStrictEqual({ fail: 'fail' });
         done();
       });

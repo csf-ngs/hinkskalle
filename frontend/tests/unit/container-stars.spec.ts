@@ -26,6 +26,7 @@ describe('ContainerStars.vue', () => {
     actions = {
       'users/addStar': jest.fn().mockResolvedValue({}),
       'users/removeStar': jest.fn().mockResolvedValue({}),
+      'users/getStarred': jest.fn().mockResolvedValue({}),
     }
     store = new Vuex.Store({ getters, actions });
   });

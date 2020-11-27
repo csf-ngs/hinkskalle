@@ -38,6 +38,7 @@ describe('ContainerDetails.vue', () => {
     actions = {
       'containers/get': jest.fn(() => tests[0]),
       'images/list': jest.fn(() => []), 
+      'users/getStarred': jest.fn(),
     };
     store = new Vuex.Store({ getters, actions, mutations });
   });
@@ -49,6 +50,7 @@ describe('ContainerDetails.vue', () => {
     await Vue.nextTick();
     await Vue.nextTick();
     expect(actions['images/list']).toHaveBeenCalledTimes(1);
+    expect(actions['users/getStarred']).toHaveBeenCalledTimes(1);
     done();
   });
 

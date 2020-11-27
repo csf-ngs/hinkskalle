@@ -60,7 +60,7 @@ describe('Containers.vue', () => {
     await Vue.nextTick();
     await Vue.nextTick();
     expect(actions['containers/list']).toHaveBeenCalledTimes(1);
-    expect(actions['users/getStarred']).toHaveBeenCalledTimes(1);
+    expect(actions['users/getStarred']).toHaveBeenCalledTimes(2);
     done();
   });
 

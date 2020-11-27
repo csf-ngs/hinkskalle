@@ -262,9 +262,6 @@ export default Vue.extend({
   methods: {
     loadContainers() {
       this.$store.dispatch('containers/list', { entityName: this.$route.params.entity, collectionName: this.$route.params.collection })
-        .then(() => {
-          return this.$store.dispatch('users/getStarred');
-        })
         .catch(err => this.$store.commit('snackbar/showError', err));
     },
     editContainer(container: Container) {

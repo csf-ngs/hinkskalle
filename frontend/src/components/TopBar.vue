@@ -3,7 +3,7 @@
     <v-toolbar-title>{{title}}</v-toolbar-title>
     <slot></slot>
     <v-spacer></v-spacer>
-    <v-autocomplete
+    <v-autocomplete class="mr-3" style="max-width: 300px"
         v-model="localState.select"
         :loading="loading"
         :items="result"
@@ -15,7 +15,7 @@
         clearable
         append-icon=''
         no-filter
-        dense solo flat>
+        solo flat>
       <template v-slot:item="{ item }">
         <v-list-item-avatar>
           <v-icon v-if="item.value.type=='Entity'">mdi-account-box-multiple</v-icon>

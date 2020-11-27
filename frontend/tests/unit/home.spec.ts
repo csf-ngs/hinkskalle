@@ -22,6 +22,7 @@ describe('Home.vue', () => {
     };
     actions = {
       'containers/latest': jest.fn(),
+      'users/getStarred': jest.fn(),
     }
     store = new Vuex.Store({ getters, actions });
     router = new VueRouter();
@@ -39,6 +40,11 @@ describe('Home.vue', () => {
     isLoggedIn = true;
     const wrapper = mount(Home, { localVue, vuetify, store, router, });
     expect(wrapper.find('latest-containers')).not.toBeNull();
+  });
+  it('renders starred containers when logged in', () => {
+    isLoggedIn = true;
+    const wrapper = mount(Home, { localVue, vuetify, store, router, });
+    expect(wrapper.find('starred-containers')).not.toBeNull();
   });
 });
 

@@ -8,12 +8,12 @@
         </v-row>
         <v-row>
           <v-col cols="10">
-            <h3>How To Use Me</h3>
+            <h2>How To Use Me</h2>
           </v-col>
         </v-row>
         <v-row>
           <v-col cols="6">
-            <v-card tile>
+            <v-card tile height="100%">
               <v-card-title>
                 Pull Only:
               </v-card-title>
@@ -28,7 +28,7 @@ singularity remote use hinkskalle
             </v-card>
           </v-col>
           <v-col cols="6">
-            <v-card tile>
+            <v-card tile height="100%">
               <v-card-title>
                 Pull and Push:
               </v-card-title>
@@ -56,8 +56,11 @@ singularity remote login hinkskalle
         </v-col>
       </v-row>
       <v-row justify="center" v-if="isLoggedIn">
-        <v-col cols="10" id="latest-containers">
+        <v-col cols="12" md="6" id="latest-containers">
           <latest-containers></latest-containers>
+        </v-col>
+        <v-col cols="12" md="6" id="latest-containers">
+          <starred-containers></starred-containers>
         </v-col>
       </v-row>
     </v-container>
@@ -68,6 +71,7 @@ singularity remote login hinkskalle
 import Vue from 'vue';
 
 import LatestContainers from '@/components/LatestContainers.vue';
+import StarredContainers from '@/components/StarredContainers.vue';
 
 export default Vue.extend({
   name: 'Home',
@@ -81,6 +85,7 @@ export default Vue.extend({
   },
   components: {
     LatestContainers,
+    StarredContainers,
   },
 });
 </script>

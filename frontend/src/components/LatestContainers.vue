@@ -1,27 +1,26 @@
 <template>
   <v-container>
-    <v-row justify="center">
-          <v-col cols="12">
-            <h3>Latest Uploads:</h3>
-            <v-list nav>
-              <v-list-item-group>
-                <v-list-item link v-for="(up, i) in latest" :key="i"
-                    :to="{name: 'ContainerDetails', params: { entity: up.container.entityName, collection: up.container.collectionName, container: up.container.name }}">
-                  <v-list-item-content>
-                    <v-list-item-title>
-                      {{up.container.entityName}}/{{up.container.collectionName}}/{{up.container.name}}
-                    </v-list-item-title>
-                    <v-list-item-subtitle>
-                      {{up.container.createdBy}} | {{(up.container.updatedAt || up.container.createdAt) | moment('YYYY-MM-DD HH:mm:ss')}}
-                    </v-list-item-subtitle>
-                  </v-list-item-content>
-                  <v-list-item-icon>
-                      <v-chip color="light-green lighten-2" v-for="tag in up.tags" :key="tag" @click.stop.prevent="copyTag(up.container, tag)">{{tag}}</v-chip>
-                  </v-list-item-icon>
-                </v-list-item>
-              </v-list-item-group>
-            </v-list>
-          </v-col>
+    <v-row>
+      <v-col>
+        <h2>Latest Uploads</h2>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col cols="12" v-for="(up, i) in latest" :key="i">
+        <v-card outlined raised class="upload" 
+            :to="{name: 'ContainerDetails', params: { entity: up.container.entityName, collection: up.container.collectionName, container: up.container.name }}">
+          <v-card-title class="text-h6">
+            {{up.container.fullPath}}
+          </v-card-title>
+          <v-card-text>
+            {{up.container.createdBy}} | {{(up.container.updatedAt || up.container.createdAt) | moment('YYYY-MM-DD HH:mm:ss')}}
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-chip pill class="mr-1" color="pink lighten-4" v-for="tag in up.tags" :key="tag" @click.stop.prevent="copyTag(up.container, tag)">{{tag}}</v-chip>
+          </v-card-actions>
+        </v-card>
+      </v-col>
     </v-row>
   </v-container>
 </template>

@@ -17,7 +17,6 @@ describe('LatestContainers.vue', () => {
   let actions: any;
   let router: any;
   let latest: Upload[] = [];
-  let mockLoadLatest: any;
 
   beforeEach(() => {
     vuetify = new Vuetify();
@@ -26,26 +25,25 @@ describe('LatestContainers.vue', () => {
         { name: 'ContainerDetails', path: '/:entity/:collection/:container' }
       ]
     });
-    mockLoadLatest = jest.fn();
     getters = {
       'containers/latest': () => latest,
     };
     actions = {
-      'containers/latest': mockLoadLatest,
+      'containers/latest': jest.fn(),
     };
     store = new Vuex.Store({ getters, actions });
   });
 
   it('renders something', () => {
     const wrapper = mount(LatestContainers, { localVue, vuetify, store, router });
-    expect(wrapper.text()).toContain('Latest Uploads:');
-    expect(mockLoadLatest).toHaveBeenCalledTimes(1);
+    expect(wrapper.text()).toContain('Latest Uploads');
+    expect(actions['containers/latest']).toHaveBeenCalledTimes(1);
   });
 
   it('renders uploads', () => {
     latest = makeTestLatestObj();
     const wrapper = mount(LatestContainers, { localVue, vuetify, store, router });
-    expect(wrapper.findAll('a.v-list-item')).toHaveLength(2);
+    expect(wrapper.findAll('.v-card.upload')).toHaveLength(2);
 
   });
 });

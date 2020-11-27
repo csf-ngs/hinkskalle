@@ -72,20 +72,6 @@ export default Vue.extend({
         _map(res.container, e => ({ text: e.name, value: _set(e, 'type', 'Container') })) as any,
       ]) : [];
       return ret;
-      /*
-      return res ? _flatten([
-        _map(res.entity, e => _set(e, 'type', 'Entity')) as any,
-        _map(res.collection, c => _set(c, 'type', 'Collection')) as any,
-        _map(res.container, c => _set(c, 'type', 'Container')) as any,
-      ]) : [];
-      */
-     /*
-      return res ? _flatten([
-        _map(res.entity, 'fullPath'),
-        _map(res.collection, 'fullPath'),
-        _map(res.container, 'fullPath'),
-      ]) : []
-      */
     },
   },
   watch: {

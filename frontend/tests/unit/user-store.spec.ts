@@ -10,7 +10,6 @@ import { makeTestContainers, makeTestContainersObj } from '../_data';
 
 jest.mock('axios');
 const mockAxios = axios as jest.Mocked<typeof axios>;
-
 store.state.backend = mockAxios;
 
 let testUserObj: User;

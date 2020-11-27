@@ -6,8 +6,8 @@
       </v-col>
     </v-row>
     <v-row>
-      <v-col cols="12" v-for="container in containers" :key="container.id">
-        <v-card outlined raised class="x-container" :to="{ name: 'ContainerDetails', params: { entity: container.entityName, collection: container.collectionName, container: container.name } }">
+      <v-col cols="12" xl="6" v-for="container in containers" :key="container.id">
+        <v-card outlined raised height="100%" class="x-container" :to="{ name: 'ContainerDetails', params: { entity: container.entityName, collection: container.collectionName, container: container.name } }">
           <v-card-title class="text-h6">
             {{container.fullPath}}
           </v-card-title>

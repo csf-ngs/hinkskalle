@@ -166,6 +166,13 @@ class Entity {
   public updatedAt!: Date | null
   
 
+  public get entityName(): string {
+    return this.name;
+  }
+  public get fullPath(): string {
+    return `${this.entityName}`
+  }
+  
   public canEdit(user: User | null): boolean {
     return !!user && this.createdBy===user.username;
   }
@@ -436,5 +443,26 @@ export function plainToUpload(json: any): Upload {
   return {
     tags: json.tags,
     container: plainToContainer(json.container),
+  };
+}
+
+export interface SearchQuery {
+  name?: string;
+  description?: string;
+}
+
+export interface SearchResult {
+  entity: Entity[];
+  collection: Collection[];
+  container: Container[];
+  image: Image[];
+}
+
+export function plainToSearchResult(json: any): SearchResult {
+  return {
+    entity: _map(json.entity, plainToEntity),
+    collection: _map(json.collection, plainToCollection),
+    container: _map(json.container, plainToContainer),
+    image: _map(json.image, plainToImage),
   };
 }

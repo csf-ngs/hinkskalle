@@ -18,7 +18,8 @@ class SearchResponseSchema(ResponseSchema):
   data=fields.Nested(SearchSchema)
 
 class SearchQuerySchema(RequestSchema):
-  value=fields.String()
+  value=fields.String(required=False)
+  description=fields.String(required=False)
 
 @registry.handles(
   rule='/v1/search',
@@ -30,20 +31,30 @@ class SearchQuerySchema(RequestSchema):
 def search():
   args = rebar.validated_args
 
-  entities = Entity.query.filter(Entity.name.ilike(f"%{args['value']}%"))
-  collections = Collection.query.filter(Collection.name.ilike(f"%{args['value']}%"))
-  containers = Container.query.filter(Container.name.ilike(f"%{args['value']}%"))
+  search = {
+    'entities': [],
+    'collections': [],
+    'containers': [],
+  }
 
-  if not g.authenticated_user.is_admin:
-    entities = entities.filter(Entity.owner==g.authenticated_user)
-    collections = collections.filter(Collection.owner==g.authenticated_user)
-    containers = containers.filter(Container.owner==g.authenticated_user)
+  if args.get('value', None):
+    search['entities'].append(Entity.name.ilike(f"%{args['value']}%"))
+    search['collections'].append(Collection.name.ilike(f"%{args['value']}%"))
+    search['containers'].append(Container.name.ilike(f"%{args['value']}%"))
+  if args.get('description', None):
+    search['entities'].append(Entity.description.ilike(f"%{args['description']}%"))
+    search['collections'].append(Collection.description.ilike(f"%{args['description']}%"))
+    search['containers'].append(Container.description.ilike(f"%{args['description']}%"))
+
+  entities = Entity.query.filter(*search['entities'])
+  collections = Collection.query.filter(*search['collections'])
+  containers = Container.query.filter(*search['containers'])
 
   return {
     'data': {
-      'entity': list(entities),
-      'collection': list(collections),
-      'container': list(containers),
+      'entity': [ e for e in entities if e.check_access(g.authenticated_user) ],
+      'collection': [ c for c in collections if c.check_access(g.authenticated_user) ],
+      'container': [ c for c in containers if c.check_access(g.authenticated_user) ],
       #'container': [],
       'image': []
     }

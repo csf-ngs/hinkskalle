@@ -125,4 +125,5 @@ describe('store actions', () => {
       done();
     });
   });
+
 });

@@ -3,6 +3,13 @@
 class {{classname}} {
   {{utils.auto_attributes(fields)}}
 
+  public get entityName(): string {
+    return this.name;
+  }
+  public get fullPath(): string {
+    return `${this.entityName}`
+  }
+  
   public canEdit(user: User | null): boolean {
     return !!user && this.createdBy===user.username;
   }

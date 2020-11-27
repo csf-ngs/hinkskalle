@@ -16,3 +16,24 @@ export function plainToUpload(json: any): Upload {
     container: plainToContainer(json.container),
   };
 }
+
+export interface SearchQuery {
+  name?: string;
+  description?: string;
+}
+
+export interface SearchResult {
+  entity: Entity[];
+  collection: Collection[];
+  container: Container[];
+  image: Image[];
+}
+
+export function plainToSearchResult(json: any): SearchResult {
+  return {
+    entity: _map(json.entity, plainToEntity),
+    collection: _map(json.collection, plainToCollection),
+    container: _map(json.container, plainToContainer),
+    image: _map(json.image, plainToImage),
+  };
+}

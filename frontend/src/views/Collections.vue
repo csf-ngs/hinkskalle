@@ -205,6 +205,9 @@ export default Vue.extend({
     }
   },
   watch: {
+    $route() {
+      this.loadCollections();
+    },
     'localState.showEdit': function showEdit(val) {
       if (!val) {
         this.closeEdit();

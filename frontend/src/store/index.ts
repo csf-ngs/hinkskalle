@@ -13,6 +13,7 @@ import collectionsModule, { State as CollectionsState }  from './modules/collect
 import imagesModule, { State as ImagesState } from './modules/images';
 import tokensModule, { State as TokensState } from './modules/tokens';
 import usersModule, { State as UsersState } from './modules/users';
+import searchModule, { State as SearchState } from './modules/search';
 
 interface State {
   backend: AxiosInstance;
@@ -26,6 +27,7 @@ interface State {
   containers?: ContainersState;
   collections?: CollectionsState;
   entities?: EntitiesState;
+  search?: SearchState;
 }
 
 const token = localStorage.getItem('token') || '';
@@ -116,5 +118,6 @@ export default new Vuex.Store({
     containers: containersModule,
     collections: collectionsModule,
     entities: entitiesModule,
+    search: searchModule,
   }
 });

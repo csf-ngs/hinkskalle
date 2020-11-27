@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { Container, plainToContainer, Upload, plainToUpload, User, plainToUser, Collection, plainToCollection, Entity, plainToEntity } from '@/store/models';
+import { Container, plainToContainer, Upload, plainToUpload, User, plainToUser, Collection, plainToCollection, Entity, plainToEntity, SearchResult, plainToSearchResult } from '@/store/models';
 
 import { map as _map } from 'lodash';
 
@@ -78,4 +78,16 @@ export function makeTestEntities() {
 
 export function makeTestEntitiesObj(from:any=null): Entity[] {
   return _map(from || makeTestEntities(), plainToEntity);
+}
+
+export function makeTestSearchResult() {
+  return {
+    entity: makeTestEntities(),
+    collection: makeTestCollections(),
+    container: makeTestContainers(),
+    image: []
+  }
+}
+export function makeTestSearchResultObj(from:any=null): SearchResult {
+  return plainToSearchResult(from || makeTestSearchResult());
 }

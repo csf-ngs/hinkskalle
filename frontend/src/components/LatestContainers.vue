@@ -6,8 +6,8 @@
       </v-col>
     </v-row>
     <v-row>
-      <v-col cols="12" v-for="(up, i) in latest" :key="i">
-        <v-card outlined raised class="upload" 
+      <v-col cols="12" xl="6" v-for="(up, i) in latest" :key="i">
+        <v-card height="100%" outlined raised class="upload" 
             :to="{name: 'ContainerDetails', params: { entity: up.container.entityName, collection: up.container.collectionName, container: up.container.name }}">
           <v-card-title class="text-h6">
             {{up.container.fullPath}}

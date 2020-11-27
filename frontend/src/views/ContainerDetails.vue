@@ -125,6 +125,11 @@ export default Vue.extend({
       container: null,
     }
   }),
+  watch: {
+    $route() {
+      this.loadContainer();
+    }
+  },
   computed: {
     title(): string {
       return `${this.localState.container ? this.localState.container.fullPath : '...'}`

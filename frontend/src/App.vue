@@ -42,13 +42,13 @@
         </v-list-item>
         <template v-if="isLoggedIn">
           <v-list-item link :to="'/entities'">
-            <v-list-item-icon><v-icon>mdi-account-group</v-icon></v-list-item-icon>
+            <v-list-item-icon><v-icon>mdi-account-box-multiple</v-icon></v-list-item-icon>
             <v-list-item-content>
               <v-list-item-title>Entities</v-list-item-title>
             </v-list-item-content>
           </v-list-item>
           <v-list-item link :to="'/collections'">
-            <v-list-item-icon><v-icon>mdi-cards</v-icon></v-list-item-icon>
+            <v-list-item-icon><v-icon>mdi-folder-multiple</v-icon></v-list-item-icon>
             <v-list-item-content>
               <v-list-item-title>Your Collections</v-list-item-title>
             </v-list-item-content>

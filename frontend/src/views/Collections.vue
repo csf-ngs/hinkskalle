@@ -15,7 +15,7 @@
                 <v-spacer></v-spacer>
                 <v-dialog v-model="localState.showEdit" max-width="700px">
                   <template v-slot:activator="{ on, attrs }">
-                    <v-btn v-if="entity && entity.canEdit(currentUser)" id="create-collection" color="primary" text v-bind="attrs" v-on="on">Create Collection</v-btn>
+                    <v-btn v-if="entity && entity.canEdit(currentUser)" id="create-collection" color="primary darken-1" text v-bind="attrs" v-on="on">Create Collection</v-btn>
                   </template>
                   <v-card>
                     <v-card-title class="headline">{{editTitle}}</v-card-title>
@@ -71,7 +71,7 @@
                     </v-card-text>
                     <v-card-actions>
                       <v-spacer></v-spacer>
-                      <v-btn color="warning accent-1" text @click="closeEdit">Mabye not today.</v-btn>
+                      <v-btn color="secondary accent-1" text @click="closeEdit">Mabye not today.</v-btn>
                       <v-btn id="save" color="primary darken-1" text @click="save">Save It!</v-btn>
                     </v-card-actions>
                   </v-card>
@@ -81,11 +81,12 @@
                     <v-card-title class="headline">You really want to kill it?</v-card-title>
                     <v-card-actions>
                       <v-spacer></v-spacer>
-                      <v-btn color="primary darken-1" text @click="closeDelete">Let mercy rule.</v-btn>
+                      <v-btn color="secondary darken-1" text @click="closeDelete">Let mercy rule.</v-btn>
                       <v-btn color="warning accent-1" text @click="deleteCollectionConfirm">Get it out of my sight.</v-btn>
                     </v-card-actions>
                   </v-card>
                 </v-dialog>
+                <v-btn id="refresh" color="primary darken-1" text @click="loadCollections()"><v-icon>mdi-refresh</v-icon></v-btn>
               </v-toolbar>
             </template>
             <template v-slot:default="props">

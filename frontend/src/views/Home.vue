@@ -1,11 +1,7 @@
 <template>
   <div class="home">
+    <top-bar title="Hello, Hinkskalle speaking!"></top-bar>
     <v-container>
-        <v-row justify="center">
-          <v-col cols="6">
-            <h1 class="display-1 text-center">Hello, Hinkskalle speaking!</h1>
-          </v-col>
-        </v-row>
         <v-row>
           <v-col cols="12">
             <h2>How To Use Me</h2>

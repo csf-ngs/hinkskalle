@@ -9,14 +9,22 @@
             :headers="headers"
             :items="tokens"
             :search="localState.search"
+            :sort-by="localState.sortBy"
+            :sort-desc="localState.sortDesc"
             :loading="loading">
             <template v-slot:top>
               <v-toolbar flat>
-                <v-text-field v-model="localState.search" prepend-icon="mdi-magnify" label="Search..." single-line hide-details></v-text-field>
+                <v-text-field 
+                  v-model="localState.search" 
+                  prepend-inner-icon="mdi-magnify" 
+                  label="Search..." 
+                  single-line outlined dense hide-details></v-text-field>
                 <v-spacer></v-spacer>
                 <v-dialog v-model="localState.showEdit" max-width="500px">
                   <template v-slot:activator="{ on, attrs }">
-                    <v-btn color="primary" text v-bind="attrs" v-on="on">Create Token</v-btn>
+                    <v-btn 
+                      dense depressed
+                      v-bind="attrs" v-on="on">Create Token</v-btn>
                   </template>
                   <v-card>
                     <v-card-title class="headline">{{editTitle}}</v-card-title>
@@ -64,6 +72,11 @@
                     </v-card-actions>
                   </v-card>
                 </v-dialog>
+                <v-btn 
+                  id="refresh" 
+                  class="ml-2"
+                  dense depressed 
+                  @click="loadTokens()"><v-icon>mdi-refresh</v-icon></v-btn>
               </v-toolbar>
             </template>
             <template v-slot:item.token="{ item }">
@@ -106,6 +119,8 @@ import { DataTableHeader } from 'vuetify';
 
 interface State {
   search: string;
+  sortBy: string;
+  sortDesc: boolean;
   showEdit: boolean;
   showDelete: boolean;
   showExpiration: boolean;
@@ -119,7 +134,7 @@ export default Vue.extend({
   },
   data: (): { headers: DataTableHeader[]; localState: State } => ({
     headers: [
-      { text: 'id', value: 'id', sortable: true, filterable: false, width: '1%' },
+      { text: 'id', value: 'id', sortable: true, filterable: false, width: '9%' },
       { text: 'Token', value: 'token', sortable: false, width: '20%' },
       { text: 'Comment', value: 'comment', sortable: true, width: '' },
       { text: 'Expires', value: 'expiresAt', sortable: true, filterable: false, width: '20%' },
@@ -131,6 +146,8 @@ export default Vue.extend({
       showDelete: false,
       showExpiration: false,
       editItem: new Token(),
+      sortBy: 'id',
+      sortDesc: false,
     },
   }),
   computed: {

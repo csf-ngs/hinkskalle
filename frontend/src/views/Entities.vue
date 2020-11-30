@@ -13,12 +13,16 @@
             :loading="loading">
             <template v-slot:header>
               <v-toolbar flat>
-                <v-text-field id="search" v-model="localState.search" prepend-icon="mdi-magnify" label="Search..." single-line hide-details></v-text-field>
+                <v-text-field id="search" 
+                  v-model="localState.search" 
+                  prepend-inner-icon="mdi-magnify" 
+                  label="Search..." 
+                  single-line outlined dense hide-details></v-text-field>
                 <v-spacer></v-spacer>
                 <v-select class="mr-1"
                   v-model="localState.sortBy" 
                   label="Sort..."
-                  hide-details 
+                  hide-details outlined dense
                   :items="sortKeys"
                   item-text="desc"
                   item-value="key"

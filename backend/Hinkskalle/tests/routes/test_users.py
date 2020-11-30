@@ -45,7 +45,7 @@ class TestUsers(RouteBase):
     user1 = _create_user('test.hase')
     user2 = _create_user('test.kuh')
 
-    with self.fake_admin_auth():
+    with self.fake_auth():
       ret = self.client.get('/v1/users')
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')

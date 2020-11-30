@@ -11,6 +11,10 @@ class {{classname}} {
     return this.isAdmin ? 'admin' : 'user';
   }
 
+  public canEdit(user: User | null): boolean {
+    return !!user && (user.isAdmin || this.username===user.username);
+  }
+
   public stars: Container[] = []
 }
 

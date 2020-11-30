@@ -8,6 +8,7 @@ import Collections from '../views/Collections.vue';
 import Entities from '../views/Entities.vue';
 import Containers from '../views/Containers.vue';
 import ContainerDetails from '../views/ContainerDetails.vue';
+import Users from '../views/Users.vue';
 import store from '../store';
 
 Vue.use(VueRouter);
@@ -23,6 +24,15 @@ export const isAuthenticated: NavigationGuard = (to, _, next) => {
     return next();
   }
 };
+
+export const isAdmin: NavigationGuard = (to, from, next) => {
+  if (!store.getters.currentUser || !store.getters.currentUser.isAdmin) {
+    return next(new Error("Admin privileges required"));
+  }
+  else {
+    return next();
+  }
+}
 
 const routes: Array<RouteConfig> = [
   {
@@ -77,6 +87,12 @@ const routes: Array<RouteConfig> = [
     component: ContainerDetails,
     meta: { requiresAuth: true },
   },
+  {
+    path: '/users',
+    name: 'Users',
+    component: Users,
+    meta: { requiresAdmin: true, requiresAuth: true, },
+  }
 ];
 
 const router = new VueRouter({
@@ -88,6 +104,9 @@ const router = new VueRouter({
 router.beforeEach((to, from, next) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
     return isAuthenticated(to, from, next);
+  }
+  if (to.matched.some(record => record.meta.requiresAdmin)) {
+    return isAdmin(to, from, next);
   }
   next();
 });

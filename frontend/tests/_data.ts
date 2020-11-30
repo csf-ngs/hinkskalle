@@ -6,7 +6,7 @@ import { map as _map } from 'lodash';
 
 export function makeTestUser() {
   return {
-    id: 1,
+    id: "1",
     username: 'test.hase',
     email: 'test@ha.se',
     firstname: 'Test',

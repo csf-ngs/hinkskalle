@@ -23,7 +23,6 @@
               <v-list-item-title>Tokens</v-list-item-title>
             </v-list-item-content>
           </v-list-item>
-
         </template>
         <v-list-item link v-else color="error" :to="'/login'">
           <v-list-item-icon><v-icon>mdi-alert</v-icon></v-list-item-icon>
@@ -32,6 +31,17 @@
           </v-list-item-content>
         </v-list-item>
       </v-list>
+      <template v-if="currentUser.isAdmin">
+        <v-divider></v-divider>
+        <v-list dense nav>
+          <v-list-item link :to="'/users'">
+            <v-list-item-icon><v-icon>mdi-cog</v-icon></v-list-item-icon>
+            <v-list-item-content>
+              <v-list-item-title>User Administration</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+      </template>
       <v-divider></v-divider>
       <v-list dense nav>
         <v-list-item link :to="'/'">

@@ -92,7 +92,11 @@
       </v-row>
       <v-row>
         <v-col cols="12" md="10" offset-md="1">
-          <h2 class="text-center mb-2">Images</h2>
+          <h2 class="mb-2 d-flex">
+            Images
+            <v-spacer></v-spacer>
+            <v-btn text color="primary darken-1" @click="loadContainer()"><v-icon>mdi-refresh</v-icon></v-btn>
+          </h2>
           <v-expansion-panels inset>
             <image-details 
               v-for="image in images"
@@ -109,6 +113,8 @@
 import ImageDetails from '@/components/ImageDetails.vue';
 import Vue from 'vue';
 import { Container, Image, User } from '../store/models';
+
+import { orderBy as _orderBy } from 'lodash';
 
 interface State {
   container: Container | null;
@@ -138,7 +144,7 @@ export default Vue.extend({
       return this.$store.getters['container/status']==='loading';
     },
     images(): Image[] {
-      return this.$store.getters['images/list'];
+      return _orderBy(this.$store.getters['images/list'], 'createdAt', 'desc');
     },
     currentUser(): User {
       return this.$store.getters.currentUser;

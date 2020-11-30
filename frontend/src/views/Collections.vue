@@ -8,14 +8,34 @@
             id="collections"
             :items="collections"
             :search="localState.search"
+            :sort-by="localState.sortBy"
+            :sort-desc="localState.sortDesc"
             :loading="loading">
             <template v-slot:header>
               <v-toolbar flat>
                 <v-text-field id="search" v-model="localState.search" prepend-icon="mdi-magnify" label="Search..." single-line hide-details></v-text-field>
                 <v-spacer></v-spacer>
+                <v-select class="mr-1"
+                  v-model="localState.sortBy" 
+                  label="Sort..."
+                  hide-details 
+                  :items="sortKeys"
+                  item-text="desc"
+                  item-value="key"
+                  prepend-inner-icon="mdi-sort"></v-select>
+                <v-btn-toggle dense active-class="green--text" borderless
+                  v-model="localState.sortDesc" mandatory>
+                  <v-btn :value="true"><v-icon>mdi-sort-descending</v-icon></v-btn>
+                  <v-btn :value="false"><v-icon>mdi-sort-ascending</v-icon></v-btn>
+                </v-btn-toggle>
+                <v-spacer></v-spacer>
                 <v-dialog v-model="localState.showEdit" max-width="700px">
                   <template v-slot:activator="{ on, attrs }">
-                    <v-btn v-if="entity && entity.canEdit(currentUser)" id="create-collection" color="primary darken-1" text v-bind="attrs" v-on="on">Create Collection</v-btn>
+                    <v-btn 
+                      v-if="entity && entity.canEdit(currentUser)" 
+                      id="create-collection" 
+                      dense depressed
+                      v-bind="attrs" v-on="on">Create Collection</v-btn>
                   </template>
                   <v-card>
                     <v-card-title class="headline">{{editTitle}}</v-card-title>
@@ -86,7 +106,12 @@
                     </v-card-actions>
                   </v-card>
                 </v-dialog>
-                <v-btn id="refresh" color="primary darken-1" text @click="loadCollections()"><v-icon>mdi-refresh</v-icon></v-btn>
+                <v-spacer></v-spacer>
+                <v-btn 
+                  id="refresh" 
+                  class="ml-2"
+                  dense depressed 
+                  @click="loadCollections()"><v-icon>mdi-refresh</v-icon></v-btn>
               </v-toolbar>
             </template>
             <template v-slot:default="props">
@@ -151,6 +176,8 @@ import moment from 'moment';
 
 interface State {
   search: string;
+  sortBy: string;
+  sortDesc: boolean;
   editItem: Collection;
   showEdit: boolean;
   showDelete: boolean;
@@ -167,21 +194,21 @@ export default Vue.extend({
   mounted() {
     this.loadCollections();
   },
-  data: (): { headers: DataTableHeader[]; localState: State } => ({
-    headers: [
-      { text: 'Id', value: 'id', sortable: true, filterable: false, width: '7%' },
-      { text: 'Name', value: 'name', sortable: true, filterable: true, width: '15%' },
-      { text: 'Description', value: 'description', sortable: true, filterable: true, width: '' },
-      { text: 'Size', value: 'size', sortable: true, filterable: false, width: '8%', },
-      { text: 'Created', value: 'createdAt', sortable: true, filterable: false, width: '12%', },
-      { text: 'Actions', value: 'actions', sortable: false, filterable: false, width: '5%', },
-    ],
+  data: (): { localState: State; sortKeys: { key: string; desc: string }[] } => ({
     localState: {
       search: '',
+      sortBy: 'name',
+      sortDesc: false,
       showEdit: false,
       showDelete: false,
       editItem: defaultItem(),
     },
+    sortKeys: [
+      { key: 'name', desc: 'Name' }, 
+      { key :'createdAt', desc: "Create Date" }, 
+      { key: 'updatedAt', desc: "Last Updated" },
+      { key: 'size', desc: '# Containers' } 
+    ],
   }),
   computed: {
     collections(): Collection[] {

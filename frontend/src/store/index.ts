@@ -5,7 +5,7 @@ import axios, {AxiosInstance} from 'axios';
 
 Vue.use(Vuex);
 
-import { User, plainToUser } from './models';
+import { User, plainToUser, serializeUser } from './models';
 import snackbarModule, { State as SnackbarState } from './modules/snackbar';
 import entitiesModule, { State as EntitiesState } from './modules/entities';
 import containersModule, { State as ContainersState } from './modules/containers';
@@ -72,6 +72,7 @@ export default new Vuex.Store({
     },
     setUser(state: State, user: User) {
       state.currentUser = user;
+      localStorage.setItem('user', JSON.stringify(serializeUser(user)));
     },
     logout(state: State) {
       state.authToken = '';

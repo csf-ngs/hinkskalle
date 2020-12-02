@@ -4,7 +4,7 @@
     <v-container>
       <v-row v-if="localState.editUser">
         <v-col cols="12" md="8" offset-md="2">
-          <v-form>
+          <v-form v-model="localState.editValid">
             <v-container>
               <v-row>
                 <v-col cols="12" md="6">
@@ -12,6 +12,7 @@
                     label="Firstname"
                     field="firstname"
                     :obj="localState.editUser"
+                    required
                     @updated="localState.editUser=$event"></hsk-text-input>
                 </v-col>
                 <v-col cols="12" md="6">
@@ -19,43 +20,28 @@
                     label="Lastname"
                     field="lastname"
                     :obj="localState.editUser"
+                    required
                     @updated="localState.editUser=$event"></hsk-text-input>
                 </v-col>
                 <v-col cols="12" md="6">
                   <hsk-text-input id="username" 
-                    label="Username"
-                    field="username"
-                    :obj="localState.editUser"
-                    @updated="localState.editUser=$event"></hsk-text-input>
+                    :static-value="localState.editUser.username"
+                    label="Username"></hsk-text-input>
                 </v-col>
                 <v-col cols="12" md="6">
                   <hsk-text-input id="email" 
                     label="Email"
                     field="email"
                     :obj="localState.editUser"
+                    required
                     @updated="localState.editUser=$event"></hsk-text-input>
                 </v-col>
               </v-row>
               <v-row>
                 <v-col cols="12">
-                  <v-btn type="reset" color="warning" class="mr-4" @click.prevent="reset()">Reset</v-btn>
-                  <v-btn type="submit" color="success" class="mr-4" @click.prevent="update()">Save</v-btn>
-                  <v-dialog v-model="localState.confirmDelete" persistent max-width="250px">
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn disabled id="delete" color="error" v-bind="attrs" v-on="on">Delete</v-btn>
-                    </template>
-                    <v-card>
-                      <v-card-title class="headline">Delete Account?</v-card-title>
-                      <v-card-text>
-                        Delete yourself and all your containers and all that you stand for?
-                      </v-card-text>
-                      <v-card-actions>
-                        <v-spacer></v-spacer>
-                        <v-btn color="success" text @click="localState.confirmDelete=false">Hold on!</v-btn>
-                        <v-btn id="do-delete" color="error" text @click="deleteAccount()">Sayonara!</v-btn>
-                      </v-card-actions>
-                    </v-card>
-                  </v-dialog>
+                  <v-spacer></v-spacer>
+                  <v-btn type="reset" color="secondary accent-1" text @click.prevent="reset()">Reset</v-btn>
+                  <v-btn type="submit" color="primary darken-1" text :disabled="!localState.editValid" @click.prevent="update()">Save</v-btn>
                 </v-col>
               </v-row>
             </v-container>
@@ -73,7 +59,7 @@ import { clone as _clone } from 'lodash';
 
 interface State {
   editUser: User | null;
-  confirmDelete: boolean;
+  editValid: boolean;
 }
 
 export default Vue.extend({
@@ -81,7 +67,7 @@ export default Vue.extend({
   data: (): { localState: State } => ({
     localState: {
       editUser: null,
-      confirmDelete: false,
+      editValid: true,
     },
   }),
   mounted: function() {
@@ -99,17 +85,6 @@ export default Vue.extend({
           this.$store.commit('snackbar/showSuccess', "Hooray!");
         })
         .catch(err => this.$store.commit('snackbar/showError', err));
-    },
-    deleteAccount() {
-      this.$store.dispatch('users/delete', this.localState.editUser)
-        .then(() => {
-          this.$store.commit('logout');
-          this.$router.push('/login');
-        })
-        .catch(err => {
-          this.$store.commit('snackbar/showError', err);
-        });
-      this.localState.confirmDelete=false;
     },
   }
 });

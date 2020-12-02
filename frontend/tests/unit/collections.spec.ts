@@ -126,6 +126,7 @@ describe('Collections.vue', () => {
     store = new Vuex.Store({ getters, actions, mutations });
     const expectCollection = new Collection();
     expectCollection.name='tintifax';
+    expectCollection.description='tintifax';
     expectCollection.createdAt=expect.anything();
     expectCollection.entityName=$route.params.entity;
 
@@ -133,7 +134,12 @@ describe('Collections.vue', () => {
     expect(actions['collections/list']).toHaveBeenLastCalledWith(expect.anything(), $route.params.entity);
     wrapper.find('button#create-collection').trigger('click');
     await Vue.nextTick();
-    wrapper.vm.$data.localState.editItem.name=expectCollection.name;
+    wrapper.setData({ localState: { editItem: {
+      name: expectCollection.name,
+      description: expectCollection.description,
+    }}});
+    await Vue.nextTick();
+    await Vue.nextTick();
     wrapper.find('button#save').trigger('click');
     expect(actions['collections/create']).toHaveBeenLastCalledWith(expect.anything(), expectCollection);
     

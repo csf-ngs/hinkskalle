@@ -45,6 +45,7 @@
                     <v-card-title class="headline">{{editTitle}}</v-card-title>
                     <v-card-text>
                       <v-container>
+                        <v-form v-model="localState.editValid">
                         <v-row>
                           <v-col cols="12">
                             <hsk-text-input 
@@ -53,6 +54,7 @@
                               field="name"
                               :obj="localState.editItem"
                               :readonly="!!localState.editItem.id"
+                              required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                           <v-col cols="12">
@@ -61,6 +63,7 @@
                               label="Description"
                               field="description"
                               :obj="localState.editItem"
+                              required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                         </v-row>
@@ -74,7 +77,7 @@
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                         </v-row>
-                        <v-row>
+                        <v-row v-if="localState.editItem.id">
                           <v-col cols="12" md="4">
                             <hsk-text-input
                               label="Created"
@@ -93,12 +96,13 @@
                               ></hsk-text-input>
                           </v-col>
                         </v-row>
+                        </v-form>
                       </v-container>
                     </v-card-text>
                     <v-card-actions>
                       <v-spacer></v-spacer>
                       <v-btn color="secondary accent-1" text @click="closeEdit">Mabye not today.</v-btn>
-                      <v-btn color="primary darken-1" text @click="save">Save It!</v-btn>
+                      <v-btn color="primary darken-1" :disabled="!localState.editValid" text @click="save">Save It!</v-btn>
                     </v-card-actions>
                   </v-card>
                 </v-dialog>
@@ -182,6 +186,7 @@ interface State {
   search: string;
   editItem: Entity;
   showEdit: boolean;
+  editValid: boolean;
   showDelete: boolean;
   sortBy: string;
   sortDesc: boolean;
@@ -204,6 +209,7 @@ export default Vue.extend({
       showEdit: false,
       showDelete: false,
       editItem: defaultItem(),
+      editValid: true,
       sortBy: 'name',
       sortDesc: false,
     },

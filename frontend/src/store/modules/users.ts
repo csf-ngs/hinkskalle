@@ -10,7 +10,7 @@ export interface State {
   status: '' | 'loading' | 'failed' | 'success';
   starred: Container[];
   starsLoaded: boolean;
-  list: User[],
+  list: User[];
 }
 
 const userModule: Module<State, any> = {

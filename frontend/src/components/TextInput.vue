@@ -11,6 +11,8 @@
       :disabled="disabled"
       :readonly="localState.static || readonly" 
       :append-icon="readonly || localState.static ? 'mdi-lock-outline' : ''"
+      :rules="rules"
+      :required="required"
       @change="saveValue()"
     >
       <template v-slot:append-outer>
@@ -27,6 +29,8 @@
       :error="localState.status=='failed'"
       :disabled="disabled"
       :readonly="localState.static || readonly" 
+      :rules="rules"
+      :required="required"
       :append-icon="readonly || localState.static ? 'mdi-lock-outline' : ''"
       @change="saveValue()"
     ></v-textarea>
@@ -40,6 +44,8 @@
       :error="localState.status=='failed'"
       :disabled="disabled"
       :readonly="localState.static || readonly" 
+      :rules="rules"
+      :required="required"
       :append-icon="readonly || localState.static ? 'mdi-lock-outline' : ''"
       :items="[ { value: false, text: 'No' }, { value: true, text: 'Yes' } ]"
       @change="saveValue()"
@@ -74,8 +80,18 @@ export default Vue.extend({
     field: String,
     obj: Object,
     action: String,
-    readonly: Boolean,
-    disabled: Boolean,
+    readonly: {
+      type: Boolean,
+      default: false,
+    },
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
+    required: {
+      type: Boolean,
+      default: false,
+    },
     staticValue: {
       type: [ String, Boolean, Number ],
       default: undefined,
@@ -89,6 +105,17 @@ export default Vue.extend({
         static: this.staticValue !== undefined
       }
     };
+  },
+  computed: {
+    rules(): Array<(val: string) => boolean | string> {
+      let rules: Array<(val: string) => boolean | string> = [];
+      if (this.required) {
+        rules = rules.concat(
+          val => !!val || 'Required!'
+        )
+      }
+      return rules;
+    }
   },
   watch: {
     field(newVal, oldVal) {

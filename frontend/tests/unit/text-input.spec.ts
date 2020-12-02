@@ -9,12 +9,13 @@ import { localVue } from '../setup';
 import Vue from 'vue';
 
 const allTypes = ['text', 'textarea', 'yesno'];
+const el: { [type: string]: string } = { text: 'input', textarea: 'textarea', 'yesno': 'input' };
 
 describe('TextInput.vue', () => {
   let vuetify: any;
   let store: any;
-  let mutations: any;
-  let actions: any;
+  let mutations: { [key: string]: jest.Mock<any, any>};
+  let actions: { [key: string]: jest.Mock<any, any>};
 
   beforeEach(() => {
     vuetify = new Vuetify();
@@ -92,19 +93,54 @@ describe('TextInput.vue', () => {
   });
 
   allTypes.forEach(type => {
+    it(`${type} has required flag`, async done => {
+      const propsData = {
+        label: 'Testhase',
+        obj: { nudl: null },
+        field: 'nudl',
+        required: true,
+        type: type,
+      };
+      const wrapper = mount(TextInput, { localVue, vuetify, propsData });
+      expect(wrapper.find(el[type]).attributes()['required']).toBeTruthy();
+
+      wrapper.find(el[type]).setValue('');
+      await Vue.nextTick();
+      expect(wrapper.find('.v-messages').text()).toContain('Required!');
+
+      wrapper.find(el[type]).setValue('oink');
+      await Vue.nextTick();
+      await Vue.nextTick();
+      expect(wrapper.findAll('.v-messages')).toHaveLength(0);
+
+      done();
+    });
+
     it(type+' has readonly', async done => {
       const propsData = {
         label: 'Testhase',
         obj: { nudl: 'aug' },
         field: 'nudl',
         readonly: true,
+        type: type,
       };
-      const wrapper = mount(TextInput, { localVue, vuetify, store, propsData });
-      expect(wrapper.find('input').attributes()['readonly']).toBeTruthy();
 
-      wrapper.setProps({ readonly: false });
-      await Vue.nextTick();
-      expect(wrapper.find('input').attributes()['readonly']).toBeFalsy();
+      const wrapper = mount(TextInput, { localVue, vuetify, store, propsData });
+      // the v-select input is always readonly, check the aria annotation instead.
+      if (type === 'yesno') {
+        expect(wrapper.find(el[type]).attributes()['aria-readonly']).toBe('true');
+
+        wrapper.setProps({ readonly: false });
+        await Vue.nextTick();
+        expect(wrapper.find(el[type]).attributes()['aria-readonly']).toBe('false');
+      }
+      else {
+        expect(wrapper.find(el[type]).attributes()['readonly']).toBeTruthy();
+
+        wrapper.setProps({ readonly: false });
+        await Vue.nextTick();
+        expect(wrapper.find(el[type]).attributes()['readonly']).toBeFalsy();
+      }
 
       done();
     });

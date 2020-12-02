@@ -31,11 +31,11 @@
           </v-list-item-content>
         </v-list-item>
       </v-list>
-      <template v-if="currentUser.isAdmin">
+      <template v-if="currentUser && currentUser.isAdmin">
         <v-divider></v-divider>
         <v-list dense nav>
           <v-list-item link :to="'/users'">
-            <v-list-item-icon><v-icon>mdi-cog</v-icon></v-list-item-icon>
+            <v-list-item-icon><v-icon>mdi-account-cog-outline</v-icon></v-list-item-icon>
             <v-list-item-content>
               <v-list-item-title>User Administration</v-list-item-title>
             </v-list-item-content>

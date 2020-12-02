@@ -305,6 +305,18 @@ class TestUsers(RouteBase):
       uf = 'is_active' if f == 'isActive' else 'is_admin' if f == 'isAdmin' else f
       self.assertEqual(getattr(db_user, uf), update_data[f])
     self.assertTrue(abs(db_user.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+
+  def test_update_password(self):
+    user_data = {
+      "password": "supergeheim, supergeheim",
+    }
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/users/{self.username}", json=user_data)
+    
+    self.assertEqual(ret.status_code, 200)
+    db_user = User.query.filter(User.username==self.username).one()
+    self.assertTrue(db_user.check_password(user_data['password']))
+
   
   def test_update_username_change(self):
     user = _create_user('update.hase')
@@ -332,6 +344,7 @@ class TestUsers(RouteBase):
     self.assertEqual(db_user.email, user_data['email'])
     self.assertEqual(db_user.firstname, user_data['firstname'])
     self.assertEqual(db_user.lastname, user_data['lastname'])
+  
   
   def test_update_user_forbidden(self):
     with self.fake_auth():

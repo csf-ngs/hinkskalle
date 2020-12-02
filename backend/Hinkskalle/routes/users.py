@@ -28,6 +28,7 @@ class UserStarsResponseSchema(ResponseSchema):
 # taken from https://flask-rebar.readthedocs.io/en/latest/recipes.html#marshmallow-partial-schemas
 # to allow partial updates
 class UserUpdateSchema(UserSchema, RequestSchema):
+  password = fields.String(required=False)
   def __init__(self, **kwargs):
     super_kwargs = dict(kwargs)
     partial_arg = super_kwargs.pop('partial', True)
@@ -183,9 +184,13 @@ def update_user(username):
     if body.get('is_active', user.is_active) != user.is_active:
       raise errors.Forbidden("Cannot change isActive field")
   
+  new_password = body.pop('password', None)
+  
   for key in body:
     setattr(user, key, body[key])
   user.updatedAt = datetime.datetime.now()
+  if new_password:
+    user.set_password(new_password)
   db.session.commit()
 
   return { 'data': user }

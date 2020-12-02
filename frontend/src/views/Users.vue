@@ -268,6 +268,10 @@ export default Vue.extend({
     save() {
       const action = this.localState.editItem.id ?
         'users/update' : 'users/create';
+
+      if (this.localState.password1 && this.passwordsMatching) {
+        this.localState.editItem.password = this.localState.password1;
+      }
       this.$store.dispatch(action, this.localState.editItem)
         .then(() => this.$store.commit('snackbar/showSuccess', 'Hoorary!'))
         .catch(err => this.$store.commit('snackbar/showError', err));

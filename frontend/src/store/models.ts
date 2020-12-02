@@ -344,6 +344,8 @@ class User {
   public username!: string
   
 
+  public password?: string
+
   public get fullname(): string {
     return `${this.firstname} ${this.lastname}`;
   }
@@ -389,6 +391,9 @@ export function serializeUser(obj: User, unroll=false): any {
       json['source'] = obj.source
       json['username'] = obj.username
       
+  if (obj.password) {
+    json['password']=obj.password;
+  }
   return json;
 }
 

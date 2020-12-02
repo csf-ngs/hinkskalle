@@ -9,6 +9,7 @@ import { localVue } from '../setup';
 
 import Users from '@/views/Users.vue';
 import { makeTestUserObj } from '../_data';
+import {User} from '@/store/models';
 
 describe('Users.vue', () => {
   let vuetify: any;
@@ -17,6 +18,7 @@ describe('Users.vue', () => {
 
   let getters: { [name: string]: jest.Mock<any, any>};
   let actions: { [name: string]: jest.Mock<any, any>};
+  let mutations: { [name: string]: jest.Mock<any, any>};
 
   beforeEach(() => {
     vuetify = new Vuetify();
@@ -25,10 +27,14 @@ describe('Users.vue', () => {
     getters = {
       'users/list': jest.fn(),
     };
+    mutations = {
+      'snackbar/showSuccess': jest.fn(),
+    };
     actions = {
       'users/list': jest.fn(),
+      'users/create': jest.fn(),
     };
-    store = new Vuex.Store({ getters, actions });
+    store = new Vuex.Store({ getters, actions, mutations });
   });
 
   it('renders something', () => {
@@ -52,7 +58,22 @@ describe('Users.vue', () => {
     expect((wrapper.vm as any).passwordsMatching).toBeTruthy();
     wrapper.setData({ localState: { password1: 'eins', password2: 'zwei' } });
     expect((wrapper.vm as any).passwordsMatching).toBeFalsy();
+  });
 
+  it('sets password before creating', () => {
+    const wrapper = mount(Users, { localVue, vuetify, store, router });
+    (wrapper.vm as any).save();
+    expect(actions['users/create']).toHaveBeenLastCalledWith(expect.anything(), expect.not.objectContaining({ password: expect.anything() }));
+
+    const wrapper2 = mount(Users, { localVue, vuetify, store, router });
+    wrapper2.setData({ localState: { password1: 'oink', password2: 'oink' } });
+    (wrapper2.vm as any).save();
+    expect(actions['users/create']).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ password: 'oink' }));
+
+    const wrapper3 = mount(Users, { localVue, vuetify, store, router });
+    wrapper3.setData({ localState: { password1: 'arg', password2: 'muh' } });
+    (wrapper3.vm as any).save();
+    expect(actions['users/create']).toHaveBeenLastCalledWith(expect.anything(), expect.not.objectContaining({ password: expect.anything() }));
   });
 
 });

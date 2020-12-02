@@ -17,6 +17,20 @@ beforeAll(() => {
   testUserObj = makeTestUserObj();
 });
 
+describe('user class', () => {
+  it('serializes password', () => {
+    const user = new User();
+    user.password = 'oink';
+    const json = serializeUser(user);
+    expect(json['password']).toBe(user.password);
+  });
+  it('does not generate key if password undef', () => {
+    const user = new User();
+    const json = serializeUser(user);
+    expect(json).not.toContain('password');
+  });
+});
+
 describe('user store getters', () => {
   it('has status getter', () => {
     store.state.users!.status = 'loading';

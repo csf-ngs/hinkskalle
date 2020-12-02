@@ -3,6 +3,8 @@
 class {{classname}} {
   {{utils.auto_attributes(fields)}}
 
+  public password?: string
+
   public get fullname(): string {
     return `${this.firstname} ${this.lastname}`;
   }
@@ -26,6 +28,9 @@ export function plainTo{{classname}}(json: any): {{classname}} {
 export function serialize{{classname}}(obj: {{classname}}, unroll=false): any {
   const json: any = {};
   {{utils.serialize(fields)}}
+  if (obj.password) {
+    json['password']=obj.password;
+  }
   return json;
 }
 

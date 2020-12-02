@@ -3,7 +3,7 @@
     <top-bar title="Tokens"></top-bar>
     <v-container>
       <v-row>
-        <v-col cols="10">
+        <v-col cols="12" md="10" offset-md="1">
           <v-data-table
             id="tokens"
             :headers="headers"

@@ -30,6 +30,7 @@
                     <v-card-title class="headline">{{editTitle}}</v-card-title>
                     <v-card-text>
                       <v-container>
+                        <v-form v-model="localState.editValid">
                         <v-row>
                           <v-col cols="12">
                             <hsk-text-input
@@ -38,6 +39,7 @@
                               field="username"
                               :obj="localState.editItem"
                               :readonly="!!localState.editItem.id"
+                              required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                           <v-col cols="12" md="6">
@@ -46,6 +48,7 @@
                               label="Firstname"
                               field="firstname"
                               :obj="localState.editItem"
+                              required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                           <v-col cols="12" md="6">
@@ -54,6 +57,7 @@
                               label="Lastname"
                               field="lastname"
                               :obj="localState.editItem"
+                              required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                           <v-col cols="12">
@@ -62,15 +66,16 @@
                               label="Email"
                               field="email"
                               :obj="localState.editItem"
+                              required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                           <v-col cols="12" md="6">
                             <v-text-field
                               :type="localState.passwordVisible ? 'text' : 'password'"
                               outlined
-                              hide-details="auto"
                               v-model="localState.password1"
                               label="Password"
+                              :hint="localState.editItem.id ? 'leave empty to keep old' : ''"
                               :error="!passwordsMatching"
                               :append-icon="localState.passwordVisible ? 'mdi-eye' : 'mdi-eye-off'"
                               @click:append="localState.passwordVisible=!localState.passwordVisible"
@@ -80,7 +85,6 @@
                             <v-text-field
                               :type="localState.passwordVisible ? 'text' : 'password'"
                               outlined
-                              hide-details="auto"
                               v-model="localState.password2"
                               label="Repeat"
                               :error="!passwordsMatching"
@@ -93,6 +97,7 @@
                               type="yesno"
                               label="Active?"
                               field="isActive"
+                              :readonly="localState.editItem.id==currentUser.id"
                               :obj="localState.editItem"
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
@@ -105,12 +110,13 @@
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                         </v-row>
+                        </v-form>
                       </v-container>
                     </v-card-text>
                     <v-card-actions>
                       <v-spacer></v-spacer>
                       <v-btn color="secondary accent-1" text @click="closeEdit">Mabye not today.</v-btn>
-                      <v-btn color="primary darken-1" text @click="save">Save It!</v-btn>
+                      <v-btn color="primary darken-1" :disabled="!localState.editValid" text @click="save">Save It!</v-btn>
                     </v-card-actions>
                   </v-card>
                 </v-dialog>
@@ -135,10 +141,10 @@
               {{item.firstname}} {{item.lastname}}
             </template>
             <template v-slot:item.isActive="{ item }">
-              <v-icon>{{item.isActive ? 'mdi-check' : 'mdi-minus'}}</v-icon>
+              <v-icon small>{{item.isActive ? 'mdi-check' : 'mdi-minus'}}</v-icon>
             </template>
             <template v-slot:item.isAdmin="{ item }">
-              <v-icon>{{item.isAdmin ? 'mdi-wizard-hat' : 'mdi-minus'}}</v-icon>
+              <v-icon :small="!item.isAdmin">{{item.isAdmin ? 'mdi-wizard-hat' : 'mdi-minus'}}</v-icon>
             </template>
             <template v-slot:item.actions="{ item }">
               <v-icon
@@ -176,6 +182,7 @@ interface State {
   passwordVisible: boolean;
   password1: string;
   password2: string;
+  editValid: boolean;
 }
 
 function defaultItem(): User {
@@ -206,6 +213,7 @@ export default Vue.extend({
       search: '',
       sortBy: 'id',
       sortDesc: false,
+      editValid: true,
       editItem: defaultItem(),
       showEdit: false,
       showDelete: false,
@@ -226,7 +234,10 @@ export default Vue.extend({
     },
     passwordsMatching(): boolean {
       return this.localState.password1 === this.localState.password2;
-    }
+    },
+    currentUser(): User {
+      return this.$store.getters['currentUser'];
+    },
   },
   watch: {
     'localState.showEdit': function showEdit(val) {
@@ -249,6 +260,8 @@ export default Vue.extend({
       this.localState.showEdit = false;
       this.$nextTick(() => {
         this.localState.editItem = defaultItem();
+        this.localState.password1 = '';
+        this.localState.password2 = '';
       });
     },
     editUser(user: User) {
@@ -269,7 +282,7 @@ export default Vue.extend({
       const action = this.localState.editItem.id ?
         'users/update' : 'users/create';
 
-      if (this.localState.password1 && this.passwordsMatching) {
+      if (this.localState.password1 && this.passwordsMatching===true) {
         this.localState.editItem.password = this.localState.password1;
       }
       this.$store.dispatch(action, this.localState.editItem)

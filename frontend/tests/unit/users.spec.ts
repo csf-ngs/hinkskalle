@@ -9,7 +9,6 @@ import { localVue } from '../setup';
 
 import Users from '@/views/Users.vue';
 import { makeTestUserObj } from '../_data';
-import {User} from '@/store/models';
 
 describe('Users.vue', () => {
   let vuetify: any;
@@ -26,6 +25,7 @@ describe('Users.vue', () => {
 
     getters = {
       'users/list': jest.fn(),
+      'currentUser': jest.fn().mockReturnValue({ id: '-666' }),
     };
     mutations = {
       'snackbar/showSuccess': jest.fn(),
@@ -51,13 +51,20 @@ describe('Users.vue', () => {
     expect(wrapper.findAll('div#users tbody tr')).toHaveLength(2);
   });
 
-  it('checks password matching', ()=> {
+  it('checks password matching', () => {
     const wrapper = mount(Users, { localVue, vuetify, store, router });
-    expect((wrapper.vm as any).passwordsMatching).toBeTruthy();
+    expect((wrapper.vm as any).passwordsMatching).toBe(true);
     wrapper.setData({ localState: { password1: 'eins', password2: 'eins' } });
-    expect((wrapper.vm as any).passwordsMatching).toBeTruthy();
+    expect((wrapper.vm as any).passwordsMatching).toBe(true);
     wrapper.setData({ localState: { password1: 'eins', password2: 'zwei' } });
-    expect((wrapper.vm as any).passwordsMatching).toBeFalsy();
+    expect((wrapper.vm as any).passwordsMatching).toBe(false);
+
+    wrapper.setData({ localState: { password1: '', password2: '', editItem: { id: 1 }}});
+    expect((wrapper.vm as any).passwordsMatching).toBe(true);
+    wrapper.setData({ localState: { password1: 'eins', password2: 'eins', editItem: { id: 1 }}});
+    expect((wrapper.vm as any).passwordsMatching).toBe(true);
+    wrapper.setData({ localState: { password1: 'eins', password2: 'oink', editItem: { id: 1 }}});
+    expect((wrapper.vm as any).passwordsMatching).toBe(false);
   });
 
   it('sets password before creating', () => {

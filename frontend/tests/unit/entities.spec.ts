@@ -29,8 +29,9 @@ describe('Entities.vue', () => {
   let store: any;
   let router: VueRouter;
 
-  let getters: any;
-  let actions: any;
+  let getters: { [key: string]: jest.Mock<any, any>};
+  let mutations: { [key: string]: jest.Mock<any, any>};
+  let actions: { [key: string]: jest.Mock<any, any>};
 
   beforeEach(() => {
     vuetify = new Vuetify();
@@ -38,14 +39,18 @@ describe('Entities.vue', () => {
       routes: [ { path: '/oink/:entity/oink', name: 'EntityCollections' } ]
     });
 
+    mutations = {
+      'users/setSearchResult': jest.fn(),
+    };
     getters = {
-      'entities/list': () => testEntitiesObj,
-      'currentUser': () => testUserObj,
+      'entities/list': jest.fn().mockReturnValue(testEntitiesObj),
+      'currentUser': jest.fn().mockReturnValue(testUserObj),
     };
     actions = {
       'entities/list': jest.fn(),
+      'users/search': jest.fn(),
     };
-    store = new Vuex.Store({ getters, actions });
+    store = new Vuex.Store({ getters, actions, mutations });
   });
 
   it('renders something', () => {

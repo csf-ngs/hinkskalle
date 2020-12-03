@@ -1,6 +1,6 @@
 import { Module } from 'vuex';
 
-import { User, plainToUser, serializeUser, Container, plainToContainer } from '../models';
+import { User, plainToUser, serializeUser, Container, plainToContainer, UserQuery } from '../models';
 
 import { AxiosError, AxiosResponse } from 'axios';
 
@@ -11,6 +11,7 @@ export interface State {
   starred: Container[];
   starsLoaded: boolean;
   list: User[];
+  searchResult: User[];
 }
 
 const userModule: Module<State, any> = {
@@ -20,11 +21,13 @@ const userModule: Module<State, any> = {
     starred: [],
     starsLoaded: false,
     list: [],
+    searchResult: [],
   },
   getters: {
     status: (state): string => state.status,
     starred: (state): Container[] => state.starred,
     list: (state): User[] => state.list,
+    searchResult: (state): User[] => state.searchResult,
   },
   mutations: {
     loading(state: State) {
@@ -48,6 +51,9 @@ const userModule: Module<State, any> = {
     remove(state: State, id: string) {
       state.list = _filter(state.list, u => u.id !== id);
     },
+    setSearchResult(state: State, users: User[]) {
+      state.searchResult = users;
+    },
   },
   actions: {
     list: ({ commit, rootState }): Promise<User[]> => {
@@ -64,6 +70,23 @@ const userModule: Module<State, any> = {
             commit('failed', err);
             reject(err);
           });
+      });
+    },
+    search: ({ commit, rootState}, search: UserQuery): Promise<User[]> => {
+      return new Promise<User[]>((resolve, reject) => {
+        commit('loading');
+        rootState.backend.get('/v1/users', { params: search })
+          .then((response: AxiosResponse) => {
+            const list = _map(response.data.data, plainToUser);
+            commit('succeeded');
+            commit('setSearchResult', list);
+            resolve(list);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+
       });
     },
     create: ({ commit, rootState }, create: User): Promise<User> => {

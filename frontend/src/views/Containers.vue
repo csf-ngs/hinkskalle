@@ -102,15 +102,17 @@
                         </v-row>
                         <v-row v-if="localState.editItem.id">
                           <v-col cols="12" md="4">
+                            <hsk-user-input 
+                              label="Owner"
+                              :readonly="!currentUser.isAdmin"
+                              v-model="localState.editItem.createdBy"
+                              ></hsk-user-input>
+                          </v-col>
+                          <v-col cols="12" md="4">
                             <hsk-text-input
                               label="Created"
                               :static-value="localState.editItem.createdAt | moment('YYYY-MM-DD HH:mm')"
                               ></hsk-text-input>
-                          </v-col>
-                          <v-col cols="12" md="4">
-                            <hsk-text-input
-                              label="Created By"
-                              :static-value="localState.editItem.createdBy"></hsk-text-input>
                           </v-col>
                           <v-col cols="12" md="4">
                             <hsk-text-input
@@ -229,6 +231,7 @@ import moment from 'moment';
 import { clone as _clone, find as _find } from 'lodash';
 
 import { Container, Collection, User } from '../store/models';
+import UserInput from '@/components/UserInput.vue';
 
 interface State {
   search: string;
@@ -249,6 +252,7 @@ function defaultItem(): Container {
 
 export default Vue.extend({
   name: 'Containers',
+  components: { 'hsk-user-input': UserInput },
   mounted() {
     this.loadContainers();
   },

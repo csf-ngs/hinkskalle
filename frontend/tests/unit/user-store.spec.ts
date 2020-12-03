@@ -44,7 +44,11 @@ describe('user store getters', () => {
   it('has list getter', () => {
     store.state.users!.list = [ testUserObj ];
     expect(store.getters['users/list']).toStrictEqual([ testUserObj ]);
-  })
+  });
+  it('has searchResult getter', () => {
+    store.state.users!.searchResult = [ testUserObj ];
+    expect(store.getters['users/searchResult']).toStrictEqual([ testUserObj ]);
+  });
 });
 
 describe('user mutations', () => {
@@ -63,6 +67,12 @@ describe('user mutations', () => {
     store.state.users!.starred = [];
     store.commit('users/setStarred', test);
     expect(store.state.users!.starred).toStrictEqual(test);
+  });
+
+  it('has setSearchResult mutation', () => {
+    store.state.users!.searchResult = [];
+    store.commit('users/setSearchResult', [ testUserObj ]);
+    expect(store.state.users!.searchResult).toStrictEqual([ testUserObj ]);
   });
 
   it('has setList mutation', () => {
@@ -283,6 +293,32 @@ describe('user store actions', () => {
   it('has load user list fail handling', done => {
     mockAxios.get.mockRejectedValue({ fail: 'fail' });
     store.dispatch('users/list')
+      .catch(err => {
+        expect(store.state.users!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
+  });
+
+  it('has search users', done => {
+    const testUser = makeTestUser();
+    const testUserObj = makeTestUserObj(testUser);
+    mockAxios.get.mockResolvedValue({
+      data: { data: [ testUser ]}
+    });
+    const promise = store.dispatch('users/search', { username: 'canary' });
+    expect(store.state.users!.status).toBe('loading');
+    promise.then(list => {
+      expect(mockAxios.get).toHaveBeenLastCalledWith('/v1/users', {"params": {"username": "canary"}});
+      expect(store.state.users!.status).toBe('success');
+      expect(store.state.users!.searchResult).toStrictEqual([ testUserObj ]);
+      expect(list).toStrictEqual([ testUserObj ]);
+      done();
+    });
+  });
+  it('has search users fail handling', done => {
+    mockAxios.get.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('users/search')
       .catch(err => {
         expect(store.state.users!.status).toBe('failed');
         expect(err).toStrictEqual({ fail: 'fail' });

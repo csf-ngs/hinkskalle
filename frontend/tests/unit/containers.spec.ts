@@ -27,9 +27,9 @@ describe('Containers.vue', () => {
   let store: Store<any>;
   let router: VueRouter;
 
-  let getters: any;
-  let actions: any;
-  let mutations: any;
+  let getters: { [key: string]: jest.Mock<any, any>};
+  let actions: { [key: string]: jest.Mock<any, any>};
+  let mutations: { [key: string]: jest.Mock<any, any>};
 
   beforeEach(() => {
     vuetify = new Vuetify();
@@ -40,8 +40,8 @@ describe('Containers.vue', () => {
     });
 
     getters = {
-      'containers/list': () => testContainersObj,
-      'users/starred': () => [ testContainersObj[0] ],
+      'containers/list': jest.fn().mockReturnValue(testContainersObj),
+      'users/starred': jest.fn().mockReturnValue([ testContainersObj[0] ]),
     };
     mutations = {
       'snackbar/showSuccess': jest.fn(),

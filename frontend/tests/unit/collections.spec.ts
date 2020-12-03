@@ -37,9 +37,9 @@ describe('Collections.vue', () => {
   let store: Store<any>;
   let router: VueRouter;
 
-  let getters: any;
-  let actions: any;
-  let mutations: any;
+  let getters: { [key: string]: jest.Mock<any, any>};
+  let actions: { [key: string]: jest.Mock<any, any>};
+  let mutations: { [key: string]: jest.Mock<any, any>};
 
   beforeEach(() => {
     vuetify = new Vuetify();
@@ -50,9 +50,9 @@ describe('Collections.vue', () => {
     });
 
     getters = {
-      'collections/list': () => testCollectionsObj,
-      'collections/currentEntity': () => testEntityObj,
-      'currentUser': () => testUserObj,
+      'collections/list': jest.fn().mockReturnValue(testCollectionsObj),
+      'collections/currentEntity': jest.fn().mockReturnValue(testEntityObj),
+      'currentUser': jest.fn().mockReturnValue(testUserObj),
     };
     mutations = {
       'snackbar/showSuccess': jest.fn(),
@@ -60,6 +60,7 @@ describe('Collections.vue', () => {
     };
     actions = {
       'collections/list': jest.fn(),
+      'users/search': jest.fn(),
     };
     store = new Vuex.Store({ getters, actions, mutations });
   });

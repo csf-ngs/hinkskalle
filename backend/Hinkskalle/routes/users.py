@@ -25,6 +25,9 @@ class UserCreateSchema(UserSchema, RequestSchema):
 class UserStarsResponseSchema(ResponseSchema):
   data = fields.Nested(ContainerSchema, many=True)
 
+class UserSearchQuerySchema(RequestSchema):
+  username = fields.String(required=False)
+
 # taken from https://flask-rebar.readthedocs.io/en/latest/recipes.html#marshmallow-partial-schemas
 # to allow partial updates
 class UserUpdateSchema(UserSchema, RequestSchema):
@@ -42,9 +45,14 @@ class UserDeleteResponseSchema(ResponseSchema):
   method='GET',
   response_body_schema=UserListResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user),
+  query_string_schema=UserSearchQuerySchema(),
 )
 def list_users():
-  objs = User.query.all()
+  args = rebar.validated_args
+  search = []
+  if args.get('username', None):
+    search.append(User.username.ilike(f"%{args['username']}%"))
+  objs = User.query.filter(*search)
   return { 'data': list(objs) }
 
 @registry.handles(

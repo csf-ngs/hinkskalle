@@ -52,7 +52,23 @@ class TestUsers(RouteBase):
     self.assertIsInstance(json, list)
     self.assertEqual(len(json), 5)
     self.assertListEqual([ u['username'] for u in json ], [ self.admin_username, self.username, self.other_username, user1.username, user2.username ])
+  
+  def test_list_user_query(self):
+    user1 = _create_user('test.schaf')
+    user2 = _create_user('test.kuh')
 
+    with self.fake_auth():
+      ret = self.client.get('/v1/users?username=schaf')
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertListEqual([ u['username'] for u in json ], [ 'test.schaf' ])
+
+    with self.fake_auth():
+      ret = self.client.get('/v1/users?username=test')
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertListEqual([ u['username'] for u in json ], [ 'test.schaf', 'test.kuh' ])
+  
 
   def test_get(self):
     user1 = _create_user('test.hase')

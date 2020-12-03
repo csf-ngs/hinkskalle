@@ -53,7 +53,8 @@ export function plainToCollection(json: any): Collection {
 }
 export function serializeCollection(obj: Collection, unroll=false): any {
   const json: any = {};
-  json['customData'] = obj.customData
+  json['createdBy'] = obj.createdBy
+      json['customData'] = obj.customData
       json['description'] = obj.description
       json['entity'] = obj.entity
       json['name'] = obj.name
@@ -135,6 +136,7 @@ export function plainToContainer(json: any): Container {
 export function serializeContainer(obj: Container, unroll=false): any {
   const json: any = {};
   json['collection'] = obj.collection
+      json['createdBy'] = obj.createdBy
       json['customData'] = obj.customData
       json['description'] = obj.description
       json['fullDescription'] = obj.fullDescription
@@ -199,7 +201,8 @@ export function plainToEntity(json: any): Entity {
 }
 export function serializeEntity(obj: Entity, unroll=false): any {
   const json: any = {};
-  json['customData'] = obj.customData
+  json['createdBy'] = obj.createdBy
+      json['customData'] = obj.customData
       json['defaultPrivate'] = obj.defaultPrivate
       json['description'] = obj.description
       json['name'] = obj.name
@@ -453,6 +456,10 @@ export function plainToUpload(json: any): Upload {
     tags: json.tags,
     container: plainToContainer(json.container),
   };
+}
+
+export interface UserQuery {
+  username?: string;
 }
 
 export interface SearchQuery {

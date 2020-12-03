@@ -17,6 +17,10 @@ export function plainToUpload(json: any): Upload {
   };
 }
 
+export interface UserQuery {
+  username?: string;
+}
+
 export interface SearchQuery {
   name?: string;
   description?: string;

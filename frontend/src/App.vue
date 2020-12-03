@@ -65,6 +65,16 @@
           </v-list-item>
         </template>
       </v-list>
+      <template v-slot:append v-if="isLoggedIn">
+        <v-list dense nav>
+        <v-list-item link @click="logout">
+          <v-list-item-icon><v-icon>mdi-power</v-icon></v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Logout</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        </v-list>
+      </template>
     </v-navigation-drawer>
 
     <v-main>
@@ -140,6 +150,10 @@ export default Vue.extend({
     hideSnackbar() {
       this.$store.commit('snackbar/close');
     },
+    logout() {
+      this.$store.dispatch('logout')
+        .then(() => this.$router.push('/login'));
+    }
   }
 });
 </script>

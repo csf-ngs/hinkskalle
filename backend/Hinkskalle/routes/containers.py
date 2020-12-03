@@ -135,6 +135,10 @@ def update_container(entity_id, collection_id, container_id):
   container = _get_container(entity_id, collection_id, container_id)
   if not container.check_update_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to container")
+  if not g.authenticated_user.is_admin and body.get('createdBy', None):
+    if body.get('createdBy') != container.createdBy:
+      raise errors.Forbidden("Cannot change owner")
+  
 
   for key in body:
     setattr(container, key,  body[key])

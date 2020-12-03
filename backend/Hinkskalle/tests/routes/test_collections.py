@@ -374,6 +374,19 @@ class TestCollections(RouteBase):
     self.assertEqual(dbColl.customData, 'hot drei Eckn')
 
     self.assertTrue(abs(dbColl.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+  
+  def test_update_owner(self):
+    coll, entity = _create_collection()
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/collections/{entity.name}/{coll.name}", json={
+        'createdBy': self.other_username
+      })
+    
+    self.assertEqual(ret.status_code, 200)
+    dbColl = Collection.query.filter(Collection.name==coll.name).one()
+    self.assertEqual(dbColl.createdBy, self.other_username)
+
 
   def test_update_user(self):
     coll, entity = _create_collection()
@@ -394,6 +407,26 @@ class TestCollections(RouteBase):
     self.assertEqual(dbColl.description, 'Mei Huat')
     self.assertTrue(dbColl.private)
     self.assertEqual(dbColl.customData, 'hot drei Eckn')
+  
+  def test_update_user_owner(self):
+    coll, entity = _create_collection()
+    entity.owner=self.user
+    coll.owner=self.user
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.put(f"/v1/collections/{entity.name}/{coll.name}", json={
+        'createdBy': self.other_username
+      })
+    self.assertEqual(ret.status_code, 403)
+    dbColl = Collection.query.filter(Collection.name==coll.name).one()
+    self.assertEqual(dbColl.createdBy, self.username)
+
+    with self.fake_auth():
+      ret = self.client.put(f"/v1/collections/{entity.name}/{coll.name}", json={
+        'createdBy': self.username
+      })
+    self.assertEqual(ret.status_code, 403)
 
   def test_update_user_other(self):
     coll, entity = _create_collection()

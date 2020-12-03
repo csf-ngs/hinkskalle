@@ -18,7 +18,7 @@ class ContainerSchema(Schema):
   customData = fields.String(allow_none=True)
   vcsUrl = fields.String(allow_none=True)
   createdAt = fields.DateTime(dump_only=True)
-  createdBy = fields.String(dump_only=True, allow_none=True)
+  createdBy = fields.String(allow_none=True)
   updatedAt = fields.DateTime(dump_only=True, allow_none=True)
   deletedAt = fields.DateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)

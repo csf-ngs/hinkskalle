@@ -139,6 +139,10 @@ def update_collection(entity_id, collection_id):
   collection = _get_collection(entity_id, collection_id)
   if not collection.check_update_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to collection")
+
+  if not g.authenticated_user.is_admin and body.get('createdBy', None):
+    if body.get('createdBy') != collection.createdBy:
+      raise errors.Forbidden("Cannot change owner")
   
   for key in body:
     setattr(collection, key, body[key])

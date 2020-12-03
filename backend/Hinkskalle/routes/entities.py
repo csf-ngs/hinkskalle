@@ -106,6 +106,9 @@ def update_entity(entity_id):
     raise errors.NotFound(f"entity {entity_id} not found")
   if not entity.check_update_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to entity.")
+  if not g.authenticated_user.is_admin and body.get('createdBy', None):
+    if body.get('createdBy') != entity.createdBy:
+      raise errors.Forbidden("Cannot change owner")
 
   for key in body:
     setattr(entity, key, body[key])

@@ -426,7 +426,7 @@ class TestCollections(RouteBase):
       ret = self.client.put(f"/v1/collections/{entity.name}/{coll.name}", json={
         'createdBy': self.username
       })
-    self.assertEqual(ret.status_code, 403)
+    self.assertEqual(ret.status_code, 200)
 
   def test_update_user_other(self):
     coll, entity = _create_collection()

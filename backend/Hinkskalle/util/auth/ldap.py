@@ -12,7 +12,7 @@ from flask import g, current_app
 class LDAPService:
   def __init__(self, host=None, port=389, bind_dn=None, bind_password=None, base_dn=None, filter="(cn={})", get_info=SCHEMA, client_strategy=SYNC):
     self.host = host
-    self.port = port
+    self.port = int(port)
     self.bind_dn = bind_dn
     self.bind_password = bind_password
     self.base_dn = base_dn

@@ -70,10 +70,23 @@ def create_app():
 
   app = Flask(__name__)
   app.config.from_json(os.environ.get('HINKSKALLE_SETTINGS', '../../conf/config.json'))
+  if not 'AUTH' in app.config:
+    app.config['AUTH']={}
+
   if 'SQLALCHEMY_DATABASE_URI' in os.environ:
     app.config['SQLALCHEMY_DATABASE_URI']=os.environ['SQLALCHEMY_DATABASE_URI']
-
   app.config['PREFERRED_URL_SCHEME']=os.environ.get('PREFERRED_URL_SCHEME', 'http')
+
+  ldap_conf = {}
+  for key in ['HOST', 'PORT', 'BIND_DN', 'BIND_PASSWORD', 'BASE_DN']:
+    if 'HINKSKALLE_LDAP_' + key in os.environ:
+      ldap_conf[key]=os.environ.get('HINKSKALLE_LDAP_'+key)
+  if len(ldap_conf) > 0:
+    app.config['AUTH']['LDAP'] = app.config['AUTH'].get('LDAP', {})
+    for k, v in ldap_conf.items():
+      app.config['AUTH']['LDAP'][k]=v
+
+
   db.init_app(app)
   migrate.init_app(app, db)
 

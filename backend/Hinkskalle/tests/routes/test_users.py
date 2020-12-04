@@ -1,9 +1,10 @@
 import unittest
+from sqlalchemy.orm.exc import NoResultFound
 from Hinkskalle.tests.route_base import RouteBase
 from Hinkskalle.tests.model_base import _create_user
 from Hinkskalle.tests.models.test_Container import _create_container
 
-from Hinkskalle.models import User
+from Hinkskalle.models import User, Entity
 from Hinkskalle import db
 
 import datetime
@@ -277,6 +278,49 @@ class TestUsers(RouteBase):
     self.assertEqual(db_user.createdBy, self.admin_username)
     self.assertTrue(abs(db_user.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
   
+  def test_create_entity(self):
+    user_data = {
+      'username': 'probier.hase',
+      'email': 'probier@ha.se',
+      'firstname': 'Probier',
+      'lastname': 'Hase',
+      'source': 'Mars',
+      'isAdmin': True,
+      'isActive': False,
+      'password': 'geheimhase',
+    }
+    with self.fake_admin_auth():
+      ret = self.client.post('/v1/users', json=user_data)
+    self.assertEqual(ret.status_code, 200)
+    
+    try:
+      dbEntity = Entity.query.filter(Entity.name==user_data['username']).one()
+    except NoResultFound:
+      self.fail('db entity not found')
+    self.assertEqual(dbEntity.createdBy, user_data['username'])
+
+  def test_create_entity_exists(self):
+    user_data = {
+      'username': 'probier.hase',
+      'email': 'probier@ha.se',
+      'firstname': 'Probier',
+      'lastname': 'Hase',
+      'source': 'Mars',
+      'isAdmin': True,
+      'isActive': False,
+      'password': 'geheimhase',
+    }
+    entity = Entity(name=user_data['username'])
+    db.session.add(entity)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.post('/v1/users', json=user_data)
+    self.assertEqual(ret.status_code, 412)
+    json = ret.get_json()
+    self.assertRegexpMatches(json.get('message'), r'entity.*already exists')
+    
+  
   def test_create_not_unique(self):
     existing = _create_user()
     username = existing.username
@@ -293,6 +337,8 @@ class TestUsers(RouteBase):
       with self.fake_admin_auth():
         ret = self.client.post("/v1/users", json=new_user)
       self.assertEqual(ret.status_code, 412)
+      json = ret.get_json()
+      self.assertRegexpMatches(json.get('message'), r'User.*already exists')
 
 
   def test_create_user(self):
@@ -367,6 +413,36 @@ class TestUsers(RouteBase):
     self.assertEqual(ret.status_code, 200)
     db_user = User.query.get(user.id)
     self.assertEqual(db_user.username, 'hase.update')
+
+  def test_update_username_change_entity(self):
+    user = _create_user('update.hase')
+    entity = Entity(name=user.username, owner=user)
+    db.session.add(entity)
+    db.session.commit()
+    entity_id=entity.id
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/users/{user.username}", json={ "username": "hase.update" })
+    
+    self.assertEqual(ret.status_code, 200)
+    db_user = User.query.get(user.id)
+    self.assertEqual(db_user.username, 'hase.update')
+
+    db_entity = Entity.query.get(entity_id)
+    self.assertEqual(db_entity.name, db_user.username)
+
+  def test_update_username_change_entity_not_owned(self):
+    user = _create_user('update.hase')
+    entity = Entity(name=user.username, owner=self.other_user)
+    db.session.add(entity)
+    db.session.commit()
+    entity_id=entity.id
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/users/{user.username}", json={ "username": "hase.update" })
+    
+    self.assertEqual(ret.status_code, 412)
+    self.assertRegexpMatches(ret.get_json().get('message'), 'Cannot rename entity')
   
   def test_update_user(self):
     user_data = {

@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
 from flask import request, current_app, g
 
-from Hinkskalle.models import UserSchema, User, ContainerSchema, Container
+from Hinkskalle.models import UserSchema, User, ContainerSchema, Container, Entity
 
 import datetime
 
@@ -157,12 +157,14 @@ def create_user():
   if password:
     new_user.set_password(password)
 
+  entity = Entity(name=new_user.username, owner=new_user)
   try:
     db.session.add(new_user)
+    db.session.add(entity)
     db.session.commit()
   except IntegrityError as err:
-    current_app.logger.error(err)
-    raise errors.PreconditionFailed(f"User {new_user.username} already exists")
+    msg = f"User {new_user.username} already exists (email and/or username already taken" if err.statement.find('entity') == -1  else f"entity {new_user.username} already exists"
+    raise errors.PreconditionFailed(msg)
 
   return { 'data': new_user }
 
@@ -204,6 +206,16 @@ def update_user(username):
   user.updatedAt = datetime.datetime.now()
   if new_password:
     user.set_password(new_password)
+  
+  if username != user.username:
+    try:
+      entity = Entity.query.filter(Entity.name==username).one()
+      if entity.createdBy != username:
+        raise errors.PreconditionFailed(f"Cannot rename entity {entity.name}, not owned by user")
+      entity.name=user.username
+    except NoResultFound:
+      pass
+
   db.session.commit()
 
   return { 'data': user }

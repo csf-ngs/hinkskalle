@@ -9,10 +9,18 @@ from ldap3.core.exceptions import LDAPBindError, LDAPInvalidCredentialsResult, L
 
 from flask import g, current_app
 
+# mock ldap returns scalar, real ldap (slapd) a list
+# make sure we can deal with both
+def _get_attr(attr):
+  if type(attr) == list:
+    return attr[0]
+  else:
+    return attr
+
 class LDAPService:
   def __init__(self, host=None, port=389, bind_dn=None, bind_password=None, base_dn=None, filter="(cn={})", get_info=SCHEMA, client_strategy=SYNC):
     self.host = host
-    self.port = int(port)
+    self.port = int(port) if port else None
     self.bind_dn = bind_dn
     self.bind_password = bind_password
     self.base_dn = base_dn
@@ -53,7 +61,7 @@ class LDAPUsers(PasswordCheckerBase):
 
     attrs = entry.get('attributes')
     try:
-      user = User.query.filter(User.username==attrs.get('cn')[0]).one()
+      user = User.query.filter(User.username == _get_attr(attrs.get('cn'))).one()
 
       if not user.is_active:
         raise UserDisabled()
@@ -66,10 +74,10 @@ class LDAPUsers(PasswordCheckerBase):
       user.is_admin = False
       user.is_active = True
     
-    user.username = attrs.get('cn')[0]
-    user.email = attrs.get('mail')[0]
-    user.firstname = attrs.get('givenName')[0]
-    user.lastname = attrs.get('sn')[0]
+    user.username = _get_attr(attrs.get('cn'))
+    user.email = _get_attr(attrs.get('mail'))
+    user.firstname = _get_attr(attrs.get('givenName'))
+    user.lastname = _get_attr(attrs.get('sn'))
     user.source = 'ldap'
 
     db.session.add(user)
@@ -89,5 +97,4 @@ class LDAPUsers(PasswordCheckerBase):
     g.authenticated_user = db_user
     return db_user
     
-
 

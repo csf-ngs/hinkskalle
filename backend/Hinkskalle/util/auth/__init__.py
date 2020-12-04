@@ -13,7 +13,8 @@ class PasswordAuthenticators():
     self.config = app.config.get('AUTH', {})
     self.checkers=[]
     if self.config.get('LDAP'):
-      self.checkers.append(LDAPUsers())
+      app.logger.debug("adding ldap users...")
+      self.checkers.append(LDAPUsers(app=app))
     self.checkers.append(LocalUsers())
   
   def check_password(self, username, password):

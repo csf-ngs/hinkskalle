@@ -38,8 +38,13 @@ class LDAPService:
 
 class LDAPUsers(PasswordCheckerBase):
 
-  def __init__(self):
-    self.config = current_app.config.get('AUTH', {}).get('LDAP', {})
+  def __init__(self, app=None):
+    if app:
+      self.app = app
+    else:
+      self.app = current_app
+    self.config = self.app.config.get('AUTH', {}).get('LDAP', {})
+    self.app.logger.debug(f"initializing ldap service with host {self.config.get('HOST', '')}")
     self.ldap = LDAPService(host=self.config.get('HOST', ''), port=self.config.get('PORT', 389), bind_dn=self.config.get('BIND_DN'), bind_password=self.config.get('BIND_PASSWORD'), base_dn=self.config.get('BASE_DN'))
   
   def _sync_user(self, entry):
@@ -48,7 +53,7 @@ class LDAPUsers(PasswordCheckerBase):
 
     attrs = entry.get('attributes')
     try:
-      user = User.query.filter(User.username==attrs.get('cn')).one()
+      user = User.query.filter(User.username==attrs.get('cn')[0]).one()
 
       if not user.is_active:
         raise UserDisabled()
@@ -58,13 +63,13 @@ class LDAPUsers(PasswordCheckerBase):
 
     except NoResultFound:
       user = User()
+      user.is_admin = False
+      user.is_active = True
     
-    user.username = attrs.get('cn')
-    user.email = attrs.get('mail')
-    user.firstname = attrs.get('givenName')
-    user.lastname = attrs.get('sn')
-    user.is_admin = False
-    user.is_active = True
+    user.username = attrs.get('cn')[0]
+    user.email = attrs.get('mail')[0]
+    user.firstname = attrs.get('givenName')[0]
+    user.lastname = attrs.get('sn')[0]
     user.source = 'ldap'
 
     db.session.add(user)

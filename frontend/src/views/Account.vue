@@ -12,6 +12,7 @@
                     label="Firstname"
                     field="firstname"
                     :obj="localState.editUser"
+                    :readonly="localState.editUser.source!='local'"
                     required
                     @updated="localState.editUser=$event"></hsk-text-input>
                 </v-col>
@@ -20,6 +21,7 @@
                     label="Lastname"
                     field="lastname"
                     :obj="localState.editUser"
+                    :readonly="localState.editUser.source!='local'"
                     required
                     @updated="localState.editUser=$event"></hsk-text-input>
                 </v-col>
@@ -33,6 +35,7 @@
                     label="Email"
                     field="email"
                     :obj="localState.editUser"
+                    :readonly="localState.editUser.source!='local'"
                     required
                     @updated="localState.editUser=$event"></hsk-text-input>
                 </v-col>

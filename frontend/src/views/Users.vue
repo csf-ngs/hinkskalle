@@ -48,6 +48,7 @@
                               label="Firstname"
                               field="firstname"
                               :obj="localState.editItem"
+                              :readonly="localState.editItem.source!='local'"
                               required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
@@ -57,6 +58,7 @@
                               label="Lastname"
                               field="lastname"
                               :obj="localState.editItem"
+                              :readonly="localState.editItem.source!='local'"
                               required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
@@ -66,10 +68,11 @@
                               label="Email"
                               field="email"
                               :obj="localState.editItem"
+                              :readonly="localState.editItem.source!='local'"
                               required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
-                          <v-col cols="12" md="6">
+                          <v-col cols="12" md="6" v-if="localState.editItem.source=='local'">
                             <v-text-field
                               :type="localState.passwordVisible ? 'text' : 'password'"
                               outlined
@@ -81,7 +84,7 @@
                               @click:append="localState.passwordVisible=!localState.passwordVisible"
                               ></v-text-field>
                           </v-col>
-                          <v-col cols="12" md="6">
+                          <v-col cols="12" md="6" v-if="localState.editItem.source=='local'">
                             <v-text-field
                               :type="localState.passwordVisible ? 'text' : 'password'"
                               outlined

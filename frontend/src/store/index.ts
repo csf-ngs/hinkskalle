@@ -94,6 +94,7 @@ export default new Vuex.Store({
             const user = plainToUser(response.data.data.user);
             localStorage.setItem('user', JSON.stringify(response.data.data.user));
             commit('authSuccess', { token, user });
+            commit('users/reset');
             resolve(response);
           })
           .catch(err => {
@@ -107,6 +108,7 @@ export default new Vuex.Store({
     logout: ({ commit }) => {
       return new Promise((resolve) => {
         commit('logout');
+        commit('users/reset');
         resolve();
       });
     },

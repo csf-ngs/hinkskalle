@@ -30,6 +30,11 @@ const userModule: Module<State, any> = {
     searchResult: (state): User[] => state.searchResult,
   },
   mutations: {
+    reset(state: State) {
+      state.starred = [];
+      state.starsLoaded = false;
+      state.searchResult = [];
+    },
     loading(state: State) {
       state.status = 'loading';
     },

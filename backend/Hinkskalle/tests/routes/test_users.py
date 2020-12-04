@@ -332,6 +332,30 @@ class TestUsers(RouteBase):
     self.assertEqual(ret.status_code, 200)
     db_user = User.query.filter(User.username==self.username).one()
     self.assertTrue(db_user.check_password(user_data['password']))
+  
+  def test_update_nonlocal(self):
+    user = _create_user('update.hase')
+    user.is_active = False
+    user.is_amdin = False
+    user.source = 'thin air'
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/users/{user.username}", json={
+        'email': 'wos.aun@das',
+        'firstname': 'aundasupdate',
+        'lastname': 'aundashase',
+        'is_active': True,
+        'is_admin': True,
+      })
+    
+    self.assertEqual(ret.status_code, 200)
+    db_user = User.query.filter(User.username=='update.hase').one()
+    self.assertNotEqual(db_user.email, 'wus.aun@das')
+    self.assertNotEqual(db_user.firstname, 'aundasupdate')
+    self.assertNotEqual(db_user.lastname, 'aundashase')
+    self.assertTrue(db_user.is_active)
+    self.assertTrue(db_user.is_admin)
 
   
   def test_update_username_change(self):

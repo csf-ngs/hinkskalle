@@ -184,6 +184,9 @@ def update_user(username):
   if not user.check_update_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to user")
 
+  if user.source != 'local':
+    body = {k:v for k, v in body.items() if k in ['is_admin', 'is_active', 'source']}
+
   if not g.authenticated_user.is_admin:
     if body.get('source', user.source) != user.source:
       raise errors.Forbidden("Cannot change source field")
@@ -191,6 +194,8 @@ def update_user(username):
       raise errors.Forbidden("Cannot change isAdmin field")
     if body.get('is_active', user.is_active) != user.is_active:
       raise errors.Forbidden("Cannot change isActive field")
+  
+
   
   new_password = body.pop('password', None)
   

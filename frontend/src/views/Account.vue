@@ -43,6 +43,62 @@
               <v-row>
                 <v-col cols="12">
                   <v-spacer></v-spacer>
+                  <v-dialog v-model="localState.showPwChange" max-width="500px">
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn text v-bind="attrs" v-on="on">
+                        <v-icon>mdi-shield-key</v-icon> Change Password
+                      </v-btn>
+                    </template>
+                    <v-card>
+                      <v-card-title class="headline">Change Password</v-card-title>
+                      <v-card-text>
+                        <v-container>
+                          <v-form v-model="localState.pwChangeValid">
+                            <v-row>
+                              <v-col cols="12">
+                                <v-text-field
+                                  :type="localState.passwordVisible ? 'text': 'password'"
+                                  outlined
+                                  v-model="localState.oldPassword"
+                                  label="Current Password"
+                                  :error="oldPasswordMissing"
+                                  :append-icon="localState.passwordVisible ? 'mdi-eye' : 'mdi-eye-off'"
+                                  @click:append="localState.passwordVisible=!localState.passwordVisible"
+                                  ></v-text-field>
+                              </v-col>
+                              <v-col cols="12" md="6">
+                                <v-text-field
+                                  :type="localState.passwordVisible ? 'text': 'password'"
+                                  outlined
+                                  v-model="localState.password1"
+                                  label="Current Password"
+                                  :error="!passwordsMatching"
+                                  :append-icon="localState.passwordVisible ? 'mdi-eye' : 'mdi-eye-off'"
+                                  @click:append="localState.passwordVisible=!localState.passwordVisible"
+                                  ></v-text-field>
+                              </v-col>
+                              <v-col cols="12" md="6">
+                                <v-text-field
+                                  :type="localState.passwordVisible ? 'text': 'password'"
+                                  outlined
+                                  v-model="localState.password2"
+                                  label="Current Password"
+                                  :error="!passwordsMatching"
+                                  :append-icon="localState.passwordVisible ? 'mdi-eye' : 'mdi-eye-off'"
+                                  @click:append="localState.passwordVisible=!localState.passwordVisible"
+                                  ></v-text-field>
+                              </v-col>
+                            </v-row>
+                          </v-form>
+                        </v-container>
+                      </v-card-text>
+                      <v-card-actions>
+                        <v-spacer></v-spacer>
+                        <v-btn color="secondary accent-1" text @click="closePwChange">Mabye not today.</v-btn>
+                        <v-btn color="primary darken-1" :disabled="!localState.pwChangeValid" text @click="changePassword">Update Password</v-btn>
+                      </v-card-actions>
+                    </v-card>
+                  </v-dialog>
                   <v-btn type="reset" color="secondary accent-1" text @click.prevent="reset()">Reset</v-btn>
                   <v-btn type="submit" color="primary darken-1" text :disabled="!localState.editValid" @click.prevent="update()">Save</v-btn>
                 </v-col>
@@ -63,6 +119,11 @@ import { clone as _clone } from 'lodash';
 interface State {
   editUser: User | null;
   editValid: boolean;
+  showPwChange: boolean;
+  oldPassword: string;
+  password1: string;
+  password2: string;
+  pwChangeValid: boolean;
 }
 
 export default Vue.extend({
@@ -71,10 +132,31 @@ export default Vue.extend({
     localState: {
       editUser: null,
       editValid: true,
+      showPwChange: false,
+      oldPassword: '',
+      password1: '',
+      password2: '',
+      pwChangeValid: true,
     },
   }),
   mounted: function() {
     this.localState.editUser = _clone(this.$store.getters.currentUser);
+  },
+  computed: {
+    passwordsMatching(): boolean {
+      return this.localState.password1 != '' && this.localState.password2 != '' &&
+        this.localState.password1 === this.localState.password2;
+    },
+    oldPasswordMissing(): boolean {
+      return !this.localState.oldPassword;
+    },
+  },
+  watch: {
+    'localState.showPwChange': function showPwChange(val) {
+      if (!val) {
+        this.closePwChange();
+      }
+    },
   },
   methods: {
     reset() {
@@ -88,6 +170,24 @@ export default Vue.extend({
           this.$store.commit('snackbar/showSuccess', "Hooray!");
         })
         .catch(err => this.$store.commit('snackbar/showError', err));
+    },
+    changePassword() {
+      const user = _clone(this.$store.getters.currentUser);
+      user.oldPassword = this.localState.oldPassword;
+      user.password = this.localState.password1;
+      this.$store.dispatch('users/update', user)
+        .then(user => {
+          this.$store.commit('setUser', user);
+          this.$store.commit('snackbar/showSuccess', 'Hooray!');
+          this.closePwChange();
+        })
+        .catch(err => this.$store.commit('snackbar/showError', err));
+    },
+    closePwChange() {
+      this.localState.showPwChange=false;
+      this.localState.oldPassword='';
+      this.localState.password1='';
+      this.localState.password2='';
     },
   }
 });

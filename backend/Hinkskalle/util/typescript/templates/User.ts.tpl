@@ -4,6 +4,7 @@ class {{classname}} {
   {{utils.auto_attributes(fields)}}
 
   public password?: string
+  public oldPassword?: string
 
   public get fullname(): string {
     return `${this.firstname} ${this.lastname}`;
@@ -30,6 +31,9 @@ export function serialize{{classname}}(obj: {{classname}}, unroll=false): any {
   {{utils.serialize(fields)}}
   if (obj.password) {
     json['password']=obj.password;
+  }
+  if (obj.oldPassword) {
+    json['oldPassword']=obj.oldPassword;
   }
   return json;
 }

@@ -348,6 +348,7 @@ class User {
   
 
   public password?: string
+  public oldPassword?: string
 
   public get fullname(): string {
     return `${this.firstname} ${this.lastname}`;
@@ -396,6 +397,9 @@ export function serializeUser(obj: User, unroll=false): any {
       
   if (obj.password) {
     json['password']=obj.password;
+  }
+  if (obj.oldPassword) {
+    json['oldPassword']=obj.oldPassword;
   }
   return json;
 }

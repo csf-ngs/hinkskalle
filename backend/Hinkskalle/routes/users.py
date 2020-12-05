@@ -32,6 +32,7 @@ class UserSearchQuerySchema(RequestSchema):
 # to allow partial updates
 class UserUpdateSchema(UserSchema, RequestSchema):
   password = fields.String(required=False)
+  oldPassword = fields.String(required=False)
   def __init__(self, **kwargs):
     super_kwargs = dict(kwargs)
     partial_arg = super_kwargs.pop('partial', True)
@@ -196,8 +197,13 @@ def update_user(username):
       raise errors.Forbidden("Cannot change isAdmin field")
     if body.get('is_active', user.is_active) != user.is_active:
       raise errors.Forbidden("Cannot change isActive field")
-  
-
+    if body.get('password'):
+      try:
+        oldPw = body.pop('oldPassword')
+      except KeyError:
+        raise errors.PreconditionFailed("Old password required")
+      if not user.check_password(oldPw):
+        raise errors.Forbidden('Old password incorrect')
   
   new_password = body.pop('password', None)
   

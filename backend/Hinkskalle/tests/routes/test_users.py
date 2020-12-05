@@ -461,6 +461,39 @@ class TestUsers(RouteBase):
     self.assertEqual(db_user.firstname, user_data['firstname'])
     self.assertEqual(db_user.lastname, user_data['lastname'])
   
+  def test_update_password_user(self):
+    user_data = {
+      "password": "supergeheim, supergeheim",
+      'oldPassword': 'supergeheim',
+    }
+    self.user.set_password('supergeheim')
+    db.session.commit()
+    with self.fake_auth():
+      ret = self.client.put(f"/v1/users/{self.username}", json=user_data)
+    
+    self.assertEqual(ret.status_code, 200)
+    db_user = User.query.filter(User.username==self.username).one()
+    self.assertTrue(db_user.check_password(user_data['password']))
+
+  def test_update_password_user_missing_old(self):
+    user_data = {
+      "password": "supergeheim, supergeheim",
+    }
+    with self.fake_auth():
+      ret = self.client.put(f"/v1/users/{self.username}", json=user_data)
+    
+    self.assertEqual(ret.status_code, 412)
+
+  def test_update_password_user_wrong_old(self):
+    user_data = {
+      "password": "supergeheim, supergeheim",
+      'oldPassword': 'oink'
+    }
+    self.user.set_password('supergeheim')
+    with self.fake_auth():
+      ret = self.client.put(f"/v1/users/{self.username}", json=user_data)
+    
+    self.assertEqual(ret.status_code, 403)
   
   def test_update_user_forbidden(self):
     with self.fake_auth():

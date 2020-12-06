@@ -76,8 +76,8 @@ export default Vue.extend({
     isLoggedIn() {
       return this.$store.getters.isLoggedIn;
     },
-    backendUrl() {
-      return getEnv('VUE_APP_BACKEND_URL')
+    backendUrl(): string {
+      return getEnv('VUE_APP_BACKEND_URL') as string
     },
   },
   components: {

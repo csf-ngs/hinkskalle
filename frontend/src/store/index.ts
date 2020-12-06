@@ -40,7 +40,7 @@ const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 const currentUserObj: User | null = currentUser ? plainToUser(currentUser) : null;
 
 const state: State = {
-  backend: axios.create({ baseURL: getEnv('VUE_APP_BACKEND_URL') }),
+  backend: axios.create({ baseURL: getEnv('VUE_APP_BACKEND_URL') as string }),
   authToken: token,
   authStatus: '',
   currentUser: currentUserObj,

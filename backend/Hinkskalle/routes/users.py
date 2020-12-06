@@ -18,9 +18,15 @@ class UserResponseSchema(ResponseSchema):
 class UserListResponseSchema(ResponseSchema):
   data = fields.Nested(UserSchema, many=True)
 
+class UserRegisterSchema(RequestSchema):
+  username = fields.String(required=True)
+  email = fields.String(required=True)
+  firstname = fields.String(required=True)
+  lastname = fields.String(required=True)
+  password = fields.String(required=True)
+
 class UserCreateSchema(UserSchema, RequestSchema):
   password = fields.String()
-  pass
 
 class UserStarsResponseSchema(ResponseSchema):
   data = fields.Nested(ContainerSchema, many=True)
@@ -137,7 +143,34 @@ def remove_star(username, container_id):
   containers = [ c for c in user.starred if c.check_access(g.authenticated_user) ]
   return { 'data': containers }
 
+def _create_user(body, password=None):
+  new_user = User(**body)
+  if password:
+    new_user.set_password(password)
+  if 'authenticated_user' in g:
+    new_user.createdBy=g.authenticated_user.username
 
+  entity = Entity(name=new_user.username, owner=new_user)
+  try:
+    db.session.add(new_user)
+    db.session.add(entity)
+    db.session.commit()
+  except IntegrityError as err:
+    msg = f"User {new_user.username} already exists (email and/or username already taken" if err.statement.find('entity') == -1  else f"entity {new_user.username} already exists"
+    raise errors.PreconditionFailed(msg)
+  return new_user
+
+@registry.handles(
+  rule='/v1/register',
+  method='POST',
+  request_body_schema=UserRegisterSchema(),
+  response_body_schema=UserResponseSchema(),
+)
+def register_account():
+  body = rebar.validated_body
+  new_user = _create_user(body, body.pop('password'))
+
+  return { 'data': new_user }
 
 
 @registry.handles(
@@ -150,22 +183,7 @@ def remove_star(username, container_id):
 def create_user():
   body = rebar.validated_body
   body.pop('id', None)
-  password = body.pop('password', None)
-
-  new_user = User(**body)
-  new_user.createdBy = g.authenticated_user.username
-
-  if password:
-    new_user.set_password(password)
-
-  entity = Entity(name=new_user.username, owner=new_user)
-  try:
-    db.session.add(new_user)
-    db.session.add(entity)
-    db.session.commit()
-  except IntegrityError as err:
-    msg = f"User {new_user.username} already exists (email and/or username already taken" if err.statement.find('entity') == -1  else f"entity {new_user.username} already exists"
-    raise errors.PreconditionFailed(msg)
+  new_user = _create_user(body, body.pop('password', None))
 
   return { 'data': new_user }
 

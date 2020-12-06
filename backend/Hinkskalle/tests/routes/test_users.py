@@ -252,6 +252,34 @@ class TestUsers(RouteBase):
     with self.fake_auth():
       ret = self.client.post(f"/v1/users/{db_user.username}/stars/{container.id}")
     self.assertEqual(ret.status_code, 403)
+  
+  def test_register(self):
+    user_data = {
+      'username': 'probier.hase',
+      'email': 'probier@ha.se',
+      'firstname': 'Probier',
+      'lastname': 'Hase',
+      'password': 'geheimbaer',
+    }
+
+    ret = self.client.post('/v1/register', json=user_data)
+    self.assertEqual(ret.status_code, 200)
+
+    data = ret.get_json().get('data')
+    self.assertEqual(data['username'], user_data['username'])
+    db_user = User.query.get(data['id'])
+    for f in ['email', 'firstname', 'lastname']:
+      self.assertEqual(getattr(db_user, f), user_data[f])
+    self.assertTrue(db_user.check_password(user_data['password']))
+    self.assertTrue(db_user.is_active)
+    self.assertFalse(db_user.is_admin)
+    self.assertIsNone(db_user.createdBy)
+    self.assertTrue(abs(db_user.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+
+    db_entity = Entity.query.filter(Entity.name==user_data['username']).first()
+    self.assertIsNotNone(db_entity)
+    self.assertEqual(db_entity.createdBy, db_user.username)
+
 
     
   def test_create(self):

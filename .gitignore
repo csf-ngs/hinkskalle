@@ -1,4 +1,5 @@
 backend/config.py
+frontend/public/index.html
 conf/secrets.json
 conf/ldap_secrets.env
 conf/mongo.env

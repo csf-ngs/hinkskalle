@@ -3,6 +3,8 @@ import Vuex from 'vuex';
 
 import axios, {AxiosInstance} from 'axios';
 
+import { getEnv } from '@/util/env'
+
 Vue.use(Vuex);
 
 import { User, plainToUser, serializeUser } from './models';
@@ -38,7 +40,7 @@ const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 const currentUserObj: User | null = currentUser ? plainToUser(currentUser) : null;
 
 const state: State = {
-  backend: axios.create({ baseURL: process.env.VUE_APP_BACKEND_URL }),
+  backend: axios.create({ baseURL: getEnv('VUE_APP_BACKEND_URL') }),
   authToken: token,
   authStatus: '',
   currentUser: currentUserObj,

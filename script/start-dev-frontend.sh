@@ -4,4 +4,12 @@ if [ "$1" = "--rebuild" ]; then
   rm -rf node_modules
   yarn install
 fi
+
+JSON_STRING='window_configs = { \
+  "VUE_APP_BACKEND_URL": "'$VUE_APP_BACKEND_URL'", \
+  "VUE_APP_ENABLE_REGISTER": '$VUE_APP_ENABLE_REGISTER' \
+}'
+
+sed "s@// RUNTIME_CONFIG@${JSON_STRING}@" public/index.html.tpl > public/index.html
+
 yarn serve

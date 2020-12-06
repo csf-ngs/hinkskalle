@@ -65,6 +65,7 @@ singularity remote login hinkskalle
 
 <script lang="ts">
 import Vue from 'vue';
+import { getEnv } from '@/util/env';
 
 import LatestContainers from '@/components/LatestContainers.vue';
 import StarredContainers from '@/components/StarredContainers.vue';
@@ -76,7 +77,7 @@ export default Vue.extend({
       return this.$store.getters.isLoggedIn;
     },
     backendUrl() {
-      return process.env.VUE_APP_BACKEND_URL
+      return getEnv('VUE_APP_BACKEND_URL')
     },
   },
   components: {

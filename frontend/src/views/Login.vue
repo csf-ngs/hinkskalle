@@ -21,6 +21,11 @@
               </v-card-actions>
             </v-form>
           </v-card>
+          <v-card v-if="registerEnabled" flat>
+            <v-card-title secondary-title>
+              <h4>Create an Account</h4>
+            </v-card-title>
+          </v-card>
         </v-col>
       </v-row>
     </v-layout>
@@ -28,6 +33,7 @@
 </template>
 <script lang="ts">
 import Vue from 'vue';
+import { getEnv } from '@/util/env';
 
 import { AxiosError } from 'axios';
 
@@ -82,6 +88,9 @@ export default Vue.extend({
   computed: {
     loading(): boolean {
       return this.$store.getters.authStatus === 'loading';
+    },
+    registerEnabled(): boolean {
+      return getEnv('VUE_APP_ENABLE_REGISTER') as boolean
     },
   }
 });

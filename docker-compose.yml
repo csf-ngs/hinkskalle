@@ -22,6 +22,9 @@ services:
     volumes:
       - '.:/srv/hinkskalle/src'
     command: '../script/start-dev-frontend.sh'
+    environment:
+      VUE_APP_BACKEND_URL: 'http://172.28.128.1:7660'
+      VUE_APP_ENABLE_REGISTER: 'true'
     ports:
       - '7661:8080'
     working_dir: '/srv/hinkskalle/src/frontend'

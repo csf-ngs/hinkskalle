@@ -71,6 +71,13 @@ class TestImage(ModelBase):
     self.assertListEqual(image.tags(), ['v1', 'v2'])
     Tag.__table__.delete()
   
+  def test_tags_case(self):
+    image = _create_image()[0]
+    tag1 = Tag(name='TestHase', image_ref=image)
+    db.session.add(tag1)
+    db.session.commit()
+    self.assertListEqual(image.tags(), ['testhase'])
+  
   def test_access(self):
     admin = _create_user(name='admin.oink', is_admin=True)
     user = _create_user(name='user.oink', is_admin=False)

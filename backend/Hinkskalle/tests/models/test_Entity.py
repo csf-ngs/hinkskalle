@@ -15,6 +15,14 @@ class TestEntity(ModelBase):
     self.assertEqual(read_entity.id, entity.id)
     self.assertTrue(abs(read_entity.createdAt - datetime.now()) < timedelta(seconds=1))
   
+  def test_entity_case(self):
+    entity = Entity(name='TestHase')
+    db.session.add(entity)
+    db.session.commit()
+
+    read_entity = Entity.query.get(entity.id)
+    self.assertEqual(read_entity.name, 'testhase')
+  
   def test_count(self):
     ent = Entity(name='test-hase')
     self.assertEqual(ent.size(), 0)

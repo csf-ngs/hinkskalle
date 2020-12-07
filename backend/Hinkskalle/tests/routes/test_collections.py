@@ -85,6 +85,14 @@ class TestCollections(RouteBase):
     data = ret.get_json().get('data')
 
     self.assertEqual(data['id'], str(coll.id))
+
+  def test_get_case(self):
+    coll, _ = _create_collection('TestHase')
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/collections/Test-Hase/TestHase")
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.get_json().get('data').get('id'), str(coll.id))
+
   
   def test_get_default(self):
     coll, entity = _create_collection()
@@ -209,6 +217,18 @@ class TestCollections(RouteBase):
     db_collection = Collection.query.get(data['id'])
     self.assertTrue(abs(db_collection.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
 
+  def test_create_check_name(self):
+    entity  = Entity(name='test-hase')
+    db.session.add(entity)
+    db.session.commit()
+
+    for fail in ['Babsi Streusand', '-oink', 'Babsi&Streusand', 'oink-']:
+      with self.fake_admin_auth():
+          ret = self.client.post('/v1/collections', json={
+            'name': fail,
+            'entity': str(entity.id),
+          })
+      self.assertEqual(ret.status_code, 400)
   
   def test_create_defaultPrivate(self):
     entity = Entity(name='test-hase')
@@ -263,6 +283,15 @@ class TestCollections(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post('/v1/collections', json={
         'name': coll.name,
+        'entity': str(entity.id),
+      })
+    self.assertEqual(ret.status_code, 412)
+
+  def test_create_not_unique_case(self):
+    coll, entity = _create_collection()
+    with self.fake_admin_auth():
+      ret = self.client.post('/v1/collections', json={
+        'name': coll.name.upper(),
         'entity': str(entity.id),
       })
     self.assertEqual(ret.status_code, 412)
@@ -375,6 +404,19 @@ class TestCollections(RouteBase):
 
     self.assertTrue(abs(dbColl.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
   
+  def test_update_case(self):
+    coll, _ = _create_collection('testhase')
+
+    with self.fake_admin_auth():
+      ret = self.client.put("/v1/collections/Test-Hase/TestHase", json={
+        'description': 'Mei Huat',
+      })
+    self.assertEqual(ret.status_code, 200)
+    dbColl = Collection.query.filter(Collection.name==coll.name).one()
+    self.assertEqual(dbColl.description, 'Mei Huat')
+
+
+  
   def test_update_owner(self):
     coll, entity = _create_collection()
 
@@ -448,6 +490,14 @@ class TestCollections(RouteBase):
 
     with self.fake_admin_auth():
       ret = self.client.delete(f"/v1/collections/{entity.name}/{coll.name}")
+    self.assertEqual(ret.status_code, 200)
+
+    self.assertIsNone(Collection.query.filter(Collection.name==coll.name).first())
+  
+  def test_delete_case(self):
+    coll, _ = _create_collection("TestHase")
+    with self.fake_admin_auth():
+      ret = self.client.delete("/v1/collections/Test-Hase/TestHase")
     self.assertEqual(ret.status_code, 200)
 
     self.assertIsNone(Collection.query.filter(Collection.name==coll.name).first())

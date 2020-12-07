@@ -1,7 +1,7 @@
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
-from marshmallow import fields, Schema
+from marshmallow import fields, Schema, ValidationError
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
 from flask import request, current_app, g
@@ -59,7 +59,7 @@ def update_tag(container_id):
       current_app.logger.debug(f"removing tag {tag_name}...")
       for image in container.images_ref:
         for tag in image.tags_ref:
-          if tag.name == tag_name:
+          if tag.name == tag_name.lower():
             db.session.delete(tag)
     else:
       try:
@@ -68,6 +68,8 @@ def update_tag(container_id):
         raise errors.NotFound(f"Image {tag_image} not found for container {container_id}")
       except IntegrityError:
         raise errors.NotFound(f"Invalid image id {tag_image} not found for container {container_id}")
+      except ValidationError as err:
+        raise errors.BadRequest(err.messages.get('name', 'Unknown validation error'))
 
       current_app.logger.debug(f"created tag {new_tag.name} on {new_tag.image_ref.id}")
 

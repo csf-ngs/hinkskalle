@@ -7,9 +7,9 @@ from Hinkskalle import db
 
 
 def _create_container(postfix='container'):
-  coll, entity = _create_collection(f"test-collection-f{postfix}")
+  coll, entity = _create_collection(f"test-collection-{postfix}")
 
-  container = Container(name=f"test-f{postfix}", collection_id=coll.id)
+  container = Container(name=f"test-{postfix}", collection_id=coll.id)
   db.session.add(container)
   db.session.commit()
   return container, coll, entity
@@ -29,6 +29,11 @@ class TestContainer(ModelBase):
 
     self.assertEqual(read_container.entity(), entity.id)
     self.assertEqual(read_container.entityName(), entity.name)
+  
+  def test_container_case(self):
+    container, _, _ = _create_container('TestContainer')
+    read_container = Container.query.get(container.id)
+    self.assertEqual(container.name, 'test-testcontainer')
 
   def test_images(self):
     container = _create_container()[0]
@@ -116,6 +121,15 @@ class TestContainer(ModelBase):
       [f"v1:{image1.id}", f"v1.1:{image2.id}", f"v2:{image2.id}"]
     )
 
+  def test_tag_image_case(self):
+    container = _create_container()[0]
+    image1 = Image(hash='eins', description='test-image-1', container_id=container.id)
+    db.session.add(image1)
+    db.session.commit()
+
+    new_tag = container.tag_image('TestHase', image1.id)
+    dbtag = Tag.query.get(new_tag.id)
+    self.assertEqual(dbtag.name, 'testhase')
 
 
   def test_get_tags(self):

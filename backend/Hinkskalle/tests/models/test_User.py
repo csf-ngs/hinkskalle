@@ -18,6 +18,16 @@ class TestUser(ModelBase):
     self.assertTrue(abs(read_user.createdAt - datetime.now()) < timedelta(seconds=1))
     self.assertFalse(read_user.is_admin)
   
+  def test_user_case(self):
+    user = _create_user('tEst.Hase')
+    user.email = 'tEst@hA.Se'
+    db.session.add(user)
+    db.session.commit()
+
+    dbUser = User.query.get(user.id)
+    self.assertEqual(dbUser.username, 'test.hase')
+    self.assertEqual(dbUser.email, 'test@ha.se')
+  
   def test_group(self):
     user = _create_user()
     group1 = _create_group('Testhase1')

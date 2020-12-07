@@ -73,6 +73,15 @@ class TestEntities(RouteBase):
       'deleted': False,
     })
   
+  def test_get_case(self):
+    entity = Entity(name='testhase')
+    db.session.add(entity)
+    db.session.commit()
+    with self.fake_admin_auth():
+      ret = self.client.get('/v1/entities/TestHase')
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.get_json().get('data')['id'], str(entity.id))
+  
   def test_get_default(self):
     entity = Entity(name='default')
     db.session.add(entity)
@@ -139,6 +148,21 @@ class TestEntities(RouteBase):
 
     db_entity = Entity.query.get(data['id'])
     self.assertTrue(abs(db_entity.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+  
+  def test_create_check_name(self):
+    for fail in ['Babsi Streusand', '-oink', '_oink', '.oink', 'Babsi&Streusand', 'oink-', 'oink.', 'oink_']:
+      with self.fake_admin_auth():
+          ret = self.client.post('/v1/entities', json={
+            'name': fail
+          })
+      self.assertEqual(ret.status_code, 400, f"check {fail}")
+    for good in ['test_hase', 'test.hase', 'test-hase', 'Test-Kuh']:
+      with self.fake_admin_auth():
+        ret = self.client.post('/v1/entities', json={
+          'name': good
+        })
+      self.assertEqual(ret.status_code, 200, f"check good {good}")
+
 
   def test_create_default(self):
     with self.fake_admin_auth():
@@ -157,6 +181,17 @@ class TestEntities(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post('/v1/entities', json={
         'name': 'grunz',
+      })
+    self.assertEqual(ret.status_code, 412)
+
+  def test_create_not_unique_case(self):
+    entity = Entity(name='grunz')
+    db.session.add(entity)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.post('/v1/entities', json={
+        'name': 'GRUNZ',
       })
     self.assertEqual(ret.status_code, 412)
   
@@ -214,6 +249,18 @@ class TestEntities(RouteBase):
     self.assertEqual(dbEntity.description, 'Troro')
     self.assertTrue(dbEntity.defaultPrivate)
   
+  def test_update_case(self):
+    entity = Entity(name='testhase')
+    db.session.add(entity)
+    db.session.commit()
+    with self.fake_admin_auth():
+      ret = self.client.put('/v1/entities/TestHase', json={
+        'description': 'Oink oink'
+      })
+    self.assertEqual(ret.status_code, 200)
+    dbEntity = Entity.query.filter(Entity.name=='testhase').one()
+    self.assertEqual(dbEntity.description, 'Oink oink')
+  
   def test_update_owner(self):
     entity = Entity(name='grunz')
     db.session.add(entity)
@@ -234,7 +281,7 @@ class TestEntities(RouteBase):
     db.session.commit()
     with self.fake_admin_auth():
       ret = self.client.put('/v1/entities/grunz', json={
-        'name': 'Babsi Streusand',
+        'name': 'babsi-streusand',
       })
     self.assertEqual(ret.status_code, 200)
 
@@ -305,6 +352,16 @@ class TestEntities(RouteBase):
       ret = self.client.delete(f"/v1/entities/{entity.name}")
     self.assertEqual(ret.status_code, 200)
     self.assertIsNone(Entity.query.filter(Entity.name==entity.name).first())
+  
+  def test_delete_case(self):
+    entity = Entity(name='testhase')
+    db.session.add(entity)
+    db.session.commit()
+    with self.fake_admin_auth():
+      ret = self.client.delete("/v1/entities/TestHase")
+    self.assertEqual(ret.status_code, 200)
+    self.assertIsNone(Entity.query.filter(Entity.name==entity.name).first())
+
   
   def test_delete_not_empty(self):
     entity = Entity(name='testhase')

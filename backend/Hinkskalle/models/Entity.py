@@ -1,6 +1,8 @@
 from Hinkskalle import db
-from marshmallow import fields, Schema
+from marshmallow import fields, Schema, validates_schema, ValidationError
 from datetime import datetime
+from sqlalchemy.orm import validates
+from Hinkskalle.util.name_check import validate_name
 
 class EntitySchema(Schema):
   id = fields.String(required=True, dump_only=True)
@@ -18,6 +20,11 @@ class EntitySchema(Schema):
 
   collections = fields.String(dump_only=True, many=True)
 
+  @validates_schema
+  def validate_name(self, data, **kwargs):
+    errors = validate_name(data)
+    if errors:
+      raise ValidationError(errors)
 
 class Entity(db.Model):
   id = db.Column(db.Integer, primary_key=True)
@@ -35,6 +42,11 @@ class Entity(db.Model):
   owner = db.relationship('User', back_populates='entities')
 
   collections_ref = db.relationship('Collection', back_populates='entity_ref', lazy='dynamic')
+
+  @validates('name')
+  def convert_lower(self, key, value):
+    return value.lower()
+
 
   def size(self):
     return self.collections_ref.count()

@@ -93,6 +93,23 @@ class TestTags(RouteBase):
     db_container=Container.query.get(container_id)
     self.assertDictEqual(db_container.imageTags(), { 'v1.0': str(image.id), 'oink': str(image.id) })
   
+  def test_update_case(self):
+    image, container, _, _ = _create_image()
+    container_id = container.id
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v1/tags/{container.id}", json={"TestHase": str(image.id)})
+    self.assertEqual(ret.status_code, 200)
+    self.assertDictEqual(ret.get_json().get('data'), { "testhase": str(image.id) })
+    db_container = Container.query.get(container_id)
+    self.assertDictEqual(db_container.imageTags(), { 'testhase': str(image.id) })
+  
+  def test_valid(self):
+    image, container, _, _ = _create_image()
+    for fail in ['Babsi Streusand', '-oink', 'Babsi&Streusand', 'oink-']:
+      with self.fake_admin_auth():
+        ret = self.client.post(f"/v1/tags/{container.id}", json={fail: str(image.id)})
+      self.assertEqual(ret.status_code, 400)
+  
   def test_remove_tag(self):
     image, container, _, _ = _create_image()
     container_id=container.id
@@ -107,6 +124,19 @@ class TestTags(RouteBase):
     self.assertDictEqual(data, {});
     db_container = Container.query.get(container_id)
     self.assertDictEqual(db_container.imageTags(), {})
+  
+  def test_remove_tag_case(self):
+    image, container, _, _ = _create_image()
+    container_id=container.id
+    latest_tag = Tag(name='oiNk', image_ref=image)
+    db.session.add(latest_tag)
+    db.session.commit()
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v1/tags/{container.id}", json={'OInK': None })
+    self.assertEqual(ret.status_code, 200)
+    db_container = Container.query.get(container_id)
+    self.assertDictEqual(db_container.imageTags(), {})
+
   
   def test_multiple(self):
     image, container, _, _ = _create_image()

@@ -1,9 +1,11 @@
 from Hinkskalle import db
 from datetime import datetime
+from sqlalchemy.orm import validates
 
 from Hinkskalle.models import Collection, Image, Tag
 
-from marshmallow import fields, Schema
+from marshmallow import fields, Schema, validates_schema, ValidationError
+from Hinkskalle.util.name_check import validate_name
 
 class ContainerSchema(Schema):
   id = fields.String(dump_only=True, required=True)
@@ -33,6 +35,12 @@ class ContainerSchema(Schema):
   imageTags = fields.Dict(dump_only=True, allow_none=True)
   archTags = fields.Dict(dump_only=True, allow_none=True)
 
+  @validates_schema
+  def validate_name(self, data, **kwargs):
+    errors = validate_name(data)
+    if errors:
+      raise ValidationError(errors)
+
 class Container(db.Model):
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String(), nullable=False)
@@ -58,6 +66,10 @@ class Container(db.Model):
   starred = db.relationship('User', secondary='user_stars', back_populates='starred')
   starred_sth = db.relationship('User', viewonly=True, secondary='user_stars', lazy='dynamic')
 
+  @validates('name')
+  def convert_lower(self, key, value):
+    return value.lower()
+
   @property
   def stars(self):
     return self.starred_sth.count()
@@ -78,6 +90,10 @@ class Container(db.Model):
     return self.collection_ref.entity_ref.name
 
   def tag_image(self, tag, image_id):
+    errors = validate_name({ 'name': tag })
+    if errors:
+      raise ValidationError(errors)
+
     image = Image.query.get(image_id)
     cur_tag = Tag.query.filter(Tag.name == tag, Tag.image_id.in_([ i.id for i in self.images_ref ])).first()
     if cur_tag:

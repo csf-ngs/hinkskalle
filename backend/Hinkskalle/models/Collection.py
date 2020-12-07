@@ -1,6 +1,8 @@
 from Hinkskalle import db
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, validates_schema, ValidationError
 from datetime import datetime
+from sqlalchemy.orm import validates
+from Hinkskalle.util.name_check import validate_name
 
 from Hinkskalle.models import Entity
 
@@ -22,6 +24,12 @@ class CollectionSchema(Schema):
 
   containers = fields.String(dump_only=True, many=True)
 
+  @validates_schema
+  def validate_name(self, data, **kwargs):
+    errors = validate_name(data)
+    if errors:
+      raise ValidationError(errors)
+
 
 class Collection(db.Model):
   id = db.Column(db.Integer, primary_key=True)
@@ -39,6 +47,10 @@ class Collection(db.Model):
   entity_ref = db.relationship('Entity', back_populates='collections_ref')
   containers_ref = db.relationship('Container', back_populates='collection_ref', lazy='dynamic')
   owner = db.relationship('User', back_populates='collections')
+
+  @validates('name')
+  def convert_lower(self, key, value):
+    return value.lower()
 
   __table_args__ = (db.UniqueConstraint('name', 'entity_id', name='name_entity_id_idx'),)
 

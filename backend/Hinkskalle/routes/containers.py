@@ -27,17 +27,17 @@ class ContainerDeleteResponseSchema(ResponseSchema):
 
 def _get_container(entity_id, collection_id, container_id):
   try:
-    entity = Entity.query.filter(Entity.name==entity_id).one()
+    entity = Entity.query.filter(Entity.name==entity_id.lower()).one()
   except NoResultFound:
     current_app.logger.debug(f"entity {entity_id} not found")
     raise errors.NotFound(f"entity {entity_id} not found")
   try:
-    collection = entity.collections_ref.filter(Collection.name==collection_id).one()
+    collection = entity.collections_ref.filter(Collection.name==collection_id.lower()).one()
   except NoResultFound:
     current_app.logger.debug(f"collection {entity.name}/{collection_id} not found")
     raise errors.NotFound(f"collection {entity.name}/{collection_id} not found")
   try:
-    container = collection.containers_ref.filter(Container.name==container_id).one()
+    container = collection.containers_ref.filter(Container.name==container_id.lower()).one()
   except NoResultFound:
     current_app.logger.debug(f"container {entity.name}/{collection.name}/{container_id} not found")
     raise errors.NotFound(f"container {entity.name}/{collection.name}/{container_id} not found")

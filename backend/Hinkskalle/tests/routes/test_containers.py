@@ -79,6 +79,13 @@ class TestContainers(RouteBase):
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(container.id))
   
+  def test_get_case(self):
+    container = _create_container()[0]
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/containers/Test-Hase/test-Collection-Container/Test-Container")
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.get_json().get('data').get('id'), str(container.id))
+  
   def test_get_default_entity(self):
     container, coll, entity = _create_container()
     entity.name='default'
@@ -196,6 +203,17 @@ class TestContainers(RouteBase):
     data = ret.get_json().get('data')
     self.assertEqual(data['collection'], str(coll.id))
     self.assertEqual(data['createdBy'], self.admin_username)
+
+  def test_create_check_name(self):
+    coll = _create_collection()[0]
+
+    for fail in ['Babsi Streusand', '-oink', 'Babsi&Streusand', 'oink-']:
+      with self.fake_admin_auth():
+          ret = self.client.post('/v1/containers', json={
+            'name': fail,
+            'collection': str(coll.id),
+          })
+      self.assertEqual(ret.status_code, 400)
   
   def test_create_private(self):
     coll, _ = _create_collection()
@@ -234,6 +252,15 @@ class TestContainers(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post('/v1/containers', json={
         'name': container.name,
+        'collection': str(coll.id),
+      })
+    self.assertEqual(ret.status_code, 412)
+
+  def test_create_not_unique_case(self):
+    container, coll, _ = _create_container()
+    with self.fake_admin_auth():
+      ret = self.client.post('/v1/containers', json={
+        'name': container.name.upper(),
         'collection': str(coll.id),
       })
     self.assertEqual(ret.status_code, 412)
@@ -294,6 +321,17 @@ class TestContainers(RouteBase):
     self.assertEqual(dbContainer.vcsUrl, 'http://da.ham')
 
     self.assertTrue(abs(dbContainer.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+  
+  def test_update_case(self):
+    container = _create_container()[0]
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/containers/Test-Hase/test-Collection-Container/Test-Container", json={
+        'description': 'Mei Huat',
+      })
+    self.assertEqual(ret.status_code, 200)
+    dbContainer = Container.query.get(container.id)
+    self.assertEqual(dbContainer.description, 'Mei Huat')
     
   def test_update_owner(self):
     container, coll, entity = _create_container()
@@ -361,6 +399,14 @@ class TestContainers(RouteBase):
 
     with self.fake_admin_auth():
       ret = self.client.delete(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
+    self.assertEqual(ret.status_code, 200)
+
+    self.assertIsNone(Container.query.filter(Container.name==container.name).first())
+
+  def test_delete_case(self):
+    container = _create_container()[0]
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/containers/Test-Hase/test-Collection-Container/Test-Container")
     self.assertEqual(ret.status_code, 200)
 
     self.assertIsNone(Container.query.filter(Container.name==container.name).first())

@@ -2,6 +2,7 @@ from Hinkskalle import db
 from marshmallow import fields, Schema
 from datetime import datetime
 from flask import current_app
+from sqlalchemy.orm import validates
 
 from passlib.hash import sha512_crypt
 import secrets
@@ -62,6 +63,9 @@ class User(db.Model):
   images = db.relationship('Image', back_populates='owner')
   tags = db.relationship('Tag', back_populates='owner')
 
+  @validates('username', 'email')
+  def convert_lower(self, key, value):
+    return value.lower()
 
   def create_token(self, **attrs):
     token = Token(token=secrets.token_urlsafe(48), **attrs)

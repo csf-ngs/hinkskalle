@@ -31,6 +31,11 @@ class TestCollection(ModelBase):
     self.assertEqual(read_coll.entity(), entity.id)
     self.assertEqual(read_coll.entityName(), entity.name)
   
+  def test_collection_case(self):
+    coll, _ = _create_collection('TestCollection')
+    read_coll = Collection.query.get(coll.id)
+    self.assertEqual(read_coll.name, 'testcollection')
+  
   def test_count(self):
     coll, entity = _create_collection()
     self.assertEqual(coll.size(), 0)

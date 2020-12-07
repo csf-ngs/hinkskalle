@@ -27,11 +27,11 @@ class CollectionDeleteResponseSchema(ResponseSchema):
 
 def _get_collection(entity_id, collection_id):
   try:
-    entity = Entity.query.filter(Entity.name==entity_id).one()
+    entity = Entity.query.filter(Entity.name==entity_id.lower()).one()
   except NoResultFound:
     raise errors.NotFound(f"entity {entity_id} not found")
   try:
-    collection = entity.collections_ref.filter(Collection.name==collection_id).one()
+    collection = entity.collections_ref.filter(Collection.name==collection_id.lower()).one()
   except NoResultFound:
     raise errors.NotFound(f"collection {entity.id}/{collection_id} not found")
   return collection

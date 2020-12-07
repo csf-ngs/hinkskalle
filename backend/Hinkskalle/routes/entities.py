@@ -46,7 +46,7 @@ def list_entities():
 )
 def get_entity(entity_id):
   try:
-    entity = Entity.query.filter(Entity.name == entity_id).one()
+    entity = Entity.query.filter(Entity.name == entity_id.lower()).one()
   except NoResultFound:
     raise errors.NotFound(f"entity {entity_id} not found")
   if not entity.check_access(g.authenticated_user):
@@ -101,7 +101,7 @@ def update_entity(entity_id):
   body = rebar.validated_body
 
   try:
-    entity = Entity.query.filter(Entity.name==entity_id).one()
+    entity = Entity.query.filter(Entity.name==entity_id.lower()).one()
   except NoResultFound:
     raise errors.NotFound(f"entity {entity_id} not found")
   if not entity.check_update_access(g.authenticated_user):
@@ -125,7 +125,7 @@ def update_entity(entity_id):
 ) 
 def delete_entity(entity_id):
   try:
-    entity = Entity.query.filter(Entity.name==entity_id).one()
+    entity = Entity.query.filter(Entity.name==entity_id.lower()).one()
   except NoResultFound:
     raise errors.NotFound(f"entity {entity_id} not found")
 

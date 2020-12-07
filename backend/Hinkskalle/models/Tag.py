@@ -1,5 +1,6 @@
 from Hinkskalle import db
 from datetime import datetime
+from sqlalchemy.orm import validates
 
 class Tag(db.Model):
   id = db.Column(db.Integer, primary_key=True)
@@ -13,5 +14,10 @@ class Tag(db.Model):
   updatedAt = db.Column(db.DateTime)
 
   owner = db.relationship('User', back_populates='tags')
+
+  @validates('name')
+  def convert_lower(self, key, value):
+    return value.lower()
+
 
   __table_args__ = (db.UniqueConstraint('name', 'image_id', name='name_image_id_idx'),)

@@ -2,6 +2,7 @@ import { mount, createLocalVue } from '@vue/test-utils';
 import Vuex from 'vuex';
 import Vuetify from 'vuetify';
 import VueRouter from 'vue-router';
+import Vue from 'vue';
 
 import Login from '@/views/Login.vue';
 
@@ -21,20 +22,19 @@ describe('Login.vue', () => {
 
   it('has title', () => {
     const wrapper = mount(Login, { localVue, store, vuetify, router });
-    expect(wrapper.find('h4').text()).toBe('Login');
+    expect(wrapper.find('div.v-tab').text()).toBe('Login');
   });
 
-  it('checks required', async () => {
+  it('checks required', async done => {
     const wrapper = mount(Login, { localVue, store, vuetify, router });
     expect(wrapper.find('button#login').attributes('disabled')).toBeTruthy();
 
     await wrapper.find('input#username').setValue('oink');
     await wrapper.find('input#password').setValue('hase');
 
-    wrapper.vm.$nextTick(() => {
-      expect(wrapper.find('button#login').attributes('disabled')).toBeFalsy();
-    });
-
+    await Vue.nextTick();
+    expect(wrapper.find('button#login').attributes('disabled')).toBeFalsy();
+    done();
   });
 
   it('routes on successful login', async () => {
@@ -49,7 +49,7 @@ describe('Login.vue', () => {
     })
     const wrapper = mount(Login, { localVue: myLocal, store, vuetify, 
       mocks: { $router: mockRouter },
-      data: () => ({ state: { user: { username: 'oink', password: 'hase' }}})
+      data: () => ({ localState: { user: { username: 'oink', password: 'hase' }}})
     });
     
     await wrapper.find('form').trigger('submit');

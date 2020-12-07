@@ -94,6 +94,21 @@ const userModule: Module<State, any> = {
 
       });
     },
+    register: ({ commit, rootState }, create: User): Promise<User> => {
+      return new Promise((resolve, reject) => {
+        commit('loading');
+        rootState.backend.post(`/v1/register`, serializeUser(create))
+          .then((response: AxiosResponse) => {
+            const created = plainToUser(response.data.data);
+            commit('succeeded');
+            resolve(created);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
     create: ({ commit, rootState }, create: User): Promise<User> => {
       return new Promise((resolve, reject) => {
         commit('loading');

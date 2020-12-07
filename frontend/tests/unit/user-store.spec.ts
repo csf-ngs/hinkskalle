@@ -361,5 +361,34 @@ describe('user store actions', () => {
         done();
       });
   });
+
+  it('has register user', done => {
+    const user = { username: 'test.hase' };
+    const createUserObj = plainToUser(user);
+    createUserObj.username = 'test.hase';
+    mockAxios.post.mockResolvedValue({
+      data: { data: { id: '666', username: createUserObj.username }}
+    });
+
+    const promise = store.dispatch('users/register', createUserObj);
+    expect(store.state.users!.status).toBe('loading');
+    promise.then(user => {
+      expect(mockAxios.post).toHaveBeenLastCalledWith(`/v1/register`, serializeUser(createUserObj));
+      expect(store.state.users!.status).toBe('success');
+      createUserObj.id=user.id;
+      expect(user).toStrictEqual(createUserObj);
+      done();
+    });
+  });
+
+  it('has register user fail handling', done => {
+    mockAxios.post.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('users/register', testUserObj)
+      .catch(err => {
+        expect(store.state.users!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
+  });
     
 });

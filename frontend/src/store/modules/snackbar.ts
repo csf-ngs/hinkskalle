@@ -3,6 +3,34 @@ import { Module } from 'vuex';
 import { has as _has } from 'lodash';
 import { AxiosError } from 'axios';
 
+export function generateMsg(error: AxiosError): string {
+  let msg = 'unknown';
+  if (error.response) {
+    msg = `Code ${error.response.status}: `
+    const data = error.response.data;
+    if (_has(data, 'errors')) {
+      msg += data.errors[0].message;
+    }
+    else if (_has(data, 'message')) {
+      msg += data.message;
+    }
+    else {
+      if (error.response.status === 401) {
+        msg += "Unauthorized! ";
+      }
+      msg += error.response.statusText;
+    }
+  }
+  else if (error.request) {
+    msg="Upstream may have died, or your network sucks.";
+  }
+  else {
+    msg=error.message;
+  }
+  return msg;
+}
+
+
 export type SnackbarType = '' | 'info' | 'success' | 'error';
 
 export interface State {
@@ -47,30 +75,7 @@ const snackbarModule: Module<State, any> = {
         state.msg = error; 
         return;
       }
-
-      if (error.response) {
-        let msg = `Code ${error.response.status}: `
-        const data = error.response.data;
-        if (_has(data, 'errors')) {
-          msg += data.errors[0].message;
-        }
-        else if (_has(data, 'message')) {
-          msg += data.message;
-        }
-        else {
-          if (error.response.status === 401) {
-            msg += "Unauthorized! ";
-          }
-          msg += error.response.statusText;
-        }
-        state.msg=msg;
-      }
-      else if (error.request) {
-        state.msg="Upstream may have died, or your network sucks.";
-      }
-      else {
-        state.msg=error.message;
-      }
+      state.msg = generateMsg(error);
     },
   },
 };

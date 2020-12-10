@@ -14,6 +14,7 @@ setup(
         'requests',
         'passlib',
         'ldap3',
+        'Flask-RQ2',
     ],
     extra_requires={
       'dev': ['Jinja2'],

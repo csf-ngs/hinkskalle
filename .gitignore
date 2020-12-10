@@ -1,3 +1,4 @@
+conf/slapd_secrets.env
 backend/config.py
 frontend/public/index.html
 conf/secrets.json

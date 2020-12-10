@@ -3,7 +3,7 @@ from flask_rebar import Rebar
 from logging.config import dictConfig
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
-from flask_migrate import Migrate
+from flask_migrate import Migrate, upgrade as migrate_up
 
 import os
 
@@ -98,6 +98,7 @@ def create_app():
 
     # see https://github.com/miguelgrinberg/Flask-Migrate/issues/61#issuecomment-208131722
     migrate.init_app(app, db, render_as_batch=db.engine.url.drivername == 'sqlite')
+    migrate_up()
   
   password_checkers.init_app(app)
 

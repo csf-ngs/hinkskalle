@@ -11,3 +11,5 @@ from Hinkskalle.routes.shub import *
 
 from Hinkskalle.routes.users import *
 from Hinkskalle.routes.tokens import *
+
+from Hinkskalle.routes.adm import *

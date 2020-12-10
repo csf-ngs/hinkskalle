@@ -2,14 +2,19 @@ from Hinkskalle import db
 from datetime import datetime
 import enum
 
-from marshmallow import fields, Schema
-
-class AdmSchema(Schema):
-  key = fields.String(required=True)
-  val = fields.Dict(required=True, default={})
+from marshmallow import fields, Schema, validate, pre_dump
 
 class AdmKeys(enum.Enum):
   ldap_sync_results = 'ldap_sync_results'
+
+class AdmSchema(Schema):
+  key = fields.String(required=True, dump_only=True, validate=validate.OneOf([k.name for k in AdmKeys ]))
+  val = fields.Dict(required=True, default={})
+
+  @pre_dump
+  def unwrap_key(self, data, **kwargs):
+    data.key=data.key.name
+    return data
 
 class Adm(db.Model):
   key = db.Column(db.Enum(AdmKeys), primary_key=True)

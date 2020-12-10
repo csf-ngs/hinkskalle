@@ -21,11 +21,11 @@ class TestAdm(ModelBase):
     serialized = schema.dump(key)
     self.assertDictEqual(serialized.errors, {})
     self.assertDictEqual(serialized.data['val'], { 'knofel': 100 })
-
+  
   def test_deserialize(self):
     schema = AdmSchema()
     toParse = {
-      'key': 'ldap_sync_results',
+      'key': AdmKeys.ldap_sync_results.name,
       'val': {
         'knofel': 100,
         'tausend': [ 1, 2, 1000 ],
@@ -40,4 +40,12 @@ class TestAdm(ModelBase):
 
     fromDb = Adm.query.get(AdmKeys.ldap_sync_results)
     self.assertDictEqual(fromDb.val, toParse['val'])
+
+  def test_schema_key_validation(self):
+    schema = AdmSchema()
+    deserialized = schema.load({
+      'key': 'testhase',
+      'val': {}
+    })
+    self.assertTrue('key' in deserialized.errors)
 

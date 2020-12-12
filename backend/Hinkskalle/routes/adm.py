@@ -1,3 +1,4 @@
+from flask import current_app
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 
@@ -13,6 +14,27 @@ class AdmResponseSchema(ResponseSchema):
 
 class AdmUpdateSchema(AdmSchema, RequestSchema):
   pass
+
+class JobSchema(Schema):
+  id = fields.String()
+  meta = fields.Dict()
+  origin = fields.String()
+  get_status = fields.String(dump_to='status')
+  description = fields.String()
+  dependson = fields.String()
+  failure_ttl = fields.Int(allow_none=True)
+  ttl = fields.Int(allow_none=True)
+  result_ttl = fields.Int()
+  timeout = fields.String()
+  result = fields.String(allow_none=True)
+  enqueued_at = fields.String()
+  started_at = fields.String(allow_none=True)
+  ended_at = fields.String(allow_none=True)
+  exc_info = fields.String(allow_none=True)
+  func_name = fields.String()
+
+class JobResponseSchema(ResponseSchema):
+  data = fields.Nested(JobSchema)
 
 @registry.handles(
   rule='/v1/adm/<string:key>',
@@ -51,3 +73,26 @@ def update_key(key):
   return { 'data': db_key }
 
   
+@registry.handles(
+  rule='/v1/ldap/sync',
+  method='POST',
+  response_body_schema=JobResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.admin),
+)
+def sync_ldap():
+  from Hinkskalle.util.jobs import sync_ldap
+  job = sync_ldap.queue()
+  return { 'data': job }
+
+@registry.handles(
+  rule='/v1/jobs/<string:id>',
+  method='GET',
+  response_body_schema=JobResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.admin)
+)
+def get_job(id):
+  from Hinkskalle.util.jobs import get_job_info
+  job = get_job_info(id)
+  if not job:
+    raise errors.NotFound("job id not found")
+  return { 'data': job }

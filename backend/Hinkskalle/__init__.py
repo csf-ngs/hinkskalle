@@ -90,6 +90,11 @@ def create_app():
   db.init_app(app)
   migrate.init_app(app, db)
 
+  from Hinkskalle.util.jobs import rq
+  rq.init_app(app)
+  if 'HINKSKALLE_REDIS_URL' in os.environ:
+    rq.redis_url = os.environ.get('HINKSKALLE_REDIS_URL')
+
   with app.app_context():
     import Hinkskalle.commands
     import Hinkskalle.routes

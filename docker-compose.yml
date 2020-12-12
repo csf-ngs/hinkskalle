@@ -11,18 +11,21 @@ services:
     command: '../script/start.sh'
     environment:
       PORT: 5000
-      LC_ALL: en_US.utf8
-      FLASK_APP: Hinkskalle
-      SQLALCHEMY_DATABASE_URI: 'sqlite:////data/db/hinkskalle.db'
-      HINKSKALLE_SETTINGS: '/srv/hinkskalle/src/conf/config.json'
-      HINKSKALLE_LDAP_HOST: ldap
-      HINKSKALLE_LDAP_PORT: 389
-      HINKSKALLE_LDAP_BIND_DN: cn=login,ou=Adm,dc=ngs,dc=vbcf,dc=ac,dc=at
-      HINKSKALLE_LDAP_BASE_DN: ou=Accounts,dc=ngs,dc=vbcf,dc=ac,dc=at
     env_file:
       - "conf/ldap_secrets.env"
+      - "conf/hinkskalle.env"
     ports:
       - '7660:5000'
+    working_dir: '/srv/hinkskalle/src/backend'
+  rq_worker:
+    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.5.0"
+    volumes:
+      - '.:/srv/hinkskalle/src'
+      - './data/sqlite:/data/db'
+    command: '../script/start_worker.sh'
+    env_file:
+      - "conf/ldap_secrets.env"
+      - "conf/hinkskalle.env"
     working_dir: '/srv/hinkskalle/src/backend'
   redis:
     image: redis:6-alpine

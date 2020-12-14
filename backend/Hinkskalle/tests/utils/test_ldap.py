@@ -47,7 +47,7 @@ class TestLdap(ModelBase):
     
   def test_sync(self):
     auth = self._setup_mock()
-    db_user = auth._sync_user({ 'attributes': { 'cn': 'test.hase', 'mail': 'test@ha.se', 'givenName': 'Test', 'sn': 'Hase' }})
+    db_user = auth.sync_user({ 'attributes': { 'cn': 'test.hase', 'mail': 'test@ha.se', 'givenName': 'Test', 'sn': 'Hase' }})
     self.assertEqual(db_user.username, 'test.hase')
     self.assertEqual(db_user.email, 'test@ha.se')
     self.assertEqual(db_user.firstname, 'Test')
@@ -60,7 +60,7 @@ class TestLdap(ModelBase):
     user.source = 'ldap'
     db.session.commit()
 
-    db_user = auth._sync_user({ 'attributes': { 'cn': user.username, 'mail': user.email, 'givenName': user.firstname, 'sn': user.lastname }})
+    db_user = auth.sync_user({ 'attributes': { 'cn': user.username, 'mail': user.email, 'givenName': user.firstname, 'sn': user.lastname }})
     self.assertEqual(db_user.id, user.id)
     self.assertEqual(db_user.firstname, user.firstname)
   
@@ -70,7 +70,7 @@ class TestLdap(ModelBase):
     user.source = 'ldap'
     db.session.commit()
 
-    db_user = auth._sync_user({ 'attributes': { 'cn': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
+    db_user = auth.sync_user({ 'attributes': { 'cn': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
     self.assertEqual(db_user.id, user.id)
     self.assertEqual(db_user.firstname, user.firstname)
     self.assertEqual(db_user.lastname, user.lastname)
@@ -83,7 +83,7 @@ class TestLdap(ModelBase):
     db.session.commit()
 
     with self.assertRaises(UserDisabled):
-      db_user = auth._sync_user({ 'attributes': { 'cn': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
+      db_user = auth.sync_user({ 'attributes': { 'cn': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
     
   def test_sync_local(self):
     auth = self._setup_mock()
@@ -92,7 +92,7 @@ class TestLdap(ModelBase):
     db.session.commit()
 
     with self.assertRaises(UserConflict):
-      db_user = auth._sync_user({ 'attributes': { 'cn': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
+      db_user = auth.sync_user({ 'attributes': { 'cn': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
 
 
 

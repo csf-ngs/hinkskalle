@@ -32,6 +32,7 @@ class TestAdm(ModelBase):
       }
     }
     deserialized = schema.load(toParse)
+    deserialized.data['key']=toParse['key']
 
     self.assertDictEqual(deserialized.errors, {})
     key = Adm(**deserialized.data)
@@ -41,11 +42,4 @@ class TestAdm(ModelBase):
     fromDb = Adm.query.get(AdmKeys.ldap_sync_results)
     self.assertDictEqual(fromDb.val, toParse['val'])
 
-  def test_schema_key_validation(self):
-    schema = AdmSchema()
-    deserialized = schema.load({
-      'key': 'testhase',
-      'val': {}
-    })
-    self.assertTrue('key' in deserialized.errors)
 

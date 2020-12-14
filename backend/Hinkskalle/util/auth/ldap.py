@@ -18,13 +18,14 @@ def _get_attr(attr):
     return attr
 
 class LDAPService:
-  def __init__(self, host=None, port=389, bind_dn=None, bind_password=None, base_dn=None, filter="(cn={})", get_info=SCHEMA, client_strategy=SYNC):
+  def __init__(self, host=None, port=389, bind_dn=None, bind_password=None, base_dn=None, filter="(cn={})", all_users_filter="(objectClass=Person)", get_info=SCHEMA, client_strategy=SYNC):
     self.host = host
     self.port = int(port) if port else None
     self.bind_dn = bind_dn
     self.bind_password = bind_password
     self.base_dn = base_dn
     self.filter = filter
+    self.all_users_filter = all_users_filter
 
     self.server = Server(host=self.host, port=self.port, get_info=get_info)
     self.connection = Connection(self.server, self.bind_dn, self.bind_password, raise_exceptions=True, client_strategy=client_strategy)
@@ -41,7 +42,10 @@ class LDAPService:
       raise UserNotFound()
     return self.connection.response[0]
   
-
+  def list_users(self):
+    self.connection.search(search_base=self.base_dn, search_filter=self.all_users_filter, search_scope=SUBTREE, attributes='*')
+    current_app.logger.debug(len(self.connection.response))
+    return self.connection.response
 
 
 class LDAPUsers(PasswordCheckerBase):
@@ -55,7 +59,7 @@ class LDAPUsers(PasswordCheckerBase):
     self.app.logger.debug(f"initializing ldap service with host {self.config.get('HOST', '')}")
     self.ldap = LDAPService(host=self.config.get('HOST', ''), port=self.config.get('PORT', 389), bind_dn=self.config.get('BIND_DN'), bind_password=self.config.get('BIND_PASSWORD'), base_dn=self.config.get('BASE_DN'))
   
-  def _sync_user(self, entry):
+  def sync_user(self, entry):
     from Hinkskalle import db
     from Hinkskalle.models import User
 
@@ -67,7 +71,7 @@ class LDAPUsers(PasswordCheckerBase):
         raise UserDisabled()
 
       if not user.source == 'ldap':
-        raise UserConflict()
+        raise UserConflict(username=user.username)
 
     except NoResultFound:
       user = User()
@@ -93,7 +97,7 @@ class LDAPUsers(PasswordCheckerBase):
       raise InvalidPassword()
     self.ldap.close()
 
-    db_user = self._sync_user(ldap_user)
+    db_user = self.sync_user(ldap_user)
     g.authenticated_user = db_user
     return db_user
     

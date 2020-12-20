@@ -18,7 +18,7 @@ def _get_attr(attr):
     return attr
 
 class LDAPService:
-  def __init__(self, host=None, port=389, bind_dn=None, bind_password=None, base_dn=None, filter="(cn={})", all_users_filter="(objectClass=Person)", get_info=SCHEMA, client_strategy=SYNC):
+  def __init__(self, host=None, port=389, bind_dn=None, bind_password=None, base_dn=None, filter="(cn={})", all_users_filter="(objectClass=person)", get_info=SCHEMA, client_strategy=SYNC):
     self.host = host
     self.port = int(port) if port else None
     self.bind_dn = bind_dn
@@ -50,14 +50,17 @@ class LDAPService:
 
 class LDAPUsers(PasswordCheckerBase):
 
-  def __init__(self, app=None):
+  def __init__(self, app=None, svc=None):
     if app:
       self.app = app
     else:
       self.app = current_app
     self.config = self.app.config.get('AUTH', {}).get('LDAP', {})
     self.app.logger.debug(f"initializing ldap service with host {self.config.get('HOST', '')}")
-    self.ldap = LDAPService(host=self.config.get('HOST', ''), port=self.config.get('PORT', 389), bind_dn=self.config.get('BIND_DN'), bind_password=self.config.get('BIND_PASSWORD'), base_dn=self.config.get('BASE_DN'))
+    if not svc:
+      self.ldap = LDAPService(host=self.config.get('HOST', ''), port=self.config.get('PORT', 389), bind_dn=self.config.get('BIND_DN'), bind_password=self.config.get('BIND_PASSWORD'), base_dn=self.config.get('BASE_DN'))
+    else:
+      self.ldap = svc
   
   def sync_user(self, entry):
     from Hinkskalle import db

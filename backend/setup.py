@@ -18,6 +18,6 @@ setup(
     ],
     extra_requires={
       'dev': ['Jinja2'],
-      'test': ['nose2'],
+      'test': ['nose2', 'fakeredis'],
     },
 )

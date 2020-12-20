@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?><testsuite name="nosetests" tests="1" errors="1" failures="0" skip="0"><testcase classname="nose.failure.Failure" name="runTest" time="0.001"><error type="builtins.ModuleNotFoundError" message="No module named 'tests'"><![CDATA[Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.8/3.8.5/Frameworks/Python.framework/Versions/3.8/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/usr/local/Cellar/python@3.8/3.8.5/Frameworks/Python.framework/Versions/3.8/lib/python3.8/unittest/case.py", line 676, in run
+    self._callTestMethod(testMethod)
+  File "/usr/local/Cellar/python@3.8/3.8.5/Frameworks/Python.framework/Versions/3.8/lib/python3.8/unittest/case.py", line 633, in _callTestMethod
+    method()
+  File "/Users/heinz.ekker/Library/Python/3.8/lib/python/site-packages/nose/failure.py", line 39, in runTest
+    raise self.exc_val.with_traceback(self.tb)
+  File "/Users/heinz.ekker/Library/Python/3.8/lib/python/site-packages/nose/loader.py", line 407, in loadTestsFromName
+    module = resolve_name(addr.module)
+  File "/Users/heinz.ekker/Library/Python/3.8/lib/python/site-packages/nose/util.py", line 312, in resolve_name
+    module = __import__('.'.join(parts_copy))
+ModuleNotFoundError: No module named 'tests'
+]]></error></testcase></testsuite>

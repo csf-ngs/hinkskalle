@@ -5,15 +5,13 @@ from rq import get_current_job
 from flask import current_app
 from time import sleep
 from rq.job import Job
-from redis import Redis
-from sqlalchemy.orm.exc import NoResultFound
 from .auth.ldap import LDAPUsers, _get_attr
 from .auth.exceptions import UserConflict
 
 rq = RQ()
 
 def get_job_info(id):
-  return Job.fetch(id, connection=Redis.from_url(rq.redis_url))
+  return Job.fetch(id, connection=rq._connection)
 
 
 @rq.job
@@ -36,17 +34,16 @@ def sync_ldap():
     except:
       result['failed'].append(_get_attr(ldap_user.get('attributes').get('cn')))
 
-  job.meta['what']=len(ldap_users)
+  job.meta['result']=result
   job.save_meta()
 
-  try:
-    update = Adm.query.get(AdmKeys.ldap_sync_results)
-  except NoResultFound:
+  update = Adm.query.get(AdmKeys.ldap_sync_results)
+  if not update:
     update = Adm(key=AdmKeys.ldap_sync_results)
     db.session.add(update)
   update.val = result
   db.session.commit()
   
-  return "synced"
+  return f"synced {len(result['synced'])}"
 
 

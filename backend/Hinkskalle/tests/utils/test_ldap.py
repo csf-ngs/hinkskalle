@@ -1,23 +1,26 @@
 from Hinkskalle import db
 from Hinkskalle.tests.model_base import ModelBase, _create_user
-from ldap3 import Server, Connection, MOCK_SYNC, OFFLINE_AD_2012_R2
+from ldap3 import MOCK_SYNC, OFFLINE_AD_2012_R2, OFFLINE_SLAPD_2_4
 
+from Hinkskalle.models import Adm, AdmKeys, User
 from Hinkskalle.util.auth.ldap import LDAPUsers, LDAPService
 from Hinkskalle.util.auth.exceptions import *
+import os
+from unittest import mock
 
 class MockLDAP():
-  dummy_root = 'cn=root.hase,ou=test'
+  dummy_root = 'root.hase'
+  dummy_root_cn = f"cn={dummy_root},ou=test"
   dummy_password = 'dummy'
 
   def __init__(self):
-    self.svc = LDAPService(host='dummy', port=None, bind_dn=self.dummy_root, bind_password=self.dummy_password, base_dn='ou=test', get_info=OFFLINE_AD_2012_R2, client_strategy=MOCK_SYNC)
-    self.svc.connection.strategy.add_entry(f"cn=root.hase,ou=test", { 'cn': self.dummy_root, 'userPassword': self.dummy_password })
+    self.svc = LDAPService(host='dummy', port=None, bind_dn=self.dummy_root_cn, bind_password=self.dummy_password, base_dn='ou=test', get_info=OFFLINE_SLAPD_2_4, client_strategy=MOCK_SYNC)
+    self.svc.connection.strategy.add_entry(self.dummy_root_cn, { 'cn': self.dummy_root, 'userPassword': self.dummy_password })
 
-    self.auth = LDAPUsers()
-    self.auth.ldap = self.svc
+    self.auth = LDAPUsers(svc=self.svc)
   
   def create_user(self, name='test.hase', password='supersecret', is_admin=False):
-    create_user = { 'cn': name, 'userPassword': password, 'mail': f"{name}@testha.se", 'sn': 'Oink', 'givenName': 'Grunz' }
+    create_user = { 'cn': name, 'userPassword': password, 'mail': f"{name}@testha.se", 'sn': 'Oink', 'givenName': 'Grunz', 'objectClass': ['top', 'person'] }
     # add_entry seems to mutate the dict (all values turn to lists)
     self.svc.connection.strategy.add_entry(f"cn={name},ou=test", create_user.copy())
     return create_user
@@ -25,8 +28,17 @@ class MockLDAP():
 
 class TestLdap(ModelBase):
 
+  @classmethod
+  def setUpClass(cls):
+    os.environ['RQ_ASYNC']='0'
+    super().setUpClass()
+
+
   def _setup_mock(self):
     self.mock = MockLDAP()
+    return self.mock.auth
+
+  def _get_mock(self, app=None):
     return self.mock.auth
   
   def test_config(self):
@@ -166,3 +178,20 @@ class TestLdap(ModelBase):
     with self.assertRaises(UserDisabled):
       check_user = auth.check_password(user.get('cn'), user.get('userPassword'))
   
+  def test_db_sync(self):
+    auth = self._setup_mock()
+    user = self.mock.create_user()
+    with mock.patch('Hinkskalle.util.jobs.LDAPUsers', new=self._get_mock):
+      from Hinkskalle.util.jobs import sync_ldap
+      job = sync_ldap.queue()
+    self.assertEqual(job.result, 'synced 1')
+    key = Adm.query.get(AdmKeys.ldap_sync_results)
+    self.assertDictEqual(key.val, {
+      'synced': ['test.hase'],
+      'conflict': [],
+      'failed': []
+    })
+
+    db_user = User.query.filter(User.username==user['cn']).first()
+    self.assertEqual(db_user.email, user['mail'])
+    self.assertEqual(db_user.source, 'ldap')

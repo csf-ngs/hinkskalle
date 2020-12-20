@@ -63,3 +63,31 @@ class TestAdm(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.put(f"/v1/adm/oink", json={ 'val': { 'gru': 'nz' }})
     self.assertEqual(ret.status_code, 400)
+
+  def test_ldap_sync(self):
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v1/ldap/sync")
+
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertDictContainsSubset({
+      'status': 'queued',
+      'func_name': 'Hinkskalle.util.jobs.sync_ldap'
+    }, data)
+  
+  def test_ldap_sync_user(self):
+    with self.fake_auth():
+      ret = self.client.post(f"/v1/ldap/sync")
+    self.assertEqual(ret.status_code, 403)
+  
+  def test_get_job(self):
+    from Hinkskalle.util.jobs import sync_ldap
+    job = sync_ldap.queue()
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/jobs/{job.id}")
+    self.assertEqual(ret.status_code, 200)
+  
+  def test_get_job_user(self):
+    with self.fake_auth():
+      ret = self.client.get(f"/v1/jobs/oink")
+    self.assertEqual(ret.status_code, 403)

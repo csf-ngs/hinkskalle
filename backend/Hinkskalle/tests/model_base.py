@@ -23,6 +23,7 @@ class ModelBase(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     os.environ['SQLALCHEMY_DATABASE_URI']='sqlite://'
+    os.environ['RQ_CONNECTION_CLASS']='fakeredis.FakeStrictRedis'
   
   def setUp(self):
     self.app = create_app()

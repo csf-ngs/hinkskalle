@@ -1,5 +1,13 @@
 from setuptools import setup
 
+test_deps = [
+  'nose2',
+  'fakeredis',
+]
+extras = [
+  'test': test_deps,
+]
+
 setup(
     name='Hinkskalle',
     version='2.0.1',
@@ -18,6 +26,6 @@ setup(
     ],
     extra_requires={
       'dev': ['Jinja2'],
-      'test': ['nose2', 'fakeredis'],
+      'test': test_deps,
     },
 )

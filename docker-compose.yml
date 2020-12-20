@@ -4,7 +4,7 @@ volumes:
   ldap_conf:
 services:
   api:
-    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.5.0"
+    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.5.1"
     volumes:
       - '.:/srv/hinkskalle/src'
       - './data/sqlite:/data/db'
@@ -18,7 +18,7 @@ services:
       - '7660:5000'
     working_dir: '/srv/hinkskalle/src/backend'
   rq_worker:
-    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.5.0"
+    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v0.5.1"
     volumes:
       - '.:/srv/hinkskalle/src'
       - './data/sqlite:/data/db'

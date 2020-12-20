@@ -77,6 +77,11 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI']=os.environ['SQLALCHEMY_DATABASE_URI']
   app.config['PREFERRED_URL_SCHEME']=os.environ.get('PREFERRED_URL_SCHEME', 'http')
 
+  if 'RQ_CONNECTION_CLASS' in os.environ:
+    app.config['RQ_CONNECTION_CLASS'] = os.environ.get('RQ_CONNECTION_CLASS')
+  if 'RQ_ASYNC' in os.environ:
+    app.config['RQ_ASYNC']=os.environ.get('RQ_ASYNC')=='1'
+
   ldap_conf = {}
   for key in ['HOST', 'PORT', 'BIND_DN', 'BIND_PASSWORD', 'BASE_DN']:
     if 'HINKSKALLE_LDAP_' + key in os.environ:

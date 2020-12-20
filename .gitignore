@@ -18,3 +18,5 @@ backend/.env
 .coverage
 test_report.html
 coverage_report/
+backend/.nose*
+backend/nose*

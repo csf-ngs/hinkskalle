@@ -5,7 +5,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from ldap3 import Server, Connection, ObjectDef, Reader, SUBTREE, SYNC, SCHEMA
 from ldap3.utils.conv import escape_filter_chars
-from ldap3.core.exceptions import LDAPBindError, LDAPInvalidCredentialsResult, LDAPPasswordIsMandatoryError
+from ldap3.core.exceptions import LDAPBindError, LDAPInvalidCredentialsResult, LDAPPasswordIsMandatoryError, LDAPNoSuchObjectResult
 
 from flask import g, current_app
 
@@ -18,7 +18,7 @@ def _get_attr(attr):
     return attr
 
 class LDAPService:
-  def __init__(self, host=None, port=389, bind_dn=None, bind_password=None, base_dn=None, filter="(cn={})", all_users_filter="(objectClass=person)", get_info=SCHEMA, client_strategy=SYNC):
+  def __init__(self, host=None, port=389, bind_dn=None, bind_password=None, base_dn=None, filter="(&(cn={})(objectClass=person))", all_users_filter="(objectClass=person)", get_info=SCHEMA, client_strategy=SYNC):
     self.host = host
     self.port = int(port) if port else None
     self.bind_dn = bind_dn
@@ -37,7 +37,10 @@ class LDAPService:
     self.connection.unbind()
   
   def search_user(self, username):
-    self.connection.search(search_base=self.base_dn, search_filter=self.filter.format(escape_filter_chars(username)), search_scope=SUBTREE, attributes='*')
+    try:
+      self.connection.search(search_base=self.base_dn, search_filter=self.filter.format(escape_filter_chars(username)), search_scope=SUBTREE, attributes='*')
+    except LDAPNoSuchObjectResult:
+      raise UserNotFound()
     if len(self.connection.response) == 0:
       raise UserNotFound()
     return self.connection.response[0]

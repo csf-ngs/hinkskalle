@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_rebar import Rebar
+from flask_rebar import Rebar, SwaggerV2Generator
 from logging.config import dictConfig
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
@@ -7,13 +7,15 @@ from flask_migrate import Migrate, upgrade as migrate_up
 
 import os
 
-rebar = Rebar()
-
-registry = rebar.create_handler_registry(prefix="/")
-registry.set_default_authenticator(None)
+generator = SwaggerV2Generator()
 
 from Hinkskalle.util.swagger import register_authenticators
-register_authenticators(registry)
+register_authenticators(generator)
+
+rebar = Rebar()
+registry = rebar.create_handler_registry(swagger_generator=generator, prefix='/')
+registry.set_default_authenticator(None)
+
 
 from Hinkskalle.util.auth.token import TokenAuthenticator
 authenticator = TokenAuthenticator()

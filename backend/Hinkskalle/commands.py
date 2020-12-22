@@ -2,7 +2,7 @@ import click
 from flask import current_app
 from flask.cli import AppGroup
 from Hinkskalle import db
-from Hinkskalle import registry
+from Hinkskalle import registry, generator
 from flask_rebar import SwaggerV2Generator
 from Hinkskalle.util.typescript import ModelRenderer
 import os
@@ -110,7 +110,7 @@ current_app.cli.add_command(db_cli)
 @current_app.cli.command()
 @click.option('--out', default='../frontend/src/store/models.ts', type=click.File(mode='wb'))
 def generate_typescript_models(out):
-  swagger = SwaggerV2Generator().generate(registry)
+  swagger = generator.generate(registry)
   class_renderer = ModelRenderer()
   models = class_renderer.render(swagger['definitions'])
   out.write(models.encode('utf-8'))

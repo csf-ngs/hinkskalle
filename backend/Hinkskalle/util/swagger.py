@@ -1,4 +1,4 @@
-from flask_rebar import HandlerRegistry
+from flask_rebar import SwaggerV2Generator
 from flask_rebar.swagger_generation import swagger_words as sw
 from flask_rebar.swagger_generation.marshmallow_to_swagger import NestedConverter, request_body_converter_registry, response_converter_registry
 
@@ -6,9 +6,9 @@ from .auth.token import TokenAuthenticator, ScopedTokenAuthenticator
 
 # this has very much been stolen from the auth0 authenticator
 
-def register_authenticators(registry: HandlerRegistry):
-  registry.swagger_generator.register_authenticator_converter(TokenAuthenticator, _convert_authenticator)
-  registry.swagger_generator.register_authenticator_converter(ScopedTokenAuthenticator, _convert_scoped_authenticator)
+def register_authenticators(generator: SwaggerV2Generator):
+  generator.register_authenticator_converter(TokenAuthenticator, _convert_authenticator)
+  generator.register_authenticator_converter(ScopedTokenAuthenticator, _convert_scoped_authenticator)
 
 def _convert_authenticator(authenticator):
   definition = { sw.name: authenticator.type, sw.in_: authenticator.header, sw.type_: sw.api_key }

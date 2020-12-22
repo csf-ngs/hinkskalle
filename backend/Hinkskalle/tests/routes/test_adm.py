@@ -3,6 +3,9 @@ from Hinkskalle.tests.route_base import RouteBase
 from Hinkskalle.models import Adm, AdmKeys
 from Hinkskalle import db
 
+from ..utils.test_ldap import MockLDAP
+from unittest import mock
+
 class TestAdm(RouteBase):
   def test_get_noauth(self):
     ret = self.client.get('/v1/adm/oink')
@@ -78,6 +81,40 @@ class TestAdm(RouteBase):
   def test_ldap_sync_user(self):
     with self.fake_auth():
       ret = self.client.post(f"/v1/ldap/sync")
+    self.assertEqual(ret.status_code, 403)
+  
+  def test_ldap_ping(self):
+    mock_ldap = MockLDAP()
+    def _get_auth(app=None):
+      return mock_ldap.auth
+    
+    with mock.patch('Hinkskalle.util.auth.ldap.LDAPUsers', new=_get_auth):
+      with self.fake_admin_auth():
+        ret = self.client.get(f"/v1/ldap/ping")
+    
+    self.assertEqual(ret.status_code, 200)
+    self.assertDictEqual({
+      'status': 'ok',
+    }, ret.get_json().get('data'))
+
+  def test_ldap_ping_wrong_password(self):
+    mock_ldap = MockLDAP()
+    def _get_auth(app=None):
+      return mock_ldap.auth
+    
+    mock_ldap.svc.bind_password='failfalsch'
+    with mock.patch('Hinkskalle.util.auth.ldap.LDAPUsers', new=_get_auth):
+      with self.fake_admin_auth():
+        ret = self.client.get(f"/v1/ldap/ping")
+    
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['status'], 'failed')
+    self.assertRegex(data['error'], r'^LDAPInvalidCredentialsResult')
+  
+  def test_ldap_ping_user(self):
+    with self.fake_auth():
+      ret = self.client.get(f"/v1/ldap/ping")
     self.assertEqual(ret.status_code, 403)
   
   def test_get_job(self):

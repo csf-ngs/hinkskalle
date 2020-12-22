@@ -47,7 +47,7 @@ class LDAPService:
   
   def list_users(self):
     self.connection.search(search_base=self.base_dn, search_filter=self.all_users_filter, search_scope=SUBTREE, attributes='*')
-    current_app.logger.debug(len(self.connection.response))
+    #current_app.logger.debug(len(self.connection.response))
     return self.connection.response
 
 

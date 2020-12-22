@@ -36,6 +36,13 @@ class JobSchema(Schema):
 class JobResponseSchema(ResponseSchema):
   data = fields.Nested(JobSchema)
 
+class LdapPingSchema(Schema):
+  status = fields.String()
+  error = fields.String()
+
+class LdapPingResponseSchema(ResponseSchema):
+  data = fields.Nested(LdapPingSchema)
+
 @registry.handles(
   rule='/v1/adm/<string:key>',
   method='GET',
@@ -72,6 +79,23 @@ def update_key(key):
 
   return { 'data': db_key }
 
+@registry.handles(
+  rule='/v1/ldap/ping',
+  method='GET',
+  response_body_schema=LdapPingResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.admin)
+)
+def ping_ldap():
+  from Hinkskalle.util.auth.ldap import LDAPUsers
+  ret={}
+  try:
+    svc = LDAPUsers(app=current_app)
+    svc.ldap.connect()
+    ret['status']='ok'
+  except Exception as err:
+    ret['status']='failed'
+    ret['error']=str(err)
+  return { 'data': ret }
   
 @registry.handles(
   rule='/v1/ldap/sync',

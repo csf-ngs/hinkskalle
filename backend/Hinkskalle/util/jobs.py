@@ -29,8 +29,15 @@ def sync_ldap():
     'failed': [],
   }
 
+  job.meta['progress']='fetch'
+  job.save_meta()
   ldap_users = svc.ldap.list_users()
+
+  count=0
   for ldap_user in ldap_users:
+    count = count + 1
+    job.meta['progress']=f"{count} of {len(ldap_users)}"
+    job.save_meta()
     try:
       db_user = svc.sync_user(ldap_user)
       result['synced'].append(db_user.username)
@@ -40,6 +47,7 @@ def sync_ldap():
       result['failed'].append(_get_attr(ldap_user.get('attributes').get('cn')))
 
   result['finished']=datetime.now().isoformat()
+  job.meta['progress']='done'
   job.meta['result']=result
   job.save_meta()
 

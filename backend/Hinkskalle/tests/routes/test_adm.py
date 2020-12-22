@@ -117,6 +117,40 @@ class TestAdm(RouteBase):
       ret = self.client.get(f"/v1/ldap/ping")
     self.assertEqual(ret.status_code, 403)
   
+  def test_ldap_status_disabled(self):
+    self.app.config['AUTH']['LDAP']={}
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/ldap/status")
+    
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['status'], 'disabled')
+
+  def test_ldap_status_enabled(self):
+    self.app.config['AUTH']['LDAP'] = {
+      'HOST': 'dum.my',
+      'BASE_DN': 'ou=test',
+      'BIND_DN': 'cn=chef,ou=test',
+      'BIND_PASSWORD': 'dontleakme',
+    }
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/ldap/status")
+    
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['status'], 'configured')
+    self.assertDictEqual(data['config'], {
+      'HOST': 'dum.my',
+      'BASE_DN': 'ou=test',
+      'BIND_DN': 'cn=chef,ou=test'
+    })
+  
+  def test_ldap_status_user(self):
+    with self.fake_auth():
+      ret = self.client.get(f"/v1/ldap/status")
+    self.assertEqual(ret.status_code, 403)
+
+  
   def test_get_job(self):
     from Hinkskalle.util.jobs import sync_ldap
     job = sync_ldap.queue()

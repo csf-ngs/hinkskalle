@@ -40,8 +40,15 @@ class LdapPingSchema(Schema):
   status = fields.String()
   error = fields.String()
 
+class LdapStatusSchema(Schema):
+  status = fields.String()
+  config = fields.Dict()
+
 class LdapPingResponseSchema(ResponseSchema):
   data = fields.Nested(LdapPingSchema)
+
+class LdapStatusResponseSchema(ResponseSchema):
+  data = fields.Nested(LdapStatusSchema)
 
 @registry.handles(
   rule='/v1/adm/<string:key>',
@@ -78,6 +85,30 @@ def update_key(key):
     raise errors.BadRequest(f"Invalid key")
 
   return { 'data': db_key }
+
+@registry.handles(
+  rule='/v1/ldap/status',
+  method='GET',
+  response_body_schema=LdapStatusResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.admin)
+)
+def ldap_status():
+  from Hinkskalle.util.auth.ldap import LDAPUsers
+  ret = {}
+  try:
+    ldap = LDAPUsers(app=current_app)
+    if ldap.enabled:
+      ret['status']='configured'
+      ret['config']=ldap.config.copy()
+      ret['config'].pop('BIND_PASSWORD', '')
+    else:
+      ret['status']='disabled'
+  except:
+    ret['status']='fail'
+  
+  return { 'data': ret }
+
+
 
 @registry.handles(
   rule='/v1/ldap/ping',

@@ -59,6 +59,7 @@ class LDAPUsers(PasswordCheckerBase):
     else:
       self.app = current_app
     self.config = self.app.config.get('AUTH', {}).get('LDAP', {})
+    self.enabled = len(self.config) > 0
     self.app.logger.debug(f"initializing ldap service with host {self.config.get('HOST', '')}")
     if not svc:
       self.ldap = LDAPService(host=self.config.get('HOST', ''), port=self.config.get('PORT', 389), bind_dn=self.config.get('BIND_DN'), bind_password=self.config.get('BIND_PASSWORD'), base_dn=self.config.get('BASE_DN'))

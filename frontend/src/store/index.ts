@@ -16,6 +16,7 @@ import imagesModule, { State as ImagesState } from './modules/images';
 import tokensModule, { State as TokensState } from './modules/tokens';
 import usersModule, { State as UsersState } from './modules/users';
 import searchModule, { State as SearchState } from './modules/search';
+import admModule, { State as AdmState } from './modules/adm';
 
 interface State {
   backend: AxiosInstance;
@@ -30,6 +31,7 @@ interface State {
   collections?: CollectionsState;
   entities?: EntitiesState;
   search?: SearchState;
+  adm?: AdmState;
 }
 
 const token = localStorage.getItem('token') || '';
@@ -108,7 +110,7 @@ export default new Vuex.Store({
       });
     },
     logout: ({ commit }) => {
-      return new Promise((resolve) => {
+      return new Promise<void>((resolve) => {
         commit('logout');
         commit('users/reset');
         resolve();
@@ -124,5 +126,6 @@ export default new Vuex.Store({
     collections: collectionsModule,
     entities: entitiesModule,
     search: searchModule,
+    adm: admModule,
   }
 });

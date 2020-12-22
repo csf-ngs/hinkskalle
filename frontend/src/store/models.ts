@@ -453,17 +453,17 @@ export { Token };
 class Job {
   public dependson!: string
   public description!: string
-  public ended_at!: string
-  public enqueued_at!: string
-  public exc_info!: string
-  public failure_ttl!: number
-  public func_name!: string
+  public endedAt!: string
+  public enqueuedAt!: string
+  public excInfo!: string
+  public failureTTL!: number
+  public funcName!: string
   public id!: string
   public meta!: object
   public origin!: string
   public result!: string
-  public result_ttl!: number
-  public started_at!: string
+  public resultTTL!: number
+  public startedAt!: string
   public status!: string
   public timeout!: string
   public ttl!: number
@@ -474,17 +474,17 @@ export function plainToJob(json: any): Job {
   const obj = new Job();
   obj.dependson = json['dependson'];
     obj.description = json['description'];
-    obj.ended_at = json['ended_at'];
-    obj.enqueued_at = json['enqueued_at'];
-    obj.exc_info = json['exc_info'];
-    obj.failure_ttl = json['failure_ttl'];
-    obj.func_name = json['func_name'];
+    obj.endedAt = json['endedAt'];
+    obj.enqueuedAt = json['enqueuedAt'];
+    obj.excInfo = json['excInfo'];
+    obj.failureTTL = json['failureTTL'];
+    obj.funcName = json['funcName'];
     obj.id = json['id'];
     obj.meta = json['meta'];
     obj.origin = json['origin'];
     obj.result = json['result'];
-    obj.result_ttl = json['result_ttl'];
-    obj.started_at = json['started_at'];
+    obj.resultTTL = json['resultTTL'];
+    obj.startedAt = json['startedAt'];
     obj.status = json['status'];
     obj.timeout = json['timeout'];
     obj.ttl = json['ttl'];
@@ -495,17 +495,17 @@ export function serializeJob(obj: Job, unroll=false): any {
   const json: any = {};
   json['dependson'] = obj.dependson
       json['description'] = obj.description
-      json['ended_at'] = obj.ended_at
-      json['enqueued_at'] = obj.enqueued_at
-      json['exc_info'] = obj.exc_info
-      json['failure_ttl'] = obj.failure_ttl
-      json['func_name'] = obj.func_name
+      json['endedAt'] = obj.endedAt
+      json['enqueuedAt'] = obj.enqueuedAt
+      json['excInfo'] = obj.excInfo
+      json['failureTTL'] = obj.failureTTL
+      json['funcName'] = obj.funcName
       json['id'] = obj.id
       json['meta'] = obj.meta
       json['origin'] = obj.origin
       json['result'] = obj.result
-      json['result_ttl'] = obj.result_ttl
-      json['started_at'] = obj.started_at
+      json['resultTTL'] = obj.resultTTL
+      json['startedAt'] = obj.startedAt
       json['status'] = obj.status
       json['timeout'] = obj.timeout
       json['ttl'] = obj.ttl

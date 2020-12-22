@@ -67,6 +67,7 @@ describe('AuthGuard', () => {
         '/entities/wumm/collections/bumm/containers', 
         '/entities/wumm/collections/bumm/containers/trumm', 
         '/users',
+        '/ldap',
       ], route => {
     it(`requires auth for ${route}`, async done => {
       store.state.currentUser = null;
@@ -87,8 +88,9 @@ describe('AuthGuard', () => {
   });
   _each([
         '/users',
+        '/ldap',
     ], async route => {
-      await router.push('/');
+      await router.push('/login');
       it(`requires admin for ${route}`, async done => {
         store.state.currentUser = { isAdmin: false } as User;
         await router.push(route);

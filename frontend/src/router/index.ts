@@ -9,6 +9,7 @@ import Entities from '../views/Entities.vue';
 import Containers from '../views/Containers.vue';
 import ContainerDetails from '../views/ContainerDetails.vue';
 import Users from '../views/Users.vue';
+import Ldap from '../views/Ldap.vue';
 import store from '../store';
 
 Vue.use(VueRouter);
@@ -92,7 +93,13 @@ const routes: Array<RouteConfig> = [
     name: 'Users',
     component: Users,
     meta: { requiresAdmin: true, requiresAuth: true, },
-  }
+  },
+  {
+    path: '/ldap',
+    name: 'Ldap',
+    component: Ldap,
+    meta: { requiresAdmin: true, requiresAuth: true, },
+  },
 ];
 
 const router = new VueRouter({

@@ -34,10 +34,16 @@
       <template v-if="currentUser && currentUser.isAdmin">
         <v-divider></v-divider>
         <v-list dense nav>
-          <v-list-item link :to="'/users'">
+          <v-list-item link :to="'/users'" id="user-admin">
             <v-list-item-icon><v-icon>mdi-account-cog-outline</v-icon></v-list-item-icon>
             <v-list-item-content>
               <v-list-item-title>User Administration</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item link :to="'/ldap'" id="ldap-admin" v-if="ldapStatus && ldapStatus.status=='configured'">
+            <v-list-item-icon><v-icon>mdi-account-search-outline</v-icon></v-list-item-icon>
+            <v-list-item-content>
+              <v-list-item-title>LDAP Administration</v-list-item-title>
             </v-list-item-content>
           </v-list-item>
         </v-list>
@@ -94,13 +100,13 @@
 <script lang="ts">
 import { AxiosError } from 'axios';
 import Vue from 'vue';
-import { User } from './store/models';
+import { LdapStatus, User } from './store/models';
 
 import { SnackbarType } from './store/modules/snackbar';
 
 export default Vue.extend({
   name: 'App',
-    created: function () {
+  created: function () {
     const { $store, $router } = this;
     this.$store.commit('registerInterceptor', (err: AxiosError) => {
       return new Promise((resolve, reject) => {
@@ -111,6 +117,10 @@ export default Vue.extend({
         throw err;
       });
     });
+    this.$store.dispatch('adm/ldapStatus')
+      .catch(err => {
+        this.$store.commit('snackbar/showError', err);
+      });
   },
   computed: {
     isLoggedIn(): boolean {
@@ -144,6 +154,9 @@ export default Vue.extend({
     },
     snackbarTimeout(): number {
       return this.$store.getters['snackbar/type'] === 'error' ? -1 : 5000;
+    },
+    ldapStatus(): LdapStatus {
+      return this.$store.getters['adm/ldapStatus'];
     },
   },
   methods: {

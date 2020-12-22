@@ -450,6 +450,120 @@ export function serializeToken(obj: Token, unroll=false): any {
 export { Token };
 
 
+class Job {
+  public dependson!: string
+  public description!: string
+  public ended_at!: string
+  public enqueued_at!: string
+  public exc_info!: string
+  public failure_ttl!: number
+  public func_name!: string
+  public id!: string
+  public meta!: object
+  public origin!: string
+  public result!: string
+  public result_ttl!: number
+  public started_at!: string
+  public status!: string
+  public timeout!: string
+  public ttl!: number
+  
+}
+
+export function plainToJob(json: any): Job {
+  const obj = new Job();
+  obj.dependson = json['dependson'];
+    obj.description = json['description'];
+    obj.ended_at = json['ended_at'];
+    obj.enqueued_at = json['enqueued_at'];
+    obj.exc_info = json['exc_info'];
+    obj.failure_ttl = json['failure_ttl'];
+    obj.func_name = json['func_name'];
+    obj.id = json['id'];
+    obj.meta = json['meta'];
+    obj.origin = json['origin'];
+    obj.result = json['result'];
+    obj.result_ttl = json['result_ttl'];
+    obj.started_at = json['started_at'];
+    obj.status = json['status'];
+    obj.timeout = json['timeout'];
+    obj.ttl = json['ttl'];
+    
+  return obj;
+}
+export function serializeJob(obj: Job, unroll=false): any {
+  const json: any = {};
+  json['dependson'] = obj.dependson
+      json['description'] = obj.description
+      json['ended_at'] = obj.ended_at
+      json['enqueued_at'] = obj.enqueued_at
+      json['exc_info'] = obj.exc_info
+      json['failure_ttl'] = obj.failure_ttl
+      json['func_name'] = obj.func_name
+      json['id'] = obj.id
+      json['meta'] = obj.meta
+      json['origin'] = obj.origin
+      json['result'] = obj.result
+      json['result_ttl'] = obj.result_ttl
+      json['started_at'] = obj.started_at
+      json['status'] = obj.status
+      json['timeout'] = obj.timeout
+      json['ttl'] = obj.ttl
+      
+  return json;
+}
+
+export { Job };
+
+
+class LdapStatus {
+  public config!: object
+  public status!: string
+  
+}
+
+export function plainToLdapStatus(json: any): LdapStatus {
+  const obj = new LdapStatus();
+  obj.config = json['config'];
+    obj.status = json['status'];
+    
+  return obj;
+}
+export function serializeLdapStatus(obj: LdapStatus, unroll=false): any {
+  const json: any = {};
+  json['config'] = obj.config
+      json['status'] = obj.status
+      
+  return json;
+}
+
+export { LdapStatus };
+
+
+class LdapPing {
+  public error!: string
+  public status!: string
+  
+}
+
+export function plainToLdapPing(json: any): LdapPing {
+  const obj = new LdapPing();
+  obj.error = json['error'];
+    obj.status = json['status'];
+    
+  return obj;
+}
+export function serializeLdapPing(obj: LdapPing, unroll=false): any {
+  const json: any = {};
+  json['error'] = obj.error
+      json['status'] = obj.status
+      
+  return json;
+}
+
+export { LdapPing };
+
+
 export interface Upload {
   tags: string[];
   container: Container;

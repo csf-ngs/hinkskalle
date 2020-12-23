@@ -42,10 +42,13 @@ class TokenAuthenticator(Authenticator):
   
   def authenticate(self):
     g.authenticated_user = None
-    token = self._get_token()
-    user = self._get_identity(token)
+    token = self._get_identity(self._get_token())
+    if token.source == 'auto':
+      token.refresh()
+      from Hinkskalle import db
+      db.session.commit()
 
-    g.authenticated_user = user
+    g.authenticated_user = token.user
 
   def _get_identity(self, token):
     from Hinkskalle.models import Token
@@ -56,7 +59,7 @@ class TokenAuthenticator(Authenticator):
       raise errors.Unauthorized('Account deactivated')
     if db_token.expiresAt and db_token.expiresAt < datetime.datetime.now():
       raise errors.Unauthorized('Token expired')
-    return db_token.user
+    return db_token
 
   def _get_token(self):
     auth_header = request.headers.get(self.header)

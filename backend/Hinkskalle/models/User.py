@@ -1,6 +1,6 @@
 from Hinkskalle import db
 from marshmallow import fields, Schema
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import current_app
 from sqlalchemy.orm import validates
 
@@ -169,3 +169,8 @@ class Token(db.Model):
   createdBy = db.Column(db.String())
   updatedAt = db.Column(db.DateTime)
   deleted = db.Column(db.Boolean, default=False)
+
+  defaultExpiration = timedelta(days=1)
+
+  def refresh(self):
+    self.expiresAt = datetime.now() + Token.defaultExpiration

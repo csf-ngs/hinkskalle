@@ -85,7 +85,7 @@ class TestTokenAuth(RouteBase):
     token_auth = TokenAuthenticator()
     identity = token_auth._get_identity('schoko-banane')
 
-    self.assertEqual(identity.username, test_user.username)
+    self.assertEqual(identity.user.username, test_user.username)
 
   def test_get_identity_invalid(self):
     test_user = _create_user()

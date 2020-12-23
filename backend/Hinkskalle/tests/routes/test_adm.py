@@ -75,7 +75,7 @@ class TestAdm(RouteBase):
     data = ret.get_json().get('data')
     self.assertDictContainsSubset({
       'status': 'queued',
-      'func_name': 'Hinkskalle.util.jobs.sync_ldap'
+      'funcName': 'Hinkskalle.util.jobs.sync_ldap'
     }, data)
   
   def test_ldap_sync_user(self):

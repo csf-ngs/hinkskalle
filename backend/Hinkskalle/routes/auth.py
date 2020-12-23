@@ -43,7 +43,7 @@ def get_token():
     raise errors.Unauthorized(err.message)
 
   token = user.create_token()
-  token.expiresAt = datetime.datetime.now() + datetime.timedelta(days=1)
+  token.refresh()
   token.source = 'auto'
   db.session.add(token)
   db.session.commit()

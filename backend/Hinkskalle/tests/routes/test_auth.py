@@ -27,7 +27,7 @@ class TestPasswordAuth(RouteBase):
     db_token = Token.query.filter(Token.id==data['id']).first()
     self.assertIsNotNone(db_token)
     self.assertEqual(db_token.source, 'auto')
-    self.assertTrue(abs(db_token.expiresAt - (datetime.datetime.now()+datetime.timedelta(days=1))) < datetime.timedelta(minutes=1))
+    self.assertTrue(abs(db_token.expiresAt - (datetime.datetime.now()+Token.defaultExpiration)) < datetime.timedelta(minutes=1))
   
   def test_password_fail(self):
     user = _create_user(name='oink.hase')
@@ -154,5 +154,28 @@ class TestTokenAuth(RouteBase):
 
     ret = self.client.get('/v1/search?value=grunz', headers={ 'Authorization': f"bearer {token_text}"})
     self.assertEqual(ret.status_code, 401)
+  
+  def test_update_expiration_auto(self):
+    user = _create_user(name='test.hase')
+    token_text = 'geheimschein'
+    token = Token(token=token_text, user=user, source='auto', expiresAt=datetime.datetime.now() + datetime.timedelta(hours=1))
+    user.tokens.append(token)
 
+    ret = self.client.get('/v1/search?value=grunz', headers={ 'Authorization': f"bearer {token_text}"})
+    self.assertEqual(ret.status_code, 200)
 
+    db_token = Token.query.get(token.id)
+    self.assertLess(abs(db_token.expiresAt - (datetime.datetime.now()+Token.defaultExpiration)), datetime.timedelta(minutes=1))
+
+  def test_update_expiration_manual(self):
+    user = _create_user(name='test.hase')
+    token_text = 'geheimschein'
+    expiration = datetime.datetime.now() + datetime.timedelta(hours=1)
+    token = Token(token=token_text, user=user, source='manual', expiresAt=expiration)
+    user.tokens.append(token)
+
+    ret = self.client.get('/v1/search?value=grunz', headers={ 'Authorization': f"bearer {token_text}"})
+    self.assertEqual(ret.status_code, 200)
+
+    db_token = Token.query.get(token.id)
+    self.assertEqual(db_token.expiresAt, expiration)

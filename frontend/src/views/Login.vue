@@ -171,6 +171,9 @@ export default Vue.extend({
     doLogin() {
       this.$store.dispatch('requestAuth', this.localState.user)
         .then(() => {
+          if (this.$store.getters['currentUser'].isAdmin) {
+            this.$store.dispatch('adm/ldapStatus', { reload: true });
+          }
           this.$router.push('/');
         })
         .catch((err: AxiosError) => {

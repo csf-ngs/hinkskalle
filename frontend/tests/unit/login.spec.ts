@@ -37,12 +37,15 @@ describe('Login.vue', () => {
     done();
   });
 
-  it('routes on successful login', async () => {
+  it('routes on successful login', async done => {
     const myLocal = createLocalVue();
     myLocal.use(Vuex);
 
     const mockRouter = { push: jest.fn() };
     store = new Vuex.Store({
+      getters: {
+        currentUser: jest.fn().mockReturnValue({ isAdmin: false }),
+      },
       actions: {
         requestAuth: jest.fn().mockResolvedValue('dummy'),
       }
@@ -53,9 +56,9 @@ describe('Login.vue', () => {
     });
     
     await wrapper.find('form').trigger('submit');
-    wrapper.vm.$nextTick(() => {
-      expect(mockRouter.push).toHaveBeenCalledWith('/');
-    });
+    await Vue.nextTick();
+    expect(mockRouter.push).toHaveBeenCalledWith('/');
+    done();
   });
 
   it('shows error on failed login', async done => {
@@ -67,14 +70,11 @@ describe('Login.vue', () => {
     const wrapper = mount(Login, { localVue, store, vuetify, router });
     await wrapper.find('form').trigger('submit');
     // not really elegant
-    wrapper.vm.$nextTick(() => {
-      wrapper.vm.$nextTick(() => {
-        wrapper.vm.$nextTick(() => {
-          expect(wrapper.find('div.v-alert').text()).toContain('dummy');
-          done();
-        });
-      });
-    });
+    await Vue.nextTick();
+    await Vue.nextTick();
+    await Vue.nextTick();
+    expect(wrapper.find('div.v-alert').text()).toContain('dummy');
+    done();
   });
 
 

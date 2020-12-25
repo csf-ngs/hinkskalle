@@ -26,6 +26,7 @@ describe('Ldap.vue', () => {
     };
     actions = {
       'adm/ldapStatus': jest.fn(),
+      'adm/ldapPing': jest.fn(),
     };
 
     store = new Vuex.Store({ getters, actions });
@@ -35,5 +36,17 @@ describe('Ldap.vue', () => {
     const wrapper = mount(Ldap, { localVue, vuetify, store, router });
     expect(wrapper.text()).toContain('LDAP Administration');
     expect(actions['adm/ldapStatus']).toHaveBeenCalled();
+  });
+
+  it('pings ldap', async done => {
+    getters['adm/ldapStatus'].mockReturnValue({
+      status: 'configured',
+      config: {},
+    });
+    const wrapper = mount(Ldap, { localVue, vuetify, store, router });
+    wrapper.find('button#ping').trigger('click');
+    await Vue.nextTick();
+    expect(actions['adm/ldapPing']).toHaveBeenCalled();
+    done();
   });
 });

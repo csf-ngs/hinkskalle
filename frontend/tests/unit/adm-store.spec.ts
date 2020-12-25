@@ -1,5 +1,5 @@
 import store from '@/store';
-import {LdapStatus, plainToLdapStatus} from '@/store/models';
+import {LdapStatus, plainToLdapStatus, LdapPing, plainToLdapPing} from '@/store/models';
 
 import axios from 'axios';
 
@@ -15,15 +15,28 @@ const makeTestStatusObj = (): LdapStatus => {
   return plainToLdapStatus(makeTestStatus());
 }
 
+const makeTestPing = (): LdapPing => ({
+  status: 'ok',
+  error: '',
+});
+const makeTestPingObj = (): LdapPing => {
+  return plainToLdapPing(makeTestPing());
+}
+
 describe('adm store getters', () => {
   it('has status getter', () => {
     store.state.adm!.status = 'loading';
     expect(store.getters['adm/status']).toBe('loading');
   });
   it('has ldap status getter', () => {
-    const testStatus = makeTestStatus();
+    const testStatus = makeTestStatusObj();
     store.state.adm!.ldapStatus = testStatus;
     expect(store.getters['adm/ldapStatus']).toStrictEqual(testStatus);
+  });
+  it('has ldap ping response getter', () => {
+    const testPing = makeTestPingObj();
+    store.state.adm!.ldapPingResponse = testPing;
+    expect(store.getters['adm/ldapPing']).toStrictEqual(testPing);
   })
 });
 
@@ -85,6 +98,30 @@ describe('adm actions', () => {
     store.state.adm!.ldapStatus = null;
     mockAxios.get.mockRejectedValue({ fail: 'fail' });
     store.dispatch('adm/ldapStatus')
+      .catch(err => {
+        expect(store.state.adm!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
+  });
+
+  it('has ldap ping', done => {
+    store.state.adm!.ldapPingResponse = null;
+    const pingResponse = makeTestPing();
+    mockAxios.get.mockResolvedValue({ data: { data: pingResponse }});
+    const promise = store.dispatch('adm/ldapPing');
+    expect(store.state.adm!.status).toBe('loading');
+    promise.then(res => { 
+      expect(store.state.adm!.status).toBe('success');
+      expect(mockAxios.get).toHaveBeenCalledWith(`/v1/ldap/ping`);
+      expect(store.state.adm!.ldapPingResponse).toStrictEqual(plainToLdapPing(pingResponse));
+      done();
+    });
+  });
+
+  it('has ldap ping fail hanlding', done => {
+    mockAxios.get.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('adm/ldapPing')
       .catch(err => {
         expect(store.state.adm!.status).toBe('failed');
         expect(err).toStrictEqual({ fail: 'fail' });

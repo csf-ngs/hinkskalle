@@ -1,11 +1,12 @@
 import { Module } from 'vuex';
 
 import { AxiosError, AxiosResponse } from 'axios';
-import {LdapStatus, plainToLdapStatus} from '../models';
+import {LdapPing, LdapStatus, plainToLdapPing, plainToLdapStatus} from '../models';
 
 export interface State {
   status: '' | 'loading' | 'failed' | 'success';
   ldapStatus: LdapStatus | null;
+  ldapPingResponse: LdapPing | null;
 }
 
 const admModule: Module<State, any> = {
@@ -13,10 +14,12 @@ const admModule: Module<State, any> = {
   state: {
     status: '',
     ldapStatus: null,
+    ldapPingResponse: null,
   },
   getters: {
     status: (state): string => state.status,
     ldapStatus: (state): LdapStatus | null => state.ldapStatus,
+    ldapPing: (state): LdapPing | null => state.ldapPingResponse,
   },
   mutations: {
     loading(state: State) {
@@ -28,8 +31,11 @@ const admModule: Module<State, any> = {
     succeeded(state: State) {
       state.status = 'success';
     },
-    setLdapStatus(state: State, newStatus: LdapStatus) {
+    setLdapStatus(state: State, newStatus: LdapStatus | null) {
       state.ldapStatus = newStatus;
+    },
+    setLdapPing(state: State, newResult: LdapPing | null) {
+      state.ldapPingResponse = newResult;
     }
   },
   actions: {
@@ -49,6 +55,23 @@ const admModule: Module<State, any> = {
           .catch((err: AxiosError) => {
             commit('failed', err);
             commit('setLdapStatus', null);
+            reject(err);
+          });
+      });
+    },
+    ldapPing: ({ state, commit, rootState }): Promise<LdapPing> => {
+      return new Promise((resolve, reject) => {
+        commit('loading');
+        rootState.backend.get(`/v1/ldap/ping`)
+          .then((response: AxiosResponse) => {
+            const newResult = plainToLdapPing(response.data.data);
+            commit('succeeded');
+            commit('setLdapPing', newResult);
+            resolve(newResult);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            commit('setLdapPing', null);
             reject(err);
           });
       });

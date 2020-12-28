@@ -32,19 +32,26 @@
         </v-col>
         <v-col cols="12" md="5">
           <h2>Test</h2>
-          <v-card :loading="loading" raised :color="pingColor">
-            <v-card-title :color="pingColor">
-              {{pingResult ? pingResult.status : '...'}}
-            </v-card-title>
-            <v-card-text>
-              <span v-if="pingResult && pingResult.error">
-                {{pingResult.error}}
-              </span>
-            </v-card-text>
-            <v-card-actions>
-              <v-btn id="ping" @click="ping()">Ping Server</v-btn>
-            </v-card-actions>
-          </v-card>
+          <v-alert
+            elevation="2"
+            colored-border
+            border="left"
+            :color="pingColor"
+            :icon="pingIcon"
+          >
+            <v-row no-gutters>
+              <v-col class="grow">
+                <h3>{{pingResult ? pingResult.status : ''}}</h3>
+              </v-col>
+              <v-spacer></v-spacer>
+              <v-col class="shrink">
+                <v-btn small id="ping" @click="ping()">Ping Server</v-btn>
+              </v-col>
+            </v-row>
+            <v-row v-if="pingResult && pingResult.error">
+              <v-col>{{pingResult.error}}</v-col>
+            </v-row>
+          </v-alert>
         </v-col>
       </v-row>
     </v-container>
@@ -76,6 +83,13 @@ export default Vue.extend({
       return !this.pingResult ? '' 
         : this.pingResult.status === 'ok' ? 'success lighten-1'
         : 'error lighten-1';
+    },
+    pingIcon(): string | null {
+      return !this.pingResult ? null
+        : this.pingResult.status === 'ok' ? 'mdi-check-circle'
+        : 'mdi-alert-circle'
+
+
     }
   },
   methods: {

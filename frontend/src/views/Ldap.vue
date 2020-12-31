@@ -57,7 +57,66 @@
       <v-row>
         <v-col cols="12" md="10" offset-md="1">
           <h2>Latest Sync</h2>
-          <pre>{{ldapSyncResults}}</pre>
+          <v-container fluid v-if="ldapSyncResults">
+            <v-row dense>
+              <v-col cols="12">
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>{{ldapSyncResults.job}}</v-list-item-title>
+                    <v-list-item-subtitle>Job ID</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>{{ldapSyncResults.started | moment('YYYY-MM-DD HH:mm:ss')}}</v-list-item-title>
+                    <v-list-item-subtitle>Started</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>{{ldapSyncResults.finished | moment('YYYY-MM-DD HH:mm:ss')}}</v-list-item-title>
+                    <v-list-item-subtitle>Finished</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+              </v-col>
+            </v-row>
+            <v-row dense>
+              <v-col cols="12">
+                <v-expansion-panels>
+                  <v-expansion-panel :disabled="ldapSyncResults.synced.length==0">
+                    <v-expansion-panel-header>
+                      Success ({{ldapSyncResults.synced.length}})
+                    </v-expansion-panel-header>
+                    <v-expansion-panel-content>
+                      <v-list-item v-for="username in ldapSyncResults.synced" :key="username">
+                        {{username}}
+                      </v-list-item>
+                    </v-expansion-panel-content>
+                  </v-expansion-panel>
+                  <v-expansion-panel :disabled="ldapSyncResults.conflict.length==0">
+                    <v-expansion-panel-header>
+                      Conflict ({{ldapSyncResults.conflict.length}})
+                    </v-expansion-panel-header>
+                    <v-expansion-panel-content>
+                      <v-list-item v-for="username in ldapSyncResults.conflict" :key="username">
+                        {{username}}
+                      </v-list-item>
+                    </v-expansion-panel-content>
+                  </v-expansion-panel>
+                  <v-expansion-panel :disabled="ldapSyncResults.failed.length==0">
+                    <v-expansion-panel-header>
+                      Failed ({{ldapSyncResults.failed.length}})
+                    </v-expansion-panel-header>
+                    <v-expansion-panel-content>
+                      <v-list-item v-for="username in ldapSyncResults.failed" :key="username">
+                        {{username}}
+                      </v-list-item>
+                    </v-expansion-panel-content>
+                  </v-expansion-panel>
+                </v-expansion-panels>
+              </v-col>
+            </v-row>
+          </v-container>
         </v-col>
       </v-row>
     </v-container>

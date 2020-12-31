@@ -5,6 +5,31 @@ import { isNil as _isNil, map as _map } from 'lodash';
 {{model}}
 {% endfor %}
 
+export interface AdmLdapSyncResults {
+  job: number;
+  started: Date | null;
+  finished: Date | null;
+  synced: string[];
+  conflict: string[];
+  failed: string[];
+}
+export function plainToAdmLdapSyncResults(json: any): AdmLdapSyncResults {
+  return {
+    job: json['job'],
+    started: json['started'] ? new Date(json['started']) : null,
+    finished: json['finished'] ? new Date(json['finished']) : null,
+    synced: json['synced'],
+    conflict: json['conflict'],
+    failed: json['failed'],
+  };
+}
+
+export interface AdmKey {
+  key: string;
+  val: AdmLdapSyncResults;
+}
+
+
 export interface Upload {
   tags: string[];
   container: Container;

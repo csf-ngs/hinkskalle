@@ -54,6 +54,12 @@
           </v-alert>
         </v-col>
       </v-row>
+      <v-row>
+        <v-col cols="12" md="10" offset-md="1">
+          <h2>Latest Sync</h2>
+          <pre>{{ldapSyncResults}}</pre>
+        </v-col>
+      </v-row>
     </v-container>
     <v-container v-else>
       <h4>Not Configured (why are you seeing me?)</h4>
@@ -61,22 +67,23 @@
   </div>
 </template>
 <script lang="ts">
-import { LdapStatus, LdapPing } from '@/store/models';
+import { LdapStatus, LdapPing, AdmLdapSyncResults } from '@/store/models';
 import Vue from 'vue';
 
 export default Vue.extend({
   name: 'Ldap',
   mounted() {
     this.loadStatus();
+    this.loadSyncResults();
   },
   computed: {
     loading(): boolean {
       return this.$store.getters['adm/status'] === 'loading';
     },
-    ldap(): LdapStatus {
+    ldap(): LdapStatus | null {
       return this.$store.getters['adm/ldapStatus'];
     },
-    pingResult(): LdapPing {
+    pingResult(): LdapPing | null {
       return this.$store.getters['adm/ldapPing'];
     },
     pingColor(): string {
@@ -88,9 +95,10 @@ export default Vue.extend({
       return !this.pingResult ? null
         : this.pingResult.status === 'ok' ? 'mdi-check-circle'
         : 'mdi-alert-circle'
-
-
-    }
+    },
+    ldapSyncResults(): AdmLdapSyncResults | null {
+      return this.$store.getters['adm/ldapSyncResults'];
+    },
   },
   methods: {
     loadStatus() {
@@ -100,7 +108,11 @@ export default Vue.extend({
     ping() {
       this.$store.dispatch('adm/ldapPing')
         .catch(err => this.$store.commit('snackbar/showError', err))
-    }
+    },
+    loadSyncResults() {
+      this.$store.dispatch('adm/ldapSyncResults')
+        .catch(err => this.$store.commit('snackbar/showError', err))
+    },
   }
 });
 </script>

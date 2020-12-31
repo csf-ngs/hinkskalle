@@ -1,12 +1,13 @@
 import { Module } from 'vuex';
 
 import { AxiosError, AxiosResponse } from 'axios';
-import {LdapPing, LdapStatus, plainToLdapPing, plainToLdapStatus} from '../models';
+import {AdmLdapSyncResults, LdapPing, LdapStatus, plainToAdmLdapSyncResults, plainToLdapPing, plainToLdapStatus} from '../models';
 
 export interface State {
   status: '' | 'loading' | 'failed' | 'success';
   ldapStatus: LdapStatus | null;
   ldapPingResponse: LdapPing | null;
+  ldapSyncResults: AdmLdapSyncResults | null;
 }
 
 const admModule: Module<State, any> = {
@@ -15,11 +16,13 @@ const admModule: Module<State, any> = {
     status: '',
     ldapStatus: null,
     ldapPingResponse: null,
+    ldapSyncResults: null,
   },
   getters: {
     status: (state): string => state.status,
     ldapStatus: (state): LdapStatus | null => state.ldapStatus,
     ldapPing: (state): LdapPing | null => state.ldapPingResponse,
+    ldapSyncResults: (state): AdmLdapSyncResults | null => state.ldapSyncResults,
   },
   mutations: {
     loading(state: State) {
@@ -36,7 +39,10 @@ const admModule: Module<State, any> = {
     },
     setLdapPing(state: State, newResult: LdapPing | null) {
       state.ldapPingResponse = newResult;
-    }
+    },
+    setLdapSyncResults(state: State, newResult: AdmLdapSyncResults | null) {
+      state.ldapSyncResults = newResult;
+    },
   },
   actions: {
     ldapStatus: ({ state, commit, rootState }, param: { reload?: boolean } = {}): Promise<LdapStatus> => {
@@ -72,6 +78,22 @@ const admModule: Module<State, any> = {
           .catch((err: AxiosError) => {
             commit('failed', err);
             commit('setLdapPing', null);
+            reject(err);
+          });
+      });
+    },
+    ldapSyncResults: ({ state, commit, rootState }): Promise<AdmLdapSyncResults> => {
+      return new Promise((resolve, reject) => {
+        commit('loading');
+        rootState.backend.get(`/v1/adm/ldap_sync_results`)
+          .then((response: AxiosResponse) => {
+            const result = plainToAdmLdapSyncResults(response.data.data.val);
+            commit('succeeded');
+            commit('setLdapSyncResults', result);
+            resolve(result);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
             reject(err);
           });
       });

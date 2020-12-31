@@ -1,5 +1,5 @@
 import store from '@/store';
-import {LdapStatus, plainToLdapStatus, LdapPing, plainToLdapPing} from '@/store/models';
+import {LdapStatus, plainToLdapStatus, LdapPing, plainToLdapPing, plainToAdmLdapSyncResults} from '@/store/models';
 
 import axios from 'axios';
 
@@ -122,6 +122,49 @@ describe('adm actions', () => {
   it('has ldap ping fail hanlding', done => {
     mockAxios.get.mockRejectedValue({ fail: 'fail' });
     store.dispatch('adm/ldapPing')
+      .catch(err => {
+        expect(store.state.adm!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
+  });
+
+  it('has get ldap sync adm key', done => {
+    const testResponse = {
+      key: 'ldap_sync_results',
+      val: {
+        job: 12,
+        started: '2020-10-12',
+        finished: '2020-10-13',
+        synced: ['eins', 'zwei'],
+        conflict: ['drei'],
+        failed: ['vier', 'funf'],
+      },
+    };
+    const expectResponse = {
+      job: 12,
+      started: new Date('2020-10-12'),
+      finished: new Date('2020-10-13'),
+      synced: [ 'eins', 'zwei' ],
+      conflict: [ 'drei' ],
+      failed: [ 'vier', 'funf' ],
+    };
+
+    mockAxios.get.mockResolvedValue({ data: { data: testResponse }});
+    const promise = store.dispatch('adm/ldapSyncResults')
+    expect(store.state.adm!.status).toBe('loading');
+    promise.then(res => {
+
+      expect(store.state.adm!.status).toBe('success');
+      expect(store.state.adm!.ldapSyncResults).toStrictEqual(expectResponse);
+      expect(mockAxios.get).toHaveBeenCalledWith(`/v1/adm/ldap_sync_results`)
+      expect(res).toStrictEqual(expectResponse);
+      done();
+    });
+  });
+  it('has ldap sync results fail handling', done => {
+    mockAxios.get.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('adm/ldapSyncResults')
       .catch(err => {
         expect(store.state.adm!.status).toBe('failed');
         expect(err).toStrictEqual({ fail: 'fail' });

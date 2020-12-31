@@ -90,7 +90,7 @@ describe('AuthGuard', () => {
         '/users',
         '/ldap',
     ], async route => {
-      await router.push('/login');
+      await router.push('/').catch(err => {});
       it(`requires admin for ${route}`, async done => {
         store.state.currentUser = { isAdmin: false } as User;
         await router.push(route);

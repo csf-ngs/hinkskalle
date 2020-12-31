@@ -112,7 +112,9 @@ export default Vue.extend({
       return new Promise((resolve, reject) => {
         if (err.response && err.response.status === 401 && err.config) {
           $store.dispatch('logout');
-          $router.push('/login');
+          if ($router.currentRoute.fullPath !== '/login') {
+            $router.push('/login');
+          }
         }
         throw err;
       });

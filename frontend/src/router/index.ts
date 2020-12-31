@@ -14,9 +14,9 @@ import store from '../store';
 
 Vue.use(VueRouter);
 
-export const isAuthenticated: NavigationGuard = (to, _, next) => {
+export const isAuthenticated: NavigationGuard = (to, from, next) => {
   if (!store.getters.isLoggedIn) {
-    return next({
+    return next(from.name === 'Login' ? false : {
       name: 'Login',
       query: { redirect: to.fullPath },
     });

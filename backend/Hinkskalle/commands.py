@@ -7,7 +7,16 @@ from flask_rebar import SwaggerV2Generator
 from Hinkskalle.util.typescript import ModelRenderer
 import os
 import re
+import click
 
+ldap_cli = AppGroup('ldap', short_help='manage ldap integration')
+
+@ldap_cli.command('sync', short_help='synchronize users')
+def sync_ldap():
+  from Hinkskalle.util.jobs import sync_ldap
+  click.echo("starting sync...")
+  job = sync_ldap.queue()
+  click.echo(f"started sync with job id {job.id}")
 
 db_cli = AppGroup('local_db', short_help='hinkskalle specific db commands')
 
@@ -106,6 +115,7 @@ def migrate_mongo(mongodb_host):
 
 
 current_app.cli.add_command(db_cli)
+current_app.cli.add_command(ldap_cli)
 
 @current_app.cli.command()
 @click.option('--out', default='../frontend/src/store/models.ts', type=click.File(mode='wb'))

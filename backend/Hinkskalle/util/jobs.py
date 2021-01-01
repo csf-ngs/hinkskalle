@@ -38,6 +38,8 @@ def sync_ldap():
     count = count + 1
     job.meta['progress']=f"{count} of {len(ldap_users)}"
     job.save_meta()
+    import time
+    time.sleep(1)
     try:
       db_user = svc.sync_user(ldap_user)
       result['synced'].append(db_user.username)

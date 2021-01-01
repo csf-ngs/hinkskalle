@@ -1,5 +1,5 @@
 import store from '@/store';
-import {LdapStatus, plainToLdapStatus, LdapPing, plainToLdapPing, plainToAdmLdapSyncResults} from '@/store/models';
+import {LdapStatus, plainToLdapStatus, LdapPing, plainToLdapPing, plainToAdmLdapSyncResults, Job, plainToJob} from '@/store/models';
 
 import axios from 'axios';
 
@@ -165,6 +165,103 @@ describe('adm actions', () => {
   it('has ldap sync results fail handling', done => {
     mockAxios.get.mockRejectedValue({ fail: 'fail' });
     store.dispatch('adm/ldapSyncResults')
+      .catch(err => {
+        expect(store.state.adm!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
+  });
+
+  it('can trigger ldap sync', done => {
+    const testJobResponse = {
+      id: 'oink',
+      status: 'running',
+    };
+    const testJobObj = plainToJob(testJobResponse);
+
+    mockAxios.post.mockResolvedValue({ data: { data: testJobResponse }});
+    const promise = store.dispatch('adm/syncLdap');
+    expect(store.state.adm!.status).toBe('loading');
+    promise.then(res => {
+      expect(store.state.adm!.status).toBe('success');
+      expect(mockAxios.post).toHaveBeenCalledWith(`/v1/ldap/sync`);
+      expect(store.state.adm!.ldapSyncJob).toStrictEqual(testJobObj);
+      expect(store.getters['adm/ldapSyncJob']).toStrictEqual(testJobObj);
+      expect(res).toStrictEqual(testJobObj);
+      done();
+    });
+  });
+  it('has ldap sync fail handling', done => {
+    mockAxios.post.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('adm/syncLdap')
+      .catch(err => {
+        expect(store.state.adm!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
+  });
+
+  it('has get ldap sync job info', done => {
+    store.state.adm!.ldapSyncJob = plainToJob({ id: 'oink' });
+    const testJobResponse = {
+      id: 'oink',
+      status: 'running',
+    };
+    const testJobObj = plainToJob(testJobResponse);
+
+    mockAxios.get.mockResolvedValue({ data: { data: testJobResponse }});
+    const promise = store.dispatch(`adm/syncLdapStatus`);
+    expect(store.state.adm!.status).toBe('loading');
+    promise.then(res => {
+      expect(store.state.adm!.status).toBe('success');
+      expect(mockAxios.get).toHaveBeenCalledWith(`/v1/jobs/oink`)
+      expect(store.state.adm!.ldapSyncJob).toStrictEqual(testJobObj);
+      expect(res).toStrictEqual(testJobObj);
+      done();
+    });
+  });
+  it('has get ldap sync job info with missing job', done => {
+    store.state.adm!.ldapSyncJob = null;
+    mockAxios.get.mockReset();
+    const promise = store.dispatch(`adm/syncLdapStatus`);
+    promise.then(res => {
+      expect(store.state.adm!.status).toBe('success');
+      expect(mockAxios.get).not.toHaveBeenCalled();
+      expect(store.state.adm!.ldapSyncJob).toBeNull();
+      done();
+    });
+  });
+  it('has get ldap sync job fail handling', done => {
+    store.state.adm!.ldapSyncJob = plainToJob({ id: 'oink' });
+    mockAxios.get.mockRejectedValue({ fail: 'fail' });
+    store.dispatch(`adm/syncLdapStatus`)
+      .catch(err => {
+        expect(store.state.adm!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
+  });
+
+  it('has get job info action', done => {
+    const testJobResponse = {
+      id: 'oink',
+      status: 'running',
+    };
+    const testJobObj = plainToJob(testJobResponse);
+
+    mockAxios.get.mockResolvedValue({ data: { data: testJobResponse }});
+    const promise = store.dispatch('adm/jobInfo', 'oink');
+    expect(store.state.adm!.status).toBe('loading');
+    promise.then(res => {
+      expect(store.state.adm!.status).toBe('success');
+      expect(mockAxios.get).toHaveBeenCalledWith(`/v1/jobs/oink`);
+      expect(res).toStrictEqual(testJobObj);
+      done();
+    });
+  });
+  it('has get job fail handling', done => {
+    mockAxios.get.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('adm/jobInfo', 'oink')
       .catch(err => {
         expect(store.state.adm!.status).toBe('failed');
         expect(err).toStrictEqual({ fail: 'fail' });

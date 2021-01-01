@@ -56,10 +56,65 @@
       </v-row>
       <v-row>
         <v-col cols="12" md="10" offset-md="1">
-          <h2>Latest Sync</h2>
+          <div class="d-flex justify-space-between">
+            <h2>Synchronisation</h2>
+            <v-btn small id="sync" @click="startSync()">Trigger Sync</v-btn>
+          </div>
+
+          <v-alert
+            v-if="ldapSyncJob"
+            elevation="2"
+            colored-border
+            border="left"
+            :color="ldapSyncColor"
+            :icon="ldapSyncIcon"
+            dismissible
+          >
+            <v-row dense>
+              <v-col>
+                <h3>Syncing...</h3>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>{{ldapSyncJob.id}}</v-list-item-title>
+                    <v-list-item-subtitle>Job ID</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>{{ldapSyncJob.status}}</v-list-item-title>
+                    <v-list-item-subtitle>Status</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>{{ldapSyncJob.startedAt | moment('YYYY-MM-DD HH:mm:ss')}}</v-list-item-title>
+                    <v-list-item-subtitle>Started At</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      <span v-if="ldapSyncJob.meta">
+                        {{ldapSyncJob.meta.progress}}
+                      </span>
+                      <span v-else>
+                        -
+                      </span>
+                    </v-list-item-title>
+                    <v-list-item-subtitle>Progress</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+              </v-col>
+            </v-row>
+          </v-alert>
+
           <v-container fluid v-if="ldapSyncResults">
             <v-row dense>
               <v-col cols="12">
+                <div class="d-flex justify-space-between">
+                  <h3>Latest Sync</h3>
+                  <v-btn small icon @click="loadSyncResults()"><v-icon>mdi-refresh</v-icon></v-btn>
+                </div>
                 <v-list-item two-line>
                   <v-list-item-content>
                     <v-list-item-title>{{ldapSyncResults.job}}</v-list-item-title>
@@ -126,7 +181,7 @@
   </div>
 </template>
 <script lang="ts">
-import { LdapStatus, LdapPing, AdmLdapSyncResults } from '@/store/models';
+import { LdapStatus, LdapPing, AdmLdapSyncResults, Job } from '@/store/models';
 import Vue from 'vue';
 
 export default Vue.extend({
@@ -158,6 +213,26 @@ export default Vue.extend({
     ldapSyncResults(): AdmLdapSyncResults | null {
       return this.$store.getters['adm/ldapSyncResults'];
     },
+    ldapSyncJob(): Job | null {
+      return this.$store.getters['adm/ldapSyncJob'];
+    },
+    ldapSyncColor(): string {
+      return !this.ldapSyncJob || this.ldapSyncJob.status === 'queued' ? ''
+        : this.ldapSyncJob.status === 'started' ? 'indigo lighten-1' 
+        : this.ldapSyncJob.status === 'finished' ? 'success lighten-1'
+        : this.ldapSyncJob.status === 'failed' ? 'error lighten-1'
+        : this.ldapSyncJob.status === 'deferred' ? 'warning lighten-1'
+        : 'grey lighten-1'
+    },
+    ldapSyncIcon(): string | null {
+      return !this.ldapSyncJob ? null
+        : this.ldapSyncJob.status === 'queued' ? 'mdi-timer-sand' 
+        : this.ldapSyncJob.status === 'started' ? 'mdi-run' 
+        : this.ldapSyncJob.status === 'finished' ? 'mdi-check-circle'
+        : this.ldapSyncJob.status === 'failed' ? 'mdi-alert-circle'
+        : this.ldapSyncJob.status === 'deferred' ? 'mdi-sleep'
+        : 'mdi-progress-question';
+    },
   },
   methods: {
     loadStatus() {
@@ -172,6 +247,21 @@ export default Vue.extend({
       this.$store.dispatch('adm/ldapSyncResults')
         .catch(err => this.$store.commit('snackbar/showError', err))
     },
+    startSync() {
+      this.$store.dispatch('adm/syncLdap')
+        .then(res => {
+          const pollLdapJob = () => {
+            this.$store.dispatch('adm/syncLdapStatus')
+              .then(res => {
+                if (res.status !== 'finished' && res.status !== 'failed') {
+                  setTimeout(pollLdapJob, 1000);
+                }
+              });
+          };
+          setTimeout(pollLdapJob, 1000);
+        })
+        .catch(err => this.$store.commit('snackbar/showError', err));
+    }
   }
 });
 </script>

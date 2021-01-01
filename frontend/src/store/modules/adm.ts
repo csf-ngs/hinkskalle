@@ -1,13 +1,14 @@
 import { Module } from 'vuex';
 
 import { AxiosError, AxiosResponse } from 'axios';
-import {AdmLdapSyncResults, LdapPing, LdapStatus, plainToAdmLdapSyncResults, plainToLdapPing, plainToLdapStatus} from '../models';
+import {Job, plainToJob, AdmLdapSyncResults, LdapPing, LdapStatus, plainToAdmLdapSyncResults, plainToLdapPing, plainToLdapStatus} from '../models';
 
 export interface State {
   status: '' | 'loading' | 'failed' | 'success';
   ldapStatus: LdapStatus | null;
   ldapPingResponse: LdapPing | null;
   ldapSyncResults: AdmLdapSyncResults | null;
+  ldapSyncJob: Job | null;
 }
 
 const admModule: Module<State, any> = {
@@ -17,12 +18,14 @@ const admModule: Module<State, any> = {
     ldapStatus: null,
     ldapPingResponse: null,
     ldapSyncResults: null,
+    ldapSyncJob: null,
   },
   getters: {
     status: (state): string => state.status,
     ldapStatus: (state): LdapStatus | null => state.ldapStatus,
     ldapPing: (state): LdapPing | null => state.ldapPingResponse,
     ldapSyncResults: (state): AdmLdapSyncResults | null => state.ldapSyncResults,
+    ldapSyncJob: (state): Job | null => state.ldapSyncJob,
   },
   mutations: {
     loading(state: State) {
@@ -42,6 +45,9 @@ const admModule: Module<State, any> = {
     },
     setLdapSyncResults(state: State, newResult: AdmLdapSyncResults | null) {
       state.ldapSyncResults = newResult;
+    },
+    setLdapSyncJob(state: State, job: Job | null) {
+      state.ldapSyncJob = job;
     },
   },
   actions: {
@@ -91,6 +97,52 @@ const admModule: Module<State, any> = {
             commit('succeeded');
             commit('setLdapSyncResults', result);
             resolve(result);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
+    syncLdap: ({ state, commit, rootState }): Promise<Job | null> => {
+      return new Promise((resolve, reject) => {
+        commit('loading');
+        rootState.backend.post(`/v1/ldap/sync`)
+        .then((response: AxiosResponse) => {
+          const jobInfo = plainToJob(response.data.data);
+          commit('setLdapSyncJob', jobInfo);
+          commit('succeeded');
+          resolve(jobInfo);
+        })
+        .catch((err: AxiosError) => {
+          commit('failed', err);
+          reject(err);
+        });
+      });
+    },
+    syncLdapStatus: ({ state, commit, dispatch }): Promise<Job | null> => {
+      return new Promise((resolve, reject) => {
+        if (state.ldapSyncJob === null) {
+          return resolve(null);
+        }
+        dispatch('jobInfo', state.ldapSyncJob.id)
+          .then(res => {
+            commit('setLdapSyncJob', res);
+            resolve(res);
+          })
+          .catch(err => {
+            reject(err);
+          })
+      });
+    },
+    jobInfo: ({ state, commit, rootState }, jobId: string): Promise<Job> => {
+      return new Promise((resolve, reject) => {
+        commit('loading');
+        rootState.backend.get(`/v1/jobs/${jobId}`)
+          .then((response: AxiosResponse) => {
+            const jobInfo = plainToJob(response.data.data);
+            commit('succeeded');
+            resolve(jobInfo);
           })
           .catch((err: AxiosError) => {
             commit('failed', err);

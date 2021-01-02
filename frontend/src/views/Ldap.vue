@@ -68,6 +68,7 @@
             border="left"
             :color="ldapSyncColor"
             :icon="ldapSyncIcon"
+            v-model="showSyncProgress"
             dismissible
           >
             <v-row dense>
@@ -87,7 +88,14 @@
                 </v-list-item>
                 <v-list-item two-line>
                   <v-list-item-content>
-                    <v-list-item-title>{{ldapSyncJob.startedAt | moment('YYYY-MM-DD HH:mm:ss')}}</v-list-item-title>
+                    <v-list-item-title>
+                      <span v-if="ldapSyncJob.startedAt">
+                        {{ldapSyncJob.startedAt | moment('YYYY-MM-DD HH:mm:ss')}}
+                      </span>
+                      <span v-else>
+                        -
+                      </span>
+                    </v-list-item-title>
                     <v-list-item-subtitle>Started At</v-list-item-subtitle>
                   </v-list-item-content>
                 </v-list-item>
@@ -96,6 +104,9 @@
                     <v-list-item-title>
                       <span v-if="ldapSyncJob.meta">
                         {{ldapSyncJob.meta.progress}}
+                        <span v-if="ldapSyncJob.meta.progress == 'done'">
+                          - finished {{ldapSyncJob.endedAt | moment('YYYY-MM-DD HH:mm:ss')}}
+                        </span>
                       </span>
                       <span v-else>
                         -
@@ -190,6 +201,9 @@ export default Vue.extend({
     this.loadStatus();
     this.loadSyncResults();
   },
+  data: () => ({
+    showSyncProgress: false,
+  }),
   computed: {
     loading(): boolean {
       return this.$store.getters['adm/status'] === 'loading';
@@ -248,6 +262,7 @@ export default Vue.extend({
         .catch(err => this.$store.commit('snackbar/showError', err))
     },
     startSync() {
+      this.showSyncProgress = true;
       this.$store.dispatch('adm/syncLdap')
         .then(res => {
           const pollLdapJob = () => {
@@ -256,7 +271,11 @@ export default Vue.extend({
                 if (res.status !== 'finished' && res.status !== 'failed') {
                   setTimeout(pollLdapJob, 1000);
                 }
-              });
+                else if (res.status === 'finished') {
+                  this.loadSyncResults();
+                }
+              })
+              .catch(err => this.$store.commit('snackbar/showError', err))
           };
           setTimeout(pollLdapJob, 1000);
         })

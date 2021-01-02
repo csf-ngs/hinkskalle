@@ -453,8 +453,8 @@ export { Token };
 class Job {
   public dependson!: string
   public description!: string
-  public endedAt!: string
-  public enqueuedAt!: string
+  public endedAt!: Date | null
+  public enqueuedAt!: Date | null
   public excInfo!: string
   public failureTTL!: number
   public funcName!: string
@@ -463,7 +463,7 @@ class Job {
   public origin!: string
   public result!: string
   public resultTTL!: number
-  public startedAt!: string
+  public startedAt!: Date | null
   public status!: string
   public timeout!: string
   public ttl!: number
@@ -474,9 +474,9 @@ export function plainToJob(json: any): Job {
   const obj = new Job();
   obj.dependson = json['dependson'];
     obj.description = json['description'];
-    obj.endedAt = json['endedAt'];
-    obj.enqueuedAt = json['enqueuedAt'];
-    obj.excInfo = json['excInfo'];
+    obj.endedAt = _isNil(json['endedAt']) ? null : new Date(json['endedAt']);
+      obj.enqueuedAt = _isNil(json['enqueuedAt']) ? null : new Date(json['enqueuedAt']);
+      obj.excInfo = json['excInfo'];
     obj.failureTTL = json['failureTTL'];
     obj.funcName = json['funcName'];
     obj.id = json['id'];
@@ -484,8 +484,8 @@ export function plainToJob(json: any): Job {
     obj.origin = json['origin'];
     obj.result = json['result'];
     obj.resultTTL = json['resultTTL'];
-    obj.startedAt = json['startedAt'];
-    obj.status = json['status'];
+    obj.startedAt = _isNil(json['startedAt']) ? null : new Date(json['startedAt']);
+      obj.status = json['status'];
     obj.timeout = json['timeout'];
     obj.ttl = json['ttl'];
     
@@ -495,9 +495,9 @@ export function serializeJob(obj: Job, unroll=false): any {
   const json: any = {};
   json['dependson'] = obj.dependson
       json['description'] = obj.description
-      json['endedAt'] = obj.endedAt
-      json['enqueuedAt'] = obj.enqueuedAt
-      json['excInfo'] = obj.excInfo
+      json['endedAt'] = _isNil(obj.endedAt) ? null : obj.endedAt.toJSON();
+        json['enqueuedAt'] = _isNil(obj.enqueuedAt) ? null : obj.enqueuedAt.toJSON();
+        json['excInfo'] = obj.excInfo
       json['failureTTL'] = obj.failureTTL
       json['funcName'] = obj.funcName
       json['id'] = obj.id
@@ -505,8 +505,8 @@ export function serializeJob(obj: Job, unroll=false): any {
       json['origin'] = obj.origin
       json['result'] = obj.result
       json['resultTTL'] = obj.resultTTL
-      json['startedAt'] = obj.startedAt
-      json['status'] = obj.status
+      json['startedAt'] = _isNil(obj.startedAt) ? null : obj.startedAt.toJSON();
+        json['status'] = obj.status
       json['timeout'] = obj.timeout
       json['ttl'] = obj.ttl
       

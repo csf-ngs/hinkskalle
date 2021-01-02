@@ -27,9 +27,9 @@ class JobSchema(Schema):
   result_ttl = fields.Int(dump_to='resultTTL')
   timeout = fields.String()
   result = fields.String(allow_none=True)
-  enqueued_at = fields.String(dump_to='enqueuedAt')
-  started_at = fields.String(allow_none=True, dump_to='startedAt')
-  ended_at = fields.String(allow_none=True, dump_to='endedAt')
+  enqueued_at = fields.DateTime(dump_to='enqueuedAt')
+  started_at = fields.DateTime(allow_none=True, dump_to='startedAt')
+  ended_at = fields.DateTime(allow_none=True, dump_to='endedAt')
   exc_info = fields.String(allow_none=True, dump_to='excInfo')
   func_name = fields.String(dump_to='funcName')
 

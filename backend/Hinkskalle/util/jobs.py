@@ -7,7 +7,7 @@ from time import sleep
 from rq.job import Job
 from .auth.ldap import LDAPUsers, _get_attr
 from .auth.exceptions import UserConflict
-from datetime import datetime
+from datetime import datetime, timezone
 
 rq = RQ()
 
@@ -23,7 +23,7 @@ def sync_ldap():
 
   result = {
     'job': job.id,
-    'started': datetime.now().isoformat(),
+    'started': datetime.now(tz=timezone.utc).isoformat(),
     'synced': [],
     'conflict': [],
     'failed': [],
@@ -38,8 +38,6 @@ def sync_ldap():
     count = count + 1
     job.meta['progress']=f"{count} of {len(ldap_users)}"
     job.save_meta()
-    import time
-    time.sleep(1)
     try:
       db_user = svc.sync_user(ldap_user)
       result['synced'].append(db_user.username)
@@ -48,7 +46,7 @@ def sync_ldap():
     except:
       result['failed'].append(_get_attr(ldap_user.get('attributes').get('cn')))
 
-  result['finished']=datetime.now().isoformat()
+  result['finished']=datetime.now(tz=timezone.utc).isoformat()
   job.meta['progress']='done'
   job.meta['result']=result
   job.save_meta()

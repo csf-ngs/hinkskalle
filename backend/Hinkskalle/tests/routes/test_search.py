@@ -6,7 +6,7 @@ from Hinkskalle.tests.models.test_Image import _create_image
 from Hinkskalle.tests.models.test_Container import _create_container
 
 from Hinkskalle import db
-from Hinkskalle.models import ContainerSchema, EntitySchema, CollectionSchema
+from Hinkskalle.models import ContainerSchema, EntitySchema, CollectionSchema, ImageSchema
 
 class TestSearch(RouteBase):
   def test_search_noauth(self):
@@ -71,8 +71,26 @@ class TestSearch(RouteBase):
       json = ret.get_json().get('data')
       self.assertDictEqual(json, expected)
   
+  def test_search_image(self):
+    image1, container, _, _ = _create_image()
+    container.name='anKYLOsaurus'
+    db.session.commit()
+
+    expected = {
+      'container': [ContainerSchema().dump(container).data],
+      'image': [ImageSchema().dump(image1).data],
+      'entity': [],
+      'collection': [],
+    }
+    for search in [container.name, container.name[3:6], container.name[3:6].lower()]:
+      with self.fake_admin_auth():
+        ret = self.client.get(f"/v1/search?value={search}")
+      self.assertEqual(ret.status_code, 200)
+      json = ret.get_json().get('data')
+      self.assertDictEqual(json, expected)
+  
   def test_all(self):
-    container, collection, entity = _create_container()
+    image, container, collection, entity = _create_image()
     entity.name='oink-entity'
     collection.name="oink-collection"
     container.name="oink-container"
@@ -82,7 +100,7 @@ class TestSearch(RouteBase):
       'collection': [ CollectionSchema().dump(collection).data ],
       'entity': [ EntitySchema().dump(entity).data ],
       'container': [ ContainerSchema().dump(container).data ],
-      'image': []
+      'image': [ ImageSchema().dump(image).data ]
     }
 
     with self.fake_admin_auth():

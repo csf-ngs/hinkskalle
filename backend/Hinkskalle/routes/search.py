@@ -6,7 +6,7 @@ from flask import current_app, g
 import re
 
 
-from Hinkskalle.models import Entity, EntitySchema, Collection, CollectionSchema, Container, ContainerSchema, ImageSchema
+from Hinkskalle.models import Entity, EntitySchema, Collection, CollectionSchema, Container, ContainerSchema, Image, ImageSchema
 
 class SearchSchema(Schema):
   entity=fields.Nested(EntitySchema, many=True)
@@ -21,6 +21,7 @@ class SearchQuerySchema(RequestSchema):
   value=fields.String(required=False)
   description=fields.String(required=False)
   arch=fields.String(required=False)
+  search=fields.String(required=False)
 
 @registry.handles(
   rule='/v1/search',
@@ -50,6 +51,7 @@ def search():
   entities = Entity.query.filter(*search['entities'])
   collections = Collection.query.filter(*search['collections'])
   containers = Container.query.filter(*search['containers'])
+  images = Image.query.join(Image.container_ref, aliased=True).filter(*search['containers'])
 
   return {
     'data': {
@@ -57,7 +59,7 @@ def search():
       'collection': [ c for c in collections if c.check_access(g.authenticated_user) ],
       'container': [ c for c in containers if c.check_access(g.authenticated_user) ],
       #'container': [],
-      'image': []
+      'image': [ i for i in images if i.check_access(g.authenticated_user) ],
     }
   }
   

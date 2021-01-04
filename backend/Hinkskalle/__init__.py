@@ -78,6 +78,8 @@ def create_app():
   if 'SQLALCHEMY_DATABASE_URI' in os.environ:
     app.config['SQLALCHEMY_DATABASE_URI']=os.environ['SQLALCHEMY_DATABASE_URI']
   app.config['PREFERRED_URL_SCHEME']=os.environ.get('PREFERRED_URL_SCHEME', 'http')
+  if 'HINKSKALLE_KEYSERVER_URL' in os.environ:
+    app.config['KEYSERVER_URL']=os.environ.get('HINKSKALLE_KEYSERVER_URL')
 
   if 'RQ_CONNECTION_CLASS' in os.environ:
     app.config['RQ_CONNECTION_CLASS'] = os.environ.get('RQ_CONNECTION_CLASS')

@@ -14,11 +14,12 @@ class TestBase(RouteBase):
     self.assertIn("version", json)
   
   def test_config(self):
+    self.app.config['KEYSERVER_URL']='http://key.serv.er'
     ret = self.client.get('/assets/config/config.prod.json')
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json()
     self.assertDictEqual(json, {
-      'keystoreAPI': { 'uri': 'http://localhost'},
+      'keystoreAPI': { 'uri': 'http://key.serv.er'},
       'libraryAPI': { 'uri': 'http://localhost'},
       'tokenAPI': { 'uri': 'http://localhost'},
     })
@@ -28,7 +29,7 @@ class TestBase(RouteBase):
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json()
     self.assertDictEqual(json, {
-      'keystoreAPI': { 'uri': 'https://localhost'},
+      'keystoreAPI': { 'uri': 'http://key.serv.er'},
       'libraryAPI': { 'uri': 'https://localhost'},
       'tokenAPI': { 'uri': 'https://localhost'},
     })

@@ -44,7 +44,7 @@ def config():
       'uri': service_url
     },
     'keystoreAPI': {
-      'uri': service_url
+      'uri': current_app.config.get('KEYSERVER_URL', 'https://sks.hnet.se'),
     },
     'tokenAPI': {
       'uri': service_url

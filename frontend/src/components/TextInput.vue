@@ -96,6 +96,10 @@ export default Vue.extend({
       type: [ String, Boolean, Number ],
       default: undefined,
     },
+    check: {
+      type: Array,
+      default: () => undefined,
+    },
   },
   data: function(): { localState: State } {
     return {
@@ -113,6 +117,9 @@ export default Vue.extend({
         rules = rules.concat(
           val => !!val || 'Required!'
         )
+      }
+      if (this.check) {
+        rules = rules.concat(this.check as any);
       }
       return rules;
     }

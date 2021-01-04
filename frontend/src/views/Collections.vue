@@ -54,6 +54,7 @@
                               field="name"
                               :obj="localState.editItem"
                               :readonly="!!localState.editItem.id"
+                              :check="[checkName]"
                               required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
@@ -177,7 +178,7 @@
   </div>
 </template>
 <script lang="ts">
-import { Collection, Entity, User } from '../store/models';
+import { Collection, Entity, User, checkName } from '../store/models';
 import Vue from 'vue';
 import { DataTableHeader } from 'vuetify';
 
@@ -302,6 +303,9 @@ export default Vue.extend({
         .then(upd => this.$store.commit('snackbar/showSuccess', 'Yay!'))
         .catch(err => this.$store.commit('snackbar/showError', err));
       this.closeEdit();
+    },
+    checkName(name: string): string | boolean {
+      return checkName(name);
     },
   }
 });

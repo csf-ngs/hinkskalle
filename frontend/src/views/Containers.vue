@@ -55,6 +55,7 @@
                               field="name"
                               :obj="localState.editItem"
                               :readonly="!!localState.editItem.id"
+                              :check="[checkName]"
                               required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
@@ -230,7 +231,7 @@ import Vue from 'vue';
 import moment from 'moment';
 import { clone as _clone, find as _find } from 'lodash';
 
-import { Container, Collection, User } from '../store/models';
+import { Container, Collection, User, checkName } from '../store/models';
 import UserInput from '@/components/UserInput.vue';
 
 interface State {
@@ -356,6 +357,9 @@ export default Vue.extend({
     },
     follow($event: MouseEvent) {
       $event.stopPropagation();
+    },
+    checkName(name: string): string | boolean {
+      return checkName(name);
     },
   },
 });

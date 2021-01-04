@@ -65,12 +65,19 @@
               <v-card>
                 <v-card-title class="headline">Add Tag</v-card-title>
                 <v-card-text>
-                  <v-text-field v-model="localState.newTag" label="New Tag" solo required></v-text-field>
+                  <v-form v-model="localState.newTagValid">
+                    <v-text-field 
+                      v-model="localState.newTag" 
+                      label="New Tag" 
+                      solo 
+                      :rules="[checkTag]"
+                      required></v-text-field>
+                  </v-form>
                 </v-card-text>
                 <v-card-actions>
                   <v-spacer></v-spacer>
                   <v-btn color="warning accent-1" text @click="closeShowAddTag()">Nej, tack</v-btn>
-                  <v-btn color="success darken-1" text @click="addTag()" :disabled="!localState.newTag">Do it!</v-btn>
+                  <v-btn color="success darken-1" text @click="addTag()" :disabled="!localState.newTagValid">Do it!</v-btn>
                 </v-card-actions>
               </v-card>
             </v-dialog>
@@ -138,7 +145,7 @@
    </v-expansion-panel>
 </template>
 <script lang="ts">
-import { Image, InspectAttributes, User } from '@/store/models';
+import { Image, InspectAttributes, User, checkName } from '@/store/models';
 import { clone as _clone, filter as _filter, concat as _concat } from 'lodash';
 import Vue from 'vue';
 
@@ -146,6 +153,7 @@ interface State {
   meta: InspectAttributes;
   showDef: boolean;
   newTag: string;
+  newTagValid: boolean;
   showAddTag: boolean;
   showDelete: boolean;
 }
@@ -171,6 +179,7 @@ export default Vue.extend({
       newTag: '',
       showAddTag: false,
       showDelete: false,
+      newTagValid: true,
     },
   }),
   computed: {
@@ -237,7 +246,15 @@ export default Vue.extend({
       this.$nextTick(() => {
         this.localState.newTag = '';
       });
-    }
+    },
+    checkTag(name: string): string | boolean {
+      if (name === '' || name === undefined) {
+        return "Required";
+      }
+      else {
+        return checkName(name);
+      }
+    },
   }
 });
 </script>

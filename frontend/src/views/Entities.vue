@@ -54,6 +54,7 @@
                               field="name"
                               :obj="localState.editItem"
                               :readonly="!!localState.editItem.id"
+                              :check="[checkName]"
                               required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
@@ -180,7 +181,7 @@
 </template>
 <script lang="ts">
 import Vue from 'vue';
-import { Entity, User } from '../store/models';
+import { Entity, User, checkName } from '../store/models';
 import moment from 'moment';
 import { clone as _clone } from 'lodash';
 import UserInput from '@/components/UserInput.vue';
@@ -292,6 +293,9 @@ export default Vue.extend({
         .then(() => this.$store.commit('snackbar/showSuccess', 'Yay!'))
         .catch(err => this.$store.commit('snackbar/showError', err));
       this.closeEdit();
+    },
+    checkName(name: string): string | boolean {
+      return checkName(name);
     },
   },
 });

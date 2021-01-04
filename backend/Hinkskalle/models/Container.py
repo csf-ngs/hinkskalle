@@ -116,6 +116,7 @@ class Container(db.Model):
     return tags
 
   def archTags(self):
+    # XXX
     return {}
   
   def check_access(self, user):

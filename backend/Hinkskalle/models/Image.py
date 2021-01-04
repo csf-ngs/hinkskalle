@@ -13,6 +13,9 @@ class ImageSchema(Schema):
   size = fields.Int(allow_none=True, dump_only=True)
   uploaded = fields.Boolean()
   customData = fields.String(allow_none=True)
+  arch = fields.String(allow_none=True)
+  signed = fields.Boolean(allow_none=True)
+  encrypted = fields.Boolean(allow_none=True)
 
   containerStars = fields.Integer(dump_only=True)
   containerDownloads = fields.Integer(dump_only=True)
@@ -31,6 +34,7 @@ class ImageSchema(Schema):
   entity = fields.String(dump_only=True)
   entityName = fields.String(dump_only=True)
   tags = fields.List(fields.String(), dump_only=True)
+  fingerprints = fields.List(fields.String(), dump_only=True)
 
 class Image(db.Model):
   id = db.Column(db.Integer, primary_key=True)
@@ -42,6 +46,10 @@ class Image(db.Model):
   uploaded = db.Column(db.Boolean, default=False)
   customData = db.Column(db.String())
   downloadCount = db.Column(db.Integer, default=0)
+  arch = db.Column(db.String())
+  signed = db.Column(db.Boolean, default=False)
+  encrypted = db.Column(db.Boolean, default=False)
+
 
   container_id = db.Column(db.Integer, db.ForeignKey('container.id'), nullable=False)
 
@@ -58,6 +66,9 @@ class Image(db.Model):
 
   __table_args__ = (db.UniqueConstraint('hash', 'container_id', name='hash_container_id_idx'),)
 
+  def fingerprints(self):
+    # XXX
+    return []
   def tags(self):
     return [ tag.name for tag in self.tags_ref ]
 

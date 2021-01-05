@@ -4,6 +4,7 @@ from logging.config import dictConfig
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 from flask_migrate import Migrate, upgrade as migrate_up
+from flask.logging import default_handler
 
 import os
 
@@ -35,40 +36,7 @@ from Hinkskalle.util.auth import PasswordAuthenticators
 password_checkers=PasswordAuthenticators()
 
 def create_app():
-  dictConfig({
-    'version': 1,
-      'formatters': {
-        'default': {
-          'format': '[%(asctime)s] %(levelname)s in %(module)s:%(lineno)d | %(message)s',
-        },
-        'access': {
-          'format': '%(message)s',
-        },
-      },
-      'handlers': {
-        'wsgi': {
-          'class': 'logging.StreamHandler',
-          'stream': 'ext://flask.logging.wsgi_errors_stream',
-          'formatter': 'default'
-        },
-        'wsgi_access': {
-          'class': 'logging.StreamHandler',
-          'stream': 'ext://flask.logging.wsgi_errors_stream',
-          'formatter': 'access'
-        },
-      },
-      'root': {
-          'level': 'DEBUG',
-          'handlers': ['wsgi']
-      },
-      'loggers': {
-        'gunicorn.access': {
-          'level': 'INFO',
-          'handlers': ['wsgi_access'],
-          'propagate': False,
-        }
-      }
-  })
+  
 
   app = Flask(__name__)
   app.config.from_json(os.environ.get('HINKSKALLE_SETTINGS', '../../conf/config.json'))
@@ -78,6 +46,8 @@ def create_app():
   if 'SQLALCHEMY_DATABASE_URI' in os.environ:
     app.config['SQLALCHEMY_DATABASE_URI']=os.environ['SQLALCHEMY_DATABASE_URI']
   app.config['PREFERRED_URL_SCHEME']=os.environ.get('PREFERRED_URL_SCHEME', 'http')
+
+  app.config['KEYSERVER_URL'] = app.config.get('KEYSERVER_URL', 'https://sks.hnet.se')
   if 'HINKSKALLE_KEYSERVER_URL' in os.environ:
     app.config['KEYSERVER_URL']=os.environ.get('HINKSKALLE_KEYSERVER_URL')
 
@@ -114,7 +84,44 @@ def create_app():
     # see https://github.com/miguelgrinberg/Flask-Migrate/issues/61#issuecomment-208131722
     migrate.init_app(app, db, render_as_batch=db.engine.url.drivername == 'sqlite')
     migrate_up()
-  
+
+  # log config has to be done after migrate_up, see 
+  # https://github.com/miguelgrinberg/Flask-Migrate/issues/227
+  dictConfig({
+    'version': 1,
+      'formatters': {
+        'default': {
+          'format': '[%(asctime)s] %(levelname)s in %(module)s:%(lineno)d | %(message)s',
+        },
+        'access': {
+          'format': '%(message)s',
+        },
+      },
+      'handlers': {
+        'wsgi': {
+          'class': 'logging.StreamHandler',
+          'stream': 'ext://flask.logging.wsgi_errors_stream',
+          'formatter': 'default'
+        },
+        'wsgi_access': {
+          'class': 'logging.StreamHandler',
+          'stream': 'ext://flask.logging.wsgi_errors_stream',
+          'formatter': 'access'
+        },
+      },
+      'root': {
+          'level': 'DEBUG',
+          'handlers': ['wsgi']
+      },
+      'loggers': {
+        'gunicorn.access': {
+          'level': 'INFO',
+          'handlers': ['wsgi_access'],
+          'propagate': False,
+        },
+      }
+  })
+
   password_checkers.init_app(app)
 
   return app

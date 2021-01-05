@@ -21,7 +21,7 @@ class SearchQuerySchema(RequestSchema):
   value=fields.String(required=False)
   description=fields.String(required=False)
   arch=fields.String(required=False)
-  search=fields.String(required=False)
+  signed=fields.String(required=False)
 
 @registry.handles(
   rule='/v1/search',

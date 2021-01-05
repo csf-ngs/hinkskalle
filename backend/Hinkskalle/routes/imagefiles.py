@@ -98,6 +98,15 @@ def push_image(image_id):
   image.size=read
   image.uploaded=True
   db.session.commit()
+
+  try:
+    current_app.logger.debug("checking signature(s)...")
+    sigdata = image.check_signature()
+    if image.signed:
+      current_app.logger.debug("... signed")
+    db.session.commit()
+  except Exception as err:
+    current_app.logger.warning(f"Image signature check failed: {err}")
    
   image.container_ref.tag_image('latest', image.id)
 

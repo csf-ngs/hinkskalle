@@ -20,6 +20,7 @@ class ImageSchema(Schema):
   customData = fields.String(allow_none=True)
   arch = fields.String(allow_none=True)
   signed = fields.Boolean(allow_none=True)
+  signatureVerified = fields.Boolean(allow_none=True)
   encrypted = fields.Boolean(allow_none=True)
 
   containerStars = fields.Integer(dump_only=True)
@@ -53,7 +54,9 @@ class Image(db.Model):
   downloadCount = db.Column(db.Integer, default=0)
   arch = db.Column(db.String())
   signed = db.Column(db.Boolean, default=False)
+  signatureVerified = db.Column(db.Boolean, default=False)
   encrypted = db.Column(db.Boolean, default=False)
+  sigdata = db.Column(db.JSON())
 
 
   container_id = db.Column(db.Integer, db.ForeignKey('container.id'), nullable=False)
@@ -71,9 +74,18 @@ class Image(db.Model):
 
   __table_args__ = (db.UniqueConstraint('hash', 'container_id', name='hash_container_id_idx'),)
 
+  @property
   def fingerprints(self):
-    # XXX
-    return []
+    current_app.logger.debug(self.sigdata)
+    if self.sigdata is None or self.sigdata.get('SignerKeys', None) is None:
+      return []
+    
+    ret = []
+    for key in self.sigdata.get('SignerKeys'):
+      ret.append(key['Signer']['Fingerprint'])
+    current_app.logger.debug(ret)
+    return set(ret)
+
   def tags(self):
     return [ tag.name for tag in self.tags_ref ]
 
@@ -122,6 +134,16 @@ class Image(db.Model):
     return inspect.stdout
   
   def check_signature(self):
+    self.sigdata = self._get_signature();
+    if self.sigdata.get('Signatures', None) == 1:
+      self.signed = True
+      self.signatureVerified = self.sigdata.get('Passed', False)
+    else:
+      self.signed = False
+
+    return self.sigdata
+
+  def _get_signature(self):
     self._check_file()
     proc = subprocess.run(["singularity", "verify", "--url", current_app.config.get('KEYSERVER_URL'), "--json", self.location], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     sigdata = json.loads(proc.stdout)
@@ -139,11 +161,6 @@ class Image(db.Model):
       sigdata["Passed"]=True
     return sigdata
     
-
-
-
-
-  
   def check_access(self, user):
     if not self.container_ref.private:
       return True

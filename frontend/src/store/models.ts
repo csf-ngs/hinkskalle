@@ -228,6 +228,7 @@ export { Entity };
 
 
 class Image {
+  public arch!: string
   public blob!: string
   public collection!: string
   public collectionName!: string
@@ -242,10 +243,14 @@ class Image {
   public deletedAt!: Date | null
   public description!: string
   public downloadCount!: number
+  public encrypted!: boolean
   public entity!: string
   public entityName!: string
+  public fingerprints!: string[]
   public hash!: string
   public id!: string
+  public signatureVerified!: boolean
+  public signed!: boolean
   public size!: number
   public tags!: string[]
   public updatedAt!: Date | null
@@ -263,7 +268,8 @@ class Image {
 
 export function plainToImage(json: any): Image {
   const obj = new Image();
-  obj.blob = json['blob'];
+  obj.arch = json['arch'];
+    obj.blob = json['blob'];
     obj.collection = json['collection'];
     obj.collectionName = json['collectionName'];
     obj.container = json['container'];
@@ -277,10 +283,14 @@ export function plainToImage(json: any): Image {
     obj.deletedAt = _isNil(json['deletedAt']) ? null : new Date(json['deletedAt']);
       obj.description = json['description'];
     obj.downloadCount = json['downloadCount'];
+    obj.encrypted = json['encrypted'];
     obj.entity = json['entity'];
     obj.entityName = json['entityName'];
+    obj.fingerprints = json['fingerprints'];
     obj.hash = json['hash'];
     obj.id = json['id'];
+    obj.signatureVerified = json['signatureVerified'];
+    obj.signed = json['signed'];
     obj.size = json['size'];
     obj.tags = json['tags'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
@@ -290,11 +300,15 @@ export function plainToImage(json: any): Image {
 }
 export function serializeImage(obj: Image, unroll=false): any {
   const json: any = {};
-  json['blob'] = obj.blob
+  json['arch'] = obj.arch
+      json['blob'] = obj.blob
       json['container'] = obj.container
       json['customData'] = obj.customData
       json['description'] = obj.description
+      json['encrypted'] = obj.encrypted
       json['hash'] = obj.hash
+      json['signatureVerified'] = obj.signatureVerified
+      json['signed'] = obj.signed
       json['uploaded'] = obj.uploaded
       
   return json;

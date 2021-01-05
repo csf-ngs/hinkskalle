@@ -210,6 +210,18 @@ class TestImage(ModelBase):
     self.assertEqual(sigdata['Reason'], 'Unknown')
 
   @unittest.skipIf(which("singularity") is None, "singularity not installed")
+  def test_signature_fail(self):
+    self.app.config['KEYSERVER_URL']='http://nonexistent/'
+    image = _create_image()[0]
+    # just something that is not a SIF
+    image.location = __file__
+    image.uploaded = True
+    db.session.commit()
+
+    with self.assertRaisesRegex(Exception, r'invalid SIF file'):
+      image.check_signature()
+
+  @unittest.skipIf(which("singularity") is None, "singularity not installed")
   def test_signature_unsigned(self):
     self.app.config['KEYSERVER_URL']='http://nonexistent/'
     image = _create_image()[0]

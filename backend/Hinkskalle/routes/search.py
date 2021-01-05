@@ -61,7 +61,6 @@ def search():
       'entity': [ e for e in entities if e.check_access(g.authenticated_user) ],
       'collection': [ c for c in collections if c.check_access(g.authenticated_user) ],
       'container': [ c for c in containers if c.check_access(g.authenticated_user) ],
-      #'container': [],
       'image': [ i for i in images if i.check_access(g.authenticated_user) ],
     }
   }

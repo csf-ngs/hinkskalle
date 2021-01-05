@@ -21,9 +21,10 @@
           <v-icon v-if="item.value.type=='Entity'">mdi-account-box-multiple</v-icon>
           <v-icon v-if="item.value.type=='Collection'">mdi-folder-multiple</v-icon>
           <v-icon v-if="item.value.type=='Container'">mdi-package</v-icon>
+          <v-icon v-if="item.value.type=='Image'">mdi-file</v-icon>
         </v-list-item-avatar>
         <v-list-item-content>
-          {{item.value.fullPath}}
+          {{item.value.prettyPath}}
         </v-list-item-content>
       </template>
     </v-autocomplete>
@@ -70,6 +71,8 @@ export default Vue.extend({
         _map(res.collection, e => ({ text: e.name, value: _set(e, 'type', 'Collection') })) as any,
         [{ header: 'Containers' }],
         _map(res.container, e => ({ text: e.name, value: _set(e, 'type', 'Container') })) as any,
+        [{ header: 'Images' }],
+        _map(res.image, i => ({ text: i.containerName, value: _set(i, 'type', 'Image') })) as any,
       ]) : [];
       return ret;
     },
@@ -103,6 +106,7 @@ export default Vue.extend({
           this.$router.push({ name: 'Containers', params: { entity: obj.entityName, collection: obj.collectionName }})
           break;
         case 'Container':
+        case 'Image':
           this.$router.push({ name: 'ContainerDetails', params: { entity: obj.entityName, collection: obj.collectionName, container: obj.containerName }})
           break;
       }

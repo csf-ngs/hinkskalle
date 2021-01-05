@@ -6,6 +6,9 @@ class {{classname}} {
   public get fullPath(): string {
     return `${this.entityName}/${this.collectionName}/${this.containerName}:${this.hash}`
   }
+  public get prettyPath(): string {
+    return `${this.entityName}/${this.collectionName}/${this.containerName}:${this.tags.length>0 ? this.tags.join(",") : this.hash}`
+  }
 
   public canEdit(user: User | null): boolean {
     return !!user && (user.isAdmin || this.createdBy===user.username);

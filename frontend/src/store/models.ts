@@ -39,6 +39,9 @@ class Collection {
   public get fullPath(): string {
     return `${this.entityName}/${this.name}`
   }
+  public get prettyPath(): string {
+    return this.fullPath;
+  }
   
   public canEdit(user: User | null): boolean {
     return !!user && (user.isAdmin || this.createdBy===user.username);
@@ -111,6 +114,9 @@ class Container {
   }
   public get fullPath(): string {
     return `${this.entityName}/${this.collectionName}/${this.name}`
+  }
+  public get prettyPath(): string {
+    return this.fullPath;
   }
 
   public canEdit(user: User | null): boolean {
@@ -187,6 +193,9 @@ class Entity {
   public get fullPath(): string {
     return `${this.entityName}`
   }
+  public get prettyPath(): string {
+    return this.fullPath;
+  }
 
   public canEdit(user: User | null): boolean {
     return !!user && (user.isAdmin || this.createdBy===user.username);
@@ -259,6 +268,9 @@ class Image {
 
   public get fullPath(): string {
     return `${this.entityName}/${this.collectionName}/${this.containerName}:${this.hash}`
+  }
+  public get prettyPath(): string {
+    return `${this.entityName}/${this.collectionName}/${this.containerName}:${this.tags.length>0 ? this.tags.join(",") : this.hash}`
   }
 
   public canEdit(user: User | null): boolean {

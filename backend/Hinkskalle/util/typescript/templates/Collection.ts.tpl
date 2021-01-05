@@ -9,6 +9,9 @@ class {{classname}} {
   public get fullPath(): string {
     return `${this.entityName}/${this.name}`
   }
+  public get prettyPath(): string {
+    return this.fullPath;
+  }
   
   public canEdit(user: User | null): boolean {
     return !!user && (user.isAdmin || this.createdBy===user.username);

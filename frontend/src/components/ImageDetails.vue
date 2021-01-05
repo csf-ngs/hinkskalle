@@ -132,11 +132,11 @@
             </template>
             <v-card>
               <v-card-title class="headline">You sure you won't miss it?</v-card-title>
-              <v-card-action>
+              <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn color="primary darken-1" text @click="localState.showDelete=false">Let's keep it for now.</v-btn>
                 <v-btn color="warning accent-1" text @click="deleteImage()">Get it out of my sight!</v-btn>
-              </v-card-action>
+              </v-card-actions>
             </v-card>
           </v-dialog>
         </v-col>

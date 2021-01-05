@@ -83,7 +83,6 @@ class Image(db.Model):
     ret = []
     for key in self.sigdata.get('SignerKeys'):
       ret.append(key['Signer']['Fingerprint'])
-    current_app.logger.debug(ret)
     return set(ret)
 
   def tags(self):

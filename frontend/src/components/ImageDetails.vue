@@ -41,6 +41,18 @@
           <v-badge :content="image.downloadCount || '0'" overlap color="blue-grey lighten-1">
             <v-icon large>mdi-download</v-icon>
           </v-badge>
+          <v-tooltip bottom v-if="image.signed">
+            <template v-slot:activator="{ on, attrs }">
+              <v-icon v-bind="attrs" v-on="on" large class="ml-2">mdi-seal</v-icon>
+            </template>
+            <span>Signed</span>
+          </v-tooltip>
+          <v-tooltip bottom v-if="image.signatureVerified">
+            <template v-slot:activator="{ on, attrs }">
+              <v-icon v-bind="attrs" v-on="on" large>mdi-check-decagram</v-icon>
+            </template>
+            <span>Valid Signature</span>
+          </v-tooltip>
         </v-col>
       </v-row>
     </v-expansion-panel-header> 

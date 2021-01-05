@@ -88,6 +88,35 @@ class TestSearch(RouteBase):
       self.assertEqual(ret.status_code, 200)
       json = ret.get_json().get('data')
       self.assertDictEqual(json, expected)
+
+  def test_search_hash(self):
+    image1, container, _, _ = _create_image()
+    container.name='anKYLOsaurus'
+    image1.hash='sha256.tintifaxkasperlkrokodil'
+    db.session.commit()
+
+    expected = {
+      'container': [],
+      'image': [ImageSchema().dump(image1).data],
+      'entity': [],
+      'collection': [],
+    }
+    for search in ['tinti', 'tiNTIfax']:
+      with self.fake_admin_auth():
+        ret = self.client.get(f"/v1/search?value={search}")
+      self.assertEqual(ret.status_code, 200)
+      json = ret.get_json().get('data')
+      self.assertDictEqual(json, expected)
+    
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/search?value=krokodil")
+    self.assertEqual(ret.status_code, 200)
+    self.assertDictEqual(ret.get_json().get('data'), {
+      'container': [],
+      'image': [],
+      'entity': [],
+      'collection': [],
+    })
   
   def test_all(self):
     image, container, collection, entity = _create_image()

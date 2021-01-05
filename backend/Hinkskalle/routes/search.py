@@ -37,12 +37,15 @@ def search():
     'entities': [],
     'collections': [],
     'containers': [],
+    'images': [],
   }
 
   if args.get('value', None):
     search['entities'].append(Entity.name.ilike(f"%{args['value']}%"))
     search['collections'].append(Collection.name.ilike(f"%{args['value']}%"))
     search['containers'].append(Container.name.ilike(f"%{args['value']}%"))
+    search['images'].append(Image.hash.ilike(f"%.{args['value']}%"))
+
   if args.get('description', None):
     search['entities'].append(Entity.description.ilike(f"%{args['description']}%"))
     search['collections'].append(Collection.description.ilike(f"%{args['description']}%"))
@@ -51,7 +54,7 @@ def search():
   entities = Entity.query.filter(*search['entities'])
   collections = Collection.query.filter(*search['collections'])
   containers = Container.query.filter(*search['containers'])
-  images = Image.query.join(Image.container_ref, aliased=True).filter(*search['containers'])
+  images = Image.query.filter(*search['images']).union(Image.query.join(Image.container_ref, aliased=True).filter(*search['containers']))
 
   return {
     'data': {

@@ -1,9 +1,14 @@
 from Hinkskalle import db
+from flask import current_app
 from marshmallow import Schema, fields
 from datetime import datetime
+import json
+import re
 
 import os.path
+import subprocess
 from Hinkskalle.models import Tag
+
 
 class ImageSchema(Schema):
   id = fields.String(required=True, dump_only=True)
@@ -95,6 +100,49 @@ class Image(db.Model):
     return os.path.join(self.entityName(), self.collectionName(), f"{self.containerName}_{tag}.sif")
   def make_filename(self):
     return f"{self.hash}.sif"
+  
+  def _check_file(self):
+    if not self.uploaded or not self.location:
+      raise Exception("Image is not uploaded yet")
+    if not os.path.exists(self.location):
+      raise Exception(f"Image file at {self.location} does not exist")
+    
+  
+  # currently using siftool to extract definition file only
+  # "singularity inspect" needs to actually spin up the container
+  # and works only when we're launched in privileged mode (or bareback)
+  # tags are stored in the actual container file system (squashfs) -
+  # metadata partitions are a thing of the future!
+  def inspect(self):
+    self._check_file()
+    inspect = subprocess.run(["singularity", "sif", "dump", "1", self.location], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if not inspect.returncode == 0:
+      raise Exception(f"{inspect.args} failed: {inspect.stderr}")
+
+    return inspect.stdout
+  
+  def check_signature(self):
+    self._check_file()
+    proc = subprocess.run(["singularity", "verify", "--url", current_app.config.get('KEYSERVER_URL'), "--json", self.location], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sigdata = json.loads(proc.stdout)
+    if not proc.returncode == 0:
+      stderr = proc.stderr.decode('utf-8')
+      sigdata["Passed"]=False
+      ## could be unsigned/unknown signer
+      if re.search(r"signature not found", stderr):
+        sigdata["Reason"]='Unsigned'
+      elif re.search(r"signature made by unknown entity", stderr):
+        sigdata["Reason"]='Unknown'
+      else:
+        raise Exception(stderr)
+    else:
+      sigdata["Passed"]=True
+    return sigdata
+    
+
+
+
+
   
   def check_access(self, user):
     if not self.container_ref.private:

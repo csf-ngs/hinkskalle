@@ -8,7 +8,6 @@ from sqlalchemy.exc import IntegrityError
 
 import os
 import os.path
-import subprocess
 import json
 import datetime
 
@@ -114,6 +113,7 @@ def list_images(entity_id, collection_id, container_id):
 )
 def get_image(entity_id, collection_id, tagged_container_id):
   image = _get_image(entity_id, collection_id, tagged_container_id)
+  current_app.logger.debug("get image")
   if not image.check_access(g.authenticated_user):
       raise errors.Forbidden('Private image, access denied.')
 
@@ -261,18 +261,4 @@ def delete_image(entity_id, collection_id, tagged_container_id):
 )
 def inspect_image(entity_id, collection_id, tagged_container_id):
   image = _get_image(entity_id, collection_id, tagged_container_id)
-  if not image.uploaded or not image.location:
-    raise errors.PreconditionFailed(f"Image is not uploaded yet.")
-  if not os.path.exists(image.location):
-    raise errors.InternalError(f"Image file at {image.location} does not exist")
-
-  # currently using siftool to extract definition file only
-  # "singularity inspect" needs to actually spin up the container
-  # and works only when we're launched in privileged mode (or bareback)
-  # tags are stored in the actual container file system (squashfs) -
-  # metadata partitions are a thing of the future!
-  inspect = subprocess.run(["singularity", "sif", "dump", "1", image.location], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  if not inspect.returncode == 0:
-    raise errors.InternalError(f"{inspect.args} failed: {inspect.stderr}")
-  
-  return { 'data': { 'attributes': { 'deffile': inspect.stdout }} }
+  return { 'data': { 'attributes': { 'deffile': image.inspect() }} }

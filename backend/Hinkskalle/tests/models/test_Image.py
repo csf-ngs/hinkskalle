@@ -1,5 +1,8 @@
 import unittest
 from datetime import datetime, timedelta
+import os.path
+from shutil import which, rmtree
+import subprocess
 
 from Hinkskalle.models import Entity, Collection, Container, Image, ImageSchema, Tag
 
@@ -162,3 +165,75 @@ class TestImage(ModelBase):
     self.assertDictEqual(serialized.errors, {})
     self.assertListEqual(serialized.data['tags'], ['v1', 'v2'])
     Tag.__table__.delete()
+  
+  def _get_test_path(self, name):
+    return os.path.join(os.path.dirname(__file__), "../share/", name)
+
+  @unittest.skipIf(which("singularity") is None, "singularity not installed")
+  def test_inspect(self):
+    image = _create_image()[0]
+    image.location = self._get_test_path("busybox.sif")
+    image.uploaded = True
+    db.session.commit()
+
+    deffile = image.inspect()
+    self.assertEqual(deffile, b'bootstrap: docker\nfrom: busybox\n\n')
+
+  def test_check_file_file_not_found(self):
+    image = _create_image()[0]
+    image.location = self._get_test_path("migibtsnet.sif")
+    image.uploaded = True
+    db.session.commit()
+
+    with self.assertRaisesRegex(Exception, r"Image file.*does not exist"):
+      image._check_file()
+
+  def test_check_file_not_uploaded(self):
+    image = _create_image()[0]
+    image.uploaded = False
+    db.session.commit()
+
+    with self.assertRaisesRegex(Exception, r"Image is not uploaded yet"):
+      image._check_file()
+
+  @unittest.skipIf(which("singularity") is None, "singularity not installed")
+  def test_signed(self):
+    self.app.config['KEYSERVER_URL']='http://nonexistent/'
+    image = _create_image()[0]
+    image.location = self._get_test_path("busybox_signed.sif")
+    image.uploaded = True
+    db.session.commit()
+
+    sigdata = image.check_signature()
+    self.assertEqual(sigdata['Signatures'], 1)
+    self.assertIsNone(sigdata['SignerKeys'])
+    self.assertEqual(sigdata['Reason'], 'Unknown')
+
+  @unittest.skipIf(which("singularity") is None, "singularity not installed")
+  def test_signature_unsigned(self):
+    self.app.config['KEYSERVER_URL']='http://nonexistent/'
+    image = _create_image()[0]
+    image.location = self._get_test_path("busybox.sif")
+    image.uploaded = True
+    db.session.commit()
+
+    sigdata = image.check_signature()
+    self.assertEqual(sigdata['Signatures'], 0)
+    self.assertIsNone(sigdata['SignerKeys'])
+    self.assertEqual(sigdata['Reason'], 'Unsigned')
+
+  @unittest.skipIf(which("singularity") is None, "singularity not installed")
+  def test_signed_pubkey(self):
+    self.app.config['KEYSERVER_URL']='http://nonexistent/'
+    imp = subprocess.run(["singularity", "keys", "import", self._get_test_path("testhase-pub.asc")], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if imp.returncode != 0:
+      raise Exception(f"Test key import error: {imp.stderr}")
+    image = _create_image()[0]
+    image.location = self._get_test_path("busybox_signed.sif")
+    image.uploaded = True
+    db.session.commit()
+
+    sigdata = image.check_signature()
+    self.assertEqual(sigdata['Signatures'], 1)
+    self.assertDictContainsSubset({ 'Partition': 'Def.FILE', 'DataCheck': True }, sigdata['SignerKeys'][0]['Signer'])
+    rmtree(os.path.expanduser("~/.singularity/sypgp"))

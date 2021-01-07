@@ -173,7 +173,7 @@
 import { User } from '@/store/models';
 import Vue from 'vue';
 import { DataTableHeader } from 'vuetify';
-import { cloneDeep as _cloneDeep } from 'lodash';
+import { cloneDeep as _cloneDeep, find as _find } from 'lodash';
 
 interface State {
   search: string;
@@ -199,7 +199,7 @@ function defaultItem(): User {
 export default Vue.extend({
   name: 'Users',
   mounted() {
-    this.loadUsers();
+    this.loadUsers().then(() => this.openEdit(this.$route.query.id));
   },
   data: (): { headers: DataTableHeader[]; localState: State } => ({
     headers: [
@@ -230,7 +230,7 @@ export default Vue.extend({
       return this.$store.getters['users/list'];
     },
     loading() {
-      return this.$store.getters['tokens/status']==='loading';
+      return this.$store.getters['users/status']==='loading';
     },
     editTitle(): string {
       return this.localState.editItem.id ? 'Edit User' : 'Create User';
@@ -245,22 +245,47 @@ export default Vue.extend({
   watch: {
     'localState.showEdit': function showEdit(val) {
       if (!val) {
-        this.closeEdit();
+        if (this.$route.query.id) {
+          this.$router.push({ query: { id: undefined }});
+        }
+        this._closeEdit();
       }
     },
     'localState.showDelete': function showDelete(val) {
       if (!val) {
         this.closeDelete();
+        this.$nextTick(() => {
+          this.localState.editItem = defaultItem();
+        });
       }
+    },
+    '$route.query.id': function openEditUser(id) {
+      this.openEdit(id);
     },
   },
   methods: {
-    loadUsers() {
-      this.$store.dispatch('users/list')
+    loadUsers(): Promise<User[]> {
+      return this.$store.dispatch('users/list')
         .catch(err => this.$store.commit('snackbar/showError', err));
+    },
+    openEdit(id: string | (string | null)[]) {
+      if (id) {
+        const user = _find(this.users, u => u.id === id || u.username === id);
+        if (user) {
+          this._editUser(user);
+        }
+        else {
+          console.log(`${id} not found`);
+        }
+      }
+      else {
+        this.localState.showEdit=false;
+      }
     },
     closeEdit() {
       this.localState.showEdit = false;
+    },
+    _closeEdit() {
       this.$nextTick(() => {
         this.localState.editItem = defaultItem();
         this.localState.password1 = '';
@@ -268,6 +293,9 @@ export default Vue.extend({
       });
     },
     editUser(user: User) {
+      this.$router.push({ query: { id: user.id }});
+    },
+    _editUser(user: User) {
       this.localState.editItem = _cloneDeep(user);
       this.localState.showEdit = true;
     },
@@ -277,9 +305,6 @@ export default Vue.extend({
     },
     closeDelete() {
       this.localState.showDelete = false;
-      this.$nextTick(() => {
-        this.localState.editItem = defaultItem();
-      });
     },
     save() {
       const action = this.localState.editItem.id ?

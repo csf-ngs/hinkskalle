@@ -154,9 +154,11 @@
                       Success ({{ldapSyncResults.synced.length}})
                     </v-expansion-panel-header>
                     <v-expansion-panel-content>
-                      <v-list-item v-for="username in ldapSyncResults.synced" :key="username">
-                        {{username}}
-                      </v-list-item>
+                      <v-list dense>
+                        <v-list-item v-for="username in ldapSyncResults.synced" :key="username">
+                          <router-link :to="{ name: 'Users', query: { id: username }}">{{username}}</router-link>
+                        </v-list-item>
+                      </v-list>
                     </v-expansion-panel-content>
                   </v-expansion-panel>
                   <v-expansion-panel :disabled="ldapSyncResults.conflict.length==0">
@@ -164,9 +166,11 @@
                       Conflict ({{ldapSyncResults.conflict.length}})
                     </v-expansion-panel-header>
                     <v-expansion-panel-content>
-                      <v-list-item v-for="username in ldapSyncResults.conflict" :key="username">
-                        {{username}}
-                      </v-list-item>
+                      <v-list dense>
+                        <v-list-item v-for="username in ldapSyncResults.conflict" :key="username">
+                          <router-link :to="{ name: 'Users', query: { id: username }}">{{username}}</router-link>
+                        </v-list-item>
+                      </v-list>
                     </v-expansion-panel-content>
                   </v-expansion-panel>
                   <v-expansion-panel :disabled="ldapSyncResults.failed.length==0">
@@ -174,9 +178,11 @@
                       Failed ({{ldapSyncResults.failed.length}})
                     </v-expansion-panel-header>
                     <v-expansion-panel-content>
-                      <v-list-item v-for="username in ldapSyncResults.failed" :key="username">
-                        {{username}}
-                      </v-list-item>
+                      <v-list dense>
+                        <v-list-item v-for="username in ldapSyncResults.failed" :key="username">
+                          <router-link :to="{ name: 'Users', query: { id: username }}">{{username}}</router-link>
+                        </v-list-item>
+                      </v-list>
                     </v-expansion-panel-content>
                   </v-expansion-panel>
                 </v-expansion-panels>

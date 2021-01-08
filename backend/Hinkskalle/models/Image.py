@@ -1,7 +1,7 @@
 from Hinkskalle import db
 from flask import current_app
 from marshmallow import Schema, fields
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import re
 import uuid
@@ -46,6 +46,8 @@ class ImageSchema(Schema):
 
 def generate_uuid():
   return str(uuid.uuid4())
+def upload_expiration():
+  return datetime.now() + timedelta(minutes=5)
 
 class UploadStates(enum.Enum):
   initialized = 'initialized'
@@ -60,7 +62,7 @@ class UploadTypes(enum.Enum):
 
 class ImageUploadUrl(db.Model):
   id = db.Column(db.String(), primary_key=True, default=generate_uuid, unique=True)
-  expiresAt = db.Column(db.DateTime)
+  expiresAt = db.Column(db.DateTime, default=upload_expiration)
   path = db.Column(db.String(), nullable=False)
   size = db.Column(db.Integer)
   md5sum = db.Column(db.String())
@@ -72,7 +74,7 @@ class ImageUploadUrl(db.Model):
   owner = db.relationship('User')
 
   image_id = db.Column(db.Integer, db.ForeignKey('image.id'), nullable=False)
-  image_ref = db.relationship('Image')
+  image_ref = db.relationship('Image', back_populates='uploads_ref')
 
 
 class Image(db.Model):
@@ -104,6 +106,7 @@ class Image(db.Model):
 
   container_ref = db.relationship('Container', back_populates='images_ref')
   tags_ref = db.relationship('Tag', back_populates='image_ref', lazy='dynamic', cascade="all, delete-orphan")
+  uploads_ref = db.relationship('ImageUploadUrl', back_populates='image_ref', lazy='dynamic', cascade="all, delete-orphan")
 
   __table_args__ = (db.UniqueConstraint('hash', 'container_id', name='hash_container_id_idx'),)
 

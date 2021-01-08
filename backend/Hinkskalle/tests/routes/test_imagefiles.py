@@ -391,7 +391,7 @@ class TestImages(RouteBase):
     upload = ImageUploadUrl(
       image_id=image.id,
       path=temp_path,
-      sha256sum=digest,
+      sha256sum=digest.replace("sha256.", ""),
       size=len(img_data),
       state=UploadStates.uploading,
     )
@@ -409,7 +409,7 @@ class TestImages(RouteBase):
     upload = ImageUploadUrl(
       image_id=image.id,
       path=temp_path,
-      sha256sum=digest,
+      sha256sum=digest.replace("sha256.", ""),
       size=len(img_data)+2,
       state=UploadStates.initialized,
     )
@@ -427,7 +427,7 @@ class TestImages(RouteBase):
     upload = ImageUploadUrl(
       image_id=image.id,
       path=temp_path,
-      sha256sum=digest+'oink',
+      sha256sum=digest.replace("sha256.", "")+'oink',
       size=len(img_data),
       state=UploadStates.initialized,
     )
@@ -436,10 +436,85 @@ class TestImages(RouteBase):
 
     ret = self.client.put(f"/v2/imagefile/_upload/"+upload.id, data=img_data)
     self.assertEqual(ret.status_code, 422)
+
+  def test_push_v2_single_do_expires_check(self):
+    image = _create_image()[0]
+    img_data, digest = _prepare_img_data()
+
+    _, temp_path = tempfile.mkstemp()
+    upload = ImageUploadUrl(
+      image_id=image.id,
+      path=temp_path,
+      sha256sum=digest.replace("sha256.", ""),
+      size=len(img_data),
+      state=UploadStates.initialized,
+      expiresAt=datetime.datetime.now() - datetime.timedelta(hours=1)
+    )
+    db.session.add(upload)
+    db.session.commit()
+
+    ret = self.client.put(f"/v2/imagefile/_upload/"+upload.id, data=img_data)
+    self.assertEqual(ret.status_code, 406)
   
   def test_push_v2_complete(self):
+    self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
     image = _create_image()[0]
+    image_id = image.id
+    img_data, digest = _prepare_img_data()
+    _, temp_path = tempfile.mkstemp()
+    with open(temp_path, "wb") as temp_fh:
+      temp_fh.write(img_data)
 
+    upload = ImageUploadUrl(
+      image_id = image.id,
+      path = temp_path,
+      sha256sum=digest.replace("sha256.", ""),
+      size=len(img_data),
+      state=UploadStates.uploaded,
+    )
+    db.session.add(upload)
+    db.session.commit()
+    upload_id = upload.id
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_complete", json={})
+    self.assertEqual(ret.status_code, 200)
+
+    read_image = Image.query.get(image_id)
+    self.assertTrue(read_image.uploaded)
+    self.assertTrue(os.path.exists(read_image.location))
+    self.assertEqual(read_image.size, os.path.getsize(read_image.location))
+
+    with open(read_image.location, "rb") as read_fh:
+      read_data = read_fh.read()
+      self.assertEqual(read_data, img_data)
+    
+    read_upload = ImageUploadUrl.query.get(upload_id)
+    self.assertEqual(read_upload.state, UploadStates.completed)
+
+  def test_push_v2_complete_upload_state(self):
+    image = _create_image()[0]
+    upload = ImageUploadUrl(
+      image_id = image.id,
+      path = '/some/where',
+      state=UploadStates.uploading,
+    )
+    db.session.add(upload)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_complete", json={})
+    self.assertEqual(ret.status_code, 404)
+
+  def test_push_v2_complete_no_upload(self):
+    image = _create_image()[0]
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_complete", json={})
+    self.assertEqual(ret.status_code, 404)
+  
+  def test_push_v2_complete_noauth(self):
+    ret = self.client.put(f"/v2/imagefile/whatever/_complete", json={})
+    self.assertEqual(ret.status_code, 401)
 
 
   def test_push_v2_single_noauth(self):
@@ -479,3 +554,29 @@ class TestImages(RouteBase):
     with self.fake_auth():
       ret = self.client.post(f"/v1/imagefile/{image.id}", json=img_data)
     self.assertEqual(ret.status_code, 403)
+
+  def test_push_v2_multi_init(self):
+    image = _create_image()[0]
+    img_data = {
+      'filesize': 128*1024*1024+1,
+    }
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/imagefile/{image.id}/_multipart", json=img_data)
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertIn('uploadID', json)
+    self.assertEqual(json['partSize'], self.app.config.get('MULTIPART_UPLOAD_CHUNK'))
+    self.assertEqual(json['totalParts'], 3)
+    self.assertDictContainsSubset(json['options'], {})
+
+    upload_id = json['uploadID']
+
+    db_upload = ImageUploadUrl.query.filter(ImageUploadUrl.id==upload_id).first()
+    self.assertIsNotNone(db_upload)
+    self.assertEqual(db_upload.state, UploadStates.initialized)
+    self.assertEqual(db_upload.type, UploadTypes.multipart)
+    self.assertEqual(db_upload.size, img_data['filesize'])
+    self.assertIsNone(db_upload.sha256sum)
+    self.assertTrue(abs(db_upload.expiresAt - (datetime.datetime.now()+datetime.timedelta(minutes=5))) < datetime.timedelta(minutes=1))
+    self.assertTrue(os.path.isdir(db_upload.path))

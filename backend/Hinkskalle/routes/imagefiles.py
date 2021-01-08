@@ -12,22 +12,38 @@ import os.path
 import hashlib
 import tempfile
 import shutil
+import math
 from datetime import datetime, timedelta
 
 class ImageFilePostSchema(RequestSchema):
   filesize = fields.Integer()
   sha256sum = fields.String()
-  md5sum = fields.String()
+  md5sum = fields.String(required=False)
+
+class MultiImageFilePostSchema(RequestSchema):
+  filesize = fields.Integer()
 
 class UploadImageSchema(Schema):
   uploadURL = fields.String()
 
+class MultiUploadImageSchema(Schema):
+  uploadID = fields.String()
+  partSize = fields.Integer()
+  totalParts = fields.Integer()
+  options = fields.Dict()
+
 class ImageFilePostResponseSchema(ResponseSchema):
   data = fields.Nested(UploadImageSchema)
+
+class MultiImageFilePostResponseSchema(ResponseSchema):
+  data = fields.Nested(MultiUploadImageSchema)
 
 class QuotaSchema(Schema):
   quotaTotal = fields.Integer()
   quotaUsage = fields.Integer()
+
+class UploadImageCompleteRequest(RequestSchema):
+  pass
 
 class UploadImageCompleteSchema(Schema):
   quota = fields.Nested(QuotaSchema)
@@ -112,7 +128,6 @@ def push_image_v2_init(image_id):
     path=tmpf,
     state=UploadStates.initialized,
     owner=g.authenticated_user,
-    expiresAt=datetime.now() + timedelta(minutes=5),
     type=UploadTypes.single,
   )
   db.session.add(upload)
@@ -129,6 +144,44 @@ def push_image_v2_init(image_id):
   }
 
 @registry.handles(
+  rule='/v2/imagefile/<string:image_id>/_multipart',
+  method='POST',
+  authenticators=authenticator.with_scope(Scopes.user),
+  request_body_schema=MultiImageFilePostSchema(),
+  response_body_schema=MultiImageFilePostResponseSchema(),
+)
+def push_image_v2_multi_init(image_id):
+  image = _get_image_id(image_id)
+  body = rebar.validated_body
+
+  upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
+  os.makedirs(upload_tmp, exist_ok=True)
+  tmpd = tempfile.mkdtemp(dir=upload_tmp)
+
+  upload = ImageUploadUrl(
+    image_id=image.id,
+    size=body.get('filesize'),
+    path=tmpd,
+    state=UploadStates.initialized,
+    owner=g.authenticated_user,
+    type=UploadTypes.multipart,
+  )
+  db.session.add(upload)
+  db.session.commit()
+
+  part_size = current_app.config.get('MULTIPART_UPLOAD_CHUNK')
+  part_count = math.ceil(body.get('filesize')/part_size)
+
+  return {
+    'data': {
+      'uploadID': upload.id,
+      'partSize': part_size,
+      'totalParts': part_count,
+      'options': {},
+    }
+  }
+
+@registry.handles(
   rule='/v2/imagefile/_upload/<string:upload_id>',
   method='PUT'
 )
@@ -140,10 +193,12 @@ def push_image_v2_upload(upload_id):
   
   if upload.state != UploadStates.initialized:
     raise errors.NotAcceptable(f"Upload {upload.id} has invalid state")
+  if upload.expiresAt < datetime.now():
+    raise errors.NotAcceptable(f"Upload already expired. Please to be faster.")
   
-  upload.state=UploadStates.uploaded
+  upload.state=UploadStates.uploading
   db.session.commit()
-  tmpf, read = _receive_upload(open(upload.path, "wb"), f"sha256.{upload.sha256sum}")
+  _, read = _receive_upload(open(upload.path, "wb"), f"sha256.{upload.sha256sum}")
 
   if read != upload.size:
     current_app.logger.error(f"Upload size mismatch {read}!={upload.size}")
@@ -153,6 +208,71 @@ def push_image_v2_upload(upload_id):
   db.session.commit()
   
   return 'Danke!'
+
+@registry.handles(
+  rule='/v2/imagefile/<string:image_id>/_complete',
+  method='PUT',
+  request_body_schema=UploadImageCompleteRequest(),
+  response_body_schema=ImageFileCompleteResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user),
+)
+def push_image_v2_complete(image_id):
+  image = _get_image_id(image_id)
+  current_app.logger.debug(request.data)
+  upload = image.uploads_ref.filter(ImageUploadUrl.state == UploadStates.uploaded).order_by(ImageUploadUrl.createdAt.desc()).first()
+  if not upload:
+    raise errors.NotFound(f"No valid upload for {image_id} found")
+  _move_image(upload.path, image)
+  upload.state = UploadStates.completed
+  db.session.commit()
+  return {
+    'data': {
+      'quota': {
+        # XXX
+        'quotaTotal': 0,
+        'quotaUsage': 0,
+      },
+      'containerUrl': f"entities/{image.container_ref.entityName()}/collections/{image.container_ref.collectionName()}/containers/{image.container_ref.name}"
+    }
+  }
+
+@registry.handles(
+  rule='/v1/imagefile/<string:image_id>',
+  method='POST',
+  authenticators=authenticator.with_scope(Scopes.user),
+)
+def push_image(image_id):
+  image = _get_image_id(image_id)
+
+  upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
+  os.makedirs(upload_tmp, exist_ok=True)
+
+  tmpf, _ = _receive_upload(tempfile.NamedTemporaryFile(delete=False, dir=upload_tmp), image.hash)
+  _move_image(tmpf.name, image)
+
+  return 'Danke!'
+
+def _move_image(tmpf, image):
+  outfn = safe_join(current_app.config.get('IMAGE_PATH'), '_imgs', image.make_filename())
+  current_app.logger.debug(f"moving image to {outfn}")
+  os.makedirs(os.path.dirname(outfn), exist_ok=True)
+  shutil.move(tmpf, outfn)
+  image.location=os.path.abspath(outfn)
+  image.size=os.path.getsize(image.location)
+  image.uploaded=True
+  db.session.commit()
+
+  try:
+    current_app.logger.debug("checking signature(s)...")
+    sigdata = image.check_signature()
+    if image.signed:
+      current_app.logger.debug("... signed")
+    db.session.commit()
+  except Exception as err:
+    current_app.logger.warning(f"Image signature check failed: {err}")
+   
+  image.container_ref.tag_image('latest', image.id)
+  return image
 
 
 def _receive_upload(tmpf, checksum):
@@ -176,38 +296,3 @@ def _receive_upload(tmpf, checksum):
   tmpf.close()
   return tmpf, read
 
-
-@registry.handles(
-  rule='/v1/imagefile/<string:image_id>',
-  method='POST',
-  authenticators=authenticator.with_scope(Scopes.user),
-)
-def push_image(image_id):
-  image = _get_image_id(image_id)
-
-  outfn = safe_join(current_app.config.get('IMAGE_PATH'), '_imgs', image.make_filename())
-  upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
-  os.makedirs(upload_tmp, exist_ok=True)
-
-  tmpf, read = _receive_upload(tempfile.NamedTemporaryFile(delete=False, dir=upload_tmp), image.hash)
-
-  current_app.logger.debug(f"moving image to {outfn}")
-  os.makedirs(os.path.dirname(outfn), exist_ok=True)
-  shutil.move(tmpf.name, outfn)
-  image.location=os.path.abspath(outfn)
-  image.size=read
-  image.uploaded=True
-  db.session.commit()
-
-  try:
-    current_app.logger.debug("checking signature(s)...")
-    sigdata = image.check_signature()
-    if image.signed:
-      current_app.logger.debug("... signed")
-    db.session.commit()
-  except Exception as err:
-    current_app.logger.warning(f"Image signature check failed: {err}")
-   
-  image.container_ref.tag_image('latest', image.id)
-
-  return 'Danke!'

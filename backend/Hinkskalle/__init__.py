@@ -56,6 +56,8 @@ def create_app():
   if 'RQ_ASYNC' in os.environ:
     app.config['RQ_ASYNC']=os.environ.get('RQ_ASYNC')=='1'
 
+  app.config['MULTIPART_UPLOAD_CHUNK'] = app.config.get('MULTIPART_UPLOAD_CHUNK', 64*1024*1024)
+
   ldap_conf = {}
   for key in ['HOST', 'PORT', 'BIND_DN', 'BIND_PASSWORD', 'BASE_DN']:
     if 'HINKSKALLE_LDAP_' + key in os.environ:

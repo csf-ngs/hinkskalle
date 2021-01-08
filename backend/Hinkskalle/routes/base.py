@@ -31,7 +31,7 @@ def version():
   return {
     'data': {
       'version': 'v1.0.0',
-      'apiVersion': '2.0.0-alpha.2',
+      'apiVersion': '2.0.0-alpha.1',
     }
   }
 
@@ -90,7 +90,7 @@ def latest_container():
 @current_app.before_request
 def before_request_func():
   # fake content type (singularity does not set it)
-  if (request.path.startswith('/v1') or request.path.startswith('/v2')) and request.method=='POST':
+  if (request.path.startswith('/v1') or request.path.startswith('/v2')) and (request.method=='POST' or request.method=='PUT'):
     request.headers.environ.update(CONTENT_TYPE='application/json')
   
   # redirect double slashes to /default/ (singularity client sends meaningful //)
@@ -118,6 +118,11 @@ def internal_error(error):
 @current_app.errorhandler(403)
 def forbidden_error(error):
   return make_response(jsonify(status="error", errors=create_error_object(403, str(error))), 403)
+
+@current_app.errorhandler(400)
+def bad_request_error(error):
+  current_app.logger.error(error)
+  return make_response(jsonify(status="error", errors=create_error_object(400, str(error))), 400)
 
 @current_app.after_request
 def add_header(r):

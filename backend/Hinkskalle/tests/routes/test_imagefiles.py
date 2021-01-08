@@ -3,9 +3,11 @@ import os.path
 import json
 import tempfile
 import hashlib
+from urllib.parse import urlparse
+import datetime
 from Hinkskalle.tests.route_base import RouteBase
 
-from Hinkskalle.models import Image, Tag, Container
+from Hinkskalle.models import Image, Tag, Container, ImageUploadUrl, UploadStates, UploadTypes
 from Hinkskalle.tests.models.test_Image import _create_image
 from Hinkskalle import db
 
@@ -327,4 +329,153 @@ class TestImages(RouteBase):
 
     with self.fake_auth():
       ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
+    self.assertEqual(ret.status_code, 403)
+
+  def test_push_v2_single(self):
+    image, _, _, _ = _create_image()
+    img_data = {
+      'filesize': 1,
+      'sha256sum': 'something',
+      'md5sum': 'also something'
+    }
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/imagefile/{image.id}", json=img_data)
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertIn('uploadURL', json)
+    urlparts = urlparse(json['uploadURL'])
+    upload_id = urlparts.path.split('/').pop()
+
+    db_upload = ImageUploadUrl.query.filter(ImageUploadUrl.id==upload_id).first()
+    self.assertIsNotNone(db_upload)
+    self.assertEqual(db_upload.state, UploadStates.initialized)
+    self.assertEqual(db_upload.type, UploadTypes.single)
+    self.assertEqual(db_upload.size, img_data['filesize'])
+    self.assertEqual(db_upload.sha256sum, img_data['sha256sum'])
+    self.assertEqual(db_upload.md5sum, img_data['md5sum'])
+    self.assertTrue(abs(db_upload.expiresAt - (datetime.datetime.now()+datetime.timedelta(minutes=5))) < datetime.timedelta(minutes=1))
+    self.assertTrue(os.path.exists(db_upload.path))
+  
+  def test_push_v2_single_do(self):
+    image = _create_image()[0]
+    img_data, digest = _prepare_img_data()
+
+    _, temp_path = tempfile.mkstemp()
+    upload = ImageUploadUrl(
+      image_id=image.id,
+      path=temp_path,
+      sha256sum=digest.replace("sha256.", ""),
+      size=len(img_data),
+      state=UploadStates.initialized,
+    )
+    db.session.add(upload)
+    db.session.commit()
+    upload_id = upload.id
+
+    ret = self.client.put(f"/v2/imagefile/_upload/"+upload_id, data=img_data)
+    self.assertEqual(ret.status_code, 200)
+
+    read_upload = ImageUploadUrl.query.get(upload_id)
+    self.assertEqual(read_upload.state, UploadStates.uploaded)
+
+    with open(temp_path, "rb") as infh:
+      content = infh.read()
+      self.assertEqual(content, img_data)
+
+  def test_push_v2_single_do_state_check(self):
+    image = _create_image()[0]
+    img_data, digest = _prepare_img_data()
+
+    temp_path = tempfile.mkdtemp()
+    upload = ImageUploadUrl(
+      image_id=image.id,
+      path=temp_path,
+      sha256sum=digest,
+      size=len(img_data),
+      state=UploadStates.uploading,
+    )
+    db.session.add(upload)
+    db.session.commit()
+
+    ret = self.client.put(f"/v2/imagefile/_upload/"+upload.id, data=img_data)
+    self.assertEqual(ret.status_code, 406)
+
+  def test_push_v2_single_do_size_check(self):
+    image = _create_image()[0]
+    img_data, digest = _prepare_img_data()
+
+    _, temp_path = tempfile.mkstemp()
+    upload = ImageUploadUrl(
+      image_id=image.id,
+      path=temp_path,
+      sha256sum=digest,
+      size=len(img_data)+2,
+      state=UploadStates.initialized,
+    )
+    db.session.add(upload)
+    db.session.commit()
+
+    ret = self.client.put(f"/v2/imagefile/_upload/"+upload.id, data=img_data)
+    self.assertEqual(ret.status_code, 422)
+
+  def test_push_v2_single_do_checksum_check(self):
+    image = _create_image()[0]
+    img_data, digest = _prepare_img_data()
+
+    _, temp_path = tempfile.mkstemp()
+    upload = ImageUploadUrl(
+      image_id=image.id,
+      path=temp_path,
+      sha256sum=digest+'oink',
+      size=len(img_data),
+      state=UploadStates.initialized,
+    )
+    db.session.add(upload)
+    db.session.commit()
+
+    ret = self.client.put(f"/v2/imagefile/_upload/"+upload.id, data=img_data)
+    self.assertEqual(ret.status_code, 422)
+  
+  def test_push_v2_complete(self):
+    image = _create_image()[0]
+
+
+
+  def test_push_v2_single_noauth(self):
+    ret = self.client.post("/v2/imagefile/whatever", json={'some': 'thing'})
+    self.assertEqual(ret.status_code, 401)
+
+  def test_push_v2_single_user(self):
+    image, container, coll, entity = _create_image()
+    entity.owner=self.user
+    coll.owner=self.user
+    container.owner=self.user
+    db.session.commit()
+
+    img_data = {
+      'filesize': 1,
+      'sha256sum': 'something',
+      'md5sum': 'also something'
+    }
+
+    with self.fake_auth():
+      ret = self.client.post(f"/v2/imagefile/{image.id}", json=img_data)
+    self.assertEqual(ret.status_code, 200)
+
+  def test_push_v2_single_user_other(self):
+    image, container, coll, entity = _create_image()
+    entity.owner=self.user
+    coll.owner=self.user
+    container.owner=self.other_user
+    db.session.commit()
+
+    img_data = {
+      'filesize': 1,
+      'sha256sum': 'something',
+      'md5sum': 'also something'
+    }
+
+    with self.fake_auth():
+      ret = self.client.post(f"/v1/imagefile/{image.id}", json=img_data)
     self.assertEqual(ret.status_code, 403)

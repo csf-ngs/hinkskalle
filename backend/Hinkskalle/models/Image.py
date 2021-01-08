@@ -4,6 +4,8 @@ from marshmallow import Schema, fields
 from datetime import datetime
 import json
 import re
+import uuid
+import enum
 
 import os.path
 import subprocess
@@ -41,6 +43,37 @@ class ImageSchema(Schema):
   entityName = fields.String(dump_only=True)
   tags = fields.List(fields.String(), dump_only=True)
   fingerprints = fields.List(fields.String(), dump_only=True)
+
+def generate_uuid():
+  return str(uuid.uuid4())
+
+class UploadStates(enum.Enum):
+  initialized = 'initialized'
+  uploading = 'uploading'
+  uploaded = 'uploaded'
+  failed = 'failed'
+  completed = 'completed'
+
+class UploadTypes(enum.Enum):
+  single = 'single'
+  multipart = 'multipart'
+
+class ImageUploadUrl(db.Model):
+  id = db.Column(db.String(), primary_key=True, default=generate_uuid, unique=True)
+  expiresAt = db.Column(db.DateTime)
+  path = db.Column(db.String(), nullable=False)
+  size = db.Column(db.Integer)
+  md5sum = db.Column(db.String())
+  sha256sum = db.Column(db.String())
+  state = db.Column(db.Enum(UploadStates))
+  type = db.Column(db.Enum(UploadTypes))
+  createdAt = db.Column(db.DateTime, default=datetime.now)
+  createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
+  owner = db.relationship('User')
+
+  image_id = db.Column(db.Integer, db.ForeignKey('image.id'), nullable=False)
+  image_ref = db.relationship('Image')
+
 
 class Image(db.Model):
   id = db.Column(db.Integer, primary_key=True)

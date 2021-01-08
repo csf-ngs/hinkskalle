@@ -13,3 +13,11 @@ from Hinkskalle.routes.users import *
 from Hinkskalle.routes.tokens import *
 
 from Hinkskalle.routes.adm import *
+
+from flask import request, current_app
+def _get_service_url():
+  service_url = request.url_root.rstrip('/')
+  if current_app.config.get('PREFERRED_URL_SCHEME', 'http') == 'https':
+    service_url = service_url.replace('http:', 'https:')
+  return service_url
+

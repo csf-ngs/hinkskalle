@@ -10,9 +10,12 @@ from sqlalchemy import desc
 
 from Hinkskalle.models import Tag, ContainerSchema
 
-class VersionResponseSchema(ResponseSchema):
+class VersionSchema(Schema):
   version = fields.String()
   apiVersion = fields.String()
+
+class VersionResponseSchema(ResponseSchema):
+  data = fields.Nested(VersionSchema())
 
 class ConfigResponseSchema(ResponseSchema):
   libraryAPI = fields.Dict()
@@ -26,8 +29,10 @@ class ConfigResponseSchema(ResponseSchema):
 )
 def version():
   return {
-    'version': '2.0.0',
-    'apiVersion': '2.0.0',
+    'data': {
+      'version': 'v1.0.0',
+      'apiVersion': '2.0.0-alpha.2',
+    }
   }
 
 @registry.handles(
@@ -36,9 +41,8 @@ def version():
   response_body_schema=ConfigResponseSchema()
 )
 def config():
-  service_url = request.url_root.rstrip('/')
-  if current_app.config.get('PREFERRED_URL_SCHEME', 'http') == 'https':
-    service_url = service_url.replace('http:', 'https:')
+  from Hinkskalle.routes import _get_service_url
+  service_url = _get_service_url()
   return {
     'libraryAPI': {
       'uri': service_url
@@ -86,7 +90,7 @@ def latest_container():
 @current_app.before_request
 def before_request_func():
   # fake content type (singularity does not set it)
-  if request.path.startswith('/v1') and request.method=='POST':
+  if (request.path.startswith('/v1') or request.path.startswith('/v2')) and request.method=='POST':
     request.headers.environ.update(CONTENT_TYPE='application/json')
   
   # redirect double slashes to /default/ (singularity client sends meaningful //)

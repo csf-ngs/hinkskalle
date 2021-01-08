@@ -9,7 +9,7 @@ class TestBase(RouteBase):
   def test_version(self):
     ret = self.client.get('/version')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json()
+    json = ret.get_json().get('data')
     self.assertIn("apiVersion", json)
     self.assertIn("version", json)
   

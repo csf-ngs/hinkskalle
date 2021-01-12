@@ -23,6 +23,12 @@ class ImageFilePostSchema(RequestSchema):
 class MultiImageFilePostSchema(RequestSchema):
   filesize = fields.Integer()
 
+class MultiImageFilePartSchema(RequestSchema):
+  partSize = fields.Integer()
+  uploadID = fields.String()
+  partNumber = fields.Integer()
+  sha256sum = fields.String()
+
 class UploadImageSchema(Schema):
   uploadURL = fields.String()
 
@@ -37,6 +43,12 @@ class ImageFilePostResponseSchema(ResponseSchema):
 
 class MultiImageFilePostResponseSchema(ResponseSchema):
   data = fields.Nested(MultiUploadImageSchema)
+
+class MultiUploadImagePartSchema(Schema):
+  presignedURL = fields.String()
+
+class MultiImageFilePartResponseSchema(ResponseSchema):
+  data = fields.Nested(MultiUploadImagePartSchema)
 
 class QuotaSchema(Schema):
   quotaTotal = fields.Integer()
@@ -158,19 +170,20 @@ def push_image_v2_multi_init(image_id):
   os.makedirs(upload_tmp, exist_ok=True)
   tmpd = tempfile.mkdtemp(dir=upload_tmp)
 
+  part_size = current_app.config.get('MULTIPART_UPLOAD_CHUNK')
+  part_count = math.ceil(body.get('filesize')/part_size)
+
   upload = ImageUploadUrl(
     image_id=image.id,
     size=body.get('filesize'),
     path=tmpd,
+    totalParts=part_count,
     state=UploadStates.initialized,
     owner=g.authenticated_user,
     type=UploadTypes.multipart,
   )
   db.session.add(upload)
   db.session.commit()
-
-  part_size = current_app.config.get('MULTIPART_UPLOAD_CHUNK')
-  part_count = math.ceil(body.get('filesize')/part_size)
 
   return {
     'data': {

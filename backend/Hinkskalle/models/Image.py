@@ -69,12 +69,24 @@ class ImageUploadUrl(db.Model):
   sha256sum = db.Column(db.String())
   state = db.Column(db.Enum(UploadStates))
   type = db.Column(db.Enum(UploadTypes))
+  totalParts = db.Column(db.Integer)
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   owner = db.relationship('User')
 
   image_id = db.Column(db.Integer, db.ForeignKey('image.id'), nullable=False)
   image_ref = db.relationship('Image', back_populates='uploads_ref')
+
+  parts_ref = db.relationship('ImageUploadPartUrl', back_populates='upload_ref', lazy='dynamic', cascade="all, delete-orphan")
+
+class ImageUploadPartUrl(db.Model):
+  id = db.Column(db.String(), primary_key=True, default=generate_uuid, unique=True)
+  path = db.Column(db.String(), nullable=False)
+  size = db.Column(db.Integer)
+  partNumber = db.Column(db.Integer)
+  sha256sum = db.Column(db.String)
+  upload_id = db.Column(db.String, db.ForeignKey('image_upload_url.id'), nullable=False)
+  upload_ref = db.relationship('ImageUploadUrl', back_populates='parts_ref')
 
 
 class Image(db.Model):

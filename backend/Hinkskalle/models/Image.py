@@ -59,6 +59,7 @@ class UploadStates(enum.Enum):
 class UploadTypes(enum.Enum):
   single = 'single'
   multipart = 'multipart'
+  multipart_chunk = 'multipart_chunk'
 
 class ImageUploadUrl(db.Model):
   id = db.Column(db.String(), primary_key=True, default=generate_uuid, unique=True)
@@ -69,25 +70,27 @@ class ImageUploadUrl(db.Model):
   sha256sum = db.Column(db.String())
   state = db.Column(db.Enum(UploadStates))
   type = db.Column(db.Enum(UploadTypes))
+  partNumber = db.Column(db.Integer)
   totalParts = db.Column(db.Integer)
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   owner = db.relationship('User')
 
+  parent_id = db.Column(db.String, db.ForeignKey('image_upload_url.id'), nullable=True)
+  parent_ref = db.relationship('ImageUploadUrl', back_populates='parts_ref', remote_side=[id])
+
   image_id = db.Column(db.Integer, db.ForeignKey('image.id'), nullable=False)
   image_ref = db.relationship('Image', back_populates='uploads_ref')
 
-  parts_ref = db.relationship('ImageUploadPartUrl', back_populates='upload_ref', lazy='dynamic', cascade="all, delete-orphan")
+  parts_ref = db.relationship('ImageUploadUrl', back_populates='parent_ref', lazy='dynamic', cascade="all, delete-orphan")
 
-class ImageUploadPartUrl(db.Model):
-  id = db.Column(db.String(), primary_key=True, default=generate_uuid, unique=True)
-  path = db.Column(db.String(), nullable=False)
-  size = db.Column(db.Integer)
-  partNumber = db.Column(db.Integer)
-  sha256sum = db.Column(db.String)
-  upload_id = db.Column(db.String, db.ForeignKey('image_upload_url.id'), nullable=False)
-  upload_ref = db.relationship('ImageUploadUrl', back_populates='parts_ref')
-
+  def check_access(self, user):
+    if user.is_admin:
+      return True
+    elif self.owner == user:
+      return True
+    else:
+      return False
 
 class Image(db.Model):
   id = db.Column(db.Integer, primary_key=True)

@@ -32,6 +32,9 @@ class MultiImageFilePartSchema(RequestSchema):
 class UploadImageSchema(Schema):
   uploadURL = fields.String()
 
+class UploadImagePartSchema(Schema):
+  presignedURL = fields.String()
+
 class MultiUploadImageSchema(Schema):
   uploadID = fields.String()
   partSize = fields.Integer()
@@ -40,6 +43,9 @@ class MultiUploadImageSchema(Schema):
 
 class ImageFilePostResponseSchema(ResponseSchema):
   data = fields.Nested(UploadImageSchema)
+
+class ImageFilePostPartResponseSchema(ResponseSchema):
+  data = fields.Nested(UploadImagePartSchema)
 
 class MultiImageFilePostResponseSchema(ResponseSchema):
   data = fields.Nested(MultiUploadImageSchema)
@@ -195,6 +201,46 @@ def push_image_v2_multi_init(image_id):
   }
 
 @registry.handles(
+  rule='/v2/imagefile/<string:image_id>/_multipart',
+  method='PUT',
+  authenticators=authenticator.with_scope(Scopes.user),
+  request_body_schema=MultiImageFilePartSchema(),
+  response_body_schema=ImageFilePostPartResponseSchema(),
+)
+def push_image_v2_multi_part(image_id):
+  image = _get_image_id(image_id)
+  body = rebar.validated_body
+
+  upload = ImageUploadUrl.query.get(body.get('uploadID'))
+  _, tmpf = tempfile.mkstemp(dir=upload.path)
+
+  part = ImageUploadUrl(
+    image_id=image.id,
+    size=body.get('partSize'),
+    partNumber=body.get('partNumber'),
+    totalParts=upload.totalParts,
+    sha256sum=body.get('sha256sum'),
+    path=tmpf,
+    state=UploadStates.initialized,
+    type=UploadTypes.multipart_chunk,
+    owner=g.authenticated_user,
+    parent_ref=upload,
+  )
+  db.session.add(part)
+
+  upload.state=UploadStates.uploading
+  db.session.commit()
+
+  from Hinkskalle.routes import _get_service_url
+  upload_url = _get_service_url()+f"/v2/imagefile/_upload/{part.id}"
+  return {
+    'data': {
+      'presignedURL': upload_url,
+    }
+  }
+
+
+@registry.handles(
   rule='/v2/imagefile/_upload/<string:upload_id>',
   method='PUT'
 )
@@ -231,10 +277,12 @@ def push_image_v2_upload(upload_id):
 )
 def push_image_v2_complete(image_id):
   image = _get_image_id(image_id)
-  current_app.logger.debug(request.data)
   upload = image.uploads_ref.filter(ImageUploadUrl.state == UploadStates.uploaded).order_by(ImageUploadUrl.createdAt.desc()).first()
   if not upload:
     raise errors.NotFound(f"No valid upload for {image_id} found")
+  if not upload.check_access(g.authenticated_user):
+    raise errors.Forbidden(f"Not allowed to access image")
+
   _move_image(upload.path, image)
   upload.state = UploadStates.completed
   db.session.commit()

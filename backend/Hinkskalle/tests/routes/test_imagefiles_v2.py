@@ -162,6 +162,7 @@ class TestImagefilesV2(RouteBase):
       size=len(img_data),
       state=UploadStates.uploaded,
       owner=self.admin_user,
+      type=UploadTypes.single,
     )
     db.session.add(upload)
     db.session.commit()
@@ -189,6 +190,7 @@ class TestImagefilesV2(RouteBase):
       image_id = image.id,
       path = '/some/where',
       state=UploadStates.uploading,
+      type=UploadTypes.single,
     )
     db.session.add(upload)
     db.session.commit()
@@ -226,6 +228,7 @@ class TestImagefilesV2(RouteBase):
       size=len(img_data),
       state=UploadStates.uploaded,
       owner=self.user,
+      type=UploadTypes.single,
     )
     db.session.add(upload)
     db.session.commit()
@@ -253,6 +256,7 @@ class TestImagefilesV2(RouteBase):
       size=len(img_data),
       state=UploadStates.uploaded,
       owner=self.other_user,
+      type=UploadTypes.single,
     )
     db.session.add(upload)
     db.session.commit()
@@ -577,11 +581,12 @@ class TestImagefilesV2(RouteBase):
     image_id = image.id
 
     complete_data, complete_digest = _prepare_img_data(data='123'.encode())
+    image.hash = complete_digest
+    db.session.commit()
     temp_path = tempfile.mkdtemp()
     upload = ImageUploadUrl(
       image_id = image.id,
       path = temp_path,
-      sha256sum=complete_digest.replace('sha256.', ''),
       size=len(complete_data),
       totalParts=len(complete_data),
       state=UploadStates.uploaded,
@@ -590,6 +595,7 @@ class TestImagefilesV2(RouteBase):
     )
     db.session.add(upload)
     db.session.commit()
+    upload_id = upload.id
 
     parts = []
     for index, item in enumerate(list(complete_data)):
@@ -611,7 +617,7 @@ class TestImagefilesV2(RouteBase):
       parts.append(part)
     db.session.commit()
 
-    complete_data = {
+    complete_json = {
       'uploadID': upload.id,
       'completedParts': [
         { 'partNumber': p.partNumber, 'token': p.sha256sum } for p in parts
@@ -619,5 +625,22 @@ class TestImagefilesV2(RouteBase):
     }
 
     with self.fake_admin_auth():
-      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_data)
-    #self.assertEqual(ret.status_code, 200)
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_json)
+    self.assertEqual(ret.status_code, 200)
+
+    data = ret.get_json().get('data')
+    self.assertIn('containerUrl', data)
+    self.assertIn('quota', data)
+
+    read_image = Image.query.get(image_id)
+    self.assertTrue(read_image.uploaded)
+    self.assertTrue(os.path.exists(read_image.location))
+    self.assertEqual(read_image.size, len(complete_data))
+    self.assertEqual(read_image.size, os.path.getsize(read_image.location))
+
+    with open(read_image.location, "rb") as read_fh:
+      read_data = read_fh.read()
+      self.assertEqual(read_data, complete_data)
+    
+    read_upload = ImageUploadUrl.query.get(upload_id)
+    self.assertEqual(read_upload.state, UploadStates.completed)

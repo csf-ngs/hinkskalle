@@ -56,6 +56,14 @@ class MultiUploadImagePartSchema(Schema):
 class MultiImageFilePartResponseSchema(ResponseSchema):
   data = fields.Nested(MultiUploadImagePartSchema)
 
+class MultiImageUploadCompletedPartsSchema(Schema):
+  partNumber = fields.Integer()
+  token = fields.String()
+
+class MultiUploadImageCompleteRequest(RequestSchema):
+  uploadID = fields.String()
+  completedParts = fields.Nested(MultiImageUploadCompletedPartsSchema, many=True)
+
 class QuotaSchema(Schema):
   quotaTotal = fields.Integer()
   quotaUsage = fields.Integer()
@@ -296,10 +304,70 @@ def push_image_v2_complete(image_id):
     raise errors.NotFound(f"No valid upload for {image_id} found")
   if not upload.check_access(g.authenticated_user):
     raise errors.Forbidden(f"Not allowed to access image")
+  if not upload.type == UploadTypes.single:
+    raise errors.NotAcceptable(f"Not a single part upload")
 
   _move_image(upload.path, image)
   upload.state = UploadStates.completed
   db.session.commit()
+  return {
+    'data': {
+      'quota': {
+        # XXX
+        'quotaTotal': 0,
+        'quotaUsage': 0,
+      },
+      'containerUrl': f"entities/{image.container_ref.entityName()}/collections/{image.container_ref.collectionName()}/containers/{image.container_ref.name}"
+    }
+  }
+
+@registry.handles(
+  rule='/v2/imagefile/<string:image_id>/_multipart_complete',
+  method='PUT',
+  request_body_schema=MultiUploadImageCompleteRequest(),
+  response_body_schema=ImageFileCompleteResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user),
+)
+def push_image_v2_multi_complete(image_id):
+  image = _get_image_id(image_id)
+  body = rebar.validated_body
+  upload = ImageUploadUrl.query.filter(ImageUploadUrl.id == body.get('uploadID')).first()
+  if not upload:
+    raise errors.NotFound(f"Upload ID {body.get('uploadID')} not found")
+  if not upload.check_access(g.authenticated_user):
+    raise errors.Forbidden(f"Not allowed to access upload")
+  if not upload.type == UploadTypes.multipart:
+    raise errors.NotAcceptable(f"Not a multipart upload")
+
+  chunks=[]
+  for chunk in upload.parts_ref.order_by(ImageUploadUrl.partNumber.asc()):
+    if not chunk.state == UploadStates.uploaded:
+      raise errors.NotAcceptable(f"Part {chunk.partNumber} not uploaded yet")
+    chunks.append(chunk)
+  if len(chunks) != upload.totalParts:
+    raise errors.NotAcceptable(f"Received only {len(chunks)}/{upload.totalParts}")
+
+  upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
+  os.makedirs(upload_tmp, exist_ok=True)
+
+  m = hashlib.sha256()
+  _, tmpf = tempfile.mkstemp(dir=upload_tmp)
+  with open(tmpf, "wb") as tmpfh:
+    for chunk in chunks:
+      with open(chunk.path, "rb") as chunk_fh:
+        chunk_data = chunk_fh.read()
+        m.update(chunk_data)
+        tmpfh.write(chunk_data)
+
+      chunk.state=UploadStates.completed
+  digest = m.hexdigest()
+  if image.hash != f"sha256.{digest}":
+    current_app.logger.error(f"Invalid checksum {image.hash}/{digest}")
+    raise errors.UnprocessableEntity(f"Announced hash {image.hash} does not match final hash {digest}")
+  _move_image(tmpf, image)
+  upload.state = UploadStates.completed
+  db.session.commit()
+
   return {
     'data': {
       'quota': {
@@ -327,10 +395,14 @@ def push_image(image_id):
 
   return 'Danke!'
 
-def _move_image(tmpf, image):
+def _make_filename(image):
   outfn = safe_join(current_app.config.get('IMAGE_PATH'), '_imgs', image.make_filename())
-  current_app.logger.debug(f"moving image to {outfn}")
   os.makedirs(os.path.dirname(outfn), exist_ok=True)
+  return outfn
+
+def _move_image(tmpf, image):
+  outfn = _make_filename(image)
+  current_app.logger.debug(f"moving image to {outfn}")
   shutil.move(tmpf, outfn)
   image.location=os.path.abspath(outfn)
   image.size=os.path.getsize(image.location)

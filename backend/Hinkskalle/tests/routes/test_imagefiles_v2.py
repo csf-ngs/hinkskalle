@@ -64,6 +64,7 @@ class TestImagefilesV2(RouteBase):
 
     ret = self.client.put(f"/v2/imagefile/_upload/"+upload_id, data=img_data)
     self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.headers.get('ETag', None), upload.sha256sum)
 
     read_upload = ImageUploadUrl.query.get(upload_id)
     self.assertEqual(read_upload.state, UploadStates.uploaded)
@@ -375,8 +376,8 @@ class TestImagefilesV2(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart", json=part_data)
 
-    json = ret.get_json().get('data')
     self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
     self.assertIn('presignedURL', json)
 
     urlparts = urlparse(json['presignedURL'])
@@ -392,4 +393,231 @@ class TestImagefilesV2(RouteBase):
     self.assertEqual(part.parent_id, upload_id)
     self.assertEqual(part.createdBy, self.admin_username)
 
+  def test_push_v2_multi_part_twice(self):
+    image = _create_image()[0]
+    image_id = image.id
+    upload = ImageUploadUrl(
+      image_id = image.id,
+      path = tempfile.mkdtemp(),
+      totalParts = 2,
+      size = 1,
+      state=UploadStates.initialized,
+      type=UploadTypes.multipart,
+      owner=self.admin_user,
+    )
+    db.session.add(upload)
+    db.session.commit()
+    upload_id = upload.id
 
+    part_data = {
+      "uploadID": upload.id,
+      "partSize": 1,
+      "partNumber": 1,
+      "sha256sum": 'something',
+    }
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image_id}/_multipart", json=part_data)
+
+    self.assertEqual(ret.status_code, 200)
+    first_url = ret.get_json().get('data').get('presignedURL')
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image_id}/_multipart", json=part_data)
+
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.get_json().get('data').get('presignedURL'), first_url)
+
+
+  def test_push_v2_multi_part_invalid_type(self):
+    for type in [UploadTypes.single, UploadTypes.multipart_chunk]:
+      image = _create_image(hash=f"sha256.oink{type}")[0]
+      upload = ImageUploadUrl(
+        image_id = image.id,
+        path = tempfile.mkdtemp(),
+        totalParts = 2,
+        size = 1,
+        state=UploadStates.initialized,
+        type=type,
+        owner=self.admin_user,
+      )
+      db.session.add(upload)
+      db.session.commit()
+
+      part_data = {
+        "uploadID": upload.id,
+        "partSize": 1,
+        "partNumber": 1,
+        "sha256sum": 'something',
+      }
+
+      with self.fake_admin_auth():
+        ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart", json=part_data)
+
+      self.assertEqual(ret.status_code, 406, f"type {type} not acceptable")
+
+  def test_push_v2_multi_part_invalid_state(self):
+    for state in [UploadStates.completed, UploadStates.failed]:
+      image = _create_image(hash=f"sha256.oink{state}")[0]
+      upload = ImageUploadUrl(
+        image_id = image.id,
+        path = tempfile.mkdtemp(),
+        totalParts = 2,
+        size = 1,
+        state=state,
+        type=UploadTypes.multipart,
+        owner=self.admin_user,
+      )
+      db.session.add(upload)
+      db.session.commit()
+
+      part_data = {
+        "uploadID": upload.id,
+        "partSize": 1,
+        "partNumber": 1,
+        "sha256sum": 'something',
+      }
+
+      with self.fake_admin_auth():
+        ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart", json=part_data)
+
+      self.assertEqual(ret.status_code, 406, f"state {state} not acceptable")
+
+  def test_push_v2_multi_part_invalid_part_number(self):
+    for number in [-1, 3]:
+      image = _create_image(hash=f"sha256.oink-{number}")[0]
+      upload = ImageUploadUrl(
+        image_id = image.id,
+        path = tempfile.mkdtemp(),
+        totalParts = 2,
+        size = 1,
+        state=UploadStates.initialized,
+        type=UploadTypes.multipart,
+        owner=self.admin_user,
+      )
+      db.session.add(upload)
+      db.session.commit()
+
+      part_data = {
+        "uploadID": upload.id,
+        "partSize": 1,
+        "partNumber": number,
+        "sha256sum": 'something',
+      }
+
+      with self.fake_admin_auth():
+        ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart", json=part_data)
+
+      self.assertEqual(ret.status_code, 406, f"part number {number} not acceptable")
+
+  def test_push_v2_multi_part_user(self):
+    image, container, _, _ = _create_image()
+    container.owner = self.user
+    upload = ImageUploadUrl(
+      image_id = image.id,
+      path = tempfile.mkdtemp(),
+      totalParts = 2,
+      size = 1,
+      state=UploadStates.initialized,
+      type=UploadTypes.multipart,
+      owner=self.user,
+    )
+    db.session.add(upload)
+    db.session.commit()
+
+    part_data = {
+      "uploadID": upload.id,
+      "partSize": 1,
+      "partNumber": 1,
+      "sha256sum": 'something',
+    }
+
+    with self.fake_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart", json=part_data)
+
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+
+    urlparts = urlparse(json['presignedURL'])
+    part_id = urlparts.path.split('/').pop()
+
+    part = ImageUploadUrl.query.get(part_id)
+    self.assertEqual(part.createdBy, self.username)
+
+  def test_push_v2_multi_part_user_other(self):
+    image, container, _, _ = _create_image()
+    container.owner = self.other_user
+    upload = ImageUploadUrl(
+      image_id = image.id,
+      path = tempfile.mkdtemp(),
+      totalParts = 2,
+      size = 1,
+      state=UploadStates.initialized,
+      type=UploadTypes.multipart,
+      owner=self.other_user,
+    )
+    db.session.add(upload)
+    db.session.commit()
+
+    part_data = {
+      "uploadID": upload.id,
+      "partSize": 1,
+      "partNumber": 1,
+      "sha256sum": 'something',
+    }
+
+    with self.fake_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart", json=part_data)
+
+    self.assertEqual(ret.status_code, 403)
+  
+  def test_push_v2_multi_complete(self):
+    self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
+    image = _create_image()[0]
+    image_id = image.id
+
+    complete_data, complete_digest = _prepare_img_data(data='123'.encode())
+    temp_path = tempfile.mkdtemp()
+    upload = ImageUploadUrl(
+      image_id = image.id,
+      path = temp_path,
+      sha256sum=complete_digest.replace('sha256.', ''),
+      size=len(complete_data),
+      totalParts=len(complete_data),
+      state=UploadStates.uploaded,
+      owner=self.admin_user,
+      type=UploadTypes.multipart,
+    )
+    db.session.add(upload)
+    db.session.commit()
+
+    parts = []
+    for index, item in enumerate(list(complete_data)):
+      img_data, digest = _prepare_img_data(data=chr(item).encode())
+      _, temp_file = tempfile.mkstemp(dir=temp_path)
+      with open(temp_file, "wb") as temp_fh:
+        temp_fh.write(img_data)
+      part = ImageUploadUrl(
+        image_id = image.id,
+        path = temp_file,
+        sha256sum = digest.replace('sha256.', ''),
+        partNumber = index+1,
+        parent_ref = upload,
+        owner = self.admin_user,
+        state=UploadStates.uploaded,
+        type=UploadTypes.multipart_chunk,
+      )
+      db.session.add(part)
+      parts.append(part)
+    db.session.commit()
+
+    complete_data = {
+      'uploadID': upload.id,
+      'completedParts': [
+        { 'partNumber': p.partNumber, 'token': p.sha256sum } for p in parts
+      ]
+    }
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_data)
+    #self.assertEqual(ret.status_code, 200)

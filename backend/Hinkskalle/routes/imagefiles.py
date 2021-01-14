@@ -3,7 +3,7 @@ from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import errors, RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
 from sqlalchemy.orm.exc import NoResultFound
-from flask import request, current_app, safe_join, send_file, g
+from flask import request, current_app, safe_join, send_file, g, make_response
 from Hinkskalle.routes.images import _get_image
 from Hinkskalle.models import Image, Container, ImageUploadUrl, UploadStates, UploadTypes
 
@@ -212,21 +212,33 @@ def push_image_v2_multi_part(image_id):
   body = rebar.validated_body
 
   upload = ImageUploadUrl.query.get(body.get('uploadID'))
-  _, tmpf = tempfile.mkstemp(dir=upload.path)
+  if upload.type != UploadTypes.multipart:
+    raise errors.NotAcceptable(f"UploadID {upload.id} is not a multipart upload")
+  if upload.state == UploadStates.completed or upload.state == UploadStates.failed:
+    raise errors.NotAcceptable(f"UploadID {upload.id} already closed ({upload.state})")
+  if body.get('partNumber') < 0 or body.get('partNumber') > upload.totalParts:
+    raise errors.NotAcceptable(f"Invalid part number {body.get('partNumber')}")
 
-  part = ImageUploadUrl(
-    image_id=image.id,
-    size=body.get('partSize'),
-    partNumber=body.get('partNumber'),
-    totalParts=upload.totalParts,
-    sha256sum=body.get('sha256sum'),
-    path=tmpf,
-    state=UploadStates.initialized,
-    type=UploadTypes.multipart_chunk,
-    owner=g.authenticated_user,
-    parent_ref=upload,
-  )
-  db.session.add(part)
+  part = ImageUploadUrl.query.filter(
+    ImageUploadUrl.partNumber==body.get('partNumber'),
+    ImageUploadUrl.parent_ref==upload
+  ).first()
+
+  if not part:
+    _, tmpf = tempfile.mkstemp(dir=upload.path)
+    part = ImageUploadUrl(
+      image_id=image.id,
+      size=body.get('partSize'),
+      partNumber=body.get('partNumber'),
+      totalParts=upload.totalParts,
+      sha256sum=body.get('sha256sum'),
+      path=tmpf,
+      state=UploadStates.initialized,
+      type=UploadTypes.multipart_chunk,
+      owner=g.authenticated_user,
+      parent_ref=upload,
+    )
+    db.session.add(part)
 
   upload.state=UploadStates.uploading
   db.session.commit()
@@ -266,7 +278,9 @@ def push_image_v2_upload(upload_id):
   upload.state=UploadStates.uploaded
   db.session.commit()
   
-  return 'Danke!'
+  response = make_response('Danke!')
+  response.headers.set('ETag', upload.sha256sum)
+  return response
 
 @registry.handles(
   rule='/v2/imagefile/<string:image_id>/_complete',

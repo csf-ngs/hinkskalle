@@ -299,13 +299,11 @@ def push_image_v2_upload(upload_id):
 )
 def push_image_v2_complete(image_id):
   image = _get_image_id(image_id)
-  upload = image.uploads_ref.filter(ImageUploadUrl.state == UploadStates.uploaded).order_by(ImageUploadUrl.createdAt.desc()).first()
+  upload = image.uploads_ref.filter(ImageUploadUrl.state == UploadStates.uploaded, ImageUploadUrl.type == UploadTypes.single).order_by(ImageUploadUrl.createdAt.desc()).first()
   if not upload:
     raise errors.NotFound(f"No valid upload for {image_id} found")
   if not upload.check_access(g.authenticated_user):
     raise errors.Forbidden(f"Not allowed to access image")
-  if not upload.type == UploadTypes.single:
-    raise errors.NotAcceptable(f"Not a single part upload")
 
   _move_image(upload.path, image)
   upload.state = UploadStates.completed
@@ -335,6 +333,7 @@ def push_image_v2_multi_complete(image_id):
   if not upload:
     raise errors.NotFound(f"Upload ID {body.get('uploadID')} not found")
   if not upload.check_access(g.authenticated_user):
+    current_app.logger.error(f"Access denied to upload")
     raise errors.Forbidden(f"Not allowed to access upload")
   if not upload.type == UploadTypes.multipart:
     raise errors.NotAcceptable(f"Not a multipart upload")
@@ -354,12 +353,18 @@ def push_image_v2_multi_complete(image_id):
   _, tmpf = tempfile.mkstemp(dir=upload_tmp)
   with open(tmpf, "wb") as tmpfh:
     for chunk in chunks:
-      with open(chunk.path, "rb") as chunk_fh:
-        chunk_data = chunk_fh.read()
-        m.update(chunk_data)
-        tmpfh.write(chunk_data)
+      try:
+        with open(chunk.path, "rb") as chunk_fh:
+          chunk_data = chunk_fh.read()
+          m.update(chunk_data)
+          tmpfh.write(chunk_data)
 
-      chunk.state=UploadStates.completed
+        chunk.state=UploadStates.completed
+      except FileNotFoundError:
+        db.session.rollback()
+        chunk.state=UploadStates.failed
+        db.session.commit()
+        raise errors.InternalError(f"file not found: {chunk.path}")
   digest = m.hexdigest()
   if image.hash != f"sha256.{digest}":
     current_app.logger.error(f"Invalid checksum {image.hash}/{digest}")

@@ -199,6 +199,21 @@ class TestImagefilesV2(RouteBase):
       ret = self.client.put(f"/v2/imagefile/{image.id}/_complete", json={})
     self.assertEqual(ret.status_code, 404)
 
+  def test_push_v2_complete_upload_type(self):
+    image = _create_image()[0]
+    upload = ImageUploadUrl(
+      image_id = image.id,
+      path = '/some/where',
+      state=UploadStates.uploaded,
+      type=UploadTypes.multipart,
+    )
+    db.session.add(upload)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_complete", json={})
+    self.assertEqual(ret.status_code, 404)
+
   def test_push_v2_complete_no_upload(self):
     image = _create_image()[0]
     with self.fake_admin_auth():
@@ -575,10 +590,9 @@ class TestImagefilesV2(RouteBase):
 
     self.assertEqual(ret.status_code, 403)
   
-  def test_push_v2_multi_complete(self):
+  def _setup_multi_upload(self):
     self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
     image = _create_image()[0]
-    image_id = image.id
 
     complete_data, complete_digest = _prepare_img_data(data='123'.encode())
     image.hash = complete_digest
@@ -595,7 +609,6 @@ class TestImagefilesV2(RouteBase):
     )
     db.session.add(upload)
     db.session.commit()
-    upload_id = upload.id
 
     parts = []
     for index, item in enumerate(list(complete_data)):
@@ -616,6 +629,12 @@ class TestImagefilesV2(RouteBase):
       db.session.add(part)
       parts.append(part)
     db.session.commit()
+    return image, upload, parts, complete_data
+
+  def test_push_v2_multi_complete(self):
+    image, upload, parts, complete_data = self._setup_multi_upload()
+    upload_id = upload.id
+    image_id = image.id
 
     complete_json = {
       'uploadID': upload.id,
@@ -644,3 +663,125 @@ class TestImagefilesV2(RouteBase):
     
     read_upload = ImageUploadUrl.query.get(upload_id)
     self.assertEqual(read_upload.state, UploadStates.completed)
+  
+  def test_push_v2_multi_complete_type_invalid(self):
+    image, upload, parts, _ = self._setup_multi_upload()
+    upload.type = UploadTypes.single
+    db.session.commit()
+
+    complete_json = {
+      'uploadID': upload.id,
+      'completedParts': [
+        { 'partNumber': p.partNumber, 'token': p.sha256sum } for p in parts
+      ]
+    }
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_json)
+    self.assertEqual(ret.status_code, 406)
+
+  def test_push_v2_multi_complete_state_invalid(self):
+    image, upload, parts, _ = self._setup_multi_upload()
+    parts[0].state=UploadStates.initialized
+    db.session.commit()
+
+    complete_json = {
+      'uploadID': upload.id,
+      'completedParts': [
+        { 'partNumber': p.partNumber, 'token': p.sha256sum } for p in parts
+      ]
+    }
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_json)
+    self.assertEqual(ret.status_code, 406)
+
+  def test_push_v2_multi_complete_chunks_missing(self):
+    image, upload, parts, _ = self._setup_multi_upload()
+    db.session.delete(parts[0])
+    db.session.commit()
+
+    complete_json = {
+      'uploadID': upload.id,
+      'completedParts': [
+        { 'partNumber': p.partNumber, 'token': p.sha256sum } for p in parts
+      ]
+    }
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_json)
+    self.assertEqual(ret.status_code, 406)
+
+  def test_push_v2_multi_complete_invalid_checksum(self):
+    image, upload, parts, _ = self._setup_multi_upload()
+    image.hash = 'sha256.oink'
+    db.session.commit()
+
+    complete_json = {
+      'uploadID': upload.id,
+      'completedParts': [
+        { 'partNumber': p.partNumber, 'token': p.sha256sum } for p in parts
+      ]
+    }
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_json)
+    self.assertEqual(ret.status_code, 422)
+
+  def test_push_v2_multi_complete_file_missing(self):
+    image, upload, parts, _ = self._setup_multi_upload()
+    os.remove(parts[2].path)
+    upload_id = upload.id
+
+    complete_json = {
+      'uploadID': upload.id,
+      'completedParts': [
+        { 'partNumber': p.partNumber, 'token': p.sha256sum } for p in parts
+      ]
+    }
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_json)
+    self.assertEqual(ret.status_code, 500)
+    db_parts = ImageUploadUrl.query.filter(ImageUploadUrl.parent_id==upload_id).order_by(ImageUploadUrl.partNumber.asc())
+    self.assertEqual(db_parts[2].state, UploadStates.failed)
+    for part in db_parts[:1]:
+      self.assertEqual(part.state, UploadStates.uploaded)
+  
+  def test_push_v2_multi_complete_user(self):
+    image, upload, parts, _ = self._setup_multi_upload()
+    image.container_ref.owner = self.user
+    upload.owner = self.user
+    db.session.commit()
+
+    complete_json = {
+      'uploadID': upload.id,
+      'completedParts': [
+        { 'partNumber': p.partNumber, 'token': p.sha256sum } for p in parts
+      ]
+    }
+
+    with self.fake_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_json)
+    self.assertEqual(ret.status_code, 200)
+
+  def test_push_v2_multi_complete_user_other(self):
+    image, upload, parts, _ = self._setup_multi_upload()
+    image.container_ref.owner = self.other_user
+    upload.owner = self.other_user
+    db.session.commit()
+
+    complete_json = {
+      'uploadID': upload.id,
+      'completedParts': [
+        { 'partNumber': p.partNumber, 'token': p.sha256sum } for p in parts
+      ]
+    }
+
+    with self.fake_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_json)
+    self.assertEqual(ret.status_code, 403)
+
+  def test_push_v2_multi_complete_user_noauth(self):
+    ret = self.client.put(f"/v2/imagefile/something/_multipart_complete", json={'some': 'thing'})
+    self.assertEqual(ret.status_code, 401)

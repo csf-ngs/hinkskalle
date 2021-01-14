@@ -785,3 +785,21 @@ class TestImagefilesV2(RouteBase):
   def test_push_v2_multi_complete_user_noauth(self):
     ret = self.client.put(f"/v2/imagefile/something/_multipart_complete", json={'some': 'thing'})
     self.assertEqual(ret.status_code, 401)
+  
+  def test_push_v2_multi_abort(self):
+    image, upload, _, _ = self._setup_multi_upload()
+    image_id = image.id
+    upload_id = upload.id
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_abort", json={ 'uploadID': upload.id })
+    self.assertEqual(ret.status_code, 200)
+
+    db_image = Image.query.get(image_id)
+    self.assertFalse(db_image.uploaded)
+    self.assertIsNone(db_image.location)
+
+    db_upload = ImageUploadUrl.query.get(upload_id)
+    self.assertEqual(db_upload.state, UploadStates.failed)
+    for part in db_upload.parts_ref:
+      self.assertEqual(part.state, UploadStates.failed)

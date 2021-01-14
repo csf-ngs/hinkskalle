@@ -64,6 +64,9 @@ class MultiUploadImageCompleteRequest(RequestSchema):
   uploadID = fields.String()
   completedParts = fields.Nested(MultiImageUploadCompletedPartsSchema, many=True)
 
+class MultiUploadImageAbortRequest(RequestSchema):
+  uploadID = fields.String()
+
 class QuotaSchema(Schema):
   quotaTotal = fields.Integer()
   quotaUsage = fields.Integer()
@@ -383,6 +386,30 @@ def push_image_v2_multi_complete(image_id):
       'containerUrl': f"entities/{image.container_ref.entityName()}/collections/{image.container_ref.collectionName()}/containers/{image.container_ref.name}"
     }
   }
+
+@registry.handles(
+  rule='/v2/imagefile/<string:image_id>/_multipart_abort',
+  method='PUT',
+  request_body_schema=MultiUploadImageAbortRequest(),
+  authenticators=authenticator.with_scope(Scopes.user),
+)
+def push_image_v2_multi_abort(image_id):
+  image = _get_image_id(image_id)
+  body = rebar.validated_body
+
+  upload = ImageUploadUrl.query.filter(ImageUploadUrl.id == body.get('uploadID')).first()
+  if not upload:
+    raise errors.NotFound(f"Upload {body.get('uploadID')} not found")
+
+  for part in upload.parts_ref:
+    part.state = UploadStates.failed
+  upload.state = UploadStates.failed
+  image.uploaded = False
+  image.location = None
+  db.session.commit()
+
+  return 'Sorry it did not work out'
+
 
 @registry.handles(
   rule='/v1/imagefile/<string:image_id>',

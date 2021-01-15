@@ -1,5 +1,7 @@
 # Hinkskalle
 
+[![Build Status](https://drone.ngs-cloud.vbcf.ac.at/api/badges/ngs-software/Hinkskalle/status.svg)](https://drone.ngs-cloud.vbcf.ac.at/ngs-software/Hinkskalle)
+
 (buckethead)
 
 Partial implementation of the Sylab's singularity library protocol [https://cloud.sylabs.io/library](https://cloud.sylabs.io/library)

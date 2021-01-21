@@ -63,6 +63,13 @@ def search():
     entities = []
     collections = []
     containers = []
+  
+  if args.get('arch', None):
+    images = images.filter(Image.arch==args.get('arch'))
+    # querying for arch only makes sense for images
+    entities = []
+    collections = []
+    containers = []
 
   return {
     'data': {

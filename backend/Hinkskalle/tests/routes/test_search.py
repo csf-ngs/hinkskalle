@@ -139,6 +139,27 @@ class TestSearch(RouteBase):
     data = ret.get_json().get('data')
     self.assertDictEqual(data, expected)
 
+  def test_arch(self):
+    image1, container1, _, _ = _create_image(postfix='eins')
+    image2, container2, _, _ = _create_image(postfix='zwei')
+    container1.name='fintitax1'
+    container2.name='fintitax2'
+    image1.arch='pocket calculator'
+
+    db.session.commit()
+
+    expected = {
+      'container': [],
+      'image': [ImageSchema().dump(image1).data],
+      'entity': [],
+      'collection': [],
+    }
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/search?value=fintitax&arch=pocket+calculator")
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertDictEqual(data, expected)
+
   
   def test_all(self):
     image, container, collection, entity = _create_image()

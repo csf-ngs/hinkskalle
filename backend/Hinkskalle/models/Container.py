@@ -1,6 +1,7 @@
 from Hinkskalle import db
 from datetime import datetime
 from sqlalchemy.orm import validates
+from sqlalchemy.orm.exc import NoResultFound
 
 from Hinkskalle.models import Collection, Image, Tag
 
@@ -89,13 +90,21 @@ class Container(db.Model):
   def entityName(self):
     return self.collection_ref.entity_ref.name
 
-  def tag_image(self, tag, image_id):
+  def tag_image(self, tag, image_id, arch=None):
     errors = validate_name({ 'name': tag })
     if errors:
       raise ValidationError(errors)
 
     image = Image.query.get(image_id)
-    cur_tag = Tag.query.filter(Tag.name == tag, Tag.image_id.in_([ i.id for i in self.images_ref ])).first()
+    if not image:
+      raise NoResultFound()
+    cur_tags = Tag.query.filter(Tag.name == tag, Tag.image_id.in_([ i.id for i in self.images_ref ]))
+
+    if arch:
+      image.arch=arch
+      cur_tags = cur_tags.join(Image).filter(Image.arch==arch)
+
+    cur_tag = cur_tags.first()
     if cur_tag:
       cur_tag.image_ref=image
       cur_tag.updatedAt=datetime.now()
@@ -115,9 +124,17 @@ class Container(db.Model):
         tags[tag]=str(image.id)
     return tags
 
-  def archTags(self):
-    # XXX
-    return {}
+  def archImageTags(self):
+    tags = {}
+    for image in self.images_ref:
+      if not image.arch:
+        continue
+      tags[image.arch] = tags.get(image.arch, {})
+      for tag in image.tags():
+        if tag in tags[image.arch]:
+          raise Exception(f"Tag {tag}/{image.arch} for image {image.id} is already set on {tags[tag]}")
+        tags[image.arch][tag]=str(image.id)
+    return tags
   
   def check_access(self, user):
     if user.is_admin:

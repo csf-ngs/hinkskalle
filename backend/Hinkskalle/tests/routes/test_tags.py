@@ -249,6 +249,10 @@ class TestTags(RouteBase):
       ret = self.client.post(f"/v1/tags/{container_id}", json={'v1.0': invalidid})
     self.assertEqual(ret.status_code, 404)
 
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v1/tags/{container_id}", json={'bla&...': image_id})
+    self.assertEqual(ret.status_code, 400)
+
   def _fake_uploaded_image(self, image):
     self.app.config['IMAGE_PATH']=mkdtemp()
     img_base = os.path.join(self.app.config['IMAGE_PATH'], '_imgs')

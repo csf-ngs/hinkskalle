@@ -131,6 +131,37 @@ class TestContainer(ModelBase):
     dbtag = Tag.query.get(new_tag.id)
     self.assertEqual(dbtag.name, 'testhase')
 
+  def test_tag_image_arch(self):
+    container = _create_container()[0]
+    image1 = Image(hash='test-image-1', container_ref=container, arch='c64')
+    db.session.add(image1)
+    db.session.commit()
+
+    container.tag_image('v1', image1.id)
+    self.assertDictEqual(container.archImageTags(), {
+      'c64': { 'v1': str(image1.id) }
+    })
+
+    image2 = Image(hash='test-image-2', container_ref=container)
+    db.session.add(image2)
+    db.session.commit()
+
+    tag2 = container.tag_image('v1', image2.id, arch='amiga')
+    self.assertEqual(image2.arch, 'amiga')
+    self.assertDictEqual(container.archImageTags(), {
+      'c64': { 'v1': str(image1.id) },
+      'amiga': { 'v1': str(image2.id) },
+    })
+
+    db.session.delete(tag2)
+    container.tag_image('v1', image2.id, arch='c64')
+    self.assertEqual(image2.arch, 'c64')
+    self.assertDictEqual(container.archImageTags(), {
+      'c64': { 'v1': str(image2.id) },
+    })
+
+
+
 
   def test_get_tags(self):
     container = _create_container()[0]
@@ -157,6 +188,38 @@ class TestContainer(ModelBase):
     with self.assertRaisesRegex(Exception, 'Tag v2.*already set'):
       container.imageTags()
     
+  def test_get_arch_tags(self):
+    container = _create_container()[0]
+
+    image1 = Image(hash='test-image-1', container_ref=container, arch='powerpc')
+    image1tag1 = Tag(name='v1', image_ref=image1)
+    db.session.add(image1)
+    db.session.add(image1tag1)
+    db.session.commit()
+
+    self.assertDictEqual(container.archImageTags(), {
+      'powerpc': { 'v1': str(image1.id) }
+    })
+
+    image2 = Image(hash='test-image-2', container_ref=container, arch='alpha')
+    image2tag1 = Tag(name='v1', image_ref=image2)
+    db.session.add(image2tag1)
+    db.session.commit()
+
+    self.assertDictEqual(container.archImageTags(), {
+      'powerpc': {'v1': str(image1.id)},
+      'alpha': {'v1': str(image2.id)},
+    })
+
+    no_arch = Image(hash='test-image-3', container_ref=container)
+    no_arch_tag = Tag(name='v1', image_ref=no_arch)
+    db.session.add(no_arch_tag)
+    db.session.commit()
+
+    self.assertDictEqual(container.archImageTags(), {
+      'powerpc': {'v1': str(image1.id)},
+      'alpha': {'v1': str(image2.id)},
+    })
 
   def test_access(self):
     admin = _create_user(name='admin.oink', is_admin=True)

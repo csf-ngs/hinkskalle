@@ -251,6 +251,28 @@ class TestImages(RouteBase):
     data = ret.get_json().get('data')
     self.assertFalse(data['uploaded'])
   
+  def test_get_arch(self):
+    image1 = _create_image()[0]
+    image1.arch = 'c64'
+    image1_tag = Tag(name='v1', image_ref=image1)
+    db.session.add(image1_tag)
+
+    image2 = Image(arch='amige', hash='sha256.moo', container_ref=image1.container_ref)
+    image2_tag = Tag(name='v1', image_ref=image2)
+    db.session.add(image2_tag)
+    db.session.commit()
+
+    ret = self.client.get(f"/v1/images/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}:{image1_tag.name}")
+    self.assertEqual(ret.status_code, 406)
+
+    ret = self.client.get(f"/v1/images/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}:{image1_tag.name}?arch=c64")
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['id'], str(image1.id))
+    self.assertListEqual(data['tags'], ['v1'])
+
+
+  
   def test_create_noauth(self):
     ret = self.client.post("/v1/images")
     self.assertEqual(ret.status_code, 401)

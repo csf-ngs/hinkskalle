@@ -13,6 +13,9 @@ import datetime
 
 from Hinkskalle.models import ImageSchema, Image, Container, Entity, Collection
 
+class ImageQuerySchema(RequestSchema):
+  arch = fields.String(required=False)
+
 class ImageResponseSchema(ResponseSchema):
   data = fields.Nested(ImageSchema)
 
@@ -71,7 +74,7 @@ def _get_container(entity_id, collection_id, container_id):
     raise errors.NotFound(f"container {entity.name}/{collection.name}/{container_id} not found")
   return container
 
-def _get_image(entity_id, collection_id, tagged_container_id):
+def _get_image(entity_id, collection_id, tagged_container_id, arch=None):
   container_id, tag = _parse_tag(tagged_container_id)
   container = _get_container(entity_id, collection_id, container_id)
 
@@ -82,8 +85,20 @@ def _get_image(entity_id, collection_id, tagged_container_id):
     except NoResultFound:
       current_app.logger.debug(f"image with hash {shahash} not found in container {container.name}")
       raise errors.NotFound(f"image with hash {shahash} not found in container {container.name}")
+  elif arch:
+    arch_tags = container.archImageTags()
+    if not arch in arch_tags or not tag in arch_tags[arch]:
+      raise errors.NotFound(f"Tag {tag} for architecture {arch} on container {container.entityName}/{container.collectionName}/{container.name} not found")
+    image = Image.query.get(arch_tags[arch][tag])
   else:
-    image_tags = container.imageTags()
+    try:
+      image_tags = container.imageTags()
+    except Exception as err:
+      if str(err).find('multiple architectures') != -1:
+        raise errors.NotAcceptable(str(err))
+      else:
+        raise err
+      
     if not tag in image_tags:
       current_app.logger.debug(f"tag {tag} on container {container.entityName}/{container.collectionName}/{container.name} not found")
       raise errors.NotFound(f"tag {tag} on container {container.entityName}/{container.collectionName}/{container.name} not found")
@@ -108,11 +123,13 @@ def list_images(entity_id, collection_id, container_id):
 @registry.handles(
   rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
+  query_string_schema=ImageQuerySchema(),
   response_body_schema=ImageResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.optional),
 )
 def get_image(entity_id, collection_id, tagged_container_id):
-  image = _get_image(entity_id, collection_id, tagged_container_id)
+  args = rebar.validated_args
+  image = _get_image(entity_id, collection_id, tagged_container_id, arch=args.get('arch'))
   current_app.logger.debug("get image")
   if not image.check_access(g.authenticated_user):
       raise errors.Forbidden('Private image, access denied.')
@@ -127,6 +144,7 @@ def get_image(entity_id, collection_id, tagged_container_id):
 @registry.handles(
   rule='/v1/images/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
+  query_string_schema=ImageQuerySchema(),
   response_body_schema=ImageResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.optional),
 )
@@ -136,6 +154,7 @@ def get_image_default_entity_single(collection_id, tagged_container_id):
 @registry.handles(
   rule='/v1/images/<string:tagged_container_id>',
   method='GET',
+  query_string_schema=ImageQuerySchema(),
   response_body_schema=ImageResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.optional),
 )

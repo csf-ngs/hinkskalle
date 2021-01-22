@@ -120,9 +120,12 @@ class Container(db.Model):
     for image in self.images_ref:
       for tag in image.tags():
         if tag in tags:
-          raise Exception(f"Tag {tag} for image {image.id} is already set on {tags[tag]}")
-        tags[tag]=str(image.id)
-    return tags
+          if tags[tag].arch != image.arch:
+            raise Exception(f"Tag {tag} has multiple architectures")
+          else:
+            raise Exception(f"Tag {tag} for image {image.id} is already set on {tags[tag].id}")
+        tags[tag]=image
+    return { t: str(i.id) for t,i in tags.items() }
 
   def archImageTags(self):
     tags = {}

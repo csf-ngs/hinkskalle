@@ -188,6 +188,19 @@ class TestContainer(ModelBase):
     with self.assertRaisesRegex(Exception, 'Tag v2.*already set'):
       container.imageTags()
     
+  def test_get_tags_arch_required(self):
+    container = _create_container()[0]
+    image1 = Image(hash='test-image-1', container_ref=container)
+    image2 = Image(hash='test-image-2', container_ref=container)
+    db.session.add(image1)
+    db.session.add(image2)
+    db.session.commit()
+    container.tag_image('v1', image1.id, arch='c64')
+    container.tag_image('v1', image2.id, arch='apple')
+
+    with self.assertRaisesRegex(Exception, 'Tag v1 has multiple architectures'):
+      container.imageTags()
+
   def test_get_arch_tags(self):
     container = _create_container()[0]
 

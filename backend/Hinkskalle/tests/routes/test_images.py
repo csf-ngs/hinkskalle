@@ -568,6 +568,26 @@ class TestImages(RouteBase):
       ret = self.client.delete(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
     self.assertEqual(ret.status_code, 200)
     self.assertIsNone(Image.query.get(image.id))
+  
+  def test_delete_arch(self):
+    image1, container, _, _ = _create_image()
+    container.tag_image('v1', image1.id, arch='c64')
+    image2 = Image(hash='other-image-2', container_ref=container)
+    db.session.add(image2)
+    db.session.commit()
+    container.tag_image('v1', image2.id, arch='amiga')
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/images/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}:v1")
+    self.assertEqual(ret.status_code, 406)
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/images/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}:v1?arch=c64")
+
+    self.assertEqual(ret.status_code, 200)
+    self.assertIsNone(Image.query.get(image1.id))
+    self.assertIsNotNone(Image.query.get(image2.id))
+
 
   def test_delete_user(self):
     image = _create_image()[0]

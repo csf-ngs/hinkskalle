@@ -170,7 +170,6 @@ def get_image_default_entity_default_collection_single(tagged_container_id):
 )
 def create_image():
   body = rebar.validated_body
-  current_app.logger.debug(body)
   container = Container.query.get(body['container'])
   if not container:
     raise errors.NotFound(f"container {body['container']} not found")
@@ -264,7 +263,8 @@ def update_image(entity_id, collection_id, tagged_container_id):
   authenticators=authenticator.with_scope(Scopes.user)
 )
 def delete_image(entity_id, collection_id, tagged_container_id):
-  image = _get_image(entity_id, collection_id, tagged_container_id)
+  args = rebar.validated_args
+  image = _get_image(entity_id, collection_id, tagged_container_id, arch=args.get('arch'))
   if not image.check_update_access(g.authenticated_user):
     raise errors.Forbidden('access denied')
   db.session.delete(image)

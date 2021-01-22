@@ -127,7 +127,6 @@ class Image(db.Model):
 
   @property
   def fingerprints(self):
-    current_app.logger.debug(self.sigdata)
     if self.sigdata is None or self.sigdata.get('SignerKeys', None) is None:
       return []
     

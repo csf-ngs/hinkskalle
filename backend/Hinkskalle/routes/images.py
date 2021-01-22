@@ -259,6 +259,7 @@ def update_image(entity_id, collection_id, tagged_container_id):
 @registry.handles(
   rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
   method='DELETE',
+  query_string_schema=ImageQuerySchema(),
   response_body_schema=ImageDeleteResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user)
 )
@@ -269,7 +270,11 @@ def delete_image(entity_id, collection_id, tagged_container_id):
   db.session.delete(image)
   db.session.commit()
   if image.uploaded and image.location and os.path.exists(image.location):
-    os.remove(image.location)
+    other_refs = Image.query.filter(Image.location==image.location).count()
+    if other_refs == 0:
+      os.remove(image.location)
+    else:
+      current_app.logger.debug(f"file {image.location} still referenced, let it be")
   return { 'status': 'ok' }
 
 

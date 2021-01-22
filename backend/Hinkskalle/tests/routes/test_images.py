@@ -543,6 +543,21 @@ class TestImages(RouteBase):
     self.assertIsNone(Image.query.get(image.id))
     self.assertFalse(os.path.exists(image.location))
   
+  def test_delete_file_ref(self):
+    image = _create_image(postfix='polarbear')[0]
+    other_image = _create_image(postfix='penguin')[0]
+    self._fake_uploaded_image(image)
+    other_image.location=image.location
+    other_image.uploaded=True
+    other_image_id = other_image.id
+    db.session.commit()
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+    self.assertEqual(ret.status_code, 200)
+    db_img = Image.query.get(other_image_id)
+    self.assertTrue(os.path.exists(db_img.location))
+
+  
   def test_delete_with_tags(self):
     image = _create_image()[0]
     latest_tag = Tag(name='oink', image_ref=image)

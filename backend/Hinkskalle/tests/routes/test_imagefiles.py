@@ -58,6 +58,26 @@ class TestImagefiles(RouteBase):
 
     tmpf.close()
   
+  def test_pull_arch(self):
+    image1, container, _, _ = _create_image()
+    image1_tag = Tag(name='v1', image_ref=image1)
+    image1.arch = 'c64'
+
+    image2 = Image(hash='sha256.oink2', container_ref=container, arch='amiga')
+    image2_tag = Tag(name='v1', image_ref=image2)
+    db.session.add(image1_tag)
+    db.session.add(image2_tag)
+    db.session.commit()
+
+    tmpf1 = _fake_img_file(image1, data=b"oink c64/v1")
+    tmpf2 = _fake_img_file(image2, data=b"oink amiga/v1")
+
+    ret = self.client.get(f"/v1/imagefile/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}:{image1_tag.name}?arch=c64")
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.data, b"oink c64/v1")
+    ret.close()
+
+  
   def test_pull_private(self):
     image, container, _, _ = _create_image()
     latest_tag = Tag(name='latest', image_ref=image)

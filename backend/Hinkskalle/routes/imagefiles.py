@@ -15,6 +15,9 @@ import shutil
 import math
 from datetime import datetime, timedelta
 
+class PullQuerySchema(RequestSchema):
+  arch = fields.String(required=False)
+
 class ImageFilePostSchema(RequestSchema):
   filesize = fields.Integer()
   sha256sum = fields.String()
@@ -84,10 +87,12 @@ class ImageFileCompleteResponseSchema(ResponseSchema):
 @registry.handles(
   rule='/v1/imagefile/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
+  query_string_schema=PullQuerySchema(),
   authenticators=authenticator.with_scope(Scopes.optional),
 )
 def pull_image(entity_id, collection_id, tagged_container_id):
-  image = _get_image(entity_id, collection_id, tagged_container_id)
+  args = rebar.validated_args
+  image = _get_image(entity_id, collection_id, tagged_container_id, arch=args.get('arch', None))
   if not image.check_access(g.authenticated_user):
     raise errors.Forbidden('Private image, access denied.')
 
@@ -106,6 +111,7 @@ def pull_image(entity_id, collection_id, tagged_container_id):
 @registry.handles(
   rule='/v1/imagefile/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
+  query_string_schema=PullQuerySchema(),
   authenticators=authenticator.with_scope(Scopes.optional),
 )
 def pull_image_default_entity(collection_id, tagged_container_id):
@@ -115,6 +121,7 @@ def pull_image_default_entity(collection_id, tagged_container_id):
 @registry.handles(
   rule='/v1/imagefile/<string:tagged_container_id>',
   method='GET',
+  query_string_schema=PullQuerySchema(),
   authenticators=authenticator.with_scope(Scopes.optional),
 )
 def pull_image_default_collection_default_entity_single(tagged_container_id):

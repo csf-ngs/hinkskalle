@@ -95,6 +95,7 @@ def _get_image(entity_id, collection_id, tagged_container_id, arch=None):
       image_tags = container.imageTags()
     except Exception as err:
       if str(err).find('multiple architectures') != -1:
+        current_app.logger.debug(f"container {container.id} tag {tagged_container_id} has multiple architectures with same tag")
         raise errors.NotAcceptable(str(err))
       else:
         raise err

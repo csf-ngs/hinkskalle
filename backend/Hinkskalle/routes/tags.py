@@ -57,6 +57,13 @@ def update_tag_v2(container_id):
   container = _get_container(container_id, update=True)
 
   tags = request.get_json(force=True)
+  if 'Tag' in tags and 'ImageID' in tags and 'Arch' in tags:
+    tags = {
+      tags['Arch']: {
+        tags['Tag']: tags['ImageID']
+      }
+    }
+
   for arch, arch_tags in tags.items():
     for tag_name, tag_image in arch_tags.items():
       if not tag_image:

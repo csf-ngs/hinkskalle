@@ -115,6 +115,21 @@ class TestTagsV2(RouteBase):
     db_image = Image.query.get(image_id)
     self.assertEqual(db_image.arch, 'apple')
 
+  def test_update_v2_alternative(self):
+    image, container, _, _ = _create_image()
+    container_id = container.id
+    image_id = image.id
+
+    arch_tags = {
+      'Arch': 'c64', 'Tag': 'v1', 'ImageID': str(image_id),
+    }
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/tags/{container.id}", json=arch_tags)
+    self.assertEqual(ret.status_code, 200)
+    db_container = Container.query.get(container_id)
+    self.assertDictEqual(db_container.archImageTags(), {'c64': { 'v1': str(image_id) }})
+    db_image = Image.query.get(image_id)
+    self.assertEqual(db_image.arch, 'c64')
   def test_valid_v2(self):
     image, container, _, _ = _create_image()
     for fail in ['Babsi Streusand', '-oink', 'Babsi&Streusand', 'oink-']:

@@ -31,7 +31,7 @@ def version():
   return {
     'data': {
       'version': 'v1.0.0',
-      'apiVersion': '2.0.0-alpha.1',
+      'apiVersion': '2.0.0-alpha.2',
     }
   }
 

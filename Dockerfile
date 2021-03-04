@@ -1,16 +1,26 @@
+FROM node:lts as frontend-build-stage
+WORKDIR /app
+COPY frontend/package*.json ./
+RUN yarn install
+COPY ./frontend/ .
+RUN JSON_STRING='window_configs = { "VUE_APP_BACKEND_URL":"%VUE_APP_BACKEND_URL%", "VUE_APP_ENABLE_REGISTER":%VUE_APP_ENABLE_REGISTER% }' \
+  && sed "s@// RUNTIME_CONFIG@${JSON_STRING}@" public/index.html.tpl > public/index.html
+RUN yarn build
+
 FROM docker.ngs.vbcf.ac.at/singularity-base as singularity
 
-FROM docker.ngs.vbcf.ac.at/flask-base:v1.1.4
+FROM docker.ngs.vbcf.ac.at/flask-base:v2.0.0
 
 RUN apt-get install -y jq gosu
 
 RUN pip3 install gunicorn[gevent]
 
 RUN useradd -d /srv/hinkskalle -m -s /bin/bash hinkskalle
+RUN mkdir -p /data/db
 
 COPY --chown=hinkskalle backend /srv/hinkskalle/backend
 RUN cd /srv/hinkskalle/backend \
-  && pip3 install -e . 
+  && pip3 install . 
 
 WORKDIR /srv/hinkskalle
 
@@ -21,8 +31,15 @@ COPY --from=singularity /usr/local/etc/singularity/ /usr/local/etc/singularity/
 COPY --from=singularity /usr/local/libexec/singularity/ /usr/local/libexec/singularity/
 COPY --from=singularity /usr/local/var/singularity/ /usr/local/var/singularity/
 
+RUN mkdir -p /srv/hinkskalle/frontend/dist
+COPY --from=frontend-build-stage /app/dist /srv/hinkskalle/frontend/dist/
+
+COPY --chown=hinkskalle script /srv/hinkskalle/script
+
 ENV LC_ALL=en_US.utf8
 ENV FLASK_APP=Hinkskalle
 ENV HINKSKALLE_SETTINGS=/srv/hinkskalle/conf/config.json
-CMD [ "gunicorn", "-u", "hinkskalle", "--access-logfile", "-", "--error-logfile", "-", "--chdir", "/srv/hinkskalle/backend", "-w", "4", "--timeout", "3600", "--worker-class", "gevent", "--bind", "0.0.0.0:5000", "wsgi:app" ]
+ENV BACKEND_URL=http://localhost:5000
+ENV ENABLE_REGISTER=false
+CMD [ "./script/start.sh" ]
 EXPOSE 5000

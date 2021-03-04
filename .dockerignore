@@ -1,3 +1,5 @@
 tmp/
 data/
 backend/tmp/
+**/node_modules
+**/dist

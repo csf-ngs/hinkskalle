@@ -17,9 +17,11 @@ rebar = Rebar()
 registry = rebar.create_handler_registry(swagger_generator=generator, prefix='/')
 registry.set_default_authenticator(None)
 
-
 from Hinkskalle.util.auth.token import TokenAuthenticator
 authenticator = TokenAuthenticator()
+from Hinkskalle.util.auth import PasswordAuthenticators
+password_checkers = PasswordAuthenticators()
+
 
 # see https://github.com/miguelgrinberg/Flask-Migrate/issues/61#issuecomment-208131722
 naming_convention = {
@@ -32,12 +34,7 @@ naming_convention = {
 db = SQLAlchemy(metadata=MetaData(naming_convention=naming_convention))
 migrate = Migrate()
 
-from Hinkskalle.util.auth import PasswordAuthenticators
-password_checkers=PasswordAuthenticators()
-
 def create_app():
-  
-
   app = Flask(__name__)
   app.config.from_json(os.environ.get('HINKSKALLE_SETTINGS', '../../conf/config.json'))
   if not 'AUTH' in app.config:

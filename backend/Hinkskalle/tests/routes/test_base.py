@@ -1,4 +1,6 @@
 import unittest
+import tempfile
+import os.path
 
 from Hinkskalle.tests.route_base import RouteBase
 from Hinkskalle.tests.models.test_Image import _create_image
@@ -7,12 +9,21 @@ from Hinkskalle import db
 
 class TestBase(RouteBase):
 
+  def _fake_index(self):
+    tmpdir = tempfile.TemporaryDirectory()
+    self.app.config['FRONTEND_PATH']=tmpdir.name
+    with open(os.path.join(tmpdir.name, 'index.html'), 'w') as index_fh:
+      index_fh.write(f"<title>hinkskalle</title>\n")
+    return tmpdir
+
   def test_index(self):
+    tmpdir = self._fake_index()
     ret = self.client.get('/')
     self.assertEqual(ret.status_code, 200)
     self.assertRegex(ret.data.decode('utf-8'), r'<title>hinkskalle</title>')
   
   def test_route_frontend(self):
+    tmpdir = self._fake_index()
     for test_route in ['/users', '/account', '/non/existent']:
       ret = self.client.get(test_route)
       self.assertEqual(ret.status_code, 200, f"routing to {test_route}")
@@ -20,6 +31,12 @@ class TestBase(RouteBase):
     
     ret = self.client.get('/v1/gru/nz')
     self.assertEqual(ret.status_code, 404, f"routing to something nonexistent under api")
+
+    with open(os.path.join(tmpdir.name, 'grunz.txt'), 'w') as grunz_fh:
+      grunz_fh.write("grunz\n")
+    ret = self.client.get('/grunz.txt')
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.data.decode('utf-8'), 'grunz\n', 'route to existing file')
 
     
 

@@ -55,6 +55,7 @@ def create_app():
     app.config['RQ_ASYNC']=os.environ.get('RQ_ASYNC')=='1'
 
   app.config['MULTIPART_UPLOAD_CHUNK'] = app.config.get('MULTIPART_UPLOAD_CHUNK', 64*1024*1024)
+  app.config['FRONTEND_PATH'] = app.config.get('FRONTEND_PATH', os.path.abspath('../frontend/dist'))
 
   ldap_conf = {}
   for key in ['HOST', 'PORT', 'BIND_DN', 'BIND_PASSWORD', 'BASE_DN']:
@@ -93,10 +94,10 @@ def create_app():
       orig_path=path
       if path.startswith('v1/'):
         raise errors.NotFound
-      if path=="" or not os.path.exists(safe_join('../frontend/dist', path)):
+      if path=="" or not os.path.exists(safe_join(app.config.get('FRONTEND_PATH'), path)):
         path="index.html"
       app.logger.debug(f"frontend route to {path} from {orig_path}")
-      return send_from_directory(os.getcwd()+"/../frontend/dist", path)
+      return send_from_directory(app.config.get('FRONTEND_PATH'), path)
 
 
   # log config has to be done after migrate_up, see 

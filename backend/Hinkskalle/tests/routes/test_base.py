@@ -6,6 +6,23 @@ from Hinkskalle.models import Image
 from Hinkskalle import db
 
 class TestBase(RouteBase):
+
+  def test_index(self):
+    ret = self.client.get('/')
+    self.assertEqual(ret.status_code, 200)
+    self.assertRegex(ret.data.decode('utf-8'), r'<title>hinkskalle</title>')
+  
+  def test_route_frontend(self):
+    for test_route in ['/users', '/account', '/non/existent']:
+      ret = self.client.get(test_route)
+      self.assertEqual(ret.status_code, 200, f"routing to {test_route}")
+      self.assertRegex(ret.data.decode('utf-8'), r'<title>hinkskalle</title>')
+    
+    ret = self.client.get('/v1/gru/nz')
+    self.assertEqual(ret.status_code, 404, f"routing to something nonexistent under api")
+
+    
+
   def test_version(self):
     ret = self.client.get('/version')
     self.assertEqual(ret.status_code, 200)

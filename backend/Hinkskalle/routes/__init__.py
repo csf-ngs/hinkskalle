@@ -1,21 +1,23 @@
-from Hinkskalle.routes.base import *
-from Hinkskalle.routes.auth import *
-from Hinkskalle.routes.entities import *
-from Hinkskalle.routes.collections import *
-from Hinkskalle.routes.containers import *
-from Hinkskalle.routes.images import *
-from Hinkskalle.routes.imagefiles import *
-from Hinkskalle.routes.tags import *
-from Hinkskalle.routes.search import *
-from Hinkskalle.routes.shub import *
 
-from Hinkskalle.routes.users import *
-from Hinkskalle.routes.tokens import *
+import Hinkskalle.routes.base
+import Hinkskalle.routes.auth
+import Hinkskalle.routes.entities
+import Hinkskalle.routes.collections
+import Hinkskalle.routes.containers
+import Hinkskalle.routes.images
+import Hinkskalle.routes.imagefiles
+import Hinkskalle.routes.tags
+import Hinkskalle.routes.search
+import Hinkskalle.routes.shub
 
-from Hinkskalle.routes.adm import *
+import Hinkskalle.routes.users
+import Hinkskalle.routes.tokens
 
-from flask import request, current_app
+import Hinkskalle.routes.adm
+
+
 def _get_service_url():
+  from flask import request, current_app
   service_url = request.url_root.rstrip('/')
   if current_app.config.get('PREFERRED_URL_SCHEME', 'http') == 'https':
     service_url = service_url.replace('http:', 'https:')

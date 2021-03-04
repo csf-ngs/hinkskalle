@@ -12,4 +12,4 @@ JSON_STRING='window_configs = { \
 
 sed "s@// RUNTIME_CONFIG@${JSON_STRING}@" public/index.html.tpl > public/index.html
 
-yarn serve
+yarn build --watch

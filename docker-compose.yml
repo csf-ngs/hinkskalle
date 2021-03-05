@@ -4,7 +4,7 @@ volumes:
   ldap_conf:
 services:
   api:
-    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v1.0.0"
+    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v1.1.0"
     volumes:
       - '.:/srv/hinkskalle/src'
       - './data/sqlite:/data/db'
@@ -18,7 +18,7 @@ services:
       - '7660:5000'
     working_dir: '/srv/hinkskalle/src/backend'
   rq_worker:
-    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v1.0.0"
+    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v1.1.0"
     volumes:
       - '.:/srv/hinkskalle/src'
       - './data/sqlite:/data/db'
@@ -27,6 +27,8 @@ services:
       - "conf/ldap_secrets.env"
       - "conf/hinkskalle.env"
     working_dir: '/srv/hinkskalle/src/backend'
+    depends_on:
+      - redis
   redis:
     image: redis:6-alpine
   ldap:
@@ -41,7 +43,7 @@ services:
       - ldap_db:/var/lib/ldap/
       - ldap_conf:/etc/ldap/
   build_frontend:
-    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v1.0.0"
+    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v1.1.0"
     volumes:
       - '.:/srv/hinkskalle/src'
     command: '../script/start-dev-frontend.sh'

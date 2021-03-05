@@ -32,6 +32,9 @@ naming_convention = {
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
     "pk": "pk_%(table_name)s"
 }
+
+if os.getenv('POSTGRES_PASSWORD'):
+  os.environ['SQLALCHEMY_DATABASE_URI']=os.getenv('SQLALCHEMY_DATABASE_URI').replace('%PASSWORD%', os.getenv('POSTGRES_PASSWORD'))
 db = SQLAlchemy(metadata=MetaData(naming_convention=naming_convention))
 migrate = Migrate()
 

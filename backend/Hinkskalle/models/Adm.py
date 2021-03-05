@@ -17,7 +17,7 @@ class AdmSchema(Schema):
     return data
 
 class Adm(db.Model):
-  key = db.Column(db.Enum(AdmKeys), primary_key=True)
+  key = db.Column(db.Enum(AdmKeys, name="adm_key_types"), primary_key=True)
   val = db.Column(db.JSON(), nullable=False)
 
   createdAt = db.Column(db.DateTime, default=datetime.now)

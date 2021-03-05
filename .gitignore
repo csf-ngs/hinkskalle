@@ -1,8 +1,7 @@
-conf/slapd_secrets.env
+conf/*_secrets.env
 backend/config.py
 frontend/public/index.html
 conf/secrets.json
-conf/ldap_secrets.env
 conf/mongo.env
 conf/mongo-entrypoint/01_create_user.sh
 .vagrant/

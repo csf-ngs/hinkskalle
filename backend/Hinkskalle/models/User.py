@@ -161,7 +161,7 @@ class Token(db.Model):
   user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
   expiresAt = db.Column(db.DateTime)
-  source = db.Column(db.Enum('auto', 'manual'))
+  source = db.Column(db.Enum('auto', 'manual', name="token_source_types"))
 
   user = db.relationship('User', back_populates='tokens')
 

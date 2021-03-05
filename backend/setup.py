@@ -13,11 +13,12 @@ setup(
         'flask-rebar',
         'requests',
         'passlib',
-        'ldap3',
         'Flask-RQ2',
+        'ldap3',
     ],
-    extra_requires={
+    extras_require={
       'dev': ['Jinja2'],
       'test': ['nose2', 'fakeredis'],
+      'postgres': ['psycopg2'],
     },
 )

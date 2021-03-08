@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='Hinkskalle',
-    version='2.0.1',
+    version='2.0.3',
     packages=['Hinkskalle'],
     include_package_data=True,
     install_requires=[
@@ -17,7 +17,7 @@ setup(
         'ldap3',
     ],
     extras_require={
-      'dev': ['Jinja2'],
+      'dev': ['Jinja2','nose2','fakeredis','psycopg2'],
       'test': ['nose2', 'fakeredis'],
       'postgres': ['psycopg2'],
     },

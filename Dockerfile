@@ -9,7 +9,7 @@ RUN yarn build
 
 FROM docker.ngs.vbcf.ac.at/singularity-base as singularity
 
-FROM docker.ngs.vbcf.ac.at/flask-base:v2.0.0
+FROM docker.ngs.vbcf.ac.at/flask-base:v3.0.0
 
 RUN apt-get install -y jq gosu
 
@@ -20,7 +20,7 @@ RUN mkdir -p /data/db
 
 COPY --chown=hinkskalle backend /srv/hinkskalle/backend
 RUN cd /srv/hinkskalle/backend \
-  && pip3 install . 
+  && pip3 install '.[postgres]' 
 
 WORKDIR /srv/hinkskalle
 
@@ -41,5 +41,5 @@ ENV FLASK_APP=Hinkskalle
 ENV HINKSKALLE_SETTINGS=/srv/hinkskalle/conf/config.json
 ENV BACKEND_URL=http://localhost:5000
 ENV ENABLE_REGISTER=false
-CMD [ "./script/start.sh" ]
+CMD [ "gosu", "hinkskalle", "./script/start.sh" ]
 EXPOSE 5000

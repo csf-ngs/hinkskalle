@@ -15,10 +15,11 @@ def _test_conf():
 class TestConfig(unittest.TestCase):
 
   def setUp(self):
+    self.saved_environ = os.environ
     os.environ={}
   
   def tearDown(self):
-    os.environ={}
+    os.environ=self.saved_environ
 
   def test_file(self):
     cf = tempfile.NamedTemporaryFile(mode='w')

@@ -12,7 +12,7 @@ steps:
     - git fetch --tags
     - git describe > .tags
 - name: testhase
-  image: docker.ngs.vbcf.ac.at/hinkskalle-dev:v1.0.0
+  image: docker.ngs.vbcf.ac.at/hinkskalle-dev:v1.1.0
   environment:
     HINKSKALLE_SETTINGS: ../../conf/config.json
   commands:
@@ -20,7 +20,7 @@ steps:
   - pip3 install -e .
   - nose2
 - name: testhase-front
-  image: docker.ngs.vbcf.ac.at/hinkskalle-dev:v1.0.0
+  image: docker.ngs.vbcf.ac.at/hinkskalle-dev:v1.1.0
   commands:
   - cd frontend
   - yarn install
@@ -51,6 +51,8 @@ steps:
   - TAG=$(cat .tags)
   - docker tag docker.ngs.vbcf.ac.at/hinkskalle docker.ngs.vbcf.ac.at/hinkskalle:$TAG
   - docker push docker.ngs.vbcf.ac.at/hinkskalle
+  - docker tag docker.ngs.vbcf.ac.at/hinkskalle ghcr.io/csf-ngs/hinkskalle:$TAG
+  - docker push ghcr.io/hinkskalle
   when:
     event:
       - tag

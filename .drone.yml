@@ -17,7 +17,7 @@ steps:
     HINKSKALLE_SETTINGS: ../../conf/config.json
   commands:
   - cd backend
-  - pip3 install -e .
+  - pip3 install -e '.[dev]'
   - nose2
 - name: testhase-front
   image: docker.ngs.vbcf.ac.at/hinkskalle-dev:v1.1.0

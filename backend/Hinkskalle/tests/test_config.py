@@ -16,6 +16,9 @@ class TestConfig(unittest.TestCase):
 
   def setUp(self):
     os.environ={}
+  
+  def tearDown(self):
+    os.environ={}
 
   def test_file(self):
     cf = tempfile.NamedTemporaryFile(mode='w')

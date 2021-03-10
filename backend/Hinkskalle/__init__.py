@@ -33,20 +33,31 @@ naming_convention = {
     "pk": "pk_%(table_name)s"
 }
 
-if os.getenv('POSTGRES_PASSWORD'):
-  os.environ['SQLALCHEMY_DATABASE_URI']=os.getenv('SQLALCHEMY_DATABASE_URI').replace('%PASSWORD%', os.getenv('POSTGRES_PASSWORD'))
 db = SQLAlchemy(metadata=MetaData(naming_convention=naming_convention))
 migrate = Migrate()
 
 def create_app():
   app = Flask(__name__)
   app.config.from_json(os.environ.get('HINKSKALLE_SETTINGS', '../../conf/config.json'))
+  secrets_conf = os.environ.get('HINKSKALLE_SECRETS', '../../conf/secrets.json')
+  if os.path.exists(secrets_conf):
+    app.config.from_json(secrets_conf)
+
+  if 'DB_PASSWORD' in os.environ:
+    app.config['DB_PASSWORD'] = os.getenv('DB_PASSWORD')
+  if 'SQLALCHEMY_DATABASE_URI' in os.environ:
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
+
+  if app.config.get('DB_PASSWORD'):
+    app.config['SQLALCHEMY_DATABASE_URI']=app.config.get('SQLALCHEMY_DATABASE_URI').replace('%PASSWORD%', app.config.get('DB_PASSWORD'))
+  app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=app.config.get('SQLALCHEMY_TRACK_MODIFICATIONS', False)
+
   if not 'AUTH' in app.config:
     app.config['AUTH']={}
 
-  if 'SQLALCHEMY_DATABASE_URI' in os.environ:
-    app.config['SQLALCHEMY_DATABASE_URI']=os.environ['SQLALCHEMY_DATABASE_URI']
-  app.config['PREFERRED_URL_SCHEME']=os.environ.get('PREFERRED_URL_SCHEME', 'http')
+  app.config['PREFERRED_URL_SCHEME'] = app.config.get('PREFERRED_URL_SCHEME', 'http')
+  if 'PREFERRED_URL_SCHEME' in os.environ:
+    app.config['PREFERRED_URL_SCHEME']=os.getenv('PREFERRED_URL_SCHEME')
 
   app.config['KEYSERVER_URL'] = app.config.get('KEYSERVER_URL', 'https://sks.hnet.se')
   if 'HINKSKALLE_KEYSERVER_URL' in os.environ:
@@ -60,7 +71,7 @@ def create_app():
   app.config['MULTIPART_UPLOAD_CHUNK'] = app.config.get('MULTIPART_UPLOAD_CHUNK', 64*1024*1024)
   app.config['FRONTEND_PATH'] = app.config.get('FRONTEND_PATH', os.path.abspath('../frontend/dist'))
 
-  ldap_conf = {}
+  ldap_conf = app.config['AUTH'].get('LDAP', {})
   for key in ['HOST', 'PORT', 'BIND_DN', 'BIND_PASSWORD', 'BASE_DN']:
     if 'HINKSKALLE_LDAP_' + key in os.environ:
       ldap_conf[key]=os.environ.get('HINKSKALLE_LDAP_'+key)

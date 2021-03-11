@@ -47,7 +47,9 @@ interface. The registry works perfectly fine.
 
 Set up singularity according to the [instructions on sylabs.io](https://sylabs.io/docs/#singularity)
 
-#### 
+#### Configuration
+
+
 
 ### Development Install
 
@@ -67,6 +69,18 @@ compiling the frontend:
 # install node according to your OS
 cd frontend/
 yarn install
+```
+
+#### Start Development Server
+
+Achieve the best development experience with continuous reloads and frontend builds!
+
+```bash
+script/start-dev.sh
+# continuous build of frontend
+script/start-dev-frontend.sh
+# (optional: start rq worker)
+# script/start-dev-worker.sh
 ```
 
 #### Backend Tests

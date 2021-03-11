@@ -1,0 +1,39 @@
+version: "3"
+volumes:
+  - hinkdb
+services:
+  api:
+    restart: always
+    image: ghcr.io/csf-ngs/hinkskalle
+    env_file:
+      - "conf/secrets.env"
+      - "conf/hinkskalle.env"
+    environment:
+      - PREFERRED_URL_SCHEME=https
+    volumes:
+      - ./conf/config.json:/srv/hinkskalle/conf/config.json
+      - /mnt/singularity:/mnt/images
+    ports:
+      - '7600:5000'
+    depends_on:
+      - hinkdb
+  hinkdb:
+    image: postgres:12
+    environment:
+      POSTGRES_DB: hinkskalle
+      POSTGRES_USER: knihskalle
+    env_file:
+      - "conf/db_secrets.env"
+    volumes:
+      - hink_db:/var/lib/postgresql/data
+  rq_worker:
+    image: ghcr.io/csf-ngs/hinkskalle
+    command: '../script/start-worker.sh'
+    env_file:
+      - "conf/secrets.env"
+      - "conf/hinkskalle.env"
+    working_dir: '/srv/hinkskalle/src/backend'
+    depends_on:
+      - redis
+  redis:
+    image: redis:6-alpine

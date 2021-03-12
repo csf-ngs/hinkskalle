@@ -39,17 +39,28 @@ pip install .
 pip install '.[postgres]'
 ```
 
-#### Install Singularity (optional)
-
-Singularity itself is optional on the server and only required for some
-features, e.g.  displaying the Singularity definition file in the web
-interface. The registry works perfectly fine.
+#### Install Singularity
 
 Set up singularity according to the [instructions on sylabs.io](https://sylabs.io/docs/#singularity)
 
+It is required only for checking image signatures and showing the singularity
+definition file on the web.
+
+The singularity binary should end up in `$PATH` so that Hinkskalle can find it.
+`/usr/local/bin`, the default, is usually fine.
+
 #### Configuration
 
+Hinkskalle reads its configuration from JSON files. By default it looks for
 
+- `conf/config.json`
+- `conf/secrets.json` (optional)
+
+My recommendation is to put passwords etc. in an extra file (which is in
+[.gitignore](.gitignore)), which makes it harder to accidentally commit your
+credentials.
+
+See [share/doc/CONFIG.md](share/doc/CONFIG.md) for valid configuration options.
 
 ### Development Install
 
@@ -83,6 +94,26 @@ script/start-dev-frontend.sh
 # script/start-dev-worker.sh
 ```
 
+#### Patch Singularity
+
+Singularity absolutely requires that the library server is reachable via https.
+While you can set this up for your development server, it's much easier to
+patch the source code and recompile your own.
+
+The necessary patch is provided in
+[share/singularity-plain-http.patch](share/singularity-plain-http.patch) and
+should work an all versions.
+
+Follow the instructions on
+[https://sylabs.io/guides/3.7/admin-guide/installation.html](https://sylabs.io/guides/3.7/admin-guide/installation.html)
+(adjust for the version you would like) and apply the patch between the steps
+"Checkout Code from Git" and "Compile Singularity":
+
+```bash
+cd ${GOPATH}/src/github.com/sylabs/singularity
+patch -p1 < /path/to/singularity-plain-http.patch
+```
+
 #### Backend Tests
 
 ```bash
@@ -94,7 +125,6 @@ nose2
 ```bash
 yarn test:unit
 ```
-
 
 # Deployment
 

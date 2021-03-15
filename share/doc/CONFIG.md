@@ -19,6 +19,7 @@ You might want to set these:
 - `PREFERRED_URL_SCHEME` - `(http|https)`: for generating URLs. If we run behind a reverse proxy we might think that we are on plain http. Use this to force https
 - `UPLOAD_CHUNK_SIZE` - buffer this many bytes before dumping to disk during upload. Find a balance between upload speed and memory usage!
 - `MULTIPART_UPLOAD_CHUNK` - for v2 multipart uploads. The singularity client splits images into chunks of this size.
+- `DEFAULT_ARCH` - which archtitecture should we use for the default `latest` tag if no explicit tag is specified for a push (default `amd64`)
 
 - `SQLALCHEMY_DATABASE_URI` - database location. E.g. `sqlite:///data/db/hinkskalle.db`, or `postgresql+psycopg2://knihskalle:%PASSWORD%@hinkdb/hinkskalle"`. Any `%PASSWORD%` string will be replaced by the config value for `DB_PASSWORD`
 - `KEYSERVER_URL` - public key storage/search. Hinkskalle does not come with its own keyserver. Point this to a compatible GnuPG keyserver (see [https://sks-keyservers.net/](https://sks-keyservers.net/) for a list). You can also run your own: [https://github.com/hockeypuck/hockeypuck](https://github.com/hockeypuck/hockeypuck)

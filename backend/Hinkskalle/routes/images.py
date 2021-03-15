@@ -1,7 +1,7 @@
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
-from marshmallow import fields, Schema
+from marshmallow import fields, Schema, pre_load
 from flask import request, current_app, safe_join, send_file, g
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
@@ -15,6 +15,23 @@ from Hinkskalle.models import ImageSchema, Image, Container, Entity, Collection
 
 class ImageQuerySchema(RequestSchema):
   arch = fields.String(required=False)
+
+  # singularity 3.7.0 has a weird bug, it escapes the = in the query string sending arch%3Damd64
+  # unfortunately this is the only workaround I found for rebar 2.x 
+  class Meta:
+    include = {"arch=amd64": fields.String(required=False)}
+
+  @pre_load
+  def preprocess(self, in_data):
+    newdict={}
+    for k in in_data.keys():
+      if k.startswith('arch='):
+        (new_k, v) = k.split('=')
+        newdict[new_k]=v
+      else:
+        newdict[k]=in_data[k]
+    return newdict
+
 
 class ImageResponseSchema(ResponseSchema):
   data = fields.Nested(ImageSchema)
@@ -88,7 +105,7 @@ def _get_image(entity_id, collection_id, tagged_container_id, arch=None):
   elif arch:
     arch_tags = container.archImageTags()
     if not arch in arch_tags or not tag in arch_tags[arch]:
-      raise errors.NotFound(f"Tag {tag} for architecture {arch} on container {container.entityName}/{container.collectionName}/{container.name} not found")
+      raise errors.NotFound(f"Tag {tag} for architecture {arch} on container {container.entityName()}/{container.collectionName()}/{container.name} not found")
     image = Image.query.get(arch_tags[arch][tag])
   else:
     try:
@@ -202,7 +219,7 @@ def create_image():
     db.session.commit()
 
   if new_image.uploaded:
-    container.tag_image('latest', new_image.id)
+    container.tag_image('latest', new_image.id, arch=current_app.config.get('DEFAULT_ARCH', 'amd64'))
 
   return { 'data': new_image }
 

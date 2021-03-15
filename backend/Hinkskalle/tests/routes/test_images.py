@@ -317,6 +317,11 @@ class TestImages(RouteBase):
     self.assertDictEqual(db_container.imageTags(), {
       'latest': data['id']
     })
+    self.assertDictEqual(db_container.archImageTags(), {
+      'amd64': { 'latest': data['id'] }
+    })
+    db_image = Image.query.get(data['id'])
+    self.assertEqual(db_image.arch, 'amd64')
 
 
   def test_create_not_unique(self):

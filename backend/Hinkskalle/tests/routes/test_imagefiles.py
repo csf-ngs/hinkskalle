@@ -265,7 +265,13 @@ class TestImagefiles(RouteBase):
     self.assertEqual(read_image.size, os.path.getsize(read_image.location))
 
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.imageTags(), { 'latest': str(read_image.id) }, 'latest tag updated')
+    self.assertDictEqual(db_container.imageTags(),
+      { 'latest': str(read_image.id) }, 'latest tag updated')
+    self.assertDictEqual(db_container.archImageTags(),
+      { 'amd64': { 'latest': str(read_image.id) }}, 'arch image tag updated'
+    )
+    db_image = Image.query.get(image_id)
+    self.assertEqual(db_image.arch, 'amd64')
 
   def test_push_readonly(self):
     image, container, _, _ = _create_image()

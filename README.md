@@ -128,6 +128,23 @@ yarn test:unit
 
 # Deployment
 
+## 
+
+## GnuPG Keyserver
+
+Signed and verified images require a central lookup of public keys. singularity
+provides the keys subcommand to manage your keys, upload them and search for
+public keys. 
+
+Since singularity can talk to any (public or not) keyserver, Hinkskalle does
+not come with keyserver functionality. Instead you can point it either to any
+keyserver (see [https://sks-keyservers.net/](https://sks-keyservers.net/) for a
+list) or run something like
+[HockeyPuck](https://github.com/hockeypuck/hockeypuck) yourself.
+
+The config variable `KEYSERVER_URL` should point to the webserver of the
+keyserver you have chosen.
+
 # Built With
 
 - [Python Flask](https://flask.palletsprojects.com/en/1.1.x/)

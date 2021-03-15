@@ -3,9 +3,11 @@ volumes:
   ldap_db:
   ldap_conf:
   hink_db:
+  hockeypuck_db:
+  hockeypuck_data:
 services:
   api:
-    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v1.1.0"
+    image: "ghcr.io/csf-ngs/hinkskalle-dev:v1.1.1"
     volumes:
       - '.:/srv/hinkskalle/src'
       - './data/sqlite:/data/db'
@@ -13,8 +15,7 @@ services:
     environment:
       PORT: 5000
     env_file:
-      - "conf/ldap_secrets.env"
-      - "conf/db_secrets.env"
+      - "conf/secrets.env"
       - "conf/hinkskalle.env"
     ports:
       - '7660:5000'
@@ -31,21 +32,21 @@ services:
     volumes:
       - hink_db:/var/lib/postgresql/data
   rq_worker:
-    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v1.1.0"
+    image: "ghcr.io/csf-ngs/hinkskalle-dev:v1.1.1"
+    command: '../script/start-dev-worker.sh'
     volumes:
       - '.:/srv/hinkskalle/src'
-      - './data/sqlite:/data/db'
-    command: '../script/start-dev-worker.sh'
     env_file:
-      - "conf/ldap_secrets.env"
+      - "conf/secrets.env"
       - "conf/hinkskalle.env"
     working_dir: '/srv/hinkskalle/src/backend'
     depends_on:
       - redis
+      - hinkdb
   redis:
     image: redis:6-alpine
   ldap:
-    image: docker.ngs.vbcf.ac.at/fsk-ldap:v0.1.0
+    image: ghcr.io/csf-ngs/fsk-ldap
     environment:
       LDAP_LOGIN_DN: cn=login,ou=Adm,dc=ngs,dc=vbcf,dc=ac,dc=at
     env_file:
@@ -56,7 +57,7 @@ services:
       - ldap_db:/var/lib/ldap/
       - ldap_conf:/etc/ldap/
   build_frontend:
-    image: "docker.ngs.vbcf.ac.at/hinkskalle-dev:v1.1.0"
+    image: "ghcr.io/csf-ngs/hinkskalle-dev:v1.1.1"
     volumes:
       - '.:/srv/hinkskalle/src'
     command: '../script/start-dev-frontend.sh'
@@ -66,3 +67,19 @@ services:
     working_dir: '/srv/hinkskalle/src/frontend'
     depends_on: 
       - api
+  hockeypuck:
+    image: "ghcr.io/csf-ngs/hockeypuck"
+    ports:
+      - "11371:11371"
+    depends_on:
+      - hockeypuck_db
+    volumes:
+      - hockeypuck_data:/hockeypuck/data
+  hockeypuck_db:
+    image: postgres:12
+    environment:
+      - POSTGRES_USER=hkp
+      - POSTGRES_DB=hkp
+      - POSTGRES_PASSWORD=hkp
+    volumes:
+      - hockeypuck_db:/var/lib/postgresql/data

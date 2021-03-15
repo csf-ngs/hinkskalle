@@ -1,3 +1,4 @@
+conf/secrets.env
 conf/*_secrets.env
 backend/config.py
 frontend/public/index.html

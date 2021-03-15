@@ -21,7 +21,7 @@ You might want to set these:
 - `MULTIPART_UPLOAD_CHUNK` - for v2 multipart uploads. The singularity client splits images into chunks of this size.
 
 - `SQLALCHEMY_DATABASE_URI` - database location. E.g. `sqlite:///data/db/hinkskalle.db`, or `postgresql+psycopg2://knihskalle:%PASSWORD%@hinkdb/hinkskalle"`. Any `%PASSWORD%` string will be replaced by the config value for `DB_PASSWORD`
-- `KEYSERVER_URL` - public key storage/search. Hinkskalle does not come with its own keyserver. Point this to a SKS keyserver (see [https://sks-keyservers.net/](https://sks-keyservers.net/) for a list). You can also run your own: [https://gitlab.com/hagrid-keyserver/hagrid](https://gitlab.com/hagrid-keyserver/hagrid)
+- `KEYSERVER_URL` - public key storage/search. Hinkskalle does not come with its own keyserver. Point this to a compatible GnuPG keyserver (see [https://sks-keyservers.net/](https://sks-keyservers.net/) for a list). You can also run your own: [https://github.com/hockeypuck/hockeypuck](https://github.com/hockeypuck/hockeypuck)
 
 - `SQLALCHEMY_TRACK_MODIFICATIONS` - leave this to false
 
@@ -65,3 +65,4 @@ e.g.
 }
 ```
 
+# Environment Overrides

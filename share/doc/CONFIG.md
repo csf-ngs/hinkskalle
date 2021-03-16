@@ -4,7 +4,7 @@ Refer to
 [https://flask.palletsprojects.com/en/1.1.x/config/](https://flask.palletsprojects.com/en/1.1.x/config/)
 for general Flask configuration values.
 
-## Flask Config Values
+### Flask Config Values
 
 You might want to set these:
 
@@ -12,7 +12,7 @@ You might want to set these:
 - `PERMANENT_SESSION_LIFETIME` - session cookie expiration time
 - `SESSION_COOKIE_NAME` - name for cookie. Note that Hinkskalle does not use cookie-based sessions, only Authorization: Bearer tokens.
 
-## Hinskalle Config Values
+### Hinskalle Config Values
 
 - `IMAGE_PATH` - where should we store the uploaded images?
 - `FRONTEND_PATH` - where can we find `index.html` and the js bundles for the frontend, usually `../frontend/dist/`
@@ -26,34 +26,30 @@ You might want to set these:
 
 - `SQLALCHEMY_TRACK_MODIFICATIONS` - leave this to false
 
-## RQ Worker/Redis config
+### RQ Worker/Redis config
 
 See [https://python-rq.org/docs/workers/](https://python-rq.org/docs/workers/) for general config settings.
 
 - `REDIS_URL` - where can we find our redis server?
 
-## Secrets
+### Secrets
 
 try to keep these out of `config.json`!
 
 - `DB_PASSWORD`
 - `REDIS_PASSWORD`
 
-## subkey `AUTH`
+### Auth/LDAP config
 
-### subkey `LDAP`
-
-- `HOST`
-- `PORT`
-- `BIND_DN`
-- `BIND_PASSWORD`
-- `BASE_DN`
-
-e.g.
+- `AUTH.LDAP.HOST` - where to find the ldap server
+- `AUTH.LDAP.PORT` - which port (default: 389)
+- `AUTH.LDAP.BIND_DN` - initial bind - this DN must be able to look up user accounts by username/email
+- `AUTH.LDAP.BIND_PASSWORD` - should be in secrets.json
+- `AUTH.LDAP.BASE_DN` - search base for user accounts
 
 ```json
 {
-  // ...
+  ...
   "AUTH": {
     "LDAP": {
       "HOST": "ldap.testha.se",
@@ -67,3 +63,20 @@ e.g.
 ```
 
 # Environment Overrides
+
+Certain variables from the config file(s) can be set via the environment. If
+hinkskalle finds them there, it will overwrite the values:
+
+- `DB_PASSWORD`
+- `SQLALCHEMY_DATABASE_URI`
+- `PREFERRED_URL_SCHEME`
+- `HINKSKALLE_KEYSERVER_URL`
+- `HINKSKALLE_REDIS_URL`
+- `HINKSKALLE_LDAP_HOST`
+- `HINKSKALLE_LDAP_PORT`
+- `HINKSKALLE_LDAP_BIND_DN`
+- `HINKSKALLE_LDAP_BIND_PASSWORD`
+- `HINKSKALLE_LDAP_BASE_DN`
+
+This is superuseful for injecting configs and secrets when running Hinkskalle
+in a container (e.g. docker)

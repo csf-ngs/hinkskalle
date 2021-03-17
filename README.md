@@ -8,7 +8,7 @@ Compatible with/re-implementation of Sylab's singularity library protocol: [http
 
 # Getting Started
 
-### Using a singularity library:
+## Using a singularity library:
 
 - `singularity remote add testhase https://singularity.testha.se/`
 - `singularity remote use testhase`
@@ -22,14 +22,13 @@ Compatible with/re-implementation of Sylab's singularity library protocol: [http
 Hinkskalle requires Python3+. A SQL database server (PostgreSQL, MySQL, ...) is
 recommended, but entirely optional (sqlite is fine).
 
-## Installing
+# Deployment
 
-#### Download the source to a location of your choice
+## Download the source to a location of your choice
 
 - latest release from the [release page](./releases) and unpack
-- or use `git clone https://github.com/h3kker/hinkskalle.git` for the latest development version
 
-#### Install Required Python Packages
+### Install Required Python Packages
 
 ```
 cd backend/
@@ -39,7 +38,7 @@ pip install .
 pip install '.[postgres]'
 ```
 
-#### Install Singularity
+### Install Singularity
 
 Set up singularity according to the [instructions on sylabs.io](https://sylabs.io/docs/#singularity)
 
@@ -49,7 +48,7 @@ definition file on the web.
 The singularity binary should end up in `$PATH` so that Hinkskalle can find it.
 `/usr/local/bin`, the default, is usually fine.
 
-#### Configuration
+### Configure Hinkskalle
 
 Hinkskalle reads its configuration from JSON files. By default it looks for
 
@@ -57,12 +56,35 @@ Hinkskalle reads its configuration from JSON files. By default it looks for
 - `conf/secrets.json` (optional)
 
 My recommendation is to put passwords etc. in an extra file (which is in
-[.gitignore](.gitignore)), which makes it harder to accidentally commit your
+[.gitignore](.gitignore)) to make it harder to accidentally commit your
 credentials.
 
 See [share/doc/CONFIG.md](share/doc/CONFIG.md) for valid configuration options.
 
-### Development Install
+## GnuPG Keyserver
+
+Signed and verified images require a central lookup of public keys. singularity
+provides the keys subcommand to manage your keys, upload them and search for
+public keys. 
+
+Since singularity can talk to any (public or not) keyserver, Hinkskalle does
+not come with keyserver functionality. Instead you can point it either to any
+keyserver (see [https://sks-keyservers.net/](https://sks-keyservers.net/) for a
+list) or run something like
+[HockeyPuck](https://github.com/hockeypuck/hockeypuck) yourself.
+
+The config variable `KEYSERVER_URL` should point to the webserver of the
+keyserver you have chosen.
+
+# Development
+
+## Clone Current HEAD
+
+```bash
+git clone https://github.com/csf-ngs/hinkskalle.git
+```
+
+## Development Install
 
 ```bash
 cd backend/
@@ -82,19 +104,7 @@ cd frontend/
 yarn install
 ```
 
-#### Start Development Server
-
-Achieve the best development experience with continuous reloads and frontend builds!
-
-```bash
-script/start-dev.sh
-# continuous build of frontend
-script/start-dev-frontend.sh
-# (optional: start rq worker)
-# script/start-dev-worker.sh
-```
-
-#### Patch Singularity
+## Patch Singularity
 
 Singularity absolutely requires that the library server is reachable via https.
 While you can set this up for your development server, it's much easier to
@@ -114,36 +124,29 @@ cd ${GOPATH}/src/github.com/sylabs/singularity
 patch -p1 < /path/to/singularity-plain-http.patch
 ```
 
-#### Backend Tests
+## Start Development Server
+
+Achieve the best development experience with continuous reloads and frontend builds!
+
+```bash
+script/start-dev.sh
+# continuous build of frontend
+script/start-dev-frontend.sh
+# (optional: start rq worker)
+# script/start-dev-worker.sh
+```
+
+## Backend Tests
 
 ```bash
 nose2
 ```
 
-#### Frontend Tests
+## Frontend Tests
 
 ```bash
 yarn test:unit
 ```
-
-# Deployment
-
-## 
-
-## GnuPG Keyserver
-
-Signed and verified images require a central lookup of public keys. singularity
-provides the keys subcommand to manage your keys, upload them and search for
-public keys. 
-
-Since singularity can talk to any (public or not) keyserver, Hinkskalle does
-not come with keyserver functionality. Instead you can point it either to any
-keyserver (see [https://sks-keyservers.net/](https://sks-keyservers.net/) for a
-list) or run something like
-[HockeyPuck](https://github.com/hockeypuck/hockeypuck) yourself.
-
-The config variable `KEYSERVER_URL` should point to the webserver of the
-keyserver you have chosen.
 
 # Built With
 

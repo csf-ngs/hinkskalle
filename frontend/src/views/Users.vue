@@ -193,6 +193,7 @@ function defaultItem(): User {
   user.createdAt = new Date();
   user.isActive = true;
   user.isAdmin = false;
+  user.source = 'local';
   return user;
 }
 

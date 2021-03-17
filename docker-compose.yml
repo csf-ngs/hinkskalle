@@ -22,6 +22,7 @@ services:
     working_dir: '/srv/hinkskalle/src/backend'
     depends_on:
       - hinkdb
+      - ldap
   hinkdb:
     image: postgres:12
     environment:

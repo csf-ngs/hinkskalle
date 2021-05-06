@@ -4,7 +4,6 @@ from logging.config import dictConfig
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 from flask_migrate import Migrate, upgrade as migrate_up
-from flask.logging import default_handler
 
 import os
 import os.path

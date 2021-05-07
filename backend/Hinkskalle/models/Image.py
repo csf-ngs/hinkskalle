@@ -65,7 +65,7 @@ class ImageUploadUrl(db.Model):
   id = db.Column(db.String(), primary_key=True, default=generate_uuid, unique=True)
   expiresAt = db.Column(db.DateTime, default=upload_expiration)
   path = db.Column(db.String(), nullable=False)
-  size = db.Column(db.Integer)
+  size = db.Column(db.BigInteger)
   md5sum = db.Column(db.String())
   sha256sum = db.Column(db.String())
   state = db.Column(db.Enum(UploadStates, name="upload_state_types"))

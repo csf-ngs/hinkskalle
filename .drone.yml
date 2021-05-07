@@ -51,6 +51,7 @@ steps:
   - TAG=$(cat .tags)
   - docker tag docker.ngs.vbcf.ac.at/hinkskalle docker.ngs.vbcf.ac.at/hinkskalle:$TAG
   - docker push docker.ngs.vbcf.ac.at/hinkskalle
+  - docker tag docker.ngs.vbcf.ac.at/hinkskalle ghcr.io/csf-ngs/hinkskalle
   - docker tag docker.ngs.vbcf.ac.at/hinkskalle ghcr.io/csf-ngs/hinkskalle:$TAG
   - docker push ghcr.io/csf-ngs/hinkskalle
   when:

@@ -22,6 +22,31 @@ Compatible with/re-implementation of Sylab's singularity library protocol: [http
 Hinkskalle requires Python3+. A SQL database server (PostgreSQL, MySQL, ...) is
 recommended, but entirely optional (sqlite is fine).
 
+# Container Deployment
+
+Using docker-compose.
+
+- Get a docker-compose file
+
+- Set up conf/hinkskalle.env, conf/secrets.env, conf/db_secrets.env
+
+- docker-compose run api bash
+
+```
+cd backend
+flask local_db init
+flask local_db add-user # admin
+```
+
+- fire up whole stack
+
+- if using ldap docker-compose exec api bash
+
+```
+cd backend
+flask ldap sync
+```
+
 # Deployment
 
 ## Download the source to a location of your choice

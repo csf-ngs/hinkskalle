@@ -31,7 +31,8 @@ COPY --from=singularity /usr/local/etc/singularity/ /usr/local/etc/singularity/
 COPY --from=singularity /usr/local/libexec/singularity/ /usr/local/libexec/singularity/
 COPY --from=singularity /usr/local/var/singularity/ /usr/local/var/singularity/
 
-RUN mkdir -p /srv/hinkskalle/frontend/dist
+RUN mkdir -p /srv/hinkskalle/frontend/dist \
+  && chown -R hinkskalle /srv/hinkskalle/frontend
 COPY --chown=hinkskalle --from=frontend-build-stage /app/dist /srv/hinkskalle/frontend/dist/
 
 COPY --chown=hinkskalle script /srv/hinkskalle/script

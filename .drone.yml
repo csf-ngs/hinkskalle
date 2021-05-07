@@ -52,7 +52,7 @@ steps:
   - docker tag docker.ngs.vbcf.ac.at/hinkskalle docker.ngs.vbcf.ac.at/hinkskalle:$TAG
   - docker push docker.ngs.vbcf.ac.at/hinkskalle
   - docker tag docker.ngs.vbcf.ac.at/hinkskalle ghcr.io/csf-ngs/hinkskalle:$TAG
-  - docker push ghcr.io/hinkskalle
+  - docker push ghcr.io/csf-ngs/hinkskalle
   when:
     event:
       - tag

@@ -3,3 +3,7 @@ data/
 backend/tmp/
 **/node_modules
 **/dist
+backend/test_report.html
+backend/coverage_report
+**/__pycache__
+*.pyc

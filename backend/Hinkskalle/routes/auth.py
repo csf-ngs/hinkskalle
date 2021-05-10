@@ -1,10 +1,11 @@
 from Hinkskalle import registry, password_checkers, authenticator, rebar, db
-from Hinkskalle.models import TokenSchema, User, Token
+from Hinkskalle.models import TokenSchema, User, Token, Entity
 from Hinkskalle.util.auth.token import Scopes
 from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from flask import current_app, g
+from sqlalchemy.orm.exc import NoResultFound
 
 import datetime
 
@@ -41,6 +42,13 @@ def get_token():
     user = password_checkers.check_password(body['username'], body['password'])
   except (UserNotFound, UserDisabled, InvalidPassword) as err:
     raise errors.Unauthorized(err.message)
+
+  
+  try:
+    user_entity = Entity.query.filter(Entity.name==user.username).one()
+  except NoResultFound:
+    user_entity = Entity(name=user.username, createdBy=user.username)
+    db.session.add(user_entity)
 
   token = user.create_token()
   token.refresh()

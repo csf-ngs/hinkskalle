@@ -4,7 +4,7 @@ from flask import g
 from Hinkskalle.tests.route_base import RouteBase
 
 from Hinkskalle.tests.model_base import _create_user
-from Hinkskalle.models import User, Token
+from Hinkskalle.models import User, Token, Entity
 from Hinkskalle import db
 
 class TestPasswordAuth(RouteBase):
@@ -28,6 +28,31 @@ class TestPasswordAuth(RouteBase):
     self.assertIsNotNone(db_token)
     self.assertEqual(db_token.source, 'auto')
     self.assertTrue(abs(db_token.expiresAt - (datetime.datetime.now()+Token.defaultExpiration)) < datetime.timedelta(minutes=1))
+  
+  def test_login_entity_create(self):
+    user = _create_user(name='oink.hase')
+    user.set_password('supergeheim')
+    db.session.commit()
+
+    with self.app.test_client() as c:
+      ret = c.post('/v1/get-token', json={ 'username': user.username, 'password': 'supergeheim' } )
+      self.assertEqual(ret.status_code, 200)
+    db_entity = Entity.query.filter(Entity.name=='oink.hase').first()
+    self.assertIsNotNone(db_entity)
+    self.assertEqual(db_entity.createdBy, 'oink.hase')
+
+  def test_login_entity_exists(self):
+    user = _create_user(name='oink.hase')
+    user.set_password('supergeheim')
+    entity = Entity(name='oink.hase')
+    db.session.add(entity)
+    db.session.commit()
+    entity_id=entity.id
+
+    with self.app.test_client() as c:
+      ret = c.post('/v1/get-token', json={ 'username': user.username, 'password': 'supergeheim' } )
+      self.assertEqual(ret.status_code, 200)
+
   
   def test_password_fail(self):
     user = _create_user(name='oink.hase')

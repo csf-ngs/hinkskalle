@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 rq = RQ()
 
 def get_job_info(id):
-  return Job.fetch(id, connection=rq._connection)
+  return Job.fetch(id, connection=rq.connection)
 
 
 @rq.job

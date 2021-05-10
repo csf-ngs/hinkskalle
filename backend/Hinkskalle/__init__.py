@@ -84,11 +84,9 @@ def create_app():
 
   from Hinkskalle.util.jobs import rq
   
-  rq.init_app(app)
   if 'HINKSKALLE_REDIS_URL' in os.environ:
-    app.config['REDIS_URL'] = os.environ.get('HINKSKALLE_REDIS_URL')
-  if app.config.get('REDIS_URL'):
-    rq.redis_url = app.config['REDIS_URL']
+    app.config['RQ_REDIS_URL'] = os.environ.get('HINKSKALLE_REDIS_URL')
+  rq.init_app(app)
 
   with app.app_context():
     import Hinkskalle.routes

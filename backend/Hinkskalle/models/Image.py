@@ -113,7 +113,7 @@ class Image(db.Model):
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
-  updatedAt = db.Column(db.DateTime)
+  updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
   owner = db.relationship('User', back_populates='images')
 

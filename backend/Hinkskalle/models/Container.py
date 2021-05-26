@@ -58,7 +58,7 @@ class Container(db.Model):
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
-  updatedAt = db.Column(db.DateTime)
+  updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
   collection_ref = db.relationship('Collection', back_populates='containers_ref')
   images_ref = db.relationship('Image', back_populates='container_ref', lazy='dynamic')

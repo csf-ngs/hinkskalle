@@ -4,10 +4,12 @@ from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 from flask import request, current_app, g
 import datetime
 
 from Hinkskalle.models import ContainerSchema, Container, Entity, Collection
+from .util import _get_container
 
 class ContainerResponseSchema(ResponseSchema):
   data = fields.Nested(ContainerSchema)
@@ -24,24 +26,6 @@ class ContainerUpdateSchema(ContainerSchema, RequestSchema):
 
 class ContainerDeleteResponseSchema(ResponseSchema):
   status = fields.String()
-
-def _get_container(entity_id, collection_id, container_id):
-  try:
-    entity = Entity.query.filter(Entity.name==entity_id.lower()).one()
-  except NoResultFound:
-    current_app.logger.debug(f"entity {entity_id} not found")
-    raise errors.NotFound(f"entity {entity_id} not found")
-  try:
-    collection = entity.collections_ref.filter(Collection.name==collection_id.lower()).one()
-  except NoResultFound:
-    current_app.logger.debug(f"collection {entity.name}/{collection_id} not found")
-    raise errors.NotFound(f"collection {entity.name}/{collection_id} not found")
-  try:
-    container = collection.containers_ref.filter(Container.name==container_id.lower()).one()
-  except NoResultFound:
-    current_app.logger.debug(f"container {entity.name}/{collection.name}/{container_id} not found")
-    raise errors.NotFound(f"container {entity.name}/{collection.name}/{container_id} not found")
-  return container
 
 @registry.handles(
   rule='/v1/containers/<string:entity_id>/<string:collection_id>',

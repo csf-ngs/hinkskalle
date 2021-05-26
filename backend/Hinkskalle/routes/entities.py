@@ -4,11 +4,12 @@ from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from flask import request, current_app, g
 import datetime
 
 from Hinkskalle.models import EntitySchema, Entity
+from .util import _get_entity
 
 class EntityResponseSchema(ResponseSchema):
   data = fields.Nested(EntitySchema)
@@ -45,10 +46,7 @@ def list_entities():
   authenticators=authenticator.with_scope(Scopes.user),
 )
 def get_entity(entity_id):
-  try:
-    entity = Entity.query.filter(Entity.name == entity_id.lower()).one()
-  except NoResultFound:
-    raise errors.NotFound(f"entity {entity_id} not found")
+  entity = _get_entity(entity_id)
   if not entity.check_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to entity.")
   return { 'data': entity }
@@ -99,11 +97,8 @@ def create_entity():
 )
 def update_entity(entity_id):
   body = rebar.validated_body
+  entity = _get_entity(entity_id)
 
-  try:
-    entity = Entity.query.filter(Entity.name==entity_id.lower()).one()
-  except NoResultFound:
-    raise errors.NotFound(f"entity {entity_id} not found")
   if not entity.check_update_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to entity.")
   if not g.authenticated_user.is_admin and body.get('createdBy', None):
@@ -124,10 +119,7 @@ def update_entity(entity_id):
   authenticators=authenticator.with_scope(Scopes.user)
 ) 
 def delete_entity(entity_id):
-  try:
-    entity = Entity.query.filter(Entity.name==entity_id.lower()).one()
-  except NoResultFound:
-    raise errors.NotFound(f"entity {entity_id} not found")
+  entity = _get_entity(entity_id)
 
   if not entity.check_update_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to entity.")

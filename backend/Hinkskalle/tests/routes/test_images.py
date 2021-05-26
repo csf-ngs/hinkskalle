@@ -1,3 +1,4 @@
+from Hinkskalle.models.Entity import Entity
 import unittest
 import json
 import datetime
@@ -5,8 +6,9 @@ import os
 from tempfile import mkdtemp
 from warnings import warn
 from Hinkskalle.tests.route_base import RouteBase
+from sqlalchemy import update
 
-from Hinkskalle.models import Image, Tag, Container
+from Hinkskalle.models import Collection, Image, Tag, Container
 from Hinkskalle.tests.models.test_Image import _create_image
 from Hinkskalle.tests.models.test_Container import _create_container
 from Hinkskalle import db
@@ -76,6 +78,21 @@ class TestImages(RouteBase):
     data = ret.get_json().get('data')
     self.assertEqual(data['id'], str(image.id))
     self.assertListEqual(data['tags'], ['latest'])
+  
+  def test_get_case(self):
+    image, container, collection, entity = _create_image()
+    db.session.execute(update(Container).where(Container.id==container.id).values(name='oInK'))
+    db.session.execute(update(Collection).where(Collection.id==collection.id).values(name='oInK'))
+    db.session.execute(update(Entity).where(Entity.id==entity.id).values(name='oInK'))
+    db.session.expire_all()
+    latest_tag = Tag(name='latest', image_ref=image)
+    db.session.add(latest_tag)
+    db.session.commit()
+
+    ret = self.client.get(f"/v1/images/oInK/OiNk/oiNK")
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.get_json().get('data')['id'], str(image.id))
+
   
   def test_get_private(self):
     image, container, _, _ = _create_image()

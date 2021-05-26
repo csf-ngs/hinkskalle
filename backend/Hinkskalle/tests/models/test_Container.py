@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Tuple
 
 from Hinkskalle.models import Entity, Collection, Container, ContainerSchema, Image, Tag
 from Hinkskalle.tests.models.test_Collection import _create_collection
@@ -6,7 +7,7 @@ from Hinkskalle.tests.model_base import ModelBase, _create_user
 from Hinkskalle import db
 
 
-def _create_container(postfix='container'):
+def _create_container(postfix: str ='container') -> Tuple[Container, Collection, Entity]:
   coll, entity = _create_collection(f"test-collection-{postfix}")
 
   container = Container(name=f"test-{postfix}", collection_id=coll.id)

@@ -1,9 +1,11 @@
 
+from Hinkskalle.models.Entity import Entity
+from Hinkskalle.models.Collection import Collection
 import unittest
 import os
 import json
-import tempfile
 import datetime
+from sqlalchemy import update
 from Hinkskalle.tests.route_base import RouteBase
 from Hinkskalle.tests.models.test_Container import _create_container
 from Hinkskalle.tests.models.test_Collection import _create_collection
@@ -83,6 +85,16 @@ class TestContainers(RouteBase):
     container = _create_container()[0]
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/containers/Test-Hase/test-Collection-Container/Test-Container")
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.get_json().get('data').get('id'), str(container.id))
+  
+  def test_get_case_legacy(self):
+    container, collection, entity = _create_container()
+    db.session.execute(update(Entity).where(Entity.id==entity.id).values(name='TeStHaSe'))
+    db.session.execute(update(Collection).where(Collection.id==collection.id).values(name='TeStHaSe'))
+    db.session.execute(update(Container).where(Container.id==container.id).values(name='OiNk'))
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/containers/TeSthase/TeStHaSe/OiNk")
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.get_json().get('data').get('id'), str(container.id))
   

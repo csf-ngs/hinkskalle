@@ -8,6 +8,7 @@ from sqlalchemy.orm.exc import NoResultFound
 import datetime
 
 from Hinkskalle.models import CollectionSchema, Collection, Entity
+from .util import _get_collection
 
 class CollectionResponseSchema(ResponseSchema):
   data = fields.Nested(CollectionSchema)
@@ -24,17 +25,6 @@ class CollectionUpdateSchema(CollectionSchema, RequestSchema):
 
 class CollectionDeleteResponseSchema(ResponseSchema):
   status = fields.String()
-
-def _get_collection(entity_id, collection_id):
-  try:
-    entity = Entity.query.filter(Entity.name==entity_id.lower()).one()
-  except NoResultFound:
-    raise errors.NotFound(f"entity {entity_id} not found")
-  try:
-    collection = entity.collections_ref.filter(Collection.name==collection_id.lower()).one()
-  except NoResultFound:
-    raise errors.NotFound(f"collection {entity.id}/{collection_id} not found")
-  return collection
 
 # POST needs to come first, otherwise OPTIONS will
 # redirect to /v1/collections/ and CORS fails.

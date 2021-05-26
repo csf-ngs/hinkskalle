@@ -12,6 +12,7 @@ import json
 import datetime
 
 from Hinkskalle.models import ImageSchema, Image, Container, Entity, Collection
+from .util import _get_container
 
 class ImageQuerySchema(RequestSchema):
   arch = fields.String(required=False)
@@ -73,24 +74,6 @@ def _parse_tag(tagged_container_id):
     tokens.append('latest')
   return tokens[0], tokens[1]
 
-def _get_container(entity_id, collection_id, container_id):
-  try:
-    entity = Entity.query.filter(Entity.name==entity_id).one()
-  except NoResultFound:
-    current_app.logger.debug(f"entity {entity_id} not found")
-    raise errors.NotFound(f"entity {entity_id} not found")
-  try:
-    collection = entity.collections_ref.filter(Collection.name==collection_id).one()
-  except NoResultFound:
-    current_app.logger.debug(f"collection {entity.name}/{collection_id} not found")
-    raise errors.NotFound(f"collection {entity.name}/{collection_id} not found")
-  try:
-    container = collection.containers_ref.filter(Container.name==container_id).one()
-  except NoResultFound:
-    current_app.logger.debug(f"container {entity.name}/{collection.name}/{container_id} not found")
-    raise errors.NotFound(f"container {entity.name}/{collection.name}/{container_id} not found")
-  return container
-
 def _get_image(entity_id, collection_id, tagged_container_id, arch=None):
   container_id, tag = _parse_tag(tagged_container_id)
   container = _get_container(entity_id, collection_id, container_id)
@@ -105,6 +88,7 @@ def _get_image(entity_id, collection_id, tagged_container_id, arch=None):
   elif arch:
     arch_tags = container.archImageTags()
     if not arch in arch_tags or not tag in arch_tags[arch]:
+      current_app.logger.debug(f"Tag {tag} for architecture {arch} on container {container.entityName()}/{container.collectionName()}/{container.name} not found")
       raise errors.NotFound(f"Tag {tag} for architecture {arch} on container {container.entityName()}/{container.collectionName()}/{container.name} not found")
     image = Image.query.get(arch_tags[arch][tag])
   else:
@@ -118,8 +102,8 @@ def _get_image(entity_id, collection_id, tagged_container_id, arch=None):
         raise err
       
     if not tag in image_tags:
-      current_app.logger.debug(f"tag {tag} on container {container.entityName}/{container.collectionName}/{container.name} not found")
-      raise errors.NotFound(f"tag {tag} on container {container.entityName}/{container.collectionName}/{container.name} not found")
+      current_app.logger.debug(f"tag {tag} on container {container.entityName()}/{container.collectionName()}/{container.name} not found")
+      raise errors.NotFound(f"tag {tag} on container {container.entityName()}/{container.collectionName()}/{container.name} not found")
 
     image = Image.query.get(image_tags[tag])
   return image

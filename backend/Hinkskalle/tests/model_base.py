@@ -2,6 +2,7 @@ import unittest
 from Hinkskalle import db, create_app
 from Hinkskalle.models import User, Group
 import os
+from . import app
 
 def _create_user(name='test.hase', is_admin=False):
   firstname, lastname = name.split('.')
@@ -26,10 +27,12 @@ class ModelBase(unittest.TestCase):
     os.environ['RQ_CONNECTION_CLASS']='fakeredis.FakeStrictRedis'
   
   def setUp(self):
-    self.app = create_app()
+    self.app = app
     self.app.config['TESTING']=True
     self.app.app_context().push()
     db.create_all()
   
   def tearDown(self):
+    db.session.rollback()
+    db.session.close()
     db.drop_all()

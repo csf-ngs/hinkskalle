@@ -29,5 +29,5 @@ def _get_container(entity_id: str, collection_id: str, container_id: str) -> Con
     container = collection.containers_ref.filter(func.lower(Container.name)==container_id.lower()).one()
   except NoResultFound:
     current_app.logger.debug(f"container {collection.entityName()}/{collection.name}/{container_id} not found")
-    raise errors.NotFound(f"container {collecion.entityName()}/{collection.name}/{container_id} not found")
+    raise errors.NotFound(f"container {collection.entityName()}/{collection.name}/{container_id} not found")
   return container

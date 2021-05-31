@@ -1,9 +1,9 @@
-from flask import Flask, safe_join, send_from_directory
-from flask_rebar import Rebar, SwaggerV2Generator, errors
+from flask import Flask
+from flask_rebar import Rebar, SwaggerV2Generator
 from logging.config import dictConfig
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
-from flask_migrate import Migrate, upgrade as migrate_up
+from flask_migrate import Migrate
 
 import os
 import os.path
@@ -97,20 +97,6 @@ def create_app():
     # see https://github.com/miguelgrinberg/Flask-Migrate/issues/61#issuecomment-208131722
     migrate.init_app(app, db, render_as_batch=db.engine.url.drivername == 'sqlite')
     #migrate_up()
-
-    # for some reason I cannot set up these routes with @current_app in the routes
-    # module like the others. They're not found (in the tests) even though
-    # flask routes shows them.
-    @app.route('/', defaults={'path': ''})
-    @app.route('/<path:path>')
-    def frontend(path):
-      orig_path=path
-      if path.startswith('v1/'):
-        raise errors.NotFound
-      if path=="" or not os.path.exists(safe_join(app.config.get('FRONTEND_PATH'), path)):
-        path="index.html"
-      app.logger.debug(f"frontend route to {path} from {orig_path}")
-      return send_from_directory(app.config.get('FRONTEND_PATH'), path)
 
 
   # log config has to be done after migrate_up, see 

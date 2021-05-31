@@ -1,7 +1,7 @@
 from Hinkskalle import registry, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
-from flask import current_app, jsonify, make_response, request, redirect, g
-from flask_rebar import RequestSchema, ResponseSchema
+from flask import current_app, jsonify, make_response, request, redirect, g, send_from_directory, safe_join
+from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from werkzeug.datastructures import EnvironHeaders
 import os
@@ -9,6 +9,21 @@ import re
 from sqlalchemy import desc
 
 from Hinkskalle.models import Tag, ContainerSchema
+
+# for some reason I cannot set up these routes with @current_app in the routes
+# module like the others. They're not found (in the tests) even though
+# flask routes shows them.
+@current_app.route('/', defaults={'path': ''})
+@current_app.route('/<path:path>')
+def frontend(path):
+  orig_path=path
+  if path.startswith('v1/'):
+    raise errors.NotFound
+  if path=="" or not os.path.exists(safe_join(current_app.config.get('FRONTEND_PATH'), path)):
+    path="index.html"
+  current_app.logger.debug(f"frontend route to {path} from {orig_path}")
+  return send_from_directory(current_app.config.get('FRONTEND_PATH'), path)
+
 
 class VersionSchema(Schema):
   version = fields.String()

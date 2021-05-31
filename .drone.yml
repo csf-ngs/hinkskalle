@@ -40,6 +40,27 @@ steps:
     --label org.label-schema.vcs-ref="$DRONE_COMMIT_SHA"
     --label at.ac.vbcf.ngs.blame="$DRONE_COMMIT_AUTHOR"
     -t docker.ngs.vbcf.ac.at/hinkskalle .
+- name: reporthinaus
+  image: drillster/drone-rsync
+  environment:
+    RSYNC_KEY:
+      from_secret: asset_pub_key
+  settings:
+    user: root
+    hosts: ["drone-pub" ]
+    port: 7692
+    source: backend/test_report.html
+    target: /data/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/
+    prescript:
+      - mkdir -p /data/${DRONE_REPO}/${DRONE_BUILD_NUMBER}
+    recursive: true
+  when:
+    status:
+    - failure
+    - success
+    event:
+      exclude:
+        - pull_request
 - name: pushraus
   image: docker:dind
   volumes:

@@ -188,7 +188,7 @@ class TestImage(ModelBase):
     db.session.commit()
 
     deffile = image.inspect()
-    self.assertEqual(deffile, b'bootstrap: docker\nfrom: busybox\n\n')
+    self.assertEqual(deffile, 'bootstrap: docker\nfrom: busybox\n\n')
 
   def test_check_file_file_not_found(self):
     image = _create_image()[0]

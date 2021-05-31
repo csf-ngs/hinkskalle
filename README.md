@@ -6,6 +6,19 @@
 
 Compatible with/re-implementation of Sylab's singularity library protocol: [https://cloud.sylabs.io/library](https://cloud.sylabs.io/library)
 
+## Features
+
+Hinkskalle is supposed to be lightweight!
+
+- full library:// protocol (should be compatible to sylabs cloud), including architecture specific tags and signed containers (with public pgp keyserver or additional software)
+- shub:// *pull only* for legacy clients and pipelines
+- oras:// *pull only* for fancy new technology (full ORAS support in progress)
+- simple container storage on local or network filesystems
+- LDAP authentication
+- Minimal permission system
+
+If you need more features, take a look at [https://github.com/singularityhub/sregistry](sregistry)!
+
 # Getting Started
 
 ## Using a singularity library:

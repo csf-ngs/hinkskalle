@@ -9,6 +9,8 @@ from Hinkskalle.models import Entity, Collection, Container, Image, Tag, User
 
 from Hinkskalle.tests.model_base import _create_user
 
+from . import app
+
 class RouteBase(unittest.TestCase):
   app = None
   client = None
@@ -19,7 +21,7 @@ class RouteBase(unittest.TestCase):
     os.environ['RQ_CONNECTION_CLASS']='fakeredis.FakeStrictRedis'
   
   def setUp(self):
-    self.app = create_app()
+    self.app = app
     self.app.config['TESTING'] = True
     self.app.config['DEBUG'] = True
     self.app.testing = True
@@ -35,15 +37,10 @@ class RouteBase(unittest.TestCase):
     self.other_username='other.hase'
     self.other_user = _create_user(name=self.other_username, is_admin=False)
 
-    # This is strange: The real before_request_func
-    # gets executed only once. I guess it has something to do with using current_app??
-    # anyways, this is a quick and dirty fix
-    from Hinkskalle.routes.base import before_request_func
-    @self.app.before_request
-    def fake_before():
-      return before_request_func()
 
   def tearDown(self):
+    db.session.rollback()
+    db.session.close()
     db.drop_all()
 
   @contextmanager

@@ -1,3 +1,4 @@
+from typing import Tuple
 import unittest
 from datetime import datetime, timedelta
 import os.path
@@ -11,7 +12,7 @@ from Hinkskalle.tests.models.test_Collection import _create_collection
 from Hinkskalle import db
 from Hinkskalle.tests.model_base import ModelBase, _create_user
 
-def _create_image(hash='sha256.oink', postfix='container'):
+def _create_image(hash: str='sha256.oink', postfix: str='container') -> Tuple[Image, Container, Collection, Entity]:
   try:
     coll = Collection.query.filter_by(name=f"test-coll-{postfix}").one()
     entity = coll.entity_ref
@@ -60,6 +61,16 @@ class TestImage(ModelBase):
 
     self.assertEqual(read_image.entity(), entity.id)
     self.assertEqual(read_image.entityName(), entity.name)
+  
+  def test_manifest(self):
+    image = _create_image()[0]
+    image.size = 666
+    manifest = image.generate_manifest()
+
+    self.assertRegex(manifest.content, r'"schemaVersion": 2')
+    self.assertRegex(manifest.content, r'"digest": "sha256:'+image.hash.replace('sha256.', '')+'"')
+    self.assertRegex(manifest.content, r'"org.opencontainers.image.title": "'+image.container_ref.name+'"')
+    self.assertRegex(manifest.content, r'"size": '+str(image.size))
 
   def test_tags(self):
     image = _create_image()[0]

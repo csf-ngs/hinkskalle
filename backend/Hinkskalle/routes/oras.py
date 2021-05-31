@@ -1,12 +1,13 @@
 from Hinkskalle.models.Container import Container
 from sqlalchemy.orm.exc import NoResultFound
-from Hinkskalle.models import Image
+from Hinkskalle.models import Image, Manifest
 from flask import current_app, request, make_response, send_file
 from flask_rebar import errors
 from werkzeug.routing import BaseConverter
 import json
 from hashlib import sha256
 
+from Hinkskalle import db
 from .util import _get_container as __get_container
 
 def _get_container(name: str) -> Container:
@@ -49,38 +50,26 @@ def oras_manifest(name: str, reference: str):
   container = _get_container(name)
 
   if reference.startswith('sha256:'):
-    reference = 'latest'
+    try:
+      manifest = Manifest.query.filter(Manifest.hash==reference.replace('sha256:', '')).one()
+    except NoResultFound:
+      raise errors.NotFound()
+  else:
+    image_tags = container.imageTags()
+    if not reference in image_tags:
+      raise errors.NotFound()
+    image = Image.query.get(image_tags.get(reference)) 
+    with db.session.no_autoflush:
+      manifest = image.generate_manifest()
+      try:
+        manifest = Manifest.query.filter(Manifest.image_ref==image, Manifest.hash==manifest.hash).one()
+      except NoResultFound:
+        db.session.add(manifest)
+        db.session.commit()
 
-  image_tags = container.imageTags()
-  image = Image.query.get(image_tags[reference]) 
-
-  # see https://github.com/opencontainers/image-spec/blob/master/manifest.md#image-manifest-property-descriptions
-  manifest={
-      "schemaVersion":2,
-      "config":{
-        'mediaType': 'application/vnd.sylabs.sif.config.v1',
-      },
-      "layers":[{ 
-          # see https://github.com/opencontainers/image-spec/blob/master/descriptor.md
-          'mediaType': 'application/vnd.sylabs.sif.layer.v1.sif',
-          'digest': f"sha256:{image.hash.replace('sha256.', '')}",
-          'size': image.size,
-          # singularity does not pull without a name
-          # could provide more annotations!
-          'annotations': {
-            'org.opencontainers.image.title': container.name,
-          }
-        },
-      ],
-    }
-  
-  # need to provide a checksum for the manifest json
-  manifest_json = json.dumps(manifest)
-  digest = sha256()
-  digest.update(manifest_json.encode('utf8'))
-  response = make_response(manifest_json)
+  response = make_response(manifest.content)
   response.headers['Content-Type']='application/vnd.oci.image.manifest.v1+json'
-  response.headers['Docker-Content-Digest']=f'sha256:{digest.hexdigest()}'
+  response.headers['Docker-Content-Digest']=f'sha256:{manifest.hash}'
   return response
   
 
@@ -91,12 +80,13 @@ def oras_blob(name, digest):
   # check accept header for
   # application/vnd.sylabs.sif.layer.v1.sif
   if not digest.startswith('sha256:'):
-    raise errors.InternalError()
+    raise errors.BadRequest()
   
   container = _get_container(name)
   try:
     image = container.images_ref.filter(Image.hash == f"sha256.{digest.replace('sha256:', '')}").one()
   except NoResultFound:
+    current_app.logger.debug(f"hash {digest} for container {container.id} not found")
     raise errors.NotFound()
   
   return send_file(image.location) 

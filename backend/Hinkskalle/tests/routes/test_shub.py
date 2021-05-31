@@ -9,7 +9,7 @@ from Hinkskalle import db
 from Hinkskalle.models import Tag
 from Hinkskalle.tests.models.test_Image import _create_image
 
-class TestEntities(RouteBase):
+class TestShub(RouteBase):
   def test_manifest(self):
     image, _, _, entity = _create_image()
     latest_tag = Tag(name='latest', image_ref=image)

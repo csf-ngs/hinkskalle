@@ -1,3 +1,4 @@
+from typing import List
 from Hinkskalle import db
 from flask import current_app
 from marshmallow import Schema, fields
@@ -9,7 +10,7 @@ import enum
 
 import os.path
 import subprocess
-from Hinkskalle.models import Tag
+from .Manifest import Manifest
 
 
 class ImageSchema(Schema):
@@ -84,7 +85,7 @@ class ImageUploadUrl(db.Model):
 
   parts_ref = db.relationship('ImageUploadUrl', back_populates='parent_ref', lazy='dynamic', cascade="all, delete-orphan")
 
-  def check_access(self, user):
+  def check_access(self, user) -> bool:
     if user.is_admin:
       return True
     elif self.owner == user:
@@ -122,47 +123,49 @@ class Image(db.Model):
   container_ref = db.relationship('Container', back_populates='images_ref')
   tags_ref = db.relationship('Tag', back_populates='image_ref', lazy='dynamic', cascade="all, delete-orphan")
   uploads_ref = db.relationship('ImageUploadUrl', back_populates='image_ref', lazy='dynamic', cascade="all, delete-orphan")
+  manifests_ref = db.relationship('Manifest', back_populates='image_ref', cascade='all, delete-orphan')
 
   __table_args__ = (db.UniqueConstraint('hash', 'container_id', name='hash_container_id_idx'),)
 
   @property
-  def fingerprints(self):
+  def fingerprints(self) -> set:
     if self.sigdata is None or self.sigdata.get('SignerKeys', None) is None:
-      return []
+      return set()
     
     ret = []
     for key in self.sigdata.get('SignerKeys'):
       ret.append(key['Signer']['Fingerprint'])
     return set(ret)
 
-  def tags(self):
+  def tags(self) -> List[str]:
     return [ tag.name for tag in self.tags_ref ]
 
-  def container(self):
+  def container(self) -> int:
     return self.container_ref.id
-  def containerName(self):
+  def containerName(self) -> str:
     return self.container_ref.name
-  def containerStars(self):
+  def containerStars(self) -> int:
     return self.container_ref.stars
-  def containerDownloads(self):
+  def containerDownloads(self) -> int:
     return self.container_ref.downloadCount
 
-  def collection(self):
+  def collection(self) -> int:
     return self.container_ref.collection_ref.id
-  def collectionName(self):
+  def collectionName(self) -> str:
     return self.container_ref.collection_ref.name
 
-  def entity(self):
+  def entity(self) -> int:
     return self.container_ref.collection_ref.entity_ref.id
-  def entityName(self):
+  def entityName(self) -> str:
     return self.container_ref.collection_ref.entity_ref.name
   
-  def make_prettyname(self, tag):
+  def make_prettyname(self, tag) -> str:
     return os.path.join(self.entityName(), self.collectionName(), f"{self.containerName}_{tag}.sif")
-  def make_filename(self):
+
+  def make_filename(self) -> str:
     return f"{self.hash}.sif"
   
-  def _check_file(self):
+  def _check_file(self) -> None:
     if not self.uploaded or not self.location:
       raise Exception("Image is not uploaded yet")
     if not os.path.exists(self.location):
@@ -174,15 +177,15 @@ class Image(db.Model):
   # and works only when we're launched in privileged mode (or bareback)
   # tags are stored in the actual container file system (squashfs) -
   # metadata partitions are a thing of the future!
-  def inspect(self):
+  def inspect(self) -> str:
     self._check_file()
     inspect = subprocess.run(["singularity", "sif", "dump", "1", self.location], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if not inspect.returncode == 0:
       raise Exception(f"{inspect.args} failed: {inspect.stderr}")
 
-    return inspect.stdout
+    return str(inspect.stdout)
   
-  def check_signature(self):
+  def check_signature(self) -> dict:
     self.sigdata = self._get_signature();
     if self.sigdata.get('Signatures', None) == 1:
       self.signed = True
@@ -192,7 +195,7 @@ class Image(db.Model):
 
     return self.sigdata
 
-  def _get_signature(self):
+  def _get_signature(self) -> dict:
     self._check_file()
     proc = subprocess.run(["singularity", "verify", "--url", current_app.config.get('KEYSERVER_URL'), "--json", self.location], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     sigdata = json.loads(proc.stdout)
@@ -209,8 +212,29 @@ class Image(db.Model):
     else:
       sigdata["Passed"]=True
     return sigdata
+  
+  def generate_manifest(self) -> Manifest:
+    data = {
+      'schemaVersion': 2,
+      'config': {
+        'mediaType': 'application/vnd.sylabs.sif.config.v1',
+      },
+      'layers': [{
+        # see https://github.com/opencontainers/image-spec/blob/master/descriptor.md
+        'mediaType': 'application/vnd.sylabs.sif.layer.v1.sif',
+        'digest': f"sha256:{self.hash.replace('sha256.', '')}",
+        'size': self.size,
+        # singularity does not pull without a name
+        # could provide more annotations!
+        'annotations': {
+          'org.opencontainers.image.title': self.container_ref.name,
+        }
+      }]
+    }
+    return Manifest(image_ref=self, content=data)
+
     
-  def check_access(self, user):
+  def check_access(self, user) -> bool:
     if not self.container_ref.private:
       return True
     
@@ -219,6 +243,6 @@ class Image(db.Model):
     
     return self.container_ref.check_access(user)
   
-  def check_update_access(self, user):
+  def check_update_access(self, user) -> bool:
     return self.container_ref.check_update_access(user)
    

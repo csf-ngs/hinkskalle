@@ -7,7 +7,7 @@ volumes:
   hockeypuck_data:
 services:
   api:
-    image: "ghcr.io/csf-ngs/hinkskalle-dev:v1.1.1"
+    image: "ghcr.io/csf-ngs/hinkskalle-dev:v1.2.0"
     volumes:
       - '.:/srv/hinkskalle/src'
       - './data/sqlite:/data/db'
@@ -33,7 +33,7 @@ services:
     volumes:
       - hink_db:/var/lib/postgresql/data
   rq_worker:
-    image: "ghcr.io/csf-ngs/hinkskalle-dev:v1.1.1"
+    image: "ghcr.io/csf-ngs/hinkskalle-dev:v1.2.0"
     command: '../script/start-dev-worker.sh'
     volumes:
       - '.:/srv/hinkskalle/src'
@@ -58,7 +58,7 @@ services:
       - ldap_db:/var/lib/ldap/
       - ldap_conf:/etc/ldap/
   build_frontend:
-    image: "ghcr.io/csf-ngs/hinkskalle-dev:v1.1.1"
+    image: "ghcr.io/csf-ngs/hinkskalle-dev:v1.2.0"
     volumes:
       - '.:/srv/hinkskalle/src'
     command: '../script/start-dev-frontend.sh'

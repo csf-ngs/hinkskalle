@@ -2,13 +2,13 @@
 
 ```mermaid
 classDiagram
-  Entity "1" --> "*" Collection
-  Collection "1" --> "*" Container
-  Container "1" ..> "*" Manifest : maybe not 
-  Container "1" --> "*" Image
-  Image "1" --> "*" Tag
-  Image "1" --> "*" ImageUploadUrl
-  ImageUploadUrl "1" --> "*" ImageUploadUrl
+  Entity "1" --> "n" Collection
+  Collection "1" --> "n" Container
+  Container "1" ..> "n" Manifest : maybe not 
+  Container "1" --> "n" Image
+  Image "1" --> "n" Tag
+  Image "1" --> "n" ImageUploadUrl
+  ImageUploadUrl "1" --> "n" ImageUploadUrl
   Manifest "1" ..> "1" Tag : needed
 
   class Entity {

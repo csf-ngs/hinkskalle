@@ -182,7 +182,7 @@ class Image(db.Model):
     if not inspect.returncode == 0:
       raise Exception(f"{inspect.args} failed: {inspect.stderr}")
 
-    return str(inspect.stdout.decode('utf8'))
+    return inspect.stdout.decode('utf-8')
   
   def check_signature(self) -> dict:
     self.sigdata = self._get_signature();

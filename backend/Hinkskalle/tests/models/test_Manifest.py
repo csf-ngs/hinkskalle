@@ -21,7 +21,7 @@ class TestManifest(ModelBase):
     self.assertEqual(manifest.content, 'blubb')
     self.assertEqual(manifest.hash, 'fbea580d286bbbbb41314430d58ba887716a74d7134119c5307cdc9f0c7a4299')
 
-    self.assertEqual(len(tag.manifest_ref), 1)
+    self.assertIsNotNone(tag.manifest_ref)
 
     manifest2 = Manifest(tag_ref=tag, content='oink')
     db.session.add(manifest2)

@@ -8,6 +8,8 @@ from flask_migrate import Migrate
 import os
 import os.path
 
+from werkzeug.routing import BaseConverter
+
 generator = SwaggerV2Generator()
 
 from Hinkskalle.util.swagger import register_authenticators
@@ -34,6 +36,13 @@ naming_convention = {
 
 db = SQLAlchemy(metadata=MetaData(naming_convention=naming_convention))
 migrate = Migrate()
+
+# regex from https://github.com/opencontainers/distribution-spec/blob/main/spec.md#pull
+class OrasNameConverter(BaseConverter):
+  def __init__(self, url_map, *items):
+    super(OrasNameConverter, self).__init__(url_map)
+    self.regex = '[a-z0-9]+([._-][a-z0-9]+)*(/[a-z0-9]+([._-][a-z0-9]+)*)*'
+
 
 def create_app():
   app = Flask(__name__)
@@ -87,6 +96,9 @@ def create_app():
   if 'HINKSKALLE_REDIS_URL' in os.environ:
     app.config['RQ_REDIS_URL'] = os.environ.get('HINKSKALLE_REDIS_URL')
   rq.init_app(app)
+
+  app.url_map.converters['distname']=OrasNameConverter
+
 
   with app.app_context():
     import Hinkskalle.routes

@@ -7,11 +7,9 @@ from flask_rebar.validation import RequestSchema
 from marshmallow import fields, Schema
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import func
-from werkzeug.routing import BaseConverter
 import tempfile
 import os
 import os.path
-import json
 from datetime import datetime
 
 from werkzeug.utils import redirect
@@ -131,14 +129,6 @@ def _get_container(name: str) -> Container:
   except errors.NotFound:
     raise OrasNameUnknown(f"name {name} not found")
   return container
-
-# regex from https://github.com/opencontainers/distribution-spec/blob/main/spec.md#pull
-class NameConverter(BaseConverter):
-  def __init__(self, url_map, *items):
-    super(NameConverter, self).__init__(url_map)
-    self.regex = '[a-z0-9]+([._-][a-z0-9]+)*(/[a-z0-9]+([._-][a-z0-9]+)*)*'
-
-current_app.url_map.converters['distname']=NameConverter
 
 # pull spec https://github.com/opencontainers/distribution-spec/blob/main/spec.md#pulling-manifests
 # oras client fetches first with tag, then re-fetches manifest by sha hash

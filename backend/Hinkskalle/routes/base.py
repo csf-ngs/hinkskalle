@@ -9,6 +9,7 @@ import re
 from sqlalchemy import desc
 
 from Hinkskalle.models import Tag, ContainerSchema
+from .util import _get_service_url
 
 # for some reason I cannot set up these routes with @current_app in the routes
 # module like the others. They're not found (in the tests) even though
@@ -56,7 +57,6 @@ def version():
   response_body_schema=ConfigResponseSchema()
 )
 def config():
-  from Hinkskalle.routes import _get_service_url
   service_url = _get_service_url()
   return {
     'libraryAPI': {

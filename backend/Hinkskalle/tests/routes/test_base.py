@@ -58,6 +58,7 @@ class TestBase(RouteBase):
       'tokenAPI': { 'uri': 'http://localhost'},
     })
 
+    old_setting = self.app.config['PREFERRED_URL_SCHEME']
     self.app.config['PREFERRED_URL_SCHEME']='https'
     ret = self.app.test_client().get('/assets/config/config.prod.json')
     self.assertEqual(ret.status_code, 200)
@@ -67,6 +68,7 @@ class TestBase(RouteBase):
       'libraryAPI': { 'uri': 'https://localhost'},
       'tokenAPI': { 'uri': 'https://localhost'},
     })
+    self.app.config['PREFERRED_URL_SCHEME']=old_setting
 
   def test_latest(self):
     image1, container1, _, _ = _create_image()

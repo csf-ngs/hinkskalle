@@ -234,6 +234,11 @@ class TestOras(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
     self.assertEqual(ret.status_code, 201)
-    self.assertRegex(ret.headers.get('location'), rf"/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2$")
+    location = ret.headers.get('location')
+    self.assertRegex(location, rf"/v2/{entity.name}/{collection.name}/{container.name}/manifests/")
+    hash = location.split('/')[-1].replace('sha256:', '')
+    db_manifest = Manifest.query.filter(Manifest.hash==hash).first()
+    self.assertIsNotNone(db_manifest)
+
 
     

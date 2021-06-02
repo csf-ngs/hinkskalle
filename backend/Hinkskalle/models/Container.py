@@ -90,6 +90,16 @@ class Container(db.Model):
   def entityName(self):
     return self.collection_ref.entity_ref.name
 
+  def get_tag(self, tag, arch=None):
+    cur_tags = Tag.query.filter(Tag.name == tag, Tag.image_id.in_([ i.id for i in self.images_ref ]))
+    if arch:
+      cur_tags = cur_tags.join(Image).filter(Image.arch==arch)
+    if cur_tags.count() > 1:
+      raise Exception(f"Multiple tags {tag} found on container {self.id}")
+
+    return cur_tags.first()
+
+
   def tag_image(self, tag, image_id, arch=None):
     errors = validate_name({ 'name': tag })
     if errors:
@@ -98,13 +108,11 @@ class Container(db.Model):
     image = Image.query.get(image_id)
     if not image:
       raise NoResultFound()
-    cur_tags = Tag.query.filter(Tag.name == tag, Tag.image_id.in_([ i.id for i in self.images_ref ]))
-
     if arch:
       image.arch=arch
-      cur_tags = cur_tags.join(Image).filter(Image.arch==arch)
+    
+    cur_tag = self.get_tag(tag, arch)
 
-    cur_tag = cur_tags.first()
     if cur_tag:
       cur_tag.image_ref=image
       cur_tag.updatedAt=datetime.now()

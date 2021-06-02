@@ -27,7 +27,7 @@ class TestOras(RouteBase):
     digest = ret.headers.get('Docker-Content-Digest')
     self.assertIsNotNone(digest)
 
-    manifest = Manifest.query.filter(Manifest.image_ref == image, Manifest.hash == digest.replace('sha256:', '')).first()
+    manifest = Manifest.query.filter(Manifest.tag_ref == latest_tag, Manifest.hash == digest.replace('sha256:', '')).first()
     self.assertIsNotNone(manifest)
     self.assertDictEqual(ret.get_json().get('layers')[0], {
       'mediaType': 'application/vnd.sylabs.sif.layer.v1.sif',
@@ -95,7 +95,7 @@ class TestOras(RouteBase):
     latest_tag = Tag(name='latest', image_ref=image)
     db.session.add(latest_tag)
 
-    manifest = Manifest(image_ref=image, content='{"oi": "nk"}')
+    manifest = Manifest(tag_ref=latest_tag, content='{"oi": "nk"}')
 
     ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/sha256:{manifest.hash}")
     self.assertEqual(ret.status_code, 200)
@@ -107,7 +107,7 @@ class TestOras(RouteBase):
     latest_tag = Tag(name='latest', image_ref=image)
     db.session.add(latest_tag)
 
-    manifest = Manifest(image_ref=image, content='{"oi": "nk"}')
+    manifest = Manifest(tag_ref=latest_tag, content='{"oi": "nk"}')
 
     ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/sha256:{manifest.hash}oink")
     self.assertEqual(ret.status_code, 404)
@@ -224,6 +224,8 @@ class TestOras(RouteBase):
   
   def test_push_manifest(self):
     image, container, collection, entity = _create_image()
+    tag1 = Tag(name='v2', image_ref=image)
+    db.session.add(tag1)
     test_manifest = {
       "schemaVersion": 2,
       "config": {

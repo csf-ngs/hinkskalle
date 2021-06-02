@@ -1,6 +1,7 @@
 from Hinkskalle import db
 from datetime import datetime
 from sqlalchemy.orm import validates
+from Hinkskalle.models.Manifest import Manifest
 
 class Tag(db.Model):
   id = db.Column(db.Integer, primary_key=True)
@@ -8,6 +9,8 @@ class Tag(db.Model):
 
   image_id = db.Column(db.Integer, db.ForeignKey('image.id'), nullable=False)
   image_ref = db.relationship('Image', back_populates='tags_ref')
+
+  manifest_ref: Manifest = db.relationship('Manifest', uselist=False, back_populates='tag_ref')
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
@@ -18,6 +21,30 @@ class Tag(db.Model):
   @validates('name')
   def convert_lower(self, key, value):
     return value.lower()
+
+  def generate_manifest(self) -> Manifest:
+    manifest = self.manifest_ref or Manifest(tag_ref=self)
+    with db.session.no_autoflush:
+      data = {
+        'schemaVersion': 2,
+        'config': {
+          'mediaType': 'application/vnd.sylabs.sif.config.v1',
+        },
+        'layers': [{
+          # see https://github.com/opencontainers/image-spec/blob/master/descriptor.md
+          'mediaType': 'application/vnd.sylabs.sif.layer.v1.sif',
+          'digest': self.image_ref.hash.replace('sha256.', 'sha256:'),
+          'size': self.image_ref.size,
+          # singularity does not pull without a name
+          # could provide more annotations!
+          'annotations': {
+            'org.opencontainers.image.title': self.image_ref.container_ref.name,
+          }
+        }]
+      }
+      manifest.content=data
+    return manifest
+
 
 
   __table_args__ = (db.UniqueConstraint('name', 'image_id', name='name_image_id_idx'),)

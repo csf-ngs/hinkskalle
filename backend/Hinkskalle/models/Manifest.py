@@ -35,18 +35,18 @@ class ManifestSchema(Schema):
 class Manifest(db.Model):
   id = db.Column(db.Integer, primary_key=True)
 
+  tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'), nullable=False, unique=True)
+  tag_ref = db.relationship('Tag', back_populates='manifest_ref')
+
   hash = db.Column(db.String(), nullable=False, unique=True)
   _content = db.Column('content', db.String(), nullable=False)
-
-  image_id = db.Column(db.Integer, db.ForeignKey('image.id'), nullable=True)
-  image_ref = db.relationship('Image', back_populates='manifests_ref')
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
   @hybrid_property
-  def content(self):
+  def content(self) -> str:
     return self._content
   
   @content.setter
@@ -54,6 +54,7 @@ class Manifest(db.Model):
     if type(upd) is str:
       self._content = upd
     else:
+      # XXX check schema?
       self._content = json.dumps(upd)
     
     digest = hashlib.sha256()

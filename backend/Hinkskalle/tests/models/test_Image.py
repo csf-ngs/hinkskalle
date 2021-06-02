@@ -68,13 +68,17 @@ class TestImage(ModelBase):
   
   def test_manifest(self):
     image = _create_image()[0]
+    tag1 = Tag(name='v1', image_ref=image)
+    db.session.add(tag1)
     image.size = 666
-    manifest = image.generate_manifest()
+    db.session.commit()
+
+    manifest = tag1.generate_manifest()
 
     self.assertRegex(manifest.content, r'"schemaVersion": 2')
-    self.assertRegex(manifest.content, r'"digest": "sha256:'+image.hash.replace('sha256.', '')+'"')
-    self.assertRegex(manifest.content, r'"org.opencontainers.image.title": "'+image.container_ref.name+'"')
-    self.assertRegex(manifest.content, r'"size": '+str(image.size))
+    self.assertRegex(manifest.content, rf'"digest": "sha256:{image.hash.replace("sha256.", "")}"')
+    self.assertRegex(manifest.content, rf'"org.opencontainers.image.title": "{image.container_ref.name}"')
+    self.assertRegex(manifest.content, rf'"size": {image.size}')
 
   def test_tags(self):
     image = _create_image()[0]

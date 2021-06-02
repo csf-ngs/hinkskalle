@@ -4,26 +4,27 @@
 classDiagram
   Entity "1" --> "n" Collection
   Collection "1" --> "n" Container
-  Container "1" ..> "n" Manifest : maybe not 
   Container "1" --> "n" Image
   Image "1" --> "n" Tag
   Image "1" --> "n" ImageUploadUrl
+  File "1" --> "n" Image
   ImageUploadUrl "1" --> "n" ImageUploadUrl
-  Manifest "1" ..> "1" Tag : needed
+  Manifest "1" <--> "1" Tag
 
   class Entity {
     +id: int
     +name: str
-    +collections() Collection[]
+    +collections: Collection[]
   }
   class Collection {
     +id: int
     +name: str
-    +containers() Container[]
+    +containers: Container[]
   }
   class Container {
     +id: int
     +name: str
+    +images: Image[]
   }
   class Image {
     +id: int
@@ -38,6 +39,13 @@ classDiagram
     +id: int
     +hash: sha256
     +content: json
-    +reference: Tag
+  }
+  class ImageUploadUrl {
+    +id: uuid
+  }
+  class File {
+    <<filesystem>>
+    +path: path
+
   }
 ```

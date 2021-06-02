@@ -154,16 +154,13 @@ def oras_manifest(name: str, reference: str):
       raise OrasManifestUnknown(f"Manifest {reference} not found")
   else:
     image_tags = container.imageTags()
-    if not reference in image_tags:
+    tag = container.get_tag(reference)
+    if not tag:
       raise OrasManifestUnknown(f"Tag {reference} not found")
-    image = Image.query.get(image_tags.get(reference)) 
-    with db.session.no_autoflush:
-      manifest = image.generate_manifest()
-      try:
-        manifest = Manifest.query.filter(Manifest.image_ref==image, Manifest.hash==manifest.hash).one()
-      except NoResultFound:
-        db.session.add(manifest)
-
+    
+    manifest = tag.generate_manifest()
+  db.session.add(manifest)
+  db.session.commit()
 
   response = make_response(manifest.content)
   response.headers['Content-Type']='application/vnd.oci.image.manifest.v1+json'
@@ -200,7 +197,9 @@ def oras_blob(name, digest):
 )
 def oras_push_manifest(name, reference):
   container = _get_container(name)
-  manifest = Manifest(content=request.json)
+  tag = container.get_tag(reference)
+
+  manifest = Manifest(content=request.json, tag_ref=tag)
   db.session.add(manifest)
   db.session.commit()
   

@@ -62,6 +62,72 @@ class TestContainer(ModelBase):
     db.session.add(other_image)
     db.session.commit()
     self.assertEqual(container.size(), 1)
+  
+  def test_get_tag(self):
+    container = _create_container()[0]
+    image1 = Image(hash='eins', description='test-image-1', container_id=container.id)
+    image2 = Image(hash='zwo', description='test-image-2', container_id=container.id)
+
+    tag1 = Tag(image_ref=image1, name='v1')
+    tag2 = Tag(image_ref=image2, name='v2')
+
+    db.session.add(image1)
+    db.session.add(image2)
+    db.session.add(tag1)
+    db.session.add(tag2)
+    db.session.commit()
+
+    tag = container.get_tag('v1')
+    self.assertEqual(tag.name, 'v1')
+    self.assertEqual(tag.image_id, image1.id)
+  
+  def test_get_tag_not_found(self):
+    container = _create_container()[0]
+    image1 = Image(hash='eins', description='test-image-1', container_id=container.id)
+    tag1 = Tag(image_ref=image1, name='v1')
+    db.session.add(image1)
+    db.session.add(tag1)
+    db.session.commit()
+
+    self.assertIsNone(container.get_tag('oink'))
+
+  
+  def test_get_tag_duplicate(self):
+    container = _create_container()[0]
+    image1 = Image(hash='eins', description='test-image-1', container_id=container.id)
+    image2 = Image(hash='zwo', description='test-image-2', container_id=container.id)
+
+    tag1 = Tag(image_ref=image1, name='v1')
+    tag2 = Tag(image_ref=image2, name='v1')
+
+    db.session.add(image1)
+    db.session.add(image2)
+    db.session.add(tag1)
+    db.session.add(tag2)
+    db.session.commit()
+
+    with self.assertRaisesRegex(Exception, r'Multiple'):
+      tag = container.get_tag('v1')
+  
+  def test_get_arch_tag(self):
+    container = _create_container()[0]
+    image1 = Image(hash='eins', arch='c64', description='test-image-1', container_id=container.id)
+    image2 = Image(hash='zwo', arch='amiga', description='test-image-2', container_id=container.id)
+
+    tag1 = Tag(image_ref=image1, name='v1')
+    tag2 = Tag(image_ref=image2, name='v1')
+
+    db.session.add(image1)
+    db.session.add(image2)
+    db.session.add(tag1)
+    db.session.add(tag2)
+    db.session.commit()
+
+    tag = container.get_tag('v1', arch='c64')
+    self.assertEqual(tag.id, tag1.id)
+    self.assertEqual(tag.image_id, image1.id)
+
+
 
   def test_tag_image(self):
     container = _create_container()[0]

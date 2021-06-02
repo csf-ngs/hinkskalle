@@ -37,6 +37,27 @@ class TestOras(RouteBase):
         'org.opencontainers.image.title': image.containerName(),
       }
     })
+
+  def test_manifest_private(self):
+    image, container, collection, entity = _create_image(postfix='1')
+    container.private=True
+    latest_tag = Tag(name='latest', image_ref=image)
+    db.session.add(latest_tag)
+
+    db.session.commit()
+
+    ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/latest")
+    self.assertEqual(ret.status_code, 403)
+
+    image, container, collection, entity = _create_image(postfix='2')
+    collection.private=True
+    latest_tag = Tag(name='latest', image_ref=image)
+    db.session.add(latest_tag)
+
+    db.session.commit()
+
+    ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/latest")
+    self.assertEqual(ret.status_code, 403)
   
   def test_manifest_tag_not_found(self):
     image = _create_image()[0]

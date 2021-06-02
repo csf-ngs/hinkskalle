@@ -18,6 +18,7 @@ class TestShub(RouteBase):
     entity.name='default'
     db.session.commit()
 
+
     ret = self.client.get(f"/api/container/{image.collectionName()}/{image.containerName()}:latest")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json()
@@ -30,7 +31,7 @@ class TestShub(RouteBase):
     })
 
   def test_manifest_private(self):
-    image, container, _, entity = _create_image()
+    image, container, _, entity = _create_image(postfix='1')
     latest_tag = Tag(name='latest', image_ref=image)
     db.session.add(latest_tag)
     entity.name='default'
@@ -41,3 +42,14 @@ class TestShub(RouteBase):
     ret = self.client.get(f"/api/container/{image.collectionName()}/{image.containerName()}:latest")
     self.assertEqual(ret.status_code, 403)
 
+  def test_manifest_private_collection(self):
+    image, container, collection, entity = _create_image(postfix='2')
+    latest_tag = Tag(name='latest', image_ref=image)
+    db.session.add(latest_tag)
+    entity.name='default'
+    collection.private=True
+
+    db.session.commit()
+
+    ret = self.client.get(f"/api/container/{image.collectionName()}/{image.containerName()}:latest")
+    self.assertEqual(ret.status_code, 403)

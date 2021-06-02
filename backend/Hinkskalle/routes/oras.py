@@ -141,6 +141,9 @@ def oras_manifest(name: str, reference: str):
   # should check accept header for 
   # application/vnd.oci.image.manifest.v1+json
   container = _get_container(name)
+  if container.private or container.collection_ref.private:
+    raise OrasDenied(f"Container is private.")
+
   if reference.startswith('sha256:'):
     try:
       manifest = Manifest.query.filter(Manifest.hash==reference.replace('sha256:', '')).one()

@@ -15,12 +15,3 @@ import Hinkskalle.routes.users
 import Hinkskalle.routes.tokens
 
 import Hinkskalle.routes.adm
-
-
-def _get_service_url():
-  from flask import request, current_app
-  service_url = request.url_root.rstrip('/')
-  if current_app.config.get('PREFERRED_URL_SCHEME', 'http') == 'https':
-    service_url = service_url.replace('http:', 'https:')
-  return service_url
-

@@ -1,9 +1,15 @@
-from flask import current_app
+from flask import current_app, request
 from flask_rebar import errors
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
 
 from Hinkskalle.models import Entity, Collection, Container
+
+def _get_service_url():
+  service_url = request.url_root.rstrip('/')
+  if current_app.config.get('PREFERRED_URL_SCHEME', 'http') == 'https':
+    service_url = service_url.replace('http:', 'https:')
+  return service_url
 
 def _get_entity(entity_id: str) -> Entity:
   try:
@@ -29,5 +35,5 @@ def _get_container(entity_id: str, collection_id: str, container_id: str) -> Con
     container = collection.containers_ref.filter(func.lower(Container.name)==container_id.lower()).one()
   except NoResultFound:
     current_app.logger.debug(f"container {collection.entityName()}/{collection.name}/{container_id} not found")
-    raise errors.NotFound(f"container {collecion.entityName()}/{collection.name}/{container_id} not found")
+    raise errors.NotFound(f"container {collection.entityName()}/{collection.name}/{container_id} not found")
   return container

@@ -5,7 +5,32 @@ from datetime import datetime
 import json
 import hashlib
 from sqlalchemy.ext.hybrid import hybrid_property
+from marshmallow import Schema, fields
 
+class ManifestLayerSchema(Schema):
+  """https://github.com/opencontainers/image-spec/blob/v1.0.1/descriptor.md"""
+  mediaType = fields.String()
+  digest = fields.String()
+  size = fields.Integer()
+  urls = fields.Nested(fields.String(), many=True)
+  annotations = fields.Dict()
+
+class ManifestConfigSchema(Schema):
+  """https://github.com/opencontainers/image-spec/blob/v1.0.1/config.md"""
+  mediaType = fields.String()
+  created = fields.String()
+  author = fields.String()
+  architecture = fields.String() # required 
+  os = fields.String() # required
+  config = fields.Dict() # could be specified 
+  rootfs = fields.Dict()
+  history = fields.Nested(fields.Dict(), many=True)
+
+class ManifestSchema(Schema):
+  schemaVersion = fields.String(required=True)
+  config = fields.Nested(ManifestConfigSchema())
+  layers = fields.Nested(ManifestLayerSchema(), many=True)
+  annotations = fields.Dict()
 
 class Manifest(db.Model):
   id = db.Column(db.Integer, primary_key=True)
@@ -13,7 +38,7 @@ class Manifest(db.Model):
   hash = db.Column(db.String(), nullable=False, unique=True)
   _content = db.Column('content', db.String(), nullable=False)
 
-  image_id = db.Column(db.Integer, db.ForeignKey('image.id'), nullable=False)
+  image_id = db.Column(db.Integer, db.ForeignKey('image.id'), nullable=True)
   image_ref = db.relationship('Image', back_populates='manifests_ref')
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
@@ -35,3 +60,6 @@ class Manifest(db.Model):
     digest.update(self._content.encode('utf8'))
     self.hash = digest.hexdigest()
 
+  @property
+  def content_json(self) -> dict:
+    return json.loads(self._content)

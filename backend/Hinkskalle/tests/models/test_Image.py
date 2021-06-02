@@ -5,7 +5,11 @@ import os.path
 from shutil import which, rmtree
 import subprocess
 
-from Hinkskalle.models import Entity, Collection, Container, Image, ImageSchema, Tag
+from Hinkskalle.models.Entity import Entity
+from Hinkskalle.models.Collection import Collection
+from Hinkskalle.models.Container import Container
+from Hinkskalle.models.Image import Image, ImageSchema
+from Hinkskalle.models.Tag import Tag
 
 from Hinkskalle.tests.models.test_Collection import _create_collection
 

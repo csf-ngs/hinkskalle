@@ -83,8 +83,8 @@ describe('Entities.vue', () => {
   });
 
   it('shows create dialog', async done => {
-    const wrapper = mount(Entities, { localVue, vuetify, store, router });
     testUserObj.isAdmin = true;
+    const wrapper = mount(Entities, { localVue, vuetify, store, router });
     await Vue.nextTick();
     wrapper.find('button#create-entity').trigger('click');
     await Vue.nextTick();

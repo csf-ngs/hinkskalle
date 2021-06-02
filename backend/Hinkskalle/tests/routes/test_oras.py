@@ -236,11 +236,70 @@ class TestOras(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
     self.assertEqual(ret.status_code, 201)
-    location = ret.headers.get('location')
+    location: str = ret.headers.get('location', '')
     self.assertRegex(location, rf"/v2/{entity.name}/{collection.name}/{container.name}/manifests/")
     hash = location.split('/')[-1].replace('sha256:', '')
     db_manifest = Manifest.query.filter(Manifest.hash==hash).first()
     self.assertIsNotNone(db_manifest)
+    self.assertDictEqual(db_manifest.content_json, test_manifest)
+  
+  def test_push_manifest_create_tag(self):
+    image, container, collection, entity = _create_image()
+    test_manifest = {
+      "schemaVersion": 2,
+      "layers": [
+        { 'digest': image.hash.replace('sha256.', 'sha256:') }
+      ],
+    }
+    with self.fake_admin_auth():
+      ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 201)
+  
+  def test_push_manifest_create_tag_need_layer(self):
+    image, container, collection, entity = _create_image()
+    test_manifest = {
+      "schemaVersion": 2,
+      "layers": [],
+    }
+    with self.fake_admin_auth():
+      ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 404)
 
+    test_manifest = {
+      "schemaVersion": 2,
+    }
+    with self.fake_admin_auth():
+      ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 404)
 
-    
+  def test_push_manifest_layer_not_found(self):
+    image, container, collection, entity = _create_image()
+    test_manifest = {
+      "schemaVersion": 2,
+      "layers": [
+        { 'digest': image.hash.replace('sha256.', 'sha256:')+'oink' }
+      ],
+    }
+    with self.fake_admin_auth():
+      ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 404)
+
+    tag1 = Tag(name='v2', image_ref=image)
+    db.session.add(tag1)
+    with self.fake_admin_auth():
+      ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 404)
+
+  def test_push_manifest_not_found(self):
+    image, container, collection, entity = _create_image()
+    tag1 = Tag(name='v2', image_ref=image)
+    db.session.add(tag1)
+    test_manifest = {
+      "schemaVersion": 2,
+      "layers": [
+        { 'digest': image.hash.replace('sha256.', 'sha256:') }
+      ],
+    }
+    with self.fake_admin_auth():
+      ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}oink/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 404)

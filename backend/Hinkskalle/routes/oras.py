@@ -16,7 +16,11 @@ from datetime import datetime
 
 from werkzeug.utils import redirect
 
-from Hinkskalle.models import Image, Manifest, Entity, Collection, Container, UploadTypes, UploadStates, ImageUploadUrl
+from Hinkskalle.models.Tag import Tag
+from Hinkskalle.models.Image import Image
+from Hinkskalle.models.Entity import Entity
+from Hinkskalle.models.Collection import Collection
+from Hinkskalle.models import Manifest, Container, UploadTypes, UploadStates, ImageUploadUrl
 from Hinkskalle import db, registry, authenticator, rebar
 
 from Hinkskalle.util.auth.token import Scopes
@@ -198,6 +202,21 @@ def oras_blob(name, digest):
 def oras_push_manifest(name, reference):
   container = _get_container(name)
   tag = container.get_tag(reference)
+  manifest_data = request.json
+  if not tag:
+    if len(manifest_data.get('layers', [])) == 0:
+      raise OrasManifestUnknown(f"No tag {reference} on container {container.id} and no layers provided")
+    tag = Tag(name=reference)
+    db.session.add(tag)
+  # XXX validate with schema
+
+  with db.session.no_autoflush:
+    for layer in manifest_data.get('layers', []):
+      try:
+        image = Image.query.filter(Image.hash==layer.get('digest').replace('sha256:', 'sha256.'), Image.container_ref==container).one()
+        tag.image_ref=image
+      except NoResultFound:
+        raise OrasBlobUnknwon(f"Blob hash {layer.get('digest')} not found in container {container.id}")
 
   manifest = Manifest(content=request.json, tag_ref=tag)
   db.session.add(manifest)

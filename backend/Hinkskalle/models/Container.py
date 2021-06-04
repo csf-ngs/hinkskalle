@@ -1,3 +1,4 @@
+from flask import current_app
 from Hinkskalle import db
 from datetime import datetime
 from sqlalchemy.orm import validates
@@ -131,7 +132,7 @@ class Container(db.Model):
           if tags[tag].arch != image.arch:
             raise Exception(f"Tag {tag} has multiple architectures")
           else:
-            raise Exception(f"Tag {tag} for image {image.id} is already set on {tags[tag].id}")
+            current_app.logger.warn(f"Tag {tag} for image {image.id} is already set on {tags[tag].id}")
         tags[tag]=image
     return { t: str(i.id) for t,i in tags.items() }
 

@@ -190,18 +190,20 @@ def oras_blob(name, digest):
 @registry.handles(
   rule='/v2/<distname:name>/manifests/<string:reference>',
   method='PUT',
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.optional)
 )
 def oras_push_manifest(name, reference):
   container = _get_container(name)
   tag = container.get_tag(reference)
+
   manifest_data = request.json
+  # XXX validate with schema
+
   if not tag:
     if len(manifest_data.get('layers', [])) == 0:
       raise OrasManifestUnknown(f"No tag {reference} on container {container.id} and no layers provided")
     tag = Tag(name=reference)
     db.session.add(tag)
-  # XXX validate with schema
 
   with db.session.no_autoflush:
     for layer in manifest_data.get('layers', []):
@@ -211,39 +213,52 @@ def oras_push_manifest(name, reference):
       except NoResultFound:
         raise OrasBlobUnknwon(f"Blob hash {layer.get('digest')} not found in container {container.id}")
 
-  manifest = Manifest(content=request.json, tag_ref=tag)
+  manifest = None
+  if tag.id:
+    manifest = Manifest.query.filter(Manifest.tag_id==tag.id).first()
+  if not manifest:
+    manifest = Manifest(tag_ref=tag)
+  manifest.content = request.data.decode('utf8')
   db.session.add(manifest)
   db.session.commit()
   
   manifest_url = _get_service_url()+f"/v2/{container.entityName()}/{container.collectionName()}/{container.name}/manifests/sha256:{manifest.hash}"
-  return redirect(manifest_url, 201)
+  response = redirect(manifest_url, 201)
+  response.headers['Docker-Content-Digest']=f'sha256:{manifest.hash}'
+  return response
 
 
 
 @registry.handles(
-  rule='/v2/<distname:name>/blobs/upload/',
+  rule='/v2/<distname:name>/blobs/uploads/',
   method='POST',
-  authenticators=authenticator.with_scope(Scopes.user)
+  headers_schema=OrasPushBlobHeaderSchema(partial=True),
+  authenticators=authenticator.with_scope(Scopes.optional),
 )
 def oras_start_upload_session(name):
+  headers = rebar.validated_headers
   try:
     container = _get_container(name)
   except OrasNameUnknown:
+    current_app.logger.debug(f"creating {name}...")
     entity_id, collection_id, container_id = _split_name(name)
     try:
       entity = Entity.query.filter(func.lower(Entity.name)==entity_id.lower()).one()
     except NoResultFound:
+      current_app.logger.debug(f"... creating entity {entity_id}")
       entity = Entity(name=entity_id, owner=g.authenticated_user)
       db.session.add(entity)
     try:
       collection = entity.collections_ref.filter(func.lower(Collection.name)==collection_id.lower()).one()
     except NoResultFound:
-      collection = Collection(name=collection_id, entity_id=entity.id, owner=g.authenticated_user)
+      current_app.logger.debug(f"... creating collection {collection_id}")
+      collection = Collection(name=collection_id, entity_ref=entity, owner=g.authenticated_user)
       db.session.add(collection)
     try:
       container = collection.containers_ref.filter(func.lower(Container.name)==container_id.lower()).one()
     except NoResultFound:
-      container = Container(name=container_id, collection_id=collection.id, owner=g.authenticated_user)
+      current_app.logger.debug(f"... creating container {container_id}")
+      container = Container(name=container_id, collection_ref=collection, owner=g.authenticated_user)
       db.session.add(container)
   
 
@@ -265,6 +280,11 @@ def oras_start_upload_session(name):
   db.session.commit()
 
   upload_url = _get_service_url()+f"/v2/__uploads/{upload.id}"
+
+  current_app.logger.debug(headers)
+  if headers.get('content_type')=='application/octet-stream' and headers.get('content_length', 0) > 0:
+    current_app.logger.debug('single post push')
+    raise OrasUnsupported(f"No single upload support yet")
 
   return redirect(upload_url, 202)
 

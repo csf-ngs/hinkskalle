@@ -166,7 +166,7 @@ class TestOras(RouteBase):
     """https://github.com/opencontainers/distribution-spec/blob/main/spec.md#post-then-put"""    
 
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/test/hase/blobs/upload/")
+      ret = self.client.post(f"/v2/test/hase/blobs/uploads/")
     self.assertEqual(ret.status_code, 202)
     self.assertIsNotNone(ret.headers.get('location'))
 
@@ -190,14 +190,14 @@ class TestOras(RouteBase):
   def test_push_monolith_get_session_existing(self):
     _, container, collection, entity = _create_image(postfix='1')
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{entity.name}/{collection.name}/{container.name}/blobs/upload/")
+      ret = self.client.post(f"/v2/{entity.name}/{collection.name}/{container.name}/blobs/uploads/")
     self.assertEqual(ret.status_code, 202)
 
     _, container, collection, entity = _create_image(postfix='2')
     entity_id = entity.id
     coll_name = collection.name
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{entity.name}/{collection.name}oink/{container.name}/blobs/upload/")
+      ret = self.client.post(f"/v2/{entity.name}/{collection.name}oink/{container.name}/blobs/uploads/")
     self.assertEqual(ret.status_code, 202)
     db_coll = Collection.query.filter(Collection.name==f"{coll_name}oink", Collection.entity_id==entity_id).first()
     self.assertIsNotNone(db_coll)
@@ -206,7 +206,7 @@ class TestOras(RouteBase):
     coll_id = collection.id
     container_name = container.name
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{entity.name}/{collection.name}/{container.name}oink/blobs/upload/")
+      ret = self.client.post(f"/v2/{entity.name}/{collection.name}/{container.name}oink/blobs/uploads/")
     self.assertEqual(ret.status_code, 202)
     db_container = Container.query.filter(Container.name==f"{container_name}oink", Container.collection_id==coll_id).first()
     self.assertIsNotNone(db_container)
@@ -262,6 +262,30 @@ class TestOras(RouteBase):
     hash = location.split('/')[-1].replace('sha256:', '')
     db_manifest = Manifest.query.filter(Manifest.hash==hash).first()
     self.assertIsNotNone(db_manifest)
+    self.assertDictEqual(db_manifest.content_json, test_manifest)
+
+    digest: str = ret.headers.get('Docker-Content-Digest', '')
+    self.assertEqual(digest, f"sha256:{hash}")
+
+  def test_push_manifest_existing(self):
+    image, container, collection, entity = _create_image()
+    tag1 = Tag(name='v2', image_ref=image)
+    manifest = Manifest(content={'oi': 'nk'}, tag_ref=tag1)
+    db.session.add(tag1, manifest)
+    db.session.commit()
+    manifest_id = manifest.id
+
+    test_manifest = {
+      "schemaVersion": 2,
+      "config": {
+        "mediaType": "application/vnd.oci.image.config.v1+json",
+      },
+      "layers": [],
+    }
+    with self.fake_admin_auth():
+      ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 201)
+    db_manifest = Manifest.query.get(manifest_id)
     self.assertDictEqual(db_manifest.content_json, test_manifest)
   
   def test_push_manifest_create_tag(self):

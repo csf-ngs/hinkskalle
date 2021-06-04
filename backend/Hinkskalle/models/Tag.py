@@ -10,7 +10,8 @@ class Tag(db.Model):
   image_id = db.Column(db.Integer, db.ForeignKey('image.id'), nullable=False)
   image_ref = db.relationship('Image', back_populates='tags_ref')
 
-  manifest_ref: Manifest = db.relationship('Manifest', uselist=False, back_populates='tag_ref')
+  manifest_id = db.Column(db.Integer, db.ForeignKey('manifest.id'), nullable=True)
+  manifest_ref: Manifest = db.relationship('Manifest', back_populates='tags')
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
@@ -23,26 +24,33 @@ class Tag(db.Model):
     return value.lower()
 
   def generate_manifest(self) -> Manifest:
-    manifest = self.manifest_ref or Manifest(tag_ref=self)
+    data = {
+      'schemaVersion': 2,
+      'config': {
+        'mediaType': 'application/vnd.sylabs.sif.config.v1',
+      },
+      'layers': [{
+        # see https://github.com/opencontainers/image-spec/blob/master/descriptor.md
+        'mediaType': 'application/vnd.sylabs.sif.layer.v1.sif',
+        'digest': self.image_ref.hash.replace('sha256.', 'sha256:'),
+        'size': self.image_ref.size,
+        # singularity does not pull without a name
+        # could provide more annotations!
+        'annotations': {
+          'org.opencontainers.image.title': self.image_ref.container_ref.name,
+        }
+      }]
+    }
     with db.session.no_autoflush:
-      data = {
-        'schemaVersion': 2,
-        'config': {
-          'mediaType': 'application/vnd.sylabs.sif.config.v1',
-        },
-        'layers': [{
-          # see https://github.com/opencontainers/image-spec/blob/master/descriptor.md
-          'mediaType': 'application/vnd.sylabs.sif.layer.v1.sif',
-          'digest': self.image_ref.hash.replace('sha256.', 'sha256:'),
-          'size': self.image_ref.size,
-          # singularity does not pull without a name
-          # could provide more annotations!
-          'annotations': {
-            'org.opencontainers.image.title': self.image_ref.container_ref.name,
-          }
-        }]
-      }
-      manifest.content=data
+      manifest = Manifest(content=data)
+      existing = Manifest.query.filter(Manifest.hash == manifest.hash).first()
+      if existing:
+        manifest = existing
+    
+    db.session.add(manifest)
+    self.manifest_ref=manifest
+    db.session.commit()
+    
     return manifest
 
 

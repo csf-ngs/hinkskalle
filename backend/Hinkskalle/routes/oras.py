@@ -5,6 +5,7 @@ from typing import Tuple
 from hashlib import sha256
 from flask_rebar.validation import RequestSchema
 from marshmallow import fields, Schema
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import func
 import tempfile
@@ -27,9 +28,7 @@ from .imagefiles import _move_image, _receive_upload
 
 class OrasPushBlobQuerySchema(RequestSchema):
   digest = fields.String(required=True)
-class OrasPushBlobHeaderSchema(Schema):
-  content_length = fields.Integer(required=True)
-  content_type = fields.String(required=True)
+
 
 
 # see https://github.com/opencontainers/distribution-spec/blob/main/spec.md#error-codes
@@ -213,13 +212,19 @@ def oras_push_manifest(name, reference):
       except NoResultFound:
         raise OrasBlobUnknwon(f"Blob hash {layer.get('digest')} not found in container {container.id}")
 
-  manifest = None
-  if tag.id:
-    manifest = Manifest.query.filter(Manifest.tag_id==tag.id).first()
-  if not manifest:
-    manifest = Manifest(tag_ref=tag)
-  manifest.content = request.data.decode('utf8')
-  db.session.add(manifest)
+  with db.session.no_autoflush:
+    manifest = tag.manifest_ref or Manifest()
+    manifest.content = request.data.decode('utf8')
+    existing = Manifest.query.filter(Manifest.hash == manifest.hash).first()
+    if existing:
+      if manifest.id:
+        db.session.delete(manifest)
+      manifest = existing
+    else:
+      db.session.add(manifest)
+
+  tag.manifest_ref=manifest
+
   db.session.commit()
   
   manifest_url = _get_service_url()+f"/v2/{container.entityName()}/{container.collectionName()}/{container.name}/manifests/sha256:{manifest.hash}"
@@ -232,16 +237,21 @@ def oras_push_manifest(name, reference):
 @registry.handles(
   rule='/v2/<distname:name>/blobs/uploads/',
   method='POST',
-  headers_schema=OrasPushBlobHeaderSchema(partial=True),
   authenticators=authenticator.with_scope(Scopes.optional),
 )
 def oras_start_upload_session(name):
-  headers = rebar.validated_headers
+  headers = request.headers
+  current_app.logger.debug(headers)
+
   try:
     container = _get_container(name)
   except OrasNameUnknown:
     current_app.logger.debug(f"creating {name}...")
     entity_id, collection_id, container_id = _split_name(name)
+    # XXX superhack-altert
+    # singularity starts two uploads immediately (config + container)
+    # this causes a race condition if container/... did not exist
+    # one upload creates, the other one tries too and crashes
     try:
       entity = Entity.query.filter(func.lower(Entity.name)==entity_id.lower()).one()
     except NoResultFound:
@@ -258,9 +268,16 @@ def oras_start_upload_session(name):
       container = collection.containers_ref.filter(func.lower(Container.name)==container_id.lower()).one()
     except NoResultFound:
       current_app.logger.debug(f"... creating container {container_id}")
-      container = Container(name=container_id, collection_ref=collection, owner=g.authenticated_user)
-      db.session.add(container)
-  
+      try:
+        container = Container(name=container_id, collection_ref=collection, owner=g.authenticated_user)
+        db.session.add(container)
+        db.session.commit()
+      except IntegrityError:
+        db.session.rollback()
+        current_app.logger.debug(f"race condition alert")
+        container = _get_container(name)
+
+
 
   upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
   os.makedirs(upload_tmp, exist_ok=True)
@@ -292,11 +309,11 @@ def oras_start_upload_session(name):
   rule='/v2/__uploads/<string:upload_id>',
   method='PUT',
   query_string_schema=OrasPushBlobQuerySchema(),
-  headers_schema=OrasPushBlobHeaderSchema(),
 )
 def oras_push_registered_single(upload_id):
   args = rebar.validated_args
-  headers = rebar.validated_headers
+  headers = request.headers
+  current_app.logger.debug(headers)
   if headers['content_type'] != 'application/octet-stream':
     raise OrasUnsupported(f"Invalid content type {headers['content_type']}")
 
@@ -320,9 +337,15 @@ def oras_push_registered_single(upload_id):
   try:
     _, read = _receive_upload(open(upload.path, 'wb'), digest)
   except errors.UnprocessableEntity:
+    upload.state = UploadStates.failed
+    db.session.commit()
     raise OrasDigestInvalid()
-  if read != headers['content_length']:
-    raise OrasBlobUploadInvalid(f"content length did not match header")
+  # OCI spec says content-length is MUST, but ORAS push PUTs without??
+  if headers.get('content_length') is not None and read != int(headers['content_length']):
+    current_app.logger.debug(f"content length {read} did not match header {headers['content_length']}")
+    upload.state = UploadStates.failed
+    db.session.commit()
+    raise OrasBlobUploadInvalid(f"content length {read} did not match header {headers['content_length']}")
   
   image = upload.image_ref
   image.hash = digest 
@@ -331,4 +354,6 @@ def oras_push_registered_single(upload_id):
   db.session.commit()
   
   blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName()}/{image.container_ref.collectionName()}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
-  return redirect(blob_url, 201)
+  response = redirect(blob_url, 201)
+  response.headers['Docker-Content-Digest']=f"{image.hash.replace('sha256.', 'sha256:')}"
+  return response

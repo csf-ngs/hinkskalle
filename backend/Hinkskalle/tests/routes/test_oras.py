@@ -5,6 +5,7 @@ from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Collection import Collection
 import datetime
 import os.path
+import json
 
 from Hinkskalle.tests.route_base import RouteBase
 
@@ -27,7 +28,7 @@ class TestOras(RouteBase):
     digest = ret.headers.get('Docker-Content-Digest')
     self.assertIsNotNone(digest)
 
-    manifest = Manifest.query.filter(Manifest.tag_ref == latest_tag, Manifest.hash == digest.replace('sha256:', '')).first()
+    manifest = Manifest.query.filter(Manifest.hash == digest.replace('sha256:', '')).first()
     self.assertIsNotNone(manifest)
     self.assertDictEqual(ret.get_json().get('layers')[0], {
       'mediaType': 'application/vnd.sylabs.sif.layer.v1.sif',
@@ -110,13 +111,33 @@ class TestOras(RouteBase):
     self.assertEqual(ret.status_code, 200)
     next_digest = ret.headers.get('Docker-Content-Digest')
     self.assertEqual(digest, next_digest)
+
+  def test_manifest_double_different_tag(self):
+    image = _create_image()[0]
+    latest_tag = Tag(name='latest', image_ref=image)
+    other_tag = Tag(name='other', image_ref=image)
+    db.session.add(latest_tag)
+    db.session.add(other_tag)
+
+    db.session.commit()
+
+    ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/latest")
+    self.assertEqual(ret.status_code, 200)
+    digest = ret.headers.get('Docker-Content-Digest')
+    self.assertIsNotNone(digest)
+
+    ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/other")
+    self.assertEqual(ret.status_code, 200)
+    next_digest = ret.headers.get('Docker-Content-Digest')
+    self.assertEqual(digest, next_digest)
   
   def test_manifest_refetch(self):
     image = _create_image()[0]
     latest_tag = Tag(name='latest', image_ref=image)
     db.session.add(latest_tag)
 
-    manifest = Manifest(tag_ref=latest_tag, content='{"oi": "nk"}')
+    manifest = Manifest(content='{"oi": "nk"}')
+    latest_tag.manifest_ref=manifest
 
     ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/sha256:{manifest.hash}")
     self.assertEqual(ret.status_code, 200)
@@ -128,7 +149,8 @@ class TestOras(RouteBase):
     latest_tag = Tag(name='latest', image_ref=image)
     db.session.add(latest_tag)
 
-    manifest = Manifest(tag_ref=latest_tag, content='{"oi": "nk"}')
+    manifest = Manifest(content='{"oi": "nk"}')
+    latest_tag.manifest_ref=manifest
 
     ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/sha256:{manifest.hash}oink")
     self.assertEqual(ret.status_code, 404)
@@ -232,6 +254,9 @@ class TestOras(RouteBase):
     self.assertRegexpMatches(ret.headers.get('location'), rf'/{entity.name}/{collection.name}/{container.name}/blobs/{digest}')
     self.assertIsNotNone(ret.headers.get('location'))
 
+    upload_digest = ret.headers.get('Docker-Content-Digest', '')
+    self.assertEqual(upload_digest, digest)
+
     read_upload = ImageUploadUrl.query.get(upload_id)
     self.assertEqual(read_upload.state, UploadStates.completed)
 
@@ -270,7 +295,8 @@ class TestOras(RouteBase):
   def test_push_manifest_existing(self):
     image, container, collection, entity = _create_image()
     tag1 = Tag(name='v2', image_ref=image)
-    manifest = Manifest(content={'oi': 'nk'}, tag_ref=tag1)
+    manifest = Manifest(content={'oi': 'nk'})
+    tag1.manifest_ref=manifest
     db.session.add(tag1, manifest)
     db.session.commit()
     manifest_id = manifest.id
@@ -287,6 +313,74 @@ class TestOras(RouteBase):
     self.assertEqual(ret.status_code, 201)
     db_manifest = Manifest.query.get(manifest_id)
     self.assertDictEqual(db_manifest.content_json, test_manifest)
+
+  def test_push_manifest_existing_other_tag(self):
+    image, container, collection, entity = _create_image()
+    tag1 = Tag(name='v2', image_ref=image)
+    tag2 = Tag(name='other', image_ref=image)
+
+    test_manifest = {
+      "schemaVersion": 2,
+      "config": {
+        "mediaType": "application/vnd.oci.image.config.v1+json",
+      },
+      "layers": [],
+    }
+    test_manifest_text = json.dumps(test_manifest)
+
+    manifest = Manifest(content=test_manifest_text)
+    tag1.manifest_ref=manifest
+    db.session.add(tag1)
+    db.session.add(tag2)
+    db.session.add(manifest)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/other', data=test_manifest_text)
+    self.assertEqual(ret.status_code, 201)
+
+    digest: str = ret.headers.get('Docker-Content-Digest', '')
+    db_manifest = Manifest.query.filter(Manifest.hash == digest.replace('sha256:', '')).one()
+    self.assertCountEqual(
+      [ t.name for t in db_manifest.tags ],
+      [ 'v2', 'other' ]
+    )
+
+  def test_push_manifest_existing_other_tag_overwrite(self):
+    image, container, collection, entity = _create_image()
+    tag1 = Tag(name='v2', image_ref=image)
+    tag2 = Tag(name='other', image_ref=image)
+
+    test_manifest = {
+      "schemaVersion": 2,
+      "config": {
+        "mediaType": "application/vnd.oci.image.config.v1+json",
+      },
+      "layers": [],
+    }
+    test_manifest_text = json.dumps(test_manifest)
+
+    manifest = Manifest(content=test_manifest_text)
+    tag1.manifest_ref=manifest
+    db.session.add(tag1)
+    db.session.add(tag2)
+    db.session.add(manifest)
+
+    manifest2 = Manifest(content={'oi': 'nk'})
+    tag2.manifest_ref=manifest2
+    db.session.add(manifest2)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/other', data=test_manifest_text)
+    self.assertEqual(ret.status_code, 201)
+
+    digest: str = ret.headers.get('Docker-Content-Digest', '')
+    db_manifest = Manifest.query.filter(Manifest.hash == digest.replace('sha256:', '')).one()
+    self.assertCountEqual(
+      [ t.name for t in db_manifest.tags ],
+      [ 'v2', 'other' ]
+    )
   
   def test_push_manifest_create_tag(self):
     image, container, collection, entity = _create_image()

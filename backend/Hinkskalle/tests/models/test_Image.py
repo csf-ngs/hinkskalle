@@ -80,6 +80,26 @@ class TestImage(ModelBase):
     self.assertRegex(manifest.content, rf'"org.opencontainers.image.title": "{image.container_ref.name}"')
     self.assertRegex(manifest.content, rf'"size": {image.size}')
 
+  def test_manifest_multiple(self):
+    image = _create_image()[0]
+    tag1 = Tag(name='v1', image_ref=image)
+    tag2 = Tag(name='v2', image_ref=image)
+
+    db.session.add(tag1)
+    db.session.add(tag2)
+
+    manifest1 = tag1.generate_manifest()
+    manifest2 = tag2.generate_manifest()
+
+    db.session.add(manifest1)
+    db.session.add(manifest2)
+    db.session.commit()
+
+    self.assertEqual(manifest1.id, manifest2.id)
+    self.assertEqual(tag1.manifest_id, manifest1.id)
+    self.assertEqual(tag2.manifest_id, manifest1.id)
+
+
   def test_tags(self):
     image = _create_image()[0]
 

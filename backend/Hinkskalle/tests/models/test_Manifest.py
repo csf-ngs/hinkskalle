@@ -28,8 +28,6 @@ class TestManifest(ModelBase):
     with self.assertRaises(IntegrityError):
       db.session.commit()
 
-
-  
   def test_manifest_json(self):
     image = _create_image()[0]
     tag = Tag(name='v1', image_ref=image)

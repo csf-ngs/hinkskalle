@@ -105,7 +105,7 @@ def latest_container():
 @current_app.before_request
 def before_request_func():
   # fake content type (singularity does not set it)
-  if (request.path.startswith('/v1') or (request.path.startswith('/v2') and not request.path.startswith('/v2/__uploads'))) and (request.method=='POST' or request.method=='PUT'):
+  if (request.path.startswith('/v1') or (request.path.startswith('/v2') and not request.path.startswith('/v2/__uploads') and not request.path.endswith('/blobs/uploads/'))) and (request.method=='POST' or request.method=='PUT'):
     request.headers.environ.update(CONTENT_TYPE='application/json')
   
   # redirect double slashes to /default/ (singularity client sends meaningful //)

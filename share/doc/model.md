@@ -9,7 +9,7 @@ classDiagram
   Image "1" --> "n" ImageUploadUrl
   File "1" --> "n" Image
   ImageUploadUrl "1" --> "n" ImageUploadUrl
-  Manifest "1" <--> "1" Tag
+  Manifest "1" --> "n" Tag
 
   class Entity {
     +id: int

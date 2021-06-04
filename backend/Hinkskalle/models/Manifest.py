@@ -35,8 +35,7 @@ class ManifestSchema(Schema):
 class Manifest(db.Model):
   id = db.Column(db.Integer, primary_key=True)
 
-  tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'), nullable=False, unique=True)
-  tag_ref = db.relationship('Tag', back_populates='manifest_ref')
+  tags = db.relationship('Tag', back_populates='manifest_ref')
 
   hash = db.Column(db.String(), nullable=False, unique=True)
   _content = db.Column('content', db.String(), nullable=False)

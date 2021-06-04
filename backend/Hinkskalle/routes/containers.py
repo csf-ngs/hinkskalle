@@ -142,7 +142,7 @@ def delete_container(entity_id, collection_id, container_id):
   if not container.check_update_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to container")
 
-  if container.size() > 0:
+  if container.images_ref.count() > 0:
     raise errors.PreconditionFailed(f"Container {container.name} still has images.")
   
   db.session.delete(container)

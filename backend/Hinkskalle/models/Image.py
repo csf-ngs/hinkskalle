@@ -16,7 +16,7 @@ from .Manifest import Manifest
 class ImageSchema(Schema):
   id = fields.String(required=True, dump_only=True)
   description = fields.String(allow_none=True)
-  hash = fields.String()
+  hash = fields.String(allow_none=True)
   blob = fields.String(allow_none=True)
   size = fields.Int(allow_none=True, dump_only=True)
   uploaded = fields.Boolean()

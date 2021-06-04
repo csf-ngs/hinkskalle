@@ -96,6 +96,11 @@ class ImageUploadUrl(db.Model):
       return False
 
 class Image(db.Model):
+  valid_media_types = {
+    'application/vnd.oci.image.layer.v1.tar+gzip': True,
+    'application/vnd.sylabs.sif.layer.v1.sif': True,
+  }
+
   id = db.Column(db.Integer, primary_key=True)
   description = db.Column(db.String())
 
@@ -136,7 +141,7 @@ class Image(db.Model):
   
   @media_type.setter
   def media_type(self, upd: str):
-    if upd == 'application/vnd.sylabs.sif.layer.v1.sif' or upd is None: 
+    if upd is None or self.valid_media_types.get(upd):
       self.hide = False
     elif upd is not None:
       self.hide = True

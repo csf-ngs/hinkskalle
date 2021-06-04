@@ -16,6 +16,30 @@ from .test_imagefiles import _fake_img_file, _prepare_img_data
 
 class TestOras(RouteBase):
 
+  def test_tag_list(self):
+    image = _create_image()[0]
+    tag1 = Tag(name='oink', image_ref=image)
+    tag2 = Tag(name='grunz', image_ref=image)
+    tag3 = Tag(name='007', image_ref=image)
+
+    db.session.add(tag1)
+    db.session.add(tag2)
+    db.session.add(tag3)
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list")
+    self.assertEqual(ret.status_code, 200)
+    ret_data = ret.get_json()
+    self.assertDictEqual({
+      "name": f"{image.entityName()}/{image.collectionName()}/{image.containerName()}",
+      "tags": [
+        '007',
+        'grunz',
+        'oink',
+      ]
+    }, ret_data)
+
+
   def test_manifest(self):
     image = _create_image()[0]
     latest_tag = Tag(name='latest', image_ref=image)
@@ -268,6 +292,49 @@ class TestOras(RouteBase):
     with open(db_image.location, "rb") as infh:
       content = infh.read()
       self.assertEqual(content, img_data)
+
+  def test_push_monolith_checksum_mismatch(self):
+    image = _create_image()[0]
+    img_data, digest = _prepare_img_data()
+
+    _, temp_path = tempfile.mkstemp()
+    upload = ImageUploadUrl(
+      image_id = image.id,
+      path = temp_path,
+      state = UploadStates.initialized,
+    )
+    db.session.add(upload)
+    db.session.commit()
+    upload_id = upload.id
+
+    digest = digest.replace('sha256.', 'sha256:')
+    ret = self.client.put(f"/v2/__uploads/{upload.id}?digest={digest}oink", data=img_data, content_type='application/octet-stream')
+    self.assertEqual(ret.status_code, 400)
+
+  def test_push_monolith_duplicate(self):
+    image, container, _, _ = _create_image()
+    img_data, digest = _prepare_img_data()
+
+    image2 = Image(container_ref=container, hash=digest)
+    db.session.add(image2)
+
+    _, temp_path = tempfile.mkstemp()
+    upload = ImageUploadUrl(
+      image_id = image.id,
+      path = temp_path,
+      state = UploadStates.initialized,
+    )
+    db.session.add(upload)
+    db.session.commit()
+    upload_id = upload.id
+
+    digest = digest.replace('sha256.', 'sha256:')
+    ret = self.client.put(f"/v2/__uploads/{upload.id}?digest={digest}", data=img_data, content_type='application/octet-stream')
+    print(ret.get_json())
+    self.assertEqual(ret.status_code, 201)
+
+    db_upload = ImageUploadUrl.query.get(upload_id)
+    self.assertEqual(db_upload.image_id, image2.id)
     
   
   def test_push_manifest(self):

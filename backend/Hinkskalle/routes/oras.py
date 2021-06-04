@@ -14,6 +14,7 @@ import os.path
 from datetime import datetime
 
 from werkzeug.utils import redirect
+from werkzeug.exceptions import BadRequest
 
 from Hinkskalle.models.Tag import Tag
 from Hinkskalle.models.Image import Image
@@ -58,6 +59,11 @@ class OrasManifestUnknown(OrasError):
   status_code = 404
   code = 'MANIFEST_UNKNOWN'
   message = 'manifest unknown'
+
+class OrasManifestInvalid(OrasError):
+  status_code = 400
+  code = 'MANIFEST_INVALID'
+  message = 'manifest invalid'
 
 class OrasBlobUnknwon(OrasError):
   status_code = 404
@@ -129,6 +135,24 @@ def _get_container(name: str) -> Container:
     raise OrasNameUnknown(f"name {name} not found")
   return container
 
+# see https://github.com/opencontainers/distribution-spec/blob/main/spec.md#content-discovery
+# XXX missing tag subsetting
+@registry.handles(
+  rule='/v2/<distname:name>/tags/list',
+  method='GET',
+  authenticators=authenticator.with_scope(Scopes.optional)
+)
+def oras_list_tags(name: str):
+  container = _get_container(name)
+  if container.private or container.collection_ref.private:
+    raise OrasDenied(f"Container is private.")
+  cur_tags = Tag.query.filter(Tag.image_id.in_([ i.id for i in container.images_ref ])).order_by(Tag.name)
+  return {
+    "name": f"{container.entityName()}/{container.collectionName()}/{container.name}",
+    "tags": [ t.name for t in cur_tags ]
+  }
+
+
 # pull spec https://github.com/opencontainers/distribution-spec/blob/main/spec.md#pulling-manifests
 # oras client fetches first with tag, then re-fetches manifest by sha hash
 @registry.handles(
@@ -149,12 +173,12 @@ def oras_manifest(name: str, reference: str):
     except NoResultFound:
       raise OrasManifestUnknown(f"Manifest {reference} not found")
   else:
-    image_tags = container.imageTags()
     tag = container.get_tag(reference)
     if not tag:
       raise OrasManifestUnknown(f"Tag {reference} not found")
     
-    manifest = tag.generate_manifest()
+    # XXX check if manifest is up-to-date with image
+    manifest = tag.manifest_ref or tag.generate_manifest()
   db.session.add(manifest)
   db.session.commit()
 
@@ -195,11 +219,17 @@ def oras_push_manifest(name, reference):
   container = _get_container(name)
   tag = container.get_tag(reference)
 
-  manifest_data = request.json
+  try:
+    manifest_data = request.json
+  except BadRequest:
+    raise OrasManifestInvalid()
+
+  current_app.logger.debug(manifest_data)
   # XXX validate with schema
 
   if not tag:
-    if len([ l for l in manifest_data.get('layers', []) if l.get('mediaType') == 'application/vnd.sylabs.sif.layer.v1.sif']) == 0:
+    if len([ l for l in manifest_data.get('layers', []) if Image.valid_media_types.get(l.get('mediaType'))]) == 0:
+      current_app.logger.debug(f"No tag {reference} on container {container.id} and no layers provided")
       raise OrasManifestUnknown(f"No tag {reference} on container {container.id} and no layers provided")
     tag = Tag(name=reference)
     db.session.add(tag)
@@ -331,6 +361,20 @@ def oras_push_registered_single(upload_id):
     raise OrasBlobUploadInvalid(f"Upload {upload.id} has invalid state")
   if upload.expiresAt < datetime.now():
     raise OrasBlobUploadInvalid(f"Upload already expired. Please to be faster.")
+  
+  # we don't know the hash when upload is initialized
+  # so we have to check if there is already an image in the container
+  # with the same hash. If yes, re-use that one and get rid of the
+  # temporary image created earlier.
+  existing = Image.query.filter(Image.hash==digest, Image.container_id==upload.image_ref.container_id).first()
+  if existing:
+    current_app.logger.debug(f"Re-using existing image {existing.id} with same hash")
+    to_delete = upload.image_ref
+    upload.image_ref=existing
+    db.session.commit()
+    # commit before deleting, otherwise sqlalchemy's soft-cascade will
+    # kill the upload too
+    db.session.delete(to_delete)
   
   upload.state = UploadStates.uploading
   db.session.commit()

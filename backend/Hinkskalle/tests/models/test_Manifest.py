@@ -14,7 +14,8 @@ class TestManifest(ModelBase):
     db.session.add(tag)
     db.session.commit()
 
-    manifest = Manifest(tag_ref=tag, content='blubb')
+    manifest = Manifest(content='blubb')
+    tag.manifest_ref=manifest
     db.session.add(manifest)
     db.session.commit()
 
@@ -23,7 +24,8 @@ class TestManifest(ModelBase):
 
     self.assertIsNotNone(tag.manifest_ref)
 
-    manifest2 = Manifest(tag_ref=tag, content='oink')
+    manifest2 = Manifest(content='blubb')
+    tag.manifest_ref=manifest2
     db.session.add(manifest2)
     with self.assertRaises(IntegrityError):
       db.session.commit()
@@ -34,7 +36,8 @@ class TestManifest(ModelBase):
     db.session.add(tag)
     db.session.commit()
 
-    manifest = Manifest(tag_ref=tag, content={'oi': 'nk'})
+    manifest = Manifest(content={'oi': 'nk'})
+    tag.manifest_ref=manifest
     db.session.add(manifest)
     db.session.commit()
 

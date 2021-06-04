@@ -79,7 +79,9 @@ class Container(db.Model):
   __table_args__ = (db.UniqueConstraint('name', 'collection_id', name='name_collection_id_idx'),)
 
   def size(self):
-    return self.images_ref.count()
+    if not self.id:
+      return 0
+    return self.images_ref.filter(Image.hide==False, Image.uploaded==True).count()
   
   def collection(self):
     return self.collection_ref.id

@@ -1,4 +1,6 @@
 from typing import List
+
+from sqlalchemy.ext.hybrid import hybrid_property
 from Hinkskalle import db
 from flask import current_app
 from marshmallow import Schema, fields
@@ -109,6 +111,8 @@ class Image(db.Model):
   encrypted = db.Column(db.Boolean, default=False)
   sigdata = db.Column(db.JSON())
 
+  _media_type = db.Column('media_type', db.String())
+  hide = db.Column(db.Boolean(), default=False)
 
   container_id = db.Column(db.Integer, db.ForeignKey('container.id'), nullable=False)
 
@@ -125,6 +129,18 @@ class Image(db.Model):
   uploads_ref = db.relationship('ImageUploadUrl', back_populates='image_ref', lazy='dynamic', cascade="all, delete-orphan")
 
   __table_args__ = (db.UniqueConstraint('hash', 'container_id', name='hash_container_id_idx'),)
+
+  @hybrid_property
+  def media_type(self) -> str:
+    return self._media_type
+  
+  @media_type.setter
+  def media_type(self, upd: str):
+    if upd == 'application/vnd.sylabs.sif.layer.v1.sif' or upd is None: 
+      self.hide = False
+    elif upd is not None:
+      self.hide = True
+    self._media_type = upd
 
   @property
   def fingerprints(self) -> set:

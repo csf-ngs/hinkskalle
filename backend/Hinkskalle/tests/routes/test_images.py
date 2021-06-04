@@ -30,6 +30,20 @@ class TestImages(RouteBase):
     json = ret.get_json().get('data')
     self.assertListEqual([ c['id'] for c in json ], [ str(image1.id), str(image2.id) ] )
   
+  def test_list_hide(self):
+    image1, container, collection, entity = _create_image('img1')
+    image2 = _create_image('img2')[0]
+    image2.container_ref=container
+    image2.hide=True
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/containers/{entity.name}/{collection.name}/{container.name}/images")
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertListEqual([ c['id'] for c in json ], [ str(image1.id) ] )
+
+  
   def test_list_user(self):
     image1, container, collection, entity = _create_image('img1')
     image2 = _create_image('img2')[0]

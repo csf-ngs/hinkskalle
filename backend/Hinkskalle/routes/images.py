@@ -120,7 +120,9 @@ def list_images(entity_id, collection_id, container_id):
   if not container.check_access(g.authenticated_user):
     raise errors.Forbidden('access denied')
   
-  return { 'data': list(container.images_ref) }
+  images = Image.query.filter(Image.container_id==container.id, Image.hide==False)
+  
+  return { 'data': list(images) }
 
 @registry.handles(
   rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',

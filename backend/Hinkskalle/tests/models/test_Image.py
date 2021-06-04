@@ -288,3 +288,17 @@ class TestImage(ModelBase):
     self.assertEqual(sigdata['Signatures'], 1)
     self.assertDictContainsSubset({ 'Partition': 'Def.FILE', 'DataCheck': True }, sigdata['SignerKeys'][0]['Signer'])
     rmtree(os.path.expanduser("~/.singularity/sypgp"))
+  
+  def test_media_type(self):
+    image = _create_image()[0]
+
+    self.assertFalse(image.hide)
+
+    image.media_type='testhase'
+    self.assertTrue(image.hide)
+    image.media_type='application/vnd.sylabs.sif.layer.v1.sif'
+    self.assertFalse(image.hide)
+
+    image.hide = True
+    image.media_type = None
+    self.assertFalse(image.hide)

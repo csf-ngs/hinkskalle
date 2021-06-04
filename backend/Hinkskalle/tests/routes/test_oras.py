@@ -263,6 +263,7 @@ class TestOras(RouteBase):
 
     db_image: Image = Image.query.get(image_id)
     self.assertTrue(db_image.uploaded)
+    self.assertTrue(db_image.hide)
     self.assertEqual(db_image.size, len(img_data))
     with open(db_image.location, "rb") as infh:
       content = infh.read()
@@ -383,13 +384,61 @@ class TestOras(RouteBase):
       [ 'v2', 'other' ]
     )
   
+  def test_push_manifest_update_images(self):
+    image, container, collection, entity = _create_image()
+    config_image = Image(container_ref=container, hash='sha256.config')
+    other_image = Image(container_ref=container, hash='sha256.other')
+    db.session.add(config_image)
+    db.session.add(other_image)
+    db.session.commit()
+
+    image_id = image.id
+    config_image_id = config_image.id
+    other_image_id = other_image.id
+
+    test_manifest = {
+      "schemaVersion": 2,
+      "config": {
+        "mediaType": "application/vnd.oci.image.config.v1+json",
+        "digest": config_image.hash.replace('sha256.', 'sha256:')
+      },
+      "layers": [{ 
+        'digest': image.hash.replace('sha256.', 'sha256:'),
+        "mediaType": "application/vnd.sylabs.sif.layer.v1.sif",
+      }, {
+        'digest': other_image.hash.replace('sha256.', 'sha256:'),
+        "mediaType": "something",
+      }],
+    }
+    with self.fake_admin_auth():
+      ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 201)
+
+    db_image = Image.query.get(image_id)
+    self.assertEqual(db_image.media_type, "application/vnd.sylabs.sif.layer.v1.sif")
+    self.assertFalse(db_image.hide)
+    self.assertListEqual(db_image.tags(), ['v2'])
+
+    db_other_image = Image.query.get(other_image_id)
+    self.assertEqual(db_other_image.media_type, "something")
+    self.assertTrue(db_other_image.hide)
+    self.assertListEqual(db_other_image.tags(), [])
+
+    db_config_image = Image.query.get(config_image_id)
+    self.assertEqual(db_config_image.media_type, "application/vnd.oci.image.config.v1+json")
+    self.assertTrue(db_config_image.hide)
+    self.assertListEqual(db_config_image.tags(), [])
+
+
+
   def test_push_manifest_create_tag(self):
     image, container, collection, entity = _create_image()
     test_manifest = {
       "schemaVersion": 2,
-      "layers": [
-        { 'digest': image.hash.replace('sha256.', 'sha256:') }
-      ],
+      "layers": [{ 
+        'digest': image.hash.replace('sha256.', 'sha256:'), 
+        "mediaType": "application/vnd.sylabs.sif.layer.v1.sif",
+      }],
     }
     with self.fake_admin_auth():
       ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
@@ -407,6 +456,16 @@ class TestOras(RouteBase):
 
     test_manifest = {
       "schemaVersion": 2,
+      "layers": [
+        { 'mediaType': 'oink' },
+      ],
+    }
+    with self.fake_admin_auth():
+      ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 404)
+
+    test_manifest = {
+      "schemaVersion": 2,
     }
     with self.fake_admin_auth():
       ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
@@ -416,9 +475,10 @@ class TestOras(RouteBase):
     image, container, collection, entity = _create_image()
     test_manifest = {
       "schemaVersion": 2,
-      "layers": [
-        { 'digest': image.hash.replace('sha256.', 'sha256:')+'oink' }
-      ],
+      "layers": [{ 
+        'digest': image.hash.replace('sha256.', 'sha256:')+'oink',
+        "mediaType": "application/vnd.sylabs.sif.layer.v1.sif",
+      }],
     }
     with self.fake_admin_auth():
       ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
@@ -436,9 +496,10 @@ class TestOras(RouteBase):
     db.session.add(tag1)
     test_manifest = {
       "schemaVersion": 2,
-      "layers": [
-        { 'digest': image.hash.replace('sha256.', 'sha256:') }
-      ],
+      "layers": [{ 
+        'digest': image.hash.replace('sha256.', 'sha256:'),
+        "mediaType": "application/vnd.sylabs.sif.layer.v1.sif",
+      }],
     }
     with self.fake_admin_auth():
       ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}oink/manifests/v2', json=test_manifest)

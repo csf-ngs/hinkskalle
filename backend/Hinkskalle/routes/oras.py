@@ -199,16 +199,20 @@ def oras_push_manifest(name, reference):
   # XXX validate with schema
 
   if not tag:
-    if len(manifest_data.get('layers', [])) == 0:
+    if len([ l for l in manifest_data.get('layers', []) if l.get('mediaType') == 'application/vnd.sylabs.sif.layer.v1.sif']) == 0:
       raise OrasManifestUnknown(f"No tag {reference} on container {container.id} and no layers provided")
     tag = Tag(name=reference)
     db.session.add(tag)
 
   with db.session.no_autoflush:
-    for layer in manifest_data.get('layers', []):
+    for layer in manifest_data.get('layers', []) + [ manifest_data.get('config', {})]:
+      if not 'digest' in layer or not 'mediaType' in layer:
+        continue
       try:
         image = Image.query.filter(Image.hash==layer.get('digest').replace('sha256:', 'sha256.'), Image.container_ref==container).one()
-        tag.image_ref=image
+        image.media_type = layer.get('mediaType')
+        if not image.hide:
+          tag.image_ref=image
       except NoResultFound:
         raise OrasBlobUnknwon(f"Blob hash {layer.get('digest')} not found in container {container.id}")
 
@@ -348,6 +352,8 @@ def oras_push_registered_single(upload_id):
   image.hash = digest 
   _move_image(upload.path, image)
   upload.state = UploadStates.completed
+  # hide until we receive the manifest
+  image.hide=True 
   db.session.commit()
   
   blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName()}/{image.container_ref.collectionName()}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"

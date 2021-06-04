@@ -241,7 +241,6 @@ def oras_push_manifest(name, reference):
 )
 def oras_start_upload_session(name):
   headers = request.headers
-  current_app.logger.debug(headers)
 
   try:
     container = _get_container(name)
@@ -298,7 +297,6 @@ def oras_start_upload_session(name):
 
   upload_url = _get_service_url()+f"/v2/__uploads/{upload.id}"
 
-  current_app.logger.debug(headers)
   if headers.get('content_type')=='application/octet-stream' and headers.get('content_length', 0) > 0:
     current_app.logger.debug('single post push')
     raise OrasUnsupported(f"No single upload support yet")
@@ -313,7 +311,6 @@ def oras_start_upload_session(name):
 def oras_push_registered_single(upload_id):
   args = rebar.validated_args
   headers = request.headers
-  current_app.logger.debug(headers)
   if headers['content_type'] != 'application/octet-stream':
     raise OrasUnsupported(f"Invalid content type {headers['content_type']}")
 

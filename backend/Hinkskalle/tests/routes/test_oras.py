@@ -200,6 +200,7 @@ class TestOras(RouteBase):
     self.assertEqual(db_upload.type, UploadTypes.single)
     self.assertTrue(abs(db_upload.expiresAt - (datetime.datetime.now()+datetime.timedelta(minutes=5))) < datetime.timedelta(minutes=1))
     self.assertTrue(os.path.exists(db_upload.path))
+    self.assertFalse(db_upload.image_ref.uploaded)
 
     # check autovivification of container path
     entity: Entity = Entity.query.filter(Entity.name=='default').first()

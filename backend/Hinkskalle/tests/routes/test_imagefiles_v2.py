@@ -619,6 +619,7 @@ class TestImagefilesV2(RouteBase):
       part = ImageUploadUrl(
         image_id = image.id,
         path = temp_file,
+        size = 1,
         sha256sum = digest.replace('sha256.', ''),
         partNumber = index+1,
         parent_ref = upload,

@@ -82,12 +82,12 @@ class ImageUploadUrl(db.Model):
   owner = db.relationship('User')
 
   parent_id = db.Column(db.String, db.ForeignKey('image_upload_url.id', ondelete='CASCADE'), nullable=True)
-  parent_ref = db.relationship('ImageUploadUrl', back_populates='parts_ref', remote_side=[id], cascade='all, delete')
+  parent_ref = db.relationship('ImageUploadUrl', back_populates='parts_ref', remote_side=[id])
 
   image_id = db.Column(db.Integer, db.ForeignKey('image.id', ondelete='CASCADE'), nullable=False)
   image_ref = db.relationship('Image', back_populates='uploads_ref')
 
-  parts_ref = db.relationship('ImageUploadUrl', back_populates='parent_ref', lazy='dynamic', cascade="all, delete", passive_deletes=True)
+  parts_ref = db.relationship('ImageUploadUrl', back_populates='parent_ref', lazy='dynamic', cascade="all, delete-orphan")
 
   def check_access(self, user) -> bool:
     if user.is_admin:
@@ -99,6 +99,7 @@ class ImageUploadUrl(db.Model):
 
 class Image(db.Model):
   valid_media_types = {
+    'application/vnd.docker.image.rootfs.diff.tar.gzip': True,
     'application/vnd.oci.image.layer.v1.tar+gzip': True,
     'application/vnd.sylabs.sif.layer.v1.sif': True,
   }

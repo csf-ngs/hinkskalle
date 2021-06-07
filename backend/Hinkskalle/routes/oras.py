@@ -14,7 +14,6 @@ import os.path
 from datetime import datetime
 import re
 
-from werkzeug.utils import redirect
 from werkzeug.exceptions import BadRequest
 
 from Hinkskalle.models.Tag import Tag
@@ -178,8 +177,10 @@ def oras_manifest(name: str, reference: str):
   db.session.add(manifest)
   db.session.commit()
 
+  manifest_type = manifest.content_json.get('mediaType', 'application/vnd.oci.image.manifest.v1+json')
+
   response = make_response(manifest.content)
-  response.headers['Content-Type']='application/vnd.oci.image.manifest.v1+json'
+  response.headers['Content-Type']=manifest_type
   response.headers['Docker-Content-Digest']=f'sha256:{manifest.hash}'
   return response
   
@@ -258,7 +259,8 @@ def oras_push_manifest(name, reference):
   db.session.commit()
   
   manifest_url = _get_service_url()+f"/v2/{container.entityName()}/{container.collectionName()}/{container.name}/manifests/sha256:{manifest.hash}"
-  response = redirect(manifest_url, 201)
+  response = make_response('', 201)
+  response.headers['Location']=manifest_url
   response.headers['Docker-Content-Digest']=f'sha256:{manifest.hash}'
   return response
 
@@ -273,7 +275,6 @@ def oras_push_manifest(name, reference):
 def oras_start_upload_session(name):
   args = rebar.validated_args
   headers = request.headers
-  current_app.logger.debug(f"content-length header: {headers.get('content_length')}")
 
   try:
     container = _get_container(name)
@@ -331,19 +332,21 @@ def oras_start_upload_session(name):
   upload_url = _get_service_url()+f"/v2/__uploads/{upload.id}"
 
   if headers.get('content_type')=='application/octet-stream' and int(headers.get('content_length', 0)) > 0:
-    current_app.logger.debug('single post push')
     upload.type = UploadTypes.single
     if not args.get('digest'):
       raise OrasDigestInvalid(f"need digest for single push upload")
     digest = args['digest'].replace('sha256:', 'sha256.')
     image = _receive_upload(upload, digest)
     blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName()}/{image.container_ref.collectionName()}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
-    response = redirect(blob_url, 201)
+    response = make_response('', 201)
+    response.headers['Location']=blob_url
     response.headers['Docker-Content-Digest']=f"{image.hash.replace('sha256.', 'sha256:')}"
     return response
 
-  current_app.logger.debug(f"Initialize upload {upload.id}")
-  return redirect(upload_url, 202)
+  response = make_response('', 202)
+  response.headers.remove('Content-Type')
+  response.headers['Location']=upload_url
+  return response
 
 @registry.handles(
   rule='/v2/__uploads/<string:upload_id>',
@@ -385,9 +388,9 @@ def oras_push_chunk_init(upload_id):
   )
   db.session.add(chunk)
   db.session.commit()
-  current_app.logger.debug(f"chunked upload to {upload.path}, start with {chunk.id}")
   _handle_chunk(chunk)
-  return _next_chunk(upload, chunk)
+  next_chunk = _next_chunk(upload, chunk)
+  return next_chunk
 
 
 @registry.handles(
@@ -408,10 +411,8 @@ def oras_push_chunk_finish(upload_id, chunk_id):
   args = rebar.validated_args
   upload, chunk = _get_chunk(upload_id, chunk_id)
   if int(request.headers.get('content_length', 0)) > 0:
-    current_app.logger.debug(f"receive last chunk")
     _handle_chunk(chunk)
   else:
-    current_app.logger.debug(f"no last chunk")
     chunk.state = UploadStates.uploaded
   
   digest = args.get('digest').replace('sha256:', 'sha256.')
@@ -439,7 +440,8 @@ def oras_push_chunk_finish(upload_id, chunk_id):
     raise OrasDigestInvalid(err.error_message)
   
   blob_url = _get_service_url()+f"/v2/{upload.image_ref.entityName()}/{upload.image_ref.collectionName()}/{upload.image_ref.containerName()}/blobs/{upload.image_ref.hash.replace('sha256.', 'sha256:')}"
-  response = redirect(blob_url, 201)
+  response = make_response('', 201)
+  response.headers['Location']=blob_url
   response.headers['Docker-Content-Digest']=f"{upload.image_ref.hash.replace('sha256.', 'sha256:')}"
   return response
 
@@ -473,8 +475,9 @@ def _get_chunk(upload_id: str, chunk_id: str) -> Tuple[ImageUploadUrl, ImageUplo
 
 def _handle_chunk(chunk: ImageUploadUrl):
   if request.headers.get('content_type') != 'application/octet-stream':
-    current_app.logger.debug(f"Invalid content type {request.headers['content_type']}")
-    raise OrasUnsupported(f"Invalid content type {request.headers['content_type']}")
+    current_app.logger.debug(f"Invalid content type {request.headers.get('content_type')}")
+    # XXX docker push does not send content-type
+    #raise OrasUnsupported(f"Invalid content type {request.headers.get('content_type')}")
   
   begin, end = None, None
   if not request.headers.get('Content-Range'):
@@ -495,13 +498,14 @@ def _handle_chunk(chunk: ImageUploadUrl):
 
   if not request.headers.get('content_length'):
     current_app.logger.debug(f"No content-length header found")
-    raise OrasBlobUploadInvalid(f"No content-length header found")
+    # XXX docker push does not send content-length?
+    #raise OrasBlobUploadInvalid(f"No content-length header found")
   
 
   chunk.state = UploadStates.uploading
 
   _, read = __receive_upload(open(chunk.path, "wb"))
-  if read != int(request.headers['content_length']):
+  if request.headers.get('content_length') and read != int(request.headers.get('content_length', -1)):
     current_app.logger.debug(f"Content length header mismatch {read}/{request.headers['content_length']}")
     raise OrasBlobUploadInvalid(f"Content length header mismatch")
 
@@ -511,7 +515,7 @@ def _handle_chunk(chunk: ImageUploadUrl):
   
   chunk.size = read
   chunk.state = UploadStates.uploaded
-  current_app.logger.debug(f"uploaded {chunk.size}b part {chunk.partNumber} for upload {chunk.parent_ref.id}")
+  #current_app.logger.debug(f"uploaded {chunk.size}b part {chunk.partNumber} for upload {chunk.parent_ref.id}")
   
 def _next_chunk(upload, chunk):
   _, tmpf = tempfile.mkstemp(dir=upload.path)
@@ -528,7 +532,11 @@ def _next_chunk(upload, chunk):
   db.session.commit()
 
   next_chunk = _get_service_url()+f"/v2/__uploads/{upload.id}/{next_part.id}"
-  return redirect(next_chunk, 202)
+  response = make_response(b'', 202)
+  response.headers.remove('Content-Type')
+  response.headers['Location'] = next_chunk
+  response.headers['Range']=f'0-{chunk.size}'
+  return response
 
   
 
@@ -569,7 +577,8 @@ def oras_push_registered(upload_id):
     raise OrasBlobUploadInvalid(f"Invalid upload type {upload.type}")
   
   blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName()}/{image.container_ref.collectionName()}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
-  response = redirect(blob_url, 201)
+  response = make_response('', 201)
+  response.headers['Location']=blob_url
   response.headers['Docker-Content-Digest']=f"{image.hash.replace('sha256.', 'sha256:')}"
   return response
 

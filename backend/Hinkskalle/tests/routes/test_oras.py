@@ -40,6 +40,113 @@ class TestOras(RouteBase):
       ]
     }, ret_data)
 
+  def test_tag_list_limit(self):
+    image = _create_image()[0]
+    tag1 = Tag(name='oink', image_ref=image)
+    tag2 = Tag(name='grunz', image_ref=image)
+    tag3 = Tag(name='007', image_ref=image)
+
+    db.session.add(tag1)
+    db.session.add(tag2)
+    db.session.add(tag3)
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list?n=1")
+    self.assertEqual(ret.status_code, 200)
+    ret_data = ret.get_json()
+    self.assertDictEqual({
+      "name": f"{image.entityName()}/{image.collectionName()}/{image.containerName()}",
+      "tags": [
+        '007',
+      ]
+    }, ret_data)
+
+  def test_tag_list_limit_zero(self):
+    image = _create_image()[0]
+    tag1 = Tag(name='oink', image_ref=image)
+
+    db.session.add(tag1)
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list?n=0")
+    self.assertEqual(ret.status_code, 200)
+    ret_data = ret.get_json()
+    self.assertDictEqual({
+      "name": f"{image.entityName()}/{image.collectionName()}/{image.containerName()}",
+      "tags": [ ]
+    }, ret_data)
+
+  def test_tag_list_limit_more(self):
+    image = _create_image()[0]
+    tag1 = Tag(name='oink', image_ref=image)
+
+    db.session.add(tag1)
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list?n=3")
+    self.assertEqual(ret.status_code, 200)
+    ret_data = ret.get_json()
+    self.assertDictEqual({
+      "name": f"{image.entityName()}/{image.collectionName()}/{image.containerName()}",
+      "tags": [ 'oink' ]
+    }, ret_data)
+
+  def test_tag_list_last(self):
+    image = _create_image()[0]
+    tag1 = Tag(name='oink', image_ref=image)
+    tag2 = Tag(name='grunz', image_ref=image)
+    tag3 = Tag(name='007', image_ref=image)
+
+    db.session.add(tag1)
+    db.session.add(tag2)
+    db.session.add(tag3)
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list?last=007")
+    self.assertEqual(ret.status_code, 200)
+    ret_data = ret.get_json()
+    self.assertDictEqual({
+      "name": f"{image.entityName()}/{image.collectionName()}/{image.containerName()}",
+      "tags": [
+        'grunz',
+        'oink',
+      ]
+    }, ret_data)
+
+  def test_tag_list_last_count(self):
+    image = _create_image()[0]
+    tag1 = Tag(name='oink', image_ref=image)
+    tag2 = Tag(name='grunz', image_ref=image)
+    tag3 = Tag(name='007', image_ref=image)
+
+    db.session.add(tag1)
+    db.session.add(tag2)
+    db.session.add(tag3)
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list?last=007&n=1")
+    self.assertEqual(ret.status_code, 200)
+    ret_data = ret.get_json()
+    self.assertDictEqual({
+      "name": f"{image.entityName()}/{image.collectionName()}/{image.containerName()}",
+      "tags": [
+        'grunz',
+      ]
+    }, ret_data)
+
+  def test_tag_list_last_not_found(self):
+    image = _create_image()[0]
+    tag1 = Tag(name='oink', image_ref=image)
+    tag2 = Tag(name='grunz', image_ref=image)
+    tag3 = Tag(name='007', image_ref=image)
+
+    db.session.add(tag1)
+    db.session.add(tag2)
+    db.session.add(tag3)
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list?last=muuh")
+    self.assertEqual(ret.status_code, 404)
 
   def test_manifest(self):
     image = _create_image()[0]

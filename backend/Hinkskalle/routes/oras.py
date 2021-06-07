@@ -1,7 +1,7 @@
 from flask import current_app, make_response, send_file, jsonify, g, request
 from flask_rebar import errors
 
-from typing import Tuple
+from typing import List, Tuple
 from hashlib import sha256
 from flask_rebar.validation import RequestSchema
 from marshmallow import fields, Schema
@@ -31,7 +31,9 @@ from .images import _delete_image
 class OrasPushBlobQuerySchema(RequestSchema):
   digest = fields.String(required=True)
 
-
+class OrasListTagQuerySchema(RequestSchema):
+  n = fields.Integer(required=False)
+  last = fields.String(required=False)
 
 # see https://github.com/opencontainers/distribution-spec/blob/main/spec.md#error-codes
 class OrasError(Exception):
@@ -141,16 +143,31 @@ def _get_container(name: str) -> Container:
 @registry.handles(
   rule='/v2/<distname:name>/tags/list',
   method='GET',
+  query_string_schema=OrasListTagQuerySchema(),
   authenticators=authenticator.with_scope(Scopes.optional)
 )
 def oras_list_tags(name: str):
+  args = rebar.validated_args
   container = _get_container(name)
   if container.private or container.collection_ref.private:
     raise OrasDenied(f"Container is private.")
-  cur_tags = Tag.query.filter(Tag.image_id.in_([ i.id for i in container.images_ref ])).order_by(Tag.name)
+  
+  if args.get('n') is None or args.get('n') > 0:
+    cur_tags: List[str] = [ t.name for t in Tag.query.filter(Tag.image_id.in_([ i.id for i in container.images_ref ])).order_by(Tag.name) ]
+    if args.get('last') is not None:
+      try:
+        last_idx = cur_tags.index(args.get('last'))
+      except ValueError:
+        raise OrasManifestUnknown(f"Tag {args.get('last')} not found")
+      cur_tags = cur_tags[last_idx+1:]
+    if args.get('n'):
+      cur_tags = cur_tags[:args.get('n')]
+  else:
+    cur_tags = []
+  
   return {
     "name": f"{container.entityName()}/{container.collectionName()}/{container.name}",
-    "tags": [ t.name for t in cur_tags ]
+    "tags": cur_tags
   }
 
 

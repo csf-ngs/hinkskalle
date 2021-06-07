@@ -438,12 +438,37 @@ class TestOras(RouteBase):
 
     digest = digest.replace('sha256.', 'sha256:')
     ret = self.client.put(f"/v2/__uploads/{upload.id}?digest={digest}", data=img_data, content_type='application/octet-stream')
-    print(ret.get_json())
     self.assertEqual(ret.status_code, 201)
 
     db_upload = ImageUploadUrl.query.get(upload_id)
     self.assertEqual(db_upload.image_id, image2.id)
     
+  def test_push_single_post(self):
+    image = _create_image()[0]
+    img_data, digest = _prepare_img_data()
+    digest = digest.replace('sha256.', 'sha256:')
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
+    self.assertEqual(ret.status_code, 201)
+    self.assertEqual(ret.headers.get('Docker-Content-Digest'), digest)
+
+    db_image: Image = Image.query.filter(Image.hash==digest.replace('sha256:', 'sha256.')).one()
+    self.assertTrue(db_image.uploaded)
+    self.assertTrue(db_image.hide)
+    self.assertEqual(db_image.size, len(img_data))
+    with open(db_image.location, "rb") as infh:
+      content = infh.read()
+      self.assertEqual(content, img_data)
+
+  def test_push_single_post_no_digest(self):
+    image = _create_image()[0]
+    img_data, digest = _prepare_img_data()
+    digest = digest.replace('sha256.', 'sha256:')
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/", data=img_data, content_type='application/octet-stream')
+    self.assertEqual(ret.status_code, 400)
   
   def test_push_manifest(self):
     image, container, collection, entity = _create_image()

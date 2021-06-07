@@ -25,7 +25,7 @@ from Hinkskalle import db, registry, authenticator, rebar
 
 from Hinkskalle.util.auth.token import Scopes
 from .util import _get_container as __get_container, _get_service_url
-from .imagefiles import _move_image, _receive_upload
+from .imagefiles import _move_image, _receive_upload as __receive_upload
 from .images import _delete_image
 
 class OrasPushBlobQuerySchema(RequestSchema):
@@ -109,34 +109,6 @@ def handle_oras_error(error: OrasError):
   resp.status_code = error.status_code
   return resp
 
-
-def _split_name(name: str) -> Tuple[str, str, str]:
-  parts = name.split('/')
-  if len(parts) == 1:
-    entity='default'
-    collection='default'
-    container=parts[0]
-  elif len(parts) == 2:
-    entity='default'
-    collection=parts[0]
-    container=parts[1]
-  elif len(parts) == 3:
-    entity = parts[0]
-    collection = parts[1]
-    container = parts[2]
-  else:
-    raise OrasNameInvalid(f"name {name} is illegal")
-  return entity, collection, container
-
-
-def _get_container(name: str) -> Container:
-  entity, collection, container = _split_name(name)
-  
-  try:
-    container = __get_container(entity, collection, container)
-  except errors.NotFound:
-    raise OrasNameUnknown(f"name {name} not found")
-  return container
 
 # see https://github.com/opencontainers/distribution-spec/blob/main/spec.md#content-discovery
 # XXX missing tag subsetting
@@ -289,10 +261,13 @@ def oras_push_manifest(name, reference):
 @registry.handles(
   rule='/v2/<distname:name>/blobs/uploads/',
   method='POST',
+  query_string_schema=OrasPushBlobQuerySchema(partial=True),
   authenticators=authenticator.with_scope(Scopes.optional),
 )
 def oras_start_upload_session(name):
+  args = rebar.validated_args
   headers = request.headers
+  current_app.logger.debug(f"content-length header: {headers.get('content_length')}")
 
   try:
     container = _get_container(name)
@@ -349,9 +324,16 @@ def oras_start_upload_session(name):
 
   upload_url = _get_service_url()+f"/v2/__uploads/{upload.id}"
 
-  if headers.get('content_type')=='application/octet-stream' and headers.get('content_length', 0) > 0:
+  if headers.get('content_type')=='application/octet-stream' and int(headers.get('content_length', 0)) > 0:
     current_app.logger.debug('single post push')
-    raise OrasUnsupported(f"No single upload support yet")
+    if not args.get('digest'):
+      raise OrasDigestInvalid(f"need digest for single push upload")
+    digest = args['digest'].replace('sha256:', 'sha256.')
+    image = _receive_upload(upload, digest)
+    blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName()}/{image.container_ref.collectionName()}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
+    response = redirect(blob_url, 201)
+    response.headers['Docker-Content-Digest']=f"{image.hash.replace('sha256.', 'sha256:')}"
+    return response
 
   return redirect(upload_url, 202)
 
@@ -379,44 +361,8 @@ def oras_push_registered_single(upload_id):
     raise OrasBlobUploadInvalid(f"Upload {upload.id} has invalid state")
   if upload.expiresAt < datetime.now():
     raise OrasBlobUploadInvalid(f"Upload already expired. Please to be faster.")
-  
-  # we don't know the hash when upload is initialized
-  # so we have to check if there is already an image in the container
-  # with the same hash. If yes, re-use that one and get rid of the
-  # temporary image created earlier.
-  existing = Image.query.filter(Image.hash==digest, Image.container_id==upload.image_ref.container_id).first()
-  if existing:
-    current_app.logger.debug(f"Re-using existing image {existing.id} with same hash")
-    to_delete = upload.image_ref
-    upload.image_ref=existing
-    db.session.commit()
-    # commit before deleting, otherwise sqlalchemy's soft-cascade will
-    # kill the upload too
-    db.session.delete(to_delete)
-  
-  upload.state = UploadStates.uploading
-  db.session.commit()
 
-  try:
-    _, read = _receive_upload(open(upload.path, 'wb'), digest)
-  except errors.UnprocessableEntity:
-    upload.state = UploadStates.failed
-    db.session.commit()
-    raise OrasDigestInvalid()
-  # OCI spec says content-length is MUST, but ORAS push PUTs without??
-  if headers.get('content_length') is not None and read != int(headers['content_length']):
-    current_app.logger.debug(f"content length {read} did not match header {headers['content_length']}")
-    upload.state = UploadStates.failed
-    db.session.commit()
-    raise OrasBlobUploadInvalid(f"content length {read} did not match header {headers['content_length']}")
-  
-  image = upload.image_ref
-  image.hash = digest 
-  _move_image(upload.path, image)
-  upload.state = UploadStates.completed
-  # hide until we receive the manifest
-  image.hide=True 
-  db.session.commit()
+  image = _receive_upload(upload, digest)
   
   blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName()}/{image.container_ref.collectionName()}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
   response = redirect(blob_url, 201)
@@ -474,3 +420,71 @@ def delete_blob(name, digest):
   
   _delete_image(image)
   return make_response({}, 202)
+
+def _split_name(name: str) -> Tuple[str, str, str]:
+  parts = name.split('/')
+  if len(parts) == 1:
+    entity='default'
+    collection='default'
+    container=parts[0]
+  elif len(parts) == 2:
+    entity='default'
+    collection=parts[0]
+    container=parts[1]
+  elif len(parts) == 3:
+    entity = parts[0]
+    collection = parts[1]
+    container = parts[2]
+  else:
+    raise OrasNameInvalid(f"name {name} is illegal")
+  return entity, collection, container
+
+
+def _get_container(name: str) -> Container:
+  entity, collection, container = _split_name(name)
+  
+  try:
+    container = __get_container(entity, collection, container)
+  except errors.NotFound:
+    raise OrasNameUnknown(f"name {name} not found")
+  return container
+
+def _receive_upload(upload: ImageUploadUrl, digest: str) -> Image:
+  # we don't know the hash when upload is initialized
+  # so we have to check if there is already an image in the container
+  # with the same hash. If yes, re-use that one and get rid of the
+  # temporary image created earlier.
+  existing = Image.query.filter(Image.hash==digest, Image.container_id==upload.image_ref.container_id).first()
+  if existing:
+    current_app.logger.debug(f"Re-using existing image {existing.id} with same hash")
+    to_delete = upload.image_ref
+    upload.image_ref=existing
+    db.session.commit()
+    # commit before deleting, otherwise sqlalchemy's soft-cascade will
+    # kill the upload too
+    db.session.delete(to_delete)
+  
+  upload.state = UploadStates.uploading
+  db.session.commit()
+
+  try:
+    _, read = __receive_upload(open(upload.path, 'wb'), digest)
+  except errors.UnprocessableEntity:
+    upload.state = UploadStates.failed
+    db.session.commit()
+    raise OrasDigestInvalid()
+  # OCI spec says content-length is MUST, but ORAS push PUTs without??
+  if request.headers.get('content_length') is not None and read != int(request.headers['content_length']):
+    current_app.logger.debug(f"content length {read} did not match header {request.headers['content_length']}")
+    upload.state = UploadStates.failed
+    db.session.commit()
+    raise OrasBlobUploadInvalid(f"content length {read} did not match header {request.headers['content_length']}")
+  
+  image = upload.image_ref
+  image.hash = digest 
+  _move_image(upload.path, image)
+  upload.state = UploadStates.completed
+  # hide until we receive the manifest
+  image.hide=True 
+  db.session.commit()
+  return image

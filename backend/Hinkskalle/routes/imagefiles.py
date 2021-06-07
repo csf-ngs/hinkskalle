@@ -339,6 +339,7 @@ def push_image_v2_multi_complete(image_id):
   body = rebar.validated_body
   upload = ImageUploadUrl.query.filter(ImageUploadUrl.id == body.get('uploadID')).first()
   if not upload:
+    current_app.logger.debug(f"Upload {body.get('uploadID')} not found")
     raise errors.NotFound(f"Upload ID {body.get('uploadID')} not found")
   if not upload.check_access(g.authenticated_user):
     current_app.logger.error(f"Access denied to upload")
@@ -428,7 +429,7 @@ def _move_image(tmpf, image):
 
 def _receive_upload(tmpf, checksum=None):
   m = hashlib.sha256()
-  current_app.logger.debug(f"starting upload to {tmpf.name}")
+  #current_app.logger.debug(f"starting upload to {tmpf.name}")
 
   read = 0
   while (True):
@@ -439,7 +440,7 @@ def _receive_upload(tmpf, checksum=None):
     m.update(chunk)
     tmpf.write(chunk)
   
-  current_app.logger.debug(f"calculating checksum...")
+  #current_app.logger.debug(f"calculating checksum...")
   digest = m.hexdigest()
   if checksum and checksum != f"sha256.{digest}":
     current_app.logger.error(f"upload checksum mismatch {checksum}!={digest}")

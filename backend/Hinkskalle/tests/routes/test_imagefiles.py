@@ -1,3 +1,4 @@
+from typing import Tuple
 import unittest
 import os.path
 import json
@@ -9,7 +10,7 @@ from Hinkskalle.models import Image, Tag, Container
 from Hinkskalle.tests.models.test_Image import _create_image
 from Hinkskalle import db
 
-def _prepare_img_data(data=b"Hello Dorian!"):
+def _prepare_img_data(data=b"Hello Dorian!") -> Tuple[bytes, str]:
     img_data=data
     m = hashlib.sha256()
     m.update(img_data)

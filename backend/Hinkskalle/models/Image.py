@@ -12,7 +12,6 @@ import enum
 
 import os.path
 import subprocess
-from .Manifest import Manifest
 
 
 class ImageSchema(Schema):
@@ -61,6 +60,9 @@ class UploadStates(enum.Enum):
 
 class UploadTypes(enum.Enum):
   single = 'single'
+  # OCI push doesn't let us differentiate between single and multipart uploads
+  # on init, it seems.
+  undetermined = 'undetermined'
   multipart = 'multipart'
   multipart_chunk = 'multipart_chunk'
 
@@ -79,13 +81,13 @@ class ImageUploadUrl(db.Model):
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   owner = db.relationship('User')
 
-  parent_id = db.Column(db.String, db.ForeignKey('image_upload_url.id'), nullable=True)
-  parent_ref = db.relationship('ImageUploadUrl', back_populates='parts_ref', remote_side=[id])
+  parent_id = db.Column(db.String, db.ForeignKey('image_upload_url.id', ondelete='CASCADE'), nullable=True)
+  parent_ref = db.relationship('ImageUploadUrl', back_populates='parts_ref', remote_side=[id], cascade='all, delete')
 
-  image_id = db.Column(db.Integer, db.ForeignKey('image.id'), nullable=False)
+  image_id = db.Column(db.Integer, db.ForeignKey('image.id', ondelete='CASCADE'), nullable=False)
   image_ref = db.relationship('Image', back_populates='uploads_ref')
 
-  parts_ref = db.relationship('ImageUploadUrl', back_populates='parent_ref', lazy='dynamic', cascade="all, delete-orphan")
+  parts_ref = db.relationship('ImageUploadUrl', back_populates='parent_ref', lazy='dynamic', cascade="all, delete", passive_deletes=True)
 
   def check_access(self, user) -> bool:
     if user.is_admin:
@@ -131,7 +133,7 @@ class Image(db.Model):
 
   container_ref = db.relationship('Container', back_populates='images_ref')
   tags_ref = db.relationship('Tag', back_populates='image_ref', lazy='dynamic', cascade="all, delete-orphan")
-  uploads_ref = db.relationship('ImageUploadUrl', back_populates='image_ref', lazy='dynamic', cascade="all, delete-orphan")
+  uploads_ref = db.relationship('ImageUploadUrl', back_populates='image_ref', lazy='dynamic', cascade="all, delete", passive_deletes=True)
 
   __table_args__ = (db.UniqueConstraint('hash', 'container_id', name='hash_container_id_idx'),)
 

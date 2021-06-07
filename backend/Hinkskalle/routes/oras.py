@@ -12,6 +12,7 @@ import tempfile
 import os
 import os.path
 from datetime import datetime
+import re
 
 from werkzeug.utils import redirect
 from werkzeug.exceptions import BadRequest
@@ -25,7 +26,7 @@ from Hinkskalle import db, registry, authenticator, rebar
 
 from Hinkskalle.util.auth.token import Scopes
 from .util import _get_container as __get_container, _get_service_url
-from .imagefiles import _move_image, _receive_upload as __receive_upload
+from .imagefiles import _move_image, _receive_upload as __receive_upload, _rebuild_chunks
 from .images import _delete_image
 
 class OrasPushBlobQuerySchema(RequestSchema):
@@ -97,6 +98,11 @@ class OrasDigestInvalid(OrasError):
   status_code = 400
   code = 'DIGEST_INVALID'
   message = 'provided digest did not match uploaded content'
+
+class OrasContentRangeInvalid(OrasError):
+  status_code = 416
+  code = 'RANGE_INVALID'
+  message = 'Requested Range Not Satisfiable'
 
 @current_app.errorhandler(OrasError)
 def handle_oras_error(error: OrasError):
@@ -316,7 +322,7 @@ def oras_start_upload_session(name):
     path=tmpf,
     state=UploadStates.initialized,
     owner=g.authenticated_user,
-    type=UploadTypes.single,
+    type=UploadTypes.undetermined,
     image_ref=image
   )
   db.session.add(upload)
@@ -326,6 +332,7 @@ def oras_start_upload_session(name):
 
   if headers.get('content_type')=='application/octet-stream' and int(headers.get('content_length', 0)) > 0:
     current_app.logger.debug('single post push')
+    upload.type = UploadTypes.single
     if not args.get('digest'):
       raise OrasDigestInvalid(f"need digest for single push upload")
     digest = args['digest'].replace('sha256:', 'sha256.')
@@ -335,14 +342,202 @@ def oras_start_upload_session(name):
     response.headers['Docker-Content-Digest']=f"{image.hash.replace('sha256.', 'sha256:')}"
     return response
 
+  current_app.logger.debug(f"Initialize upload {upload.id}")
   return redirect(upload_url, 202)
+
+@registry.handles(
+  rule='/v2/__uploads/<string:upload_id>',
+  method='PATCH',
+)
+def oras_push_chunk_init(upload_id):
+  try:
+    upload = ImageUploadUrl.query.filter(ImageUploadUrl.id == upload_id).one()
+  except NoResultFound:
+    raise OrasBlobUploadUnknown()
+  
+  if upload.type == UploadTypes.undetermined:
+    if upload.state != UploadStates.initialized:
+      current_app.logger.debug(f"Upload {upload.id} has {upload.type}/{upload.state}")
+      raise OrasBlobUploadInvalid(f"Upload {upload.id} has invalid state")
+    upload.type = UploadTypes.multipart
+  else:
+    current_app.logger.debug(f"Upload {upload.id} has {upload.type}/{upload.state}")
+    raise OrasBlobUploadInvalid(f"Upload {upload.id} has invalid state")
+  
+  if upload.expiresAt < datetime.now():
+    current_app.logger.debug(f"Upload expired at {upload.expiresAt}")
+    raise OrasBlobUploadInvalid(f"Upload already expired. Please to be faster.")
+  upload.state = UploadStates.uploading
+
+  upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
+  os.makedirs(upload_tmp, exist_ok=True)
+  upload.path = tempfile.mkdtemp(dir=upload_tmp)
+
+  _, tmpf = tempfile.mkstemp(dir=upload.path)
+
+  chunk = ImageUploadUrl(
+    image_id = upload.image_id,
+    partNumber = 1,
+    path=tmpf,
+    state=UploadStates.initialized,
+    type=UploadTypes.multipart_chunk,
+    parent_ref=upload
+  )
+  db.session.add(chunk)
+  db.session.commit()
+  current_app.logger.debug(f"chunked upload to {upload.path}, start with {chunk.id}")
+  _handle_chunk(chunk)
+  return _next_chunk(upload, chunk)
+
+
+@registry.handles(
+  rule='/v2/__uploads/<string:upload_id>/<string:chunk_id>',
+  method='PATCH',
+)
+def oras_push_chunk(upload_id, chunk_id):
+  upload, chunk = _get_chunk(upload_id, chunk_id)
+  _handle_chunk(chunk)
+  return _next_chunk(upload, chunk)
+
+@registry.handles(
+  rule='/v2/__uploads/<string:upload_id>/<string:chunk_id>',
+  query_string_schema=OrasPushBlobQuerySchema(),
+  method='PUT'
+)
+def oras_push_chunk_finish(upload_id, chunk_id):
+  args = rebar.validated_args
+  upload, chunk = _get_chunk(upload_id, chunk_id)
+  if int(request.headers.get('content_length', 0)) > 0:
+    current_app.logger.debug(f"receive last chunk")
+    _handle_chunk(chunk)
+  else:
+    current_app.logger.debug(f"no last chunk")
+    chunk.state = UploadStates.uploaded
+  
+  digest = args.get('digest').replace('sha256:', 'sha256.')
+  existing = Image.query.filter(Image.hash == digest, Image.container_id==upload.image_ref.container_id).first()
+  if existing:
+    current_app.logger.debug(f"Re-using existing image {existing.id} with same hash {digest}")
+    to_delete = upload.image_ref
+    upload.image_ref=existing
+    for sub in ImageUploadUrl.query.filter(ImageUploadUrl.image_id==to_delete.id):
+      sub.image_ref=existing
+    db.session.commit()
+    # commit before deleting, otherwise sqlalchemy's soft-cascade will
+    # kill the upload too
+    db.session.delete(to_delete)
+  else:
+    upload.image_ref.hash = digest
+
+  try:
+    _rebuild_chunks(upload)
+  except errors.NotAcceptable as err:
+    current_app.logger.debug(f"rebuild chunks {err}")
+    raise OrasBlobUploadInvalid(err.error_message)
+  except errors.UnprocessableEntity as err:
+    current_app.logger.debug(f"rebuild chunks {err}")
+    raise OrasDigestInvalid(err.error_message)
+  
+  blob_url = _get_service_url()+f"/v2/{upload.image_ref.entityName()}/{upload.image_ref.collectionName()}/{upload.image_ref.containerName()}/blobs/{upload.image_ref.hash.replace('sha256.', 'sha256:')}"
+  response = redirect(blob_url, 201)
+  response.headers['Docker-Content-Digest']=f"{upload.image_ref.hash.replace('sha256.', 'sha256:')}"
+  return response
+
+
+def _get_chunk(upload_id: str, chunk_id: str) -> Tuple[ImageUploadUrl, ImageUploadUrl]:
+  try:
+    upload = ImageUploadUrl.query.filter(ImageUploadUrl.id == upload_id).one()
+  except NoResultFound:
+    raise OrasBlobUploadUnknown()
+  
+  if upload.type != UploadTypes.multipart:
+    current_app.logger.debug(f"Invalid upload type {upload.type}")
+    raise OrasBlobUploadInvalid(f"Not a multipart upload")
+  if upload.state != UploadStates.uploading:
+    current_app.logger.debug(f"Invalid upload state {upload.state}")
+    raise OrasBlobUploadInvalid(f"Invalid upload state")
+  
+  try:
+    chunk = ImageUploadUrl.query.filter(ImageUploadUrl.id==chunk_id, ImageUploadUrl.parent_id == upload.id).one()
+  except NoResultFound:
+    raise OrasBlobUploadUnknown()
+  
+  if chunk.expiresAt < datetime.now():
+    current_app.logger.debug(f"Chunk expired at {chunk.expiresAt}")
+    raise OrasBlobUploadInvalid(f"Upload already expired. Please to be faster.")
+  if chunk.state != UploadStates.initialized:
+    current_app.logger.debug(f"Invalid chunk state {chunk.state}")
+    raise OrasBlobUploadInvalid(f"Invalid chunk state")
+  return upload, chunk
+
+
+def _handle_chunk(chunk: ImageUploadUrl):
+  if request.headers.get('content_type') != 'application/octet-stream':
+    current_app.logger.debug(f"Invalid content type {request.headers['content_type']}")
+    raise OrasUnsupported(f"Invalid content type {request.headers['content_type']}")
+  
+  begin, end = None, None
+  if not request.headers.get('Content-Range'):
+    current_app.logger.debug(f"No content-range header found")
+    # /v2/__uploads/d5d0d44c-b827-4baf-8423-9afeae6b4040
+    # says there must be a content-range header, but the 
+    # conformance tests don't send one?!
+    #raise OrasBlobUploadInvalid(f"No content-range header found")
+  else:
+    range = request.headers.get('content_range')
+    if not re.match(r'^[0-9]+-[0-9]+$', range):
+      current_app.logger.debug(f"Invalid content range {range}")
+      raise OrasBlobUploadInvalid(f"Invalid content range")
+    begin, end = range.split('-')
+    begin, end = int(begin), int(end)
+    if chunk.partNumber == 1 and begin != 0:
+      raise OrasContentRangeInvalid(f"first chunk must start with 0")
+
+  if not request.headers.get('content_length'):
+    current_app.logger.debug(f"No content-length header found")
+    raise OrasBlobUploadInvalid(f"No content-length header found")
+  
+
+  chunk.state = UploadStates.uploading
+
+  _, read = __receive_upload(open(chunk.path, "wb"))
+  if read != int(request.headers['content_length']):
+    current_app.logger.debug(f"Content length header mismatch {read}/{request.headers['content_length']}")
+    raise OrasBlobUploadInvalid(f"Content length header mismatch")
+
+  if begin is not None and end is not None and read != end - begin + 1:
+    current_app.logger.debug(f"read {read} bytes, should be {end-begin+1} from content range {begin}-{end}")
+    raise OrasBlobUploadInvalid(f"content range header does not compute")
+  
+  chunk.size = read
+  chunk.state = UploadStates.uploaded
+  current_app.logger.debug(f"uploaded {chunk.size}b part {chunk.partNumber} for upload {chunk.parent_ref.id}")
+  
+def _next_chunk(upload, chunk):
+  _, tmpf = tempfile.mkstemp(dir=upload.path)
+  next_part = ImageUploadUrl(
+    image_id = upload.image_id,
+    partNumber = chunk.partNumber +1,
+    path = tmpf,
+    state = UploadStates.initialized,
+    type = UploadTypes.multipart_chunk,
+    parent_ref = upload,
+  )
+  db.session.add(next_part)
+
+  db.session.commit()
+
+  next_chunk = _get_service_url()+f"/v2/__uploads/{upload.id}/{next_part.id}"
+  return redirect(next_chunk, 202)
+
+  
 
 @registry.handles(
   rule='/v2/__uploads/<string:upload_id>',
   method='PUT',
   query_string_schema=OrasPushBlobQuerySchema(),
 )
-def oras_push_registered_single(upload_id):
+def oras_push_registered(upload_id):
   args = rebar.validated_args
   headers = request.headers
   if headers['content_type'] != 'application/octet-stream':
@@ -357,12 +552,21 @@ def oras_push_registered_single(upload_id):
   except NoResultFound:
     raise OrasBlobUploadUnknown()
 
-  if upload.state != UploadStates.initialized:
-    raise OrasBlobUploadInvalid(f"Upload {upload.id} has invalid state")
-  if upload.expiresAt < datetime.now():
-    raise OrasBlobUploadInvalid(f"Upload already expired. Please to be faster.")
+  # fresh upload, can still become single upload
+  # if we had received a PATCH before this would have been changed to multipart
+  if upload.type == UploadTypes.undetermined:
+    if upload.state != UploadStates.initialized:
+      current_app.logger.debug(f"Upload {upload.id} has invalid state")
+      raise OrasBlobUploadInvalid(f"Upload {upload.id} has invalid state")
+    if upload.expiresAt < datetime.now():
+      current_app.logger.debug(f"Upload {upload.id} expired")
+      raise OrasBlobUploadInvalid(f"Upload already expired. Please to be faster.")
+    upload.type = UploadTypes.single
 
-  image = _receive_upload(upload, digest)
+    image = _receive_upload(upload, digest)
+  else:
+    current_app.logger.debug(f"Invalid upload type {upload.type} for {upload.id}")
+    raise OrasBlobUploadInvalid(f"Invalid upload type {upload.type}")
   
   blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName()}/{image.container_ref.collectionName()}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
   response = redirect(blob_url, 201)

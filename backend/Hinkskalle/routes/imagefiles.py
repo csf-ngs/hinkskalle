@@ -346,40 +346,7 @@ def push_image_v2_multi_complete(image_id):
   if not upload.type == UploadTypes.multipart:
     raise errors.NotAcceptable(f"Not a multipart upload")
 
-  chunks=[]
-  for chunk in upload.parts_ref.order_by(ImageUploadUrl.partNumber.asc()):
-    if not chunk.state == UploadStates.uploaded:
-      raise errors.NotAcceptable(f"Part {chunk.partNumber} not uploaded yet")
-    chunks.append(chunk)
-  if len(chunks) != upload.totalParts:
-    raise errors.NotAcceptable(f"Received only {len(chunks)}/{upload.totalParts}")
-
-  upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
-  os.makedirs(upload_tmp, exist_ok=True)
-
-  m = hashlib.sha256()
-  _, tmpf = tempfile.mkstemp(dir=upload_tmp)
-  with open(tmpf, "wb") as tmpfh:
-    for chunk in chunks:
-      try:
-        with open(chunk.path, "rb") as chunk_fh:
-          chunk_data = chunk_fh.read()
-          m.update(chunk_data)
-          tmpfh.write(chunk_data)
-
-        chunk.state=UploadStates.completed
-      except FileNotFoundError:
-        db.session.rollback()
-        chunk.state=UploadStates.failed
-        db.session.commit()
-        raise errors.InternalError(f"file not found: {chunk.path}")
-  digest = m.hexdigest()
-  if image.hash != f"sha256.{digest}":
-    current_app.logger.error(f"Invalid checksum {image.hash}/{digest}")
-    raise errors.UnprocessableEntity(f"Announced hash {image.hash} does not match final hash {digest}")
-  _move_image(tmpf, image)
-  upload.state = UploadStates.completed
-  db.session.commit()
+  _rebuild_chunks(upload)
 
   return {
     'data': {
@@ -459,7 +426,7 @@ def _move_image(tmpf, image):
   return image
 
 
-def _receive_upload(tmpf, checksum):
+def _receive_upload(tmpf, checksum=None):
   m = hashlib.sha256()
   current_app.logger.debug(f"starting upload to {tmpf.name}")
 
@@ -474,9 +441,51 @@ def _receive_upload(tmpf, checksum):
   
   current_app.logger.debug(f"calculating checksum...")
   digest = m.hexdigest()
-  if checksum != f"sha256.{digest}":
+  if checksum and checksum != f"sha256.{digest}":
     current_app.logger.error(f"upload checksum mismatch {checksum}!={digest}")
     raise errors.UnprocessableEntity(f"Image hash {checksum} does not match: {digest}")
   tmpf.close()
   return tmpf, read
 
+
+def _rebuild_chunks(upload: ImageUploadUrl):
+  chunks=[]
+  for chunk in upload.parts_ref.order_by(ImageUploadUrl.partNumber.asc()):
+    if not chunk.state == UploadStates.uploaded:
+      raise errors.NotAcceptable(f"Part {chunk.partNumber} not uploaded yet")
+    if not chunk.size:
+      current_app.logger.debug(f"skip empty chunk {chunk.partNumber}")
+      chunk.state = UploadStates.completed
+      continue
+
+    chunks.append(chunk)
+  if upload.totalParts is not None and len(chunks) != upload.totalParts:
+    raise errors.NotAcceptable(f"Received only {len(chunks)}/{upload.totalParts}")
+
+  current_app.logger.debug(f"rebuild from {len(chunks)} chunks")
+  upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
+  os.makedirs(upload_tmp, exist_ok=True)
+
+  m = hashlib.sha256()
+  _, tmpf = tempfile.mkstemp(dir=upload_tmp)
+  with open(tmpf, "wb") as tmpfh:
+    for chunk in chunks:
+      try:
+        with open(chunk.path, "rb") as chunk_fh:
+          chunk_data = chunk_fh.read()
+          m.update(chunk_data)
+          tmpfh.write(chunk_data)
+
+        chunk.state=UploadStates.completed
+      except FileNotFoundError:
+        db.session.rollback()
+        chunk.state=UploadStates.failed
+        db.session.commit()
+        raise errors.InternalError(f"file not found: {chunk.path}")
+  digest = m.hexdigest()
+  if upload.image_ref.hash != f"sha256.{digest}":
+    current_app.logger.error(f"Invalid checksum {upload.image_ref.hash}/{digest}")
+    raise errors.UnprocessableEntity(f"Announced hash {upload.image_ref.hash} does not match final hash {digest}")
+  _move_image(tmpf, upload.image_ref)
+  upload.state = UploadStates.completed
+  db.session.commit()

@@ -11,7 +11,10 @@ import os.path
 import json
 import datetime
 
-from Hinkskalle.models import ImageSchema, Image, Container, Entity, Collection
+from Hinkskalle.models.Image import Image
+from Hinkskalle.models.Entity import Entity
+from Hinkskalle.models.Collection import Collection
+from Hinkskalle.models import ImageSchema, Container
 from .util import _get_container
 
 class ImageQuerySchema(RequestSchema):
@@ -271,6 +274,10 @@ def delete_image(entity_id, collection_id, tagged_container_id):
   image = _get_image(entity_id, collection_id, tagged_container_id, arch=args.get('arch'))
   if not image.check_update_access(g.authenticated_user):
     raise errors.Forbidden('access denied')
+  _delete_image(image)
+  return { 'status': 'ok' }
+
+def _delete_image(image: Image):
   db.session.delete(image)
   db.session.commit()
   if image.uploaded and image.location and os.path.exists(image.location):
@@ -279,7 +286,6 @@ def delete_image(entity_id, collection_id, tagged_container_id):
       os.remove(image.location)
     else:
       current_app.logger.debug(f"file {image.location} still referenced, let it be")
-  return { 'status': 'ok' }
 
 
 @registry.handles(

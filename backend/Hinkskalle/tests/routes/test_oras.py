@@ -3,6 +3,7 @@ import tempfile
 from Hinkskalle.models.Container import Container
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Collection import Collection
+from Hinkskalle.models.Tag import Tag
 import datetime
 import os.path
 import json
@@ -10,7 +11,7 @@ import json
 from Hinkskalle.tests.route_base import RouteBase
 
 from Hinkskalle import db
-from Hinkskalle.models import Tag, Manifest, ImageUploadUrl, UploadStates, UploadTypes
+from Hinkskalle.models import Manifest, ImageUploadUrl, UploadStates, UploadTypes
 from Hinkskalle.tests.models.test_Image import _create_image
 from .test_imagefiles import _fake_img_file, _prepare_img_data
 
@@ -570,4 +571,90 @@ class TestOras(RouteBase):
     }
     with self.fake_admin_auth():
       ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}oink/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 404)
+  
+  def test_delete_tag(self):
+    image = _create_image()[0]
+    image_id = image.id
+    tag1 = Tag(name='v2', image_ref=image)
+    db.session.add(tag1)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/v2")
+    self.assertEqual(ret.status_code, 202)
+    self.assertIsNone(Tag.query.filter(Tag.name=='v2', Tag.image_id==image_id).first())
+
+  def test_delete_tag_not_found(self):
+    image = _create_image()[0]
+    image_id = image.id
+    tag1 = Tag(name='v2', image_ref=image)
+    db.session.add(tag1)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/v2oink")
+    self.assertEqual(ret.status_code, 404)
+
+  def test_delete_manifest(self):
+    image = _create_image()[0]
+    image_id = image.id
+    tag1 = Tag(name='v2', image_ref=image)
+    manifest = Manifest(content='{"oi": "nk"}')
+    manifest_id = manifest.id
+    tag1.manifest_ref=manifest
+    db.session.add(tag1)
+    db.session.add(manifest)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/sha256:{manifest.hash}")
+    self.assertEqual(ret.status_code, 202)
+    self.assertIsNone(Manifest.query.get(manifest_id))
+    self.assertIsNone(Tag.query.filter(Tag.name=='v2', Tag.image_id==image_id).first())
+
+  def test_delete_manifezt_not_found(self):
+    image = _create_image()[0]
+    tag1 = Tag(name='v2', image_ref=image)
+    manifest = Manifest(content='{"oi": "nk"}')
+    tag1.manifest_ref=manifest
+    db.session.add(tag1)
+    db.session.add(manifest)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/sha256:{manifest.hash}oink")
+    self.assertEqual(ret.status_code, 404)
+
+  def test_delete_blob(self):
+    image = _create_image()[0]
+    image_id = image.id
+    file = _fake_img_file(image)
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
+    self.assertEqual(ret.status_code, 202)
+    self.assertIsNone(Image.query.get(image_id))
+    self.assertFalse(os.path.exists(image.location))
+
+  def test_delete_blob_other_reference(self):
+    image = _create_image()[0]
+    image_id = image.id
+    file = _fake_img_file(image)
+    other_image = _create_image(postfix='other')[0]
+    other_image.location = image.location
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
+    self.assertEqual(ret.status_code, 202)
+    self.assertIsNone(Image.query.get(image_id))
+    self.assertTrue(os.path.exists(image.location))
+
+  def test_delete_blob_not_found(self):
+    image = _create_image()[0]
+    file = _fake_img_file(image)
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}oink")
     self.assertEqual(ret.status_code, 404)

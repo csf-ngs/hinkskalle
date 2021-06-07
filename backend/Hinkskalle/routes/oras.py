@@ -26,6 +26,7 @@ from Hinkskalle import db, registry, authenticator, rebar
 from Hinkskalle.util.auth.token import Scopes
 from .util import _get_container as __get_container, _get_service_url
 from .imagefiles import _move_image, _receive_upload
+from .images import _delete_image
 
 class OrasPushBlobQuerySchema(RequestSchema):
   digest = fields.String(required=True)
@@ -404,3 +405,55 @@ def oras_push_registered_single(upload_id):
   response = redirect(blob_url, 201)
   response.headers['Docker-Content-Digest']=f"{image.hash.replace('sha256.', 'sha256:')}"
   return response
+
+# https://github.com/opencontainers/distribution-spec/blob/main/spec.md#deleting-tags
+# https://github.com/opencontainers/distribution-spec/blob/main/spec.md#deleting-manifests
+@registry.handles(
+  rule='/v2/<distname:name>/manifests/<string:reference>',
+  method='DELETE',
+  authenticators=[authenticator.with_scope(Scopes.optional)]
+)
+def delete_reference(name, reference):
+  container = _get_container(name)
+  if reference.startswith('sha256:'):
+    try:
+      manifest = Manifest.query.filter(Manifest.hash==reference.replace('sha256:', '')).one()
+      # XXX it's not entirely clear to me if manifest delete should
+      # also delete all tags associated with it.
+      # but since we auto-vivify manifests on tag pull this might 
+      # be the expected behavior (manifest is really gone, doesn't comes alive again)
+      Tag.query.filter(Tag.manifest_id==manifest.id).delete()
+      db.session.delete(manifest)
+      db.session.commit()
+    except NoResultFound:
+      raise OrasManifestUnknown(f"Manifest {reference} not found")
+  else:
+    tag = container.get_tag(reference)
+    if not tag:
+      raise OrasManifestUnknown(f"Tag {reference} not found")
+    db.session.delete(tag)
+    db.session.commit()
+    
+  return make_response({}, 202)
+
+
+# https://github.com/opencontainers/distribution-spec/blob/main/spec.md#deleting-blobs
+@registry.handles(
+  rule='/v2/<distname:name>/blobs/<string:digest>',
+  method='DELETE',
+  authenticators=[authenticator.with_scope(Scopes.optional)]
+)
+def delete_blob(name, digest):
+  container = _get_container(name)
+  if not digest.startswith('sha256:'):
+    raise OrasUnsupported(f"only sha256 digest supported")
+  
+  container = _get_container(name)
+  try:
+    image = container.images_ref.filter(Image.hash == f"sha256.{digest.replace('sha256:', '')}").one()
+  except NoResultFound:
+    current_app.logger.debug(f"hash {digest} for container {container.id} not found")
+    raise OrasBlobUnknwon(f"Blob {digest} not found")
+  
+  _delete_image(image)
+  return make_response({}, 202)

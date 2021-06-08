@@ -101,6 +101,7 @@ class Image(db.Model):
   valid_media_types = {
     'application/vnd.docker.image.rootfs.diff.tar.gzip': True,
     'application/vnd.oci.image.layer.v1.tar+gzip': True,
+    'application/vnd.oci.image.layer.v1.tar': True,
     'application/vnd.sylabs.sif.layer.v1.sif': True,
   }
 

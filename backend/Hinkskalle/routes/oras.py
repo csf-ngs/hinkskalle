@@ -140,7 +140,10 @@ def authenticate_check():
     if len(parts) != 2 or parts[0].lower()!='basic':
       raise OrasUnauthorized()
     decoded = base64.b64decode(parts[1]).decode('utf8')
-    username, password = decoded.split(':')
+    try:
+      username, password = decoded.split(':')
+    except ValueError:
+      raise OrasUnauthorized()
     if not username or not password:
       current_app.logger.debug(f"Invalid basic auth data {decoded}")
       raise OrasUnauthorized()

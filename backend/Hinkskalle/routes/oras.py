@@ -1,3 +1,4 @@
+from Hinkskalle.models.User import Token
 from flask import current_app, make_response, send_file, jsonify, g, request
 from flask_rebar import errors
 
@@ -11,8 +12,9 @@ from sqlalchemy import func
 import tempfile
 import os
 import os.path
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
+import base64
 
 from werkzeug.exceptions import BadRequest
 
@@ -21,9 +23,10 @@ from Hinkskalle.models.Image import Image
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Collection import Collection
 from Hinkskalle.models import Manifest, Container, UploadTypes, UploadStates, ImageUploadUrl
-from Hinkskalle import db, registry, authenticator, rebar
+from Hinkskalle import db, registry, authenticator, rebar, password_checkers
 
 from Hinkskalle.util.auth.token import Scopes
+from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword
 from .util import _get_container as __get_container, _get_service_url
 from .imagefiles import _move_image, _receive_upload as __receive_upload, _rebuild_chunks
 from .images import _delete_image
@@ -83,6 +86,11 @@ class OrasDenied(OrasError):
   code = 'DENIED'
   message = 'requested access to the resource is denied'
 
+class OrasUnauthorized(OrasError):
+  status_code = 401
+  code = 'UNAUTHORIZED'
+  message = 'authentication required'
+
 class OrasBlobUploadUnknown(OrasError):
   status_code = 404
   code = 'BLOB_UPLOAD_UNKNOWN'
@@ -112,8 +120,69 @@ def handle_oras_error(error: OrasError):
   }
   resp = jsonify(body)
   resp.status_code = error.status_code
+  if error.status_code == 401:
+    resp.headers['WWW-Authenticate']=f'bearer realm="{_get_service_url()}/v2/"'
   return resp
 
+@registry.handles(
+  rule='/v2/',
+  method='GET',
+  authenticators=authenticator.with_scope(Scopes.optional)
+)
+def authenticate_check():
+  if g.authenticated_user:
+    current_app.logger.debug(f"authenticated ok: {g.authenticated_user.username}")
+    return jsonify({ 'msg': 'Hejsan!' })
+  elif request.headers.get('Authorization'):
+    current_app.logger.debug("checking basic auth...")
+    auth_header = request.headers.get('Authorization')
+    parts = auth_header.split()
+    if len(parts) != 2 or parts[0].lower()!='basic':
+      raise OrasUnauthorized()
+    decoded = base64.b64decode(parts[1]).decode('utf8')
+    username, password = decoded.split(':')
+    if not username or not password:
+      current_app.logger.debug(f"Invalid basic auth data {decoded}")
+      raise OrasUnauthorized()
+    try:
+      user = password_checkers.check_password(username, password)
+    except (UserNotFound, UserDisabled, InvalidPassword) as err:
+      current_app.logger.debug(f"password check fail {err}")
+      raise OrasUnauthorized()
+    token = user.create_token()
+    token.refresh()
+    token.source = 'auto'
+    db.session.add(token)
+    db.session.commit()
+    return _auth_token(token)
+  else:
+    raise OrasUnauthorized()
+
+@registry.handles(
+  rule='/v2/',
+  method='POST',
+)
+def authenticate():
+  token = request.form.get('refresh_token')
+  if not token:
+    current_app.logger.debug(f"no token in form data")
+    raise OrasUnauthorized('no token found')
+  from Hinkskalle.util.auth.token import TokenAuthenticator
+  try:
+    db_token = TokenAuthenticator()._get_identity(token)
+  except errors.Unauthorized as err:
+    current_app.logger.debug(f"get identity: {err.error_message}")
+    raise OrasUnauthorized(err.error_message)
+  return _auth_token(db_token) 
+
+def _auth_token(token: Token):
+  expires_in: timedelta = token.expiresAt - datetime.now() if token.expiresAt else timedelta(days=366)
+  return jsonify({
+    "token_type": "Bearer",
+    "expires_in": expires_in.seconds,
+    "access_token": token.token,
+    "scope": "all"
+  })
 
 # see https://github.com/opencontainers/distribution-spec/blob/main/spec.md#content-discovery
 # XXX missing tag subsetting

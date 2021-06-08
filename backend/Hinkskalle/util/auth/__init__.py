@@ -17,7 +17,7 @@ class PasswordAuthenticators():
       self.checkers.append(LDAPUsers(app=app))
     self.checkers.append(LocalUsers())
   
-  def check_password(self, username, password):
+  def check_password(self, username: str, password: str):
     for checker in self.checkers:
       try:
         user = checker.check_password(username, password)

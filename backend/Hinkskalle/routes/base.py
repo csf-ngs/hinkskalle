@@ -105,7 +105,7 @@ def latest_container():
 @current_app.before_request
 def before_request_func():
   # fake content type (singularity does not set it)
-  if (request.path.startswith('/v1') or (request.path.startswith('/v2') and not request.path.startswith('/v2/__uploads') and not request.path.endswith('/blobs/uploads/'))) and (request.method=='POST' or request.method=='PUT'):
+  if (request.path.startswith('/v1') or (request.path.startswith('/v2') and not request.path == '/v2/' and not request.path.startswith('/v2/__uploads') and not request.path.endswith('/blobs/uploads/'))) and (request.method=='POST' or request.method=='PUT'):
     request.headers.environ.update(CONTENT_TYPE='application/json')
   
   # redirect double slashes to /default/ (singularity client sends meaningful //)
@@ -120,6 +120,13 @@ def create_error_object(code, msg):
   return [
     { 'title': 'Fail!', 'detail': msg, 'code': code }
   ]
+
+@current_app.errorhandler(errors.Unauthorized)
+def unauthorized(error):
+  response = make_response(jsonify(status='error', errors=create_error_object(401, 'Not Authorized')), 401)
+  response.headers['WWW-Authenticate']=f'bearer realm="{_get_service_url()}/v2/"'
+  return response
+
 
 @current_app.errorhandler(404)
 def not_found(error):

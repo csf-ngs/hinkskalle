@@ -193,13 +193,13 @@ def _auth_token(token: Token):
   rule='/v2/<distname:name>/tags/list',
   method='GET',
   query_string_schema=OrasListTagQuerySchema(),
-  authenticators=authenticator.with_scope(Scopes.optional)
+  authenticators=authenticator.with_scope(Scopes.user)
 )
 def oras_list_tags(name: str):
   args = rebar.validated_args
   container = _get_container(name)
-  if container.private or container.collection_ref.private:
-    raise OrasDenied(f"Container is private.")
+  if not container.check_access(g.authenticated_user):
+    raise OrasDenied(f"Not your container")
   
   if args.get('n') is None or args.get('n') > 0:
     cur_tags: List[str] = [ t.name for t in Tag.query.filter(Tag.image_id.in_([ i.id for i in container.images_ref ])).order_by(Tag.name) ]
@@ -232,7 +232,8 @@ def oras_manifest(name: str, reference: str):
   # application/vnd.oci.image.manifest.v1+json
   container = _get_container(name)
   if container.private or container.collection_ref.private:
-    raise OrasDenied(f"Container is private.")
+    if not g.authenticated_user or not container.check_access(g.authenticated_user):
+      raise OrasDenied(f"Container is private.")
 
   if reference.startswith('sha256:'):
     try:
@@ -271,6 +272,9 @@ def oras_blob(name, digest):
     raise OrasUnsupported(f"only sha256 digest supported")
   
   container = _get_container(name)
+  if container.private or container.collection_ref.private:
+    if not g.authenticated_user or not container.check_access(g.authenticated_user):
+      raise OrasDenied(f"Private container denied")
   try:
     image = container.images_ref.filter(Image.hash == f"sha256.{digest.replace('sha256:', '')}").one()
   except NoResultFound:
@@ -282,10 +286,12 @@ def oras_blob(name, digest):
 @registry.handles(
   rule='/v2/<distname:name>/manifests/<string:reference>',
   method='PUT',
-  authenticators=authenticator.with_scope(Scopes.optional)
+  authenticators=authenticator.with_scope(Scopes.user)
 )
 def oras_push_manifest(name, reference):
   container = _get_container(name)
+  if not container.check_access(g.authenticated_user):
+    raise OrasDenied(f"Not your container")
   tag = container.get_tag(reference)
 
   try:
@@ -342,7 +348,7 @@ def oras_push_manifest(name, reference):
   rule='/v2/<distname:name>/blobs/uploads/',
   method='POST',
   query_string_schema=OrasPushBlobQuerySchema(partial=True),
-  authenticators=authenticator.with_scope(Scopes.optional),
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def oras_start_upload_session(name):
   args = rebar.validated_args
@@ -383,13 +389,15 @@ def oras_start_upload_session(name):
       current_app.logger.debug(f"race condition alert")
       container = _get_container(name)
 
+  if not container.check_access(g.authenticated_user):
+    raise OrasDenied(f"Not your container")
 
 
-  upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
+  upload_tmp = os.path.join(current_app.config['IMAGE_PATH'], '_tmp')
   os.makedirs(upload_tmp, exist_ok=True)
   _, tmpf = tempfile.mkstemp(dir=upload_tmp)
 
-  image = Image(container_ref=container)
+  image = Image(container_ref=container, owner=g.authenticated_user)
   db.session.add(image)
 
   upload = ImageUploadUrl(
@@ -660,10 +668,12 @@ def oras_push_registered(upload_id):
 @registry.handles(
   rule='/v2/<distname:name>/manifests/<string:reference>',
   method='DELETE',
-  authenticators=[authenticator.with_scope(Scopes.optional)]
+  authenticators=authenticator.with_scope(Scopes.user)
 )
 def delete_reference(name, reference):
   container = _get_container(name)
+  if not container.check_access(g.authenticated_user):
+    raise OrasDenied(f"Not your container")
   if reference.startswith('sha256:'):
     try:
       manifest = Manifest.query.filter(Manifest.hash==reference.replace('sha256:', '')).one()
@@ -690,10 +700,12 @@ def delete_reference(name, reference):
 @registry.handles(
   rule='/v2/<distname:name>/blobs/<string:digest>',
   method='DELETE',
-  authenticators=[authenticator.with_scope(Scopes.optional)]
+  authenticators=authenticator.with_scope(Scopes.user)
 )
 def delete_blob(name, digest):
   container = _get_container(name)
+  if not container.check_access(g.authenticated_user):
+    raise OrasDenied(f"Not your container")
   if not digest.startswith('sha256:'):
     raise OrasUnsupported(f"only sha256 digest supported")
   

@@ -18,6 +18,11 @@ from ..test_imagefiles import _prepare_img_data
 
 
 class TestOrasPush(RouteBase):
+
+  def test_push_monolith_no_auth(self):
+    ret = self.client.post(f"/v2/test/hase/blobs/uploads/", headers={'Content-Length': 0 })
+    self.assertEqual(ret.status_code, 401)
+
   def test_push_monolith_get_session(self):
     """https://github.com/opencontainers/distribution-spec/blob/main/spec.md#post-then-put"""    
 
@@ -35,14 +40,20 @@ class TestOrasPush(RouteBase):
     self.assertTrue(abs(db_upload.expiresAt - (datetime.datetime.now()+datetime.timedelta(minutes=5))) < datetime.timedelta(minutes=1))
     self.assertTrue(os.path.exists(db_upload.path))
     self.assertFalse(db_upload.image_ref.uploaded)
+    self.assertEqual(db_upload.createdBy, self.admin_username)
+
+    self.assertEqual(db_upload.image_ref.createdBy, self.admin_username)
 
     # check autovivification of container path
     entity: Entity = Entity.query.filter(Entity.name=='default').first()
     self.assertIsNotNone(entity)
+    self.assertEqual(entity.createdBy, self.admin_username)
     collection = entity.collections_ref.filter(Collection.name=='test').first()
     self.assertIsNotNone(collection)
+    self.assertEqual(collection.createdBy, self.admin_username)
     container = collection.containers_ref.filter(Container.name=='hase').first()
     self.assertIsNotNone(container)
+    self.assertEqual(container.createdBy, self.admin_username)
     
   def test_push_monolith_get_session_existing(self):
     _, container, collection, entity = _create_image(postfix='1')
@@ -68,6 +79,29 @@ class TestOrasPush(RouteBase):
     db_container = Container.query.filter(Container.name==f"{container_name}oink", Container.collection_id==coll_id).first()
     self.assertIsNotNone(db_container)
   
+  def test_push_monolith_get_session_user(self):
+    _, container, coll, entity = _create_image()
+    entity.owner=self.user
+    coll.owner=self.user
+    container.owner=self.user
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.post(f"/v2/{entity.name}/{coll.name}/{container.name}/blobs/uploads/")
+    self.assertEqual(ret.status_code, 202)
+
+  def test_push_monolith_get_session_user_denied(self):
+    _, container, coll, entity = _create_image()
+    entity.owner=self.other_user
+    coll.owner=self.other_user
+    container.owner=self.other_user
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.post(f"/v2/{entity.name}/{coll.name}/{container.name}/blobs/uploads/")
+    self.assertEqual(ret.status_code, 403)
+
+  
   def test_push_monolith_do(self):
     image, container, collection, entity = _create_image()
     image_id = image.id
@@ -87,7 +121,7 @@ class TestOrasPush(RouteBase):
     digest = digest.replace('sha256.', 'sha256:')
     ret = self.client.put(f"/v2/__uploads/{upload.id}?digest={digest}", data=img_data, content_type='application/octet-stream')
     self.assertEqual(ret.status_code, 201)
-    self.assertRegexpMatches(ret.headers.get('location'), rf'/{entity.name}/{collection.name}/{container.name}/blobs/{digest}')
+    self.assertRegexpMatches(ret.headers.get('location', ''), rf'/{entity.name}/{collection.name}/{container.name}/blobs/{digest}')
     self.assertIsNotNone(ret.headers.get('location'))
 
     upload_digest = ret.headers.get('Docker-Content-Digest', '')
@@ -171,6 +205,33 @@ class TestOrasPush(RouteBase):
     self.assertEqual(upload.type, UploadTypes.single)
     self.assertEqual(upload.state, UploadStates.completed)
 
+  def test_push_single_post_user(self):
+    image, container, collection, entity = _create_image()
+    entity.owner = self.user
+    collection.owner = self.user
+    container.owner = self.user
+    img_data, digest = _prepare_img_data()
+    digest = digest.replace('sha256.', 'sha256:')
+
+    with self.fake_auth():
+      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
+    self.assertEqual(ret.status_code, 201)
+
+    db_image: Image = Image.query.filter(Image.hash==digest.replace('sha256:', 'sha256.')).one()
+    self.assertEqual(db_image.createdBy, self.username)
+
+  def test_push_single_post_user_denied(self):
+    image, container, collection, entity = _create_image()
+    entity.owner = self.other_user
+    collection.owner = self.other_user
+    container.owner = self.other_user
+    img_data, digest = _prepare_img_data()
+    digest = digest.replace('sha256.', 'sha256:')
+
+    with self.fake_auth():
+      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
+    self.assertEqual(ret.status_code, 403)
+
   def test_push_single_post_no_digest(self):
     image = _create_image()[0]
     img_data, digest = _prepare_img_data()
@@ -179,6 +240,20 @@ class TestOrasPush(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/", data=img_data, content_type='application/octet-stream')
     self.assertEqual(ret.status_code, 400)
+
+  def test_push_manifest_noauth(self):
+    image, container, collection, entity = _create_image()
+    tag1 = Tag(name='v2', image_ref=image)
+    db.session.add(tag1)
+    test_manifest = {
+      "schemaVersion": 2,
+      "config": {
+        "mediaType": "application/vnd.oci.image.config.v1+json",
+      },
+      "layers": [],
+    }
+    ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 401)
   
   def test_push_manifest(self):
     image, container, collection, entity = _create_image()
@@ -203,6 +278,60 @@ class TestOrasPush(RouteBase):
 
     digest: str = ret.headers.get('Docker-Content-Digest', '')
     self.assertEqual(digest, f"sha256:{hash}")
+
+  def test_push_manifest_user(self):
+    image, container, collection, entity = _create_image()
+    container.owner = self.user
+    collection.owner = self.user
+    entity.owner = self.user
+    tag1 = Tag(name='v2', image_ref=image, owner=self.user)
+    db.session.add(tag1)
+    test_manifest = {
+      "schemaVersion": 2,
+      "config": {
+        "mediaType": "application/vnd.oci.image.config.v1+json",
+      },
+      "layers": [],
+    }
+    with self.fake_auth():
+      ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 201)
+
+  def test_push_manifest_user_denied(self):
+    image, container, collection, entity = _create_image()
+    container.owner = self.other_user
+    collection.owner = self.other_user
+    entity.owner = self.other_user
+    tag1 = Tag(name='v2', image_ref=image, owner=self.user)
+    db.session.add(tag1)
+    test_manifest = {
+      "schemaVersion": 2,
+      "config": {
+        "mediaType": "application/vnd.oci.image.config.v1+json",
+      },
+      "layers": [],
+    }
+    with self.fake_auth():
+      ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 403)
+
+  def test_push_manifest_user_tag_denied(self):
+    image, container, collection, entity = _create_image()
+    container.owner = self.other_user
+    collection.owner = self.other_user
+    entity.owner = self.other_user
+    tag1 = Tag(name='v2', image_ref=image, owner=self.other_user)
+    db.session.add(tag1)
+    test_manifest = {
+      "schemaVersion": 2,
+      "config": {
+        "mediaType": "application/vnd.oci.image.config.v1+json",
+      },
+      "layers": [],
+    }
+    with self.fake_auth():
+      ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 403)
 
   def test_push_manifest_existing(self):
     image, container, collection, entity = _create_image()

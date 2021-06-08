@@ -286,29 +286,30 @@ def oras_start_upload_session(name):
     # this causes a race condition if container/... did not exist
     # one upload creates, the other one tries too and crashes
     try:
-      entity = Entity.query.filter(func.lower(Entity.name)==entity_id.lower()).one()
-    except NoResultFound:
-      current_app.logger.debug(f"... creating entity {entity_id}")
-      entity = Entity(name=entity_id, owner=g.authenticated_user)
-      db.session.add(entity)
-    try:
-      collection = entity.collections_ref.filter(func.lower(Collection.name)==collection_id.lower()).one()
-    except NoResultFound:
-      current_app.logger.debug(f"... creating collection {collection_id}")
-      collection = Collection(name=collection_id, entity_ref=entity, owner=g.authenticated_user)
-      db.session.add(collection)
-    try:
-      container = collection.containers_ref.filter(func.lower(Container.name)==container_id.lower()).one()
-    except NoResultFound:
-      current_app.logger.debug(f"... creating container {container_id}")
       try:
+        entity = Entity.query.filter(func.lower(Entity.name)==entity_id.lower()).one()
+      except NoResultFound:
+        current_app.logger.debug(f"... creating entity {entity_id}")
+        entity = Entity(name=entity_id, owner=g.authenticated_user)
+        db.session.add(entity)
+      try:
+        collection = entity.collections_ref.filter(func.lower(Collection.name)==collection_id.lower()).one()
+      except NoResultFound:
+        current_app.logger.debug(f"... creating collection {collection_id}")
+        collection = Collection(name=collection_id, entity_ref=entity, owner=g.authenticated_user)
+        db.session.add(collection)
+        db.session.commit()
+      try:
+        container = collection.containers_ref.filter(func.lower(Container.name)==container_id.lower()).one()
+      except NoResultFound:
+        current_app.logger.debug(f"... creating container {container_id}")
         container = Container(name=container_id, collection_ref=collection, owner=g.authenticated_user)
         db.session.add(container)
         db.session.commit()
-      except IntegrityError:
-        db.session.rollback()
-        current_app.logger.debug(f"race condition alert")
-        container = _get_container(name)
+    except IntegrityError:
+      db.session.rollback()
+      current_app.logger.debug(f"race condition alert")
+      container = _get_container(name)
 
 
 

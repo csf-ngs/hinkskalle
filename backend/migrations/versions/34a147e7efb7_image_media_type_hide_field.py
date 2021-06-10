@@ -22,6 +22,7 @@ def upgrade():
     op.add_column('image', sa.Column('hide', sa.Boolean(), nullable=True))
     conn = op.get_bind()
     conn.execute(sa.text("UPDATE image SET hide=false"))
+    conn.execute(sa.text("UPDATE image SET media_type='application/vnd.sylabs.sif.layer.v1.sif'"))
     # ### end Alembic commands ###
 
 

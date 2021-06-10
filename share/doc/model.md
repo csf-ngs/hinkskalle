@@ -2,14 +2,15 @@
 
 ```mermaid
 classDiagram
-  Entity "1" --> "n" Collection
-  Collection "1" --> "n" Container
-  Container "1" --> "n" Image
-  Image "1" --> "n" Tag
-  Image "1" --> "n" ImageUploadUrl
+  Entity "1" --> "0..n" Collection
+  Collection "1" --> "0..n" Container
+  Container "1" --> "0..n" Image
+  Image "1" --> "0..n" Tag
+  Image "1" --> "0..n" ImageUploadUrl
   File "1" --> "n" Image
-  ImageUploadUrl "1" --> "n" ImageUploadUrl
-  Manifest "1" --> "n" Tag
+  ImageUploadUrl "1" --> "0..n" ImageUploadUrl : Chunks
+  Manifest "0..1" --> "n" Tag
+  Container "m" .. "n" Manifest
 
   class Entity {
     +id: int
@@ -30,6 +31,7 @@ classDiagram
     +id: int
     +hash: sha256
     +location: path
+    *tags: Tag[]
   }
   class Tag {
     +id: int
@@ -39,6 +41,7 @@ classDiagram
     +id: int
     +hash: sha256
     +content: json
+    *tags: Tag[]
   }
   class ImageUploadUrl {
     +id: uuid

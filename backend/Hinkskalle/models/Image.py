@@ -104,6 +104,7 @@ class Image(db.Model):
     'application/vnd.oci.image.layer.v1.tar': True,
     'application/vnd.sylabs.sif.layer.v1.sif': True,
   }
+  singularity_media_type = 'application/vnd.sylabs.sif.layer.v1.sif'
 
   id = db.Column(db.Integer, primary_key=True)
   description = db.Column(db.String())
@@ -120,7 +121,7 @@ class Image(db.Model):
   encrypted = db.Column(db.Boolean, default=False)
   sigdata = db.Column(db.JSON())
 
-  _media_type = db.Column('media_type', db.String(), default='application/vnd.sylabs.sif.layer.v1.sif')
+  _media_type = db.Column('media_type', db.String(), default=singularity_media_type)
   hide = db.Column(db.Boolean(), default=False)
 
   container_id = db.Column(db.Integer, db.ForeignKey('container.id'), nullable=False)
@@ -211,7 +212,7 @@ class Image(db.Model):
   
   def check_signature(self) -> dict:
     self.sigdata = self._get_signature();
-    if self.sigdata.get('Signatures', None) == 1:
+    if self.sigdata.get('Signatures', 0) >= 1:
       self.signed = True
       self.signatureVerified = self.sigdata.get('Passed', False)
     else:
@@ -221,7 +222,9 @@ class Image(db.Model):
 
   def _get_signature(self) -> dict:
     self._check_file()
-    proc = subprocess.run(["singularity", "verify", "--url", current_app.config.get('KEYSERVER_URL'), "--json", self.location], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if self.media_type != self.singularity_media_type:
+      return { 'Passed': False, 'Reason': 'NotApplicable' }
+    proc = subprocess.run(["singularity", "verify", "--url", current_app.config['KEYSERVER_URL'], "--json", self.location], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     sigdata = json.loads(proc.stdout)
     if not proc.returncode == 0:
       stderr = proc.stderr.decode('utf-8')

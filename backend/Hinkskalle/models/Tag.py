@@ -39,7 +39,7 @@ class Tag(db.Model):
         # singularity does not pull without a name
         # could provide more annotations!
         'annotations': {
-          # need for singularity oras pull
+          # singularity oras pull needs this!
           'org.opencontainers.image.title': self.image_ref.container_ref.name,
         }
       }]

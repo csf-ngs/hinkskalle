@@ -1,5 +1,6 @@
 from typing import Tuple
 import unittest
+from unittest import mock
 from datetime import datetime, timedelta
 import os.path
 from shutil import which, rmtree
@@ -299,6 +300,33 @@ class TestImage(ModelBase):
     self.assertEqual(sigdata['Signatures'], 1)
     self.assertDictContainsSubset({ 'Partition': 'Def.FILE', 'DataCheck': True }, sigdata['SignerKeys'][0]['Signer'])
     rmtree(os.path.expanduser("~/.singularity/sypgp"))
+  
+  def test_signed_mock(self):
+    image = _create_image(media_type=Image.singularity_media_type)[0]
+    image.location = self._get_test_path("busybox_signed.sif")
+    image.uploaded = True
+    db.session.commit()
+
+    with mock.patch('subprocess.run') as mock_sig:
+      mock_sig.return_value = mock.Mock(returncode=0, stdout='{ "Passed": true, "Signatures": 1 }')
+      sigdata = image.check_signature()
+      mock_sig.assert_called()
+      self.assertTrue(image.signed)
+      self.assertTrue(image.signatureVerified)
+
+  def test_skip_signature_non_singularity(self):
+    image = _create_image(media_type='oink')[0]
+    image.location = self._get_test_path("busybox_signed.sif")
+    image.uploaded = True
+    db.session.commit()
+
+    with mock.patch('subprocess.run') as mock_sig:
+      sigdata = image.check_signature()
+      mock_sig.assert_not_called()
+      self.assertDictEqual(sigdata, {'Passed': False, 'Reason': 'NotApplicable'})
+      
+
+
   
   def test_media_type(self):
     image = _create_image()[0]

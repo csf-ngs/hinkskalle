@@ -292,6 +292,9 @@ def oras_push_manifest(name, reference):
   container = _get_container(name)
   if not container.check_access(g.authenticated_user):
     raise OrasDenied(f"Not your container")
+
+  if container.readOnly:
+    raise OrasDenied(f"Container is readonly")
   tag = container.get_tag(reference)
 
   try:
@@ -391,6 +394,9 @@ def oras_start_upload_session(name):
 
   if not container.check_access(g.authenticated_user):
     raise OrasDenied(f"Not your container")
+  
+  if container.readOnly:
+    raise OrasDenied(f"Container is readonly")
 
 
   upload_tmp = os.path.join(current_app.config['IMAGE_PATH'], '_tmp')

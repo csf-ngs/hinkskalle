@@ -100,8 +100,14 @@ class TestOrasPush(RouteBase):
     with self.fake_auth():
       ret = self.client.post(f"/v2/{entity.name}/{coll.name}/{container.name}/blobs/uploads/")
     self.assertEqual(ret.status_code, 403)
-
   
+  def test_push_monolith_get_session_readonly(self):
+    image = _create_image()[0]
+    image.container_ref.readOnly = True
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/")
+    self.assertEqual(ret.status_code, 403)
+
   def test_push_monolith_do(self):
     image, container, collection, entity = _create_image()
     image_id = image.id
@@ -278,6 +284,23 @@ class TestOrasPush(RouteBase):
 
     digest: str = ret.headers.get('Docker-Content-Digest', '')
     self.assertEqual(digest, f"sha256:{hash}")
+  
+  def test_push_manifest_readonly(self):
+    image = _create_image()[0]
+    image.container_ref.readOnly = True
+    tag1 = Tag(name='v2', image_ref=image)
+    db.session.add(tag1)
+    test_manifest = {
+      "schemaVersion": 2,
+      "config": {
+        "mediaType": "application/vnd.oci.image.config.v1+json",
+      },
+      "layers": [],
+    }
+    with self.fake_admin_auth():
+      ret = self.client.put(f'/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 403)
+
 
   def test_push_manifest_user(self):
     image, container, collection, entity = _create_image()

@@ -46,6 +46,19 @@ class TestImagefilesV2(RouteBase):
     self.assertTrue(abs(db_upload.expiresAt - (datetime.datetime.now()+datetime.timedelta(minutes=5))) < datetime.timedelta(minutes=1))
     self.assertTrue(os.path.exists(db_upload.path))
   
+  def test_push_v2_single_readonly(self):
+    image = _create_image()[0]
+    img_data = {
+      'filesize': 1,
+      'sha256sum': 'something',
+      'md5sum': 'also something'
+    }
+    image.container_ref.readOnly = True
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/imagefile/{image.id}", json=img_data)
+    self.assertEqual(ret.status_code, 406)
+  
   def test_push_v2_single_do(self):
     image = _create_image()[0]
     img_data, digest = _prepare_img_data()
@@ -345,6 +358,17 @@ class TestImagefilesV2(RouteBase):
     self.assertTrue(abs(db_upload.expiresAt - (datetime.datetime.now()+datetime.timedelta(minutes=5))) < datetime.timedelta(minutes=1))
     self.assertTrue(os.path.isdir(db_upload.path))
     self.assertEqual(db_upload.createdBy, self.admin_username)
+
+  def test_push_v2_multi_init_readonly(self):
+    image = _create_image()[0]
+    img_data = {
+      'filesize': 128*1024*1024+1,
+    }
+    image.container_ref.readOnly = True
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/imagefile/{image.id}/_multipart", json=img_data)
+    self.assertEqual(ret.status_code, 406)
   
   def test_push_v2_multi_init_user(self):
     image, container, _, _ = _create_image()

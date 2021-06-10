@@ -24,6 +24,8 @@ class Tag(db.Model):
     return value.lower()
 
   def generate_manifest(self) -> Manifest:
+    if not self.image_ref.media_type == 'application/vnd.sylabs.sif.layer.v1.sif':
+      raise Exception(f"Refusing to create manifest for non-singularity media type {self.image_ref.media_type}")
     data = {
       'schemaVersion': 2,
       'config': {
@@ -31,12 +33,13 @@ class Tag(db.Model):
       },
       'layers': [{
         # see https://github.com/opencontainers/image-spec/blob/master/descriptor.md
-        'mediaType': 'application/vnd.sylabs.sif.layer.v1.sif',
+        'mediaType': self.image_ref.media_type,
         'digest': self.image_ref.hash.replace('sha256.', 'sha256:'),
         'size': self.image_ref.size,
         # singularity does not pull without a name
         # could provide more annotations!
         'annotations': {
+          # need for singularity oras pull
           'org.opencontainers.image.title': self.image_ref.container_ref.name,
         }
       }]

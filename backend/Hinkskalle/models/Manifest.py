@@ -44,6 +44,21 @@ class Manifest(db.Model):
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
+  @property
+  def stale(self) -> bool:
+    content = self.content_json
+    if not 'layers' in content:
+      return False
+    for layer in content['layers']:
+      if layer.get('mediaType') != 'application/vnd.sylabs.sif.layer.v1.sif':
+        continue
+      for tag in self.tags:
+        if tag.image_ref.hash.replace('sha256.', 'sha256:') != layer.get('digest'):
+          return True
+    return False
+      
+
+
   @hybrid_property
   def content(self) -> str:
     return self._content

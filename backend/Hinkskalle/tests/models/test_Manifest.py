@@ -29,6 +29,18 @@ class TestManifest(ModelBase):
     db.session.add(manifest2)
     with self.assertRaises(IntegrityError):
       db.session.commit()
+    
+  def test_manifest_stale(self):
+    image = _create_image()[0]
+    tag = Tag(name='v1', image_ref=image)
+    manifest = tag.generate_manifest()
+    db.session.add(tag)
+
+    self.assertFalse(manifest.stale)
+
+    image.hash = 'sha256:somethingelse'
+    self.assertTrue(manifest.stale)
+
 
   def test_manifest_json(self):
     image = _create_image()[0]

@@ -16,7 +16,7 @@ from Hinkskalle.tests.models.test_Collection import _create_collection
 from Hinkskalle import db
 from Hinkskalle.tests.model_base import ModelBase, _create_user
 
-def _create_image(hash: str='sha256.oink', postfix: str='container') -> Tuple[Image, Container, Collection, Entity]:
+def _create_image(hash: str='sha256.oink', postfix: str='container', **kwargs) -> Tuple[Image, Container, Collection, Entity]:
   try:
     coll = Collection.query.filter_by(name=f"test-coll-{postfix}").one()
     entity = coll.entity_ref
@@ -30,7 +30,7 @@ def _create_image(hash: str='sha256.oink', postfix: str='container') -> Tuple[Im
     db.session.add(container)
     db.session.commit()
 
-  image = Image(container_ref=container, hash=hash)
+  image = Image(container_ref=container, hash=hash, **kwargs)
   db.session.add(image)
   db.session.commit()
   return image, container, coll, entity
@@ -67,7 +67,7 @@ class TestImage(ModelBase):
     self.assertEqual(read_image.entityName(), entity.name)
   
   def test_manifest(self):
-    image = _create_image()[0]
+    image = _create_image(media_type='application/vnd.sylabs.sif.layer.v1.sif')[0]
     tag1 = Tag(name='v1', image_ref=image)
     db.session.add(tag1)
     image.size = 666
@@ -80,8 +80,19 @@ class TestImage(ModelBase):
     self.assertRegex(manifest.content, rf'"org.opencontainers.image.title": "{image.container_ref.name}"')
     self.assertRegex(manifest.content, rf'"size": {image.size}')
 
+  def test_manifest_mediatype(self):
+    image = _create_image(media_type='application/vnd.docker.image.rootfs.diff.tar.gzip')[0]
+    tag1 = Tag(name='v1', image_ref=image)
+    db.session.add(tag1)
+    image.size = 666
+    db.session.commit()
+
+    with self.assertRaises(Exception):
+      tag1.generate_manifest()
+
+
   def test_manifest_multiple(self):
-    image = _create_image()[0]
+    image = _create_image(media_type='application/vnd.sylabs.sif.layer.v1.sif')[0]
     tag1 = Tag(name='v1', image_ref=image)
     tag2 = Tag(name='v2', image_ref=image)
 

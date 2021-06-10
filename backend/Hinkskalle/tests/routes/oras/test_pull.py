@@ -30,6 +30,22 @@ class TestOrasPull(RouteBase):
         'org.opencontainers.image.title': image.containerName(),
       }
     })
+  
+  def test_manifest_stale(self):
+    image = _create_image()[0]
+    tag = Tag(name='v1', image_ref=image)
+    db.session.add(tag)
+    tag.generate_manifest()
+
+    image.hash='sha256.grunzgrunz'
+    db.session.commit()
+
+    ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/v1")
+    self.assertEqual(ret.status_code, 200)
+    manifest = ret.get_json()
+    self.assertEqual(manifest.get('layers')[0].get('digest'), image.hash.replace('sha256.', 'sha256:'))
+
+
 
   def test_manifest_auth(self):
     image = _create_image()[0]

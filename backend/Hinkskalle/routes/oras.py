@@ -245,10 +245,10 @@ def oras_manifest(name: str, reference: str):
     if not tag:
       raise OrasManifestUnknown(f"Tag {reference} not found")
     
-    # XXX check if manifest is up-to-date with image
-    manifest = tag.manifest_ref or tag.generate_manifest()
-  db.session.add(manifest)
-  db.session.commit()
+    if not tag.manifest_ref or tag.manifest_ref.stale:
+      tag.generate_manifest()
+    manifest = tag.manifest_ref
+
 
   manifest_type = manifest.content_json.get('mediaType', 'application/vnd.oci.image.manifest.v1+json')
 

@@ -1,3 +1,4 @@
+from Hinkskalle.models.Image import Image
 from Hinkskalle import db
 from datetime import datetime
 from sqlalchemy.orm import validates
@@ -24,7 +25,7 @@ class Tag(db.Model):
     return value.lower()
 
   def generate_manifest(self) -> Manifest:
-    if not self.image_ref.media_type == 'application/vnd.sylabs.sif.layer.v1.sif':
+    if not self.image_ref.media_type == Image.singularity_media_type:
       raise Exception(f"Refusing to create manifest for non-singularity media type {self.image_ref.media_type}")
     data = {
       'schemaVersion': 2,

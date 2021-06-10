@@ -1,3 +1,4 @@
+from Hinkskalle.models.Image import Image
 from typing import Union
 from Hinkskalle import db
 from flask import current_app
@@ -50,7 +51,7 @@ class Manifest(db.Model):
     if not 'layers' in content:
       return False
     for layer in content['layers']:
-      if layer.get('mediaType') != 'application/vnd.sylabs.sif.layer.v1.sif':
+      if layer.get('mediaType') != Image.singularity_media_type:
         continue
       for tag in self.tags:
         if tag.image_ref.hash.replace('sha256.', 'sha256:') != layer.get('digest'):

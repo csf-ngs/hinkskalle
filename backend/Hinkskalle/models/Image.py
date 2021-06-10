@@ -120,7 +120,7 @@ class Image(db.Model):
   encrypted = db.Column(db.Boolean, default=False)
   sigdata = db.Column(db.JSON())
 
-  _media_type = db.Column('media_type', db.String())
+  _media_type = db.Column('media_type', db.String(), default='application/vnd.sylabs.sif.layer.v1.sif')
   hide = db.Column(db.Boolean(), default=False)
 
   container_id = db.Column(db.Integer, db.ForeignKey('container.id'), nullable=False)

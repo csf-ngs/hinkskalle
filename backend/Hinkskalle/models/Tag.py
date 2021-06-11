@@ -12,7 +12,7 @@ class Tag(db.Model):
   container_id = db.Column(db.Integer, db.ForeignKey('container.id'), nullable=False)
   container_ref = db.relationship('Container', back_populates='tags_ref')
 
-  image_id = db.Column(db.Integer, db.ForeignKey('image.id'), nullable=False)
+  image_id = db.Column(db.Integer, db.ForeignKey('image.id'), nullable=True)
   image_ref = db.relationship('Image', back_populates='tags_ref')
 
   manifest_id = db.Column(db.Integer, db.ForeignKey('manifest.id'), nullable=True)

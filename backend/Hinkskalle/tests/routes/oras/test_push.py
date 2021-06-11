@@ -541,7 +541,7 @@ class TestOrasPush(RouteBase):
     }
     with self.fake_admin_auth():
       ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
-    self.assertEqual(ret.status_code, 404)
+    self.assertEqual(ret.status_code, 201)
 
     test_manifest = {
       "schemaVersion": 2,
@@ -551,14 +551,14 @@ class TestOrasPush(RouteBase):
     }
     with self.fake_admin_auth():
       ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
-    self.assertEqual(ret.status_code, 404)
+    self.assertEqual(ret.status_code, 201)
 
     test_manifest = {
       "schemaVersion": 2,
     }
     with self.fake_admin_auth():
       ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
-    self.assertEqual(ret.status_code, 404)
+    self.assertEqual(ret.status_code, 201)
 
   def test_push_manifest_layer_not_found(self):
     image, container, collection, entity = _create_image()

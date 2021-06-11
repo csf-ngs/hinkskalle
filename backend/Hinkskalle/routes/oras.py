@@ -315,7 +315,6 @@ def oras_push_manifest(name, reference):
   if not tag:
     if len([ l for l in manifest_data.get('layers', []) if Image.valid_media_types.get(l.get('mediaType'))]) == 0:
       current_app.logger.debug(f"No tag {reference} on container {container.id} and no layers provided")
-      raise OrasManifestUnknown(f"No tag {reference} on container {container.id} and no layers provided")
     tag = Tag(name=reference)
     db.session.add(tag)
 
@@ -343,6 +342,7 @@ def oras_push_manifest(name, reference):
       db.session.add(manifest)
 
   manifest.container_ref=container
+  tag.container_ref=container
   tag.manifest_ref=manifest
 
   db.session.commit()

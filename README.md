@@ -47,8 +47,8 @@ Using docker-compose.
 
 ```
 cd backend
-flask local_db init
-flask local_db add-user # admin
+flask localdb init
+flask localdb add-user # admin
 ```
 
 - fire up whole stack

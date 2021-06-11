@@ -17,7 +17,7 @@ def sync_ldap():
   job = sync_ldap.queue()
   click.echo(f"started sync with job id {job.id}")
 
-db_cli = AppGroup('local_db', short_help='hinkskalle specific db commands')
+db_cli = AppGroup('localdb', short_help='hinkskalle specific db commands')
 
 @db_cli.command('init')
 def init_db():
@@ -36,6 +36,15 @@ def add_user(username, password, email, firstname, lastname, admin):
   user.set_password(password)
   db.session.add(user)
   db.session.commit()
+
+@db_cli.command('remove-user')
+@click.argument('username')
+def remove_user(username):
+  from Hinkskalle.models import User
+  user = User.query.filter(User.username==username).one()
+  db.session.delete(user)
+  db.session.commit()
+
 
 
 current_app.cli.add_command(db_cli)

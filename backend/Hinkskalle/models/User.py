@@ -48,7 +48,7 @@ class User(db.Model):
   source = db.Column(db.String(), default='local', nullable=False)
 
   groups = db.relationship('Group', secondary=user_groups_table, back_populates='users')
-  tokens = db.relationship('Token', back_populates='user')
+  tokens = db.relationship('Token', back_populates='user', cascade="all, delete-orphan")
   manual_tokens = db.relationship('Token', viewonly=True, primaryjoin="and_(User.id==Token.user_id, Token.source=='manual')")
   starred = db.relationship('Container', secondary=user_stars, back_populates='starred')
   starred_sth = db.relationship('Container', viewonly=True, secondary=user_stars, lazy='dynamic')
@@ -62,6 +62,7 @@ class User(db.Model):
   containers = db.relationship('Container', back_populates='owner')
   images = db.relationship('Image', back_populates='owner')
   tags = db.relationship('Tag', back_populates='owner')
+  uploads = db.relationship('ImageUploadUrl', back_populates='owner', cascade='all, delete-orphan')
 
   @validates('username', 'email')
   def convert_lower(self, key, value):

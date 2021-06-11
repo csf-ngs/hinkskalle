@@ -12,6 +12,8 @@ class TestTagsV2(RouteBase):
 
   def test_get_v2(self):
     image, container, _, _ = _create_image()
+    image_id = image.id
+    container_id = container.id
     image.arch='c64'
     db.session.commit()
 
@@ -21,19 +23,21 @@ class TestTagsV2(RouteBase):
     data = ret.get_json().get('data')
     self.assertDictEqual(data, {})
 
-    container.tag_image('v1.0', image.id)
+    container = Container.query.get(container_id)
+    container.tag_image('v1.0', image_id, arch='c64')
     with self.fake_admin_auth():
-      ret = self.client.get(f"/v2/tags/{container.id}")
+      ret = self.client.get(f"/v2/tags/{container_id}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertDictEqual(data, {'c64': {'v1.0': str(image.id)} })
+    self.assertDictEqual(data, {'c64': {'v1.0': str(image_id)} })
 
-    container.tag_image('oink', image.id)
+    container = Container.query.get(container_id)
+    container.tag_image('oink', image_id, arch='c64')
     with self.fake_admin_auth():
-      ret = self.client.get(f"/v2/tags/{container.id}")
+      ret = self.client.get(f"/v2/tags/{container_id}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertDictEqual(data, {'c64': {'v1.0': str(image.id), 'oink': str(image.id)}})
+    self.assertDictEqual(data, {'c64': {'v1.0': str(image_id), 'oink': str(image_id)}})
 
   def test_get_user_v2(self):
     image, container, coll, entity = _create_image()
@@ -111,7 +115,7 @@ class TestTagsV2(RouteBase):
       }
     })
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.archImageTags(), {'apple': { 'red': str(image.id), 'blue': str(image.id) } })
+    self.assertDictEqual(db_container.archImageTags(), {'apple': { 'red': str(image_id), 'blue': str(image_id) } })
     db_image = Image.query.get(image_id)
     self.assertEqual(db_image.arch, 'apple')
 

@@ -75,8 +75,8 @@ class TestContainer(ModelBase):
   
   def test_get_tag(self):
     container = _create_container()[0]
-    image1 = Image(hash='eins', description='test-image-1', container_id=container.id)
-    image2 = Image(hash='zwo', description='test-image-2', container_id=container.id)
+    image1 = Image(hash='eins', description='test-image-1', container_ref=container)
+    image2 = Image(hash='zwo', description='test-image-2', container_ref=container)
 
     tag1 = Tag(image_ref=image1, name='v1')
     tag2 = Tag(image_ref=image2, name='v2')
@@ -93,7 +93,7 @@ class TestContainer(ModelBase):
   
   def test_get_tag_not_found(self):
     container = _create_container()[0]
-    image1 = Image(hash='eins', description='test-image-1', container_id=container.id)
+    image1 = Image(hash='eins', description='test-image-1', container_ref=container)
     tag1 = Tag(image_ref=image1, name='v1')
     db.session.add(image1)
     db.session.add(tag1)
@@ -104,8 +104,8 @@ class TestContainer(ModelBase):
   
   def test_get_tag_duplicate(self):
     container = _create_container()[0]
-    image1 = Image(hash='eins', description='test-image-1', container_id=container.id)
-    image2 = Image(hash='zwo', description='test-image-2', container_id=container.id)
+    image1 = Image(hash='eins', description='test-image-1', container_ref=container)
+    image2 = Image(hash='zwo', description='test-image-2', container_ref=container)
 
     tag1 = Tag(image_ref=image1, name='v1')
     tag2 = Tag(image_ref=image2, name='v1')
@@ -121,8 +121,8 @@ class TestContainer(ModelBase):
   
   def test_get_arch_tag(self):
     container = _create_container()[0]
-    image1 = Image(hash='eins', arch='c64', description='test-image-1', container_id=container.id)
-    image2 = Image(hash='zwo', arch='amiga', description='test-image-2', container_id=container.id)
+    image1 = Image(hash='eins', arch='c64', description='test-image-1', container_ref=container)
+    image2 = Image(hash='zwo', arch='amiga', description='test-image-2', container_ref=container)
 
     tag1 = Tag(image_ref=image1, name='v1')
     tag2 = Tag(image_ref=image2, name='v1')
@@ -142,7 +142,7 @@ class TestContainer(ModelBase):
   def test_tag_image(self):
     container = _create_container()[0]
 
-    image1 = Image(hash='eins', description='test-image-1', container_id=container.id)
+    image1 = Image(hash='eins', description='test-image-1', container_ref=container)
     db.session.add(image1)
     db.session.commit()
 
@@ -214,7 +214,7 @@ class TestContainer(ModelBase):
     db.session.add(image1)
     db.session.commit()
 
-    container.tag_image('v1', image1.id)
+    container.tag_image('v1', image1.id, arch='c64')
     self.assertDictEqual(container.archImageTags(), {
       'c64': { 'v1': str(image1.id) }
     })
@@ -246,7 +246,7 @@ class TestContainer(ModelBase):
     image1 = Image(hash='test-image-1', container_id=container.id)
     db.session.add(image1)
     db.session.commit()
-    image1tag1 = Tag(name='v1', image_id=image1.id)
+    image1tag1 = Tag(name='v1', image_ref=image1)
     db.session.add(image1tag1)
     db.session.commit()
     self.assertDictEqual(container.imageTags(), { 'v1': str(image1.id) })
@@ -254,7 +254,7 @@ class TestContainer(ModelBase):
     image2 = Image(hash='test-image-2', container_id=container.id)
     db.session.add(image2)
     db.session.commit()
-    image2tag1 = Tag(name='v2', image_id=image2.id)
+    image2tag1 = Tag(name='v2', image_ref=image2)
     db.session.add(image2tag1)
     db.session.commit()
     self.assertDictEqual(container.imageTags(), { 'v1': str(image1.id), 'v2': str(image2.id) })
@@ -282,7 +282,7 @@ class TestContainer(ModelBase):
     container = _create_container()[0]
 
     image1 = Image(hash='test-image-1', container_ref=container, arch='powerpc')
-    image1tag1 = Tag(name='v1', image_ref=image1)
+    image1tag1 = Tag(name='v1', image_ref=image1, arch='powerpc')
     db.session.add(image1)
     db.session.add(image1tag1)
     db.session.commit()
@@ -292,7 +292,7 @@ class TestContainer(ModelBase):
     })
 
     image2 = Image(hash='test-image-2', container_ref=container, arch='alpha')
-    image2tag1 = Tag(name='v1', image_ref=image2)
+    image2tag1 = Tag(name='v1', image_ref=image2, arch='alpha')
     db.session.add(image2tag1)
     db.session.commit()
 
@@ -384,13 +384,13 @@ class TestContainer(ModelBase):
     image1 = Image(hash='eins', description='test-image-1', container_id=container.id)
     db.session.add(image1)
     db.session.commit()
-    image1tag1 = Tag(name='v1', image_id=image1.id)
+    image1tag1 = Tag(name='v1', image_ref=image1)
     db.session.add(image1tag1)
     db.session.commit()
     image2 = Image(hash='zwei', description='test-image-2', container_id=container.id)
     db.session.add(image2)
     db.session.commit()
-    image2tag1 = Tag(name='v2', image_id=image2.id)
+    image2tag1 = Tag(name='v2', image_ref=image2)
     db.session.add(image2tag1)
     db.session.commit()
 

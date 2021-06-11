@@ -405,16 +405,17 @@ class TestImages(RouteBase):
     image.location=__file__
     db.session.commit()
     other_container, _, _ = _create_container()
+    other_container_id = other_container.id
     with self.fake_admin_auth():
       ret = self.client.post('/v1/images', json={
         'hash': image.hash,
-        'container': str(other_container.id),
+        'container': str(other_container_id),
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertFalse(data['uploaded'])
     self.assertIsNone(data['size'])
-    self.assertDictEqual(other_container.imageTags(), {})
+    self.assertDictEqual(Container.query.get(other_container_id).imageTags(), {})
 
   def test_create_user(self):
     container, coll, entity = _create_container()
@@ -611,6 +612,8 @@ class TestImages(RouteBase):
     image2 = Image(hash='other-image-2', container_ref=container)
     db.session.add(image2)
     db.session.commit()
+    image2_id=image2.id
+    image1_id=image1.id
     container.tag_image('v1', image2.id, arch='amiga')
 
     with self.fake_admin_auth():
@@ -621,8 +624,8 @@ class TestImages(RouteBase):
       ret = self.client.delete(f"/v1/images/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}:v1?arch=c64")
 
     self.assertEqual(ret.status_code, 200)
-    self.assertIsNone(Image.query.get(image1.id))
-    self.assertIsNotNone(Image.query.get(image2.id))
+    self.assertIsNone(Image.query.get(image1_id))
+    self.assertIsNotNone(Image.query.get(image2_id))
 
 
   def test_delete_user(self):

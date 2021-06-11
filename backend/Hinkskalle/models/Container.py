@@ -4,7 +4,8 @@ from datetime import datetime
 from sqlalchemy.orm import validates
 from sqlalchemy.orm.exc import NoResultFound
 
-from Hinkskalle.models import Collection, Image, Tag
+from Hinkskalle.models.Image import Image
+from Hinkskalle.models.Tag import Tag
 
 from marshmallow import fields, Schema, validates_schema, ValidationError
 from Hinkskalle.util.name_check import validate_name
@@ -63,6 +64,9 @@ class Container(db.Model):
 
   collection_ref = db.relationship('Collection', back_populates='containers_ref')
   images_ref = db.relationship('Image', back_populates='container_ref', lazy='dynamic')
+  tags_ref = db.relationship('Tag', back_populates='container_ref')
+  manifests_ref = db.relationship('Manifest', back_populates='container_ref')
+
   owner = db.relationship('User', back_populates='containers')
 
   starred = db.relationship('User', secondary='user_stars', back_populates='starred')
@@ -94,9 +98,10 @@ class Container(db.Model):
     return self.collection_ref.entity_ref.name
 
   def get_tag(self, tag, arch=None):
-    cur_tags = Tag.query.filter(Tag.name == tag, Tag.image_id.in_([ i.id for i in self.images_ref ]))
+    cur_tags = Tag.query.filter(Tag.name == tag, Tag.container_id == self.id)
     if arch:
-      cur_tags = cur_tags.join(Image).filter(Image.arch==arch)
+      cur_tags = cur_tags.filter(Tag.arch == arch)
+
     if cur_tags.count() > 1:
       raise Exception(f"Multiple tags {tag} found on container {self.id}")
 
@@ -121,33 +126,26 @@ class Container(db.Model):
       cur_tag.updatedAt=datetime.now()
       db.session.commit()
     else:
-      cur_tag = Tag(name=tag, image_ref=image)
+      cur_tag = Tag(name=tag, container_ref=self, image_ref=image, arch=arch)
       db.session.add(cur_tag)
       db.session.commit()
     return cur_tag
 
   def imageTags(self):
     tags = {}
-    for image in self.images_ref:
-      for tag in image.tags():
-        if tag in tags:
-          if tags[tag].arch != image.arch:
-            raise Exception(f"Tag {tag} has multiple architectures")
-          else:
-            current_app.logger.warn(f"Tag {tag} for image {image.id} is already set on {tags[tag].id}")
-        tags[tag]=image
-    return { t: str(i.id) for t,i in tags.items() }
+    for tag in self.tags_ref:
+      if tag.name in tags and tag.arch != tags[tag.name].arch:
+        raise Exception(f"Tag {tag.name} has multiple architectures")
+      tags[tag.name] = tag
+    return { n: str(t.image_id) for n, t in tags.items() }
 
   def archImageTags(self):
     tags = {}
-    for image in self.images_ref:
-      if not image.arch:
+    for tag in self.tags_ref:
+      if not tag.arch:
         continue
-      tags[image.arch] = tags.get(image.arch, {})
-      for tag in image.tags():
-        if tag in tags[image.arch]:
-          raise Exception(f"Tag {tag}/{image.arch} for image {image.id} is already set on {tags[tag]}")
-        tags[image.arch][tag]=str(image.id)
+      tags[tag.arch] = tags.get(tag.arch, {})
+      tags[tag.arch][tag.name]=str(tag.image_id)
     return tags
   
   def check_access(self, user):

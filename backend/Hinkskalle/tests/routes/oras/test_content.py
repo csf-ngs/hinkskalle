@@ -253,7 +253,7 @@ class TestOrasContent(RouteBase):
   def test_delete_manifest_noauth(self):
     image = _create_image()[0]
     tag1 = Tag(name='v2', image_ref=image)
-    manifest = Manifest(content='{"oi": "nk"}')
+    manifest = Manifest(content='{"oi": "nk"}', container_ref=image.container_ref)
     tag1.manifest_ref=manifest
     db.session.add(tag1)
     db.session.add(manifest)
@@ -266,7 +266,7 @@ class TestOrasContent(RouteBase):
     image = _create_image()[0]
     image_id = image.id
     tag1 = Tag(name='v2', image_ref=image)
-    manifest = Manifest(content='{"oi": "nk"}')
+    manifest = Manifest(content='{"oi": "nk"}', container_ref=image.container_ref)
     manifest_id = manifest.id
     tag1.manifest_ref=manifest
     db.session.add(tag1)
@@ -285,7 +285,7 @@ class TestOrasContent(RouteBase):
     collection.owner = self.user
     entity.owner = self.user
     tag1 = Tag(name='v2', image_ref=image)
-    manifest = Manifest(content='{"oi": "nk"}')
+    manifest = Manifest(content='{"oi": "nk"}', container_ref=container)
     tag1.manifest_ref=manifest
     db.session.add(tag1)
     db.session.add(manifest)
@@ -301,7 +301,7 @@ class TestOrasContent(RouteBase):
     collection.owner = self.other_user
     entity.owner = self.other_user
     tag1 = Tag(name='v2', image_ref=image)
-    manifest = Manifest(content='{"oi": "nk"}')
+    manifest = Manifest(content='{"oi": "nk"}', container_ref=container)
     tag1.manifest_ref=manifest
     db.session.add(tag1)
     db.session.add(manifest)
@@ -314,7 +314,7 @@ class TestOrasContent(RouteBase):
   def test_delete_manifest_not_found(self):
     image = _create_image()[0]
     tag1 = Tag(name='v2', image_ref=image)
-    manifest = Manifest(content='{"oi": "nk"}')
+    manifest = Manifest(content='{"oi": "nk"}', container_ref=image.container_ref)
     tag1.manifest_ref=manifest
     db.session.add(tag1)
     db.session.add(manifest)

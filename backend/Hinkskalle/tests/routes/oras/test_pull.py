@@ -35,7 +35,7 @@ class TestOrasPull(RouteBase):
     image = _create_image()[0]
     tag = Tag(name='v1', image_ref=image)
     db.session.add(tag)
-    tag.generate_manifest()
+    image.generate_manifest()
 
     image.hash='sha256.grunzgrunz'
     db.session.commit()
@@ -197,7 +197,7 @@ class TestOrasPull(RouteBase):
     latest_tag = Tag(name='latest', image_ref=image)
     db.session.add(latest_tag)
 
-    manifest = Manifest(content='{"oi": "nk"}')
+    manifest = Manifest(content='{"oi": "nk"}', container_ref=image.container_ref)
     latest_tag.manifest_ref=manifest
 
     ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/sha256:{manifest.hash}")
@@ -210,7 +210,7 @@ class TestOrasPull(RouteBase):
     latest_tag = Tag(name='latest', image_ref=image)
     db.session.add(latest_tag)
 
-    manifest = Manifest(content='{"oi": "nk"}')
+    manifest = Manifest(content='{"oi": "nk"}', container_ref=image.container_ref)
     latest_tag.manifest_ref=manifest
 
     ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/sha256:{manifest.hash}oink")

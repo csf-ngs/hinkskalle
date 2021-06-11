@@ -251,8 +251,10 @@ def oras_manifest(name: str, reference: str):
       raise OrasManifestUnknown(f"Tag {reference} not found")
     
     if not tag.manifest_ref or tag.manifest_ref.stale:
-      tag.generate_manifest()
-    manifest = tag.manifest_ref
+      manifest = tag.image_ref.generate_manifest()
+      tag.manifest_ref=manifest
+    else:
+      manifest = tag.manifest_ref
 
 
   manifest_type = manifest.content_json.get('mediaType', 'application/vnd.oci.image.manifest.v1+json')
@@ -332,7 +334,7 @@ def oras_push_manifest(name, reference):
   with db.session.no_autoflush:
     manifest = tag.manifest_ref or Manifest()
     manifest.content = request.data.decode('utf8')
-    existing = Manifest.query.filter(Manifest.hash == manifest.hash).first()
+    existing = Manifest.query.filter(Manifest.hash == manifest.hash, Manifest.container_ref==container).first()
     if existing:
       if manifest.id:
         db.session.delete(manifest)
@@ -340,6 +342,7 @@ def oras_push_manifest(name, reference):
     else:
       db.session.add(manifest)
 
+  manifest.container_ref=container
   tag.manifest_ref=manifest
 
   db.session.commit()

@@ -61,11 +61,11 @@ class TestImagefiles(RouteBase):
   
   def test_pull_arch(self):
     image1, container, _, _ = _create_image()
-    image1_tag = Tag(name='v1', image_ref=image1)
-    image1.arch = 'c64'
+    image1_tag = Tag(name='v1', image_ref=image1, arch='c64')
+    image1.arch='c64'
 
     image2 = Image(hash='sha256.oink2', container_ref=container, arch='amiga')
-    image2_tag = Tag(name='v1', image_ref=image2)
+    image2_tag = Tag(name='v1', image_ref=image2, arch='amiga')
     db.session.add(image1_tag)
     db.session.add(image2_tag)
     db.session.commit()

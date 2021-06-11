@@ -7,6 +7,8 @@ sed -e "s^%VUE_APP_BACKEND_URL%^$BACKEND_URL^" \
     frontend/dist/index.html.subs > frontend/dist/index.html
 
 SESSION=hink
+cd backend
+flask db upgrade
 gunicorn -u hinkskalle \
   --access-logfile - \
   --error-logfile - \

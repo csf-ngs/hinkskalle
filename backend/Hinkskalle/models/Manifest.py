@@ -1,5 +1,6 @@
-from Hinkskalle.models.Image import Image
 from typing import Union
+
+from sqlalchemy.orm.exc import NoResultFound
 from Hinkskalle import db
 from flask import current_app
 from datetime import datetime
@@ -33,27 +34,26 @@ class ManifestSchema(Schema):
   layers = fields.Nested(ManifestLayerSchema(), many=True)
   annotations = fields.Dict()
 
-manifest_to_container = db.Table('containers_manifests', db.metadata,
-    db.Column('container_id', db.Integer, db.ForeignKey('container.id')),
-    db.Column('manifest_id', db.Integer, db.ForeignKey('manifest.id'))
-)
-
 class Manifest(db.Model):
   id = db.Column(db.Integer, primary_key=True)
 
+  container_id = db.Column(db.Integer, db.ForeignKey('container.id'), nullable=False)
+  container_ref = db.relationship('Container', back_populates='manifests_ref')
+
   tags = db.relationship('Tag', back_populates='manifest_ref')
 
-  hash = db.Column(db.String(), nullable=False, unique=True)
+  hash = db.Column(db.String(), nullable=False)
   _content = db.Column('content', db.String(), nullable=False)
-
-  containers_ref = db.relationship('Container', secondary=manifest_to_container, backref='manifests_ref')
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
+  __table_args__ = (db.UniqueConstraint('hash', 'container_id', name='manifest_hash_container_idx'),)
+
   @property
   def stale(self) -> bool:
+    from Hinkskalle.models.Image import Image
     # singularity images can also be pushed via library protocol.
     # if any of those has a hash that is different from the one in our layer
     # we have to update the manifest.
@@ -65,6 +65,12 @@ class Manifest(db.Model):
     for layer in content['layers']:
       if layer.get('mediaType') != Image.singularity_media_type:
         continue
+      # check if referenced image does not exist anymore
+      try:
+        ref = Image.query.filter(Image.container_id==self.container_id, Image.hash==layer.get('digest').replace('sha256:', 'sha256.')).one()
+      except NoResultFound:
+        return True
+      # check if tags point to same image
       for tag in self.tags:
         if tag.image_ref.hash.replace('sha256.', 'sha256:') != layer.get('digest'):
           return True

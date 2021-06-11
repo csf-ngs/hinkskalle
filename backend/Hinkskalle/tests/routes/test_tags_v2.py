@@ -19,7 +19,7 @@ class TestTagsV2(RouteBase):
       ret = self.client.get(f"/v2/tags/{container.id}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
-    self.assertDictEqual(data, {'c64': {}})
+    self.assertDictEqual(data, {})
 
     container.tag_image('v1.0', image.id)
     with self.fake_admin_auth():
@@ -90,13 +90,13 @@ class TestTagsV2(RouteBase):
     data = ret.get_json().get('data')
     self.assertDictEqual(data, arch_tags)
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.archImageTags(), {'apple': { 'red': str(image.id) }})
+    self.assertDictEqual(db_container.archImageTags(), {'apple': { 'red': str(image_id) }})
     db_image = Image.query.get(image_id)
     self.assertEqual(db_image.arch, 'apple')
 
     arch_tags = {
       'apple': {
-        'blue': str(image.id)
+        'blue': str(image_id)
       }
     }
     with self.fake_admin_auth():
@@ -106,8 +106,8 @@ class TestTagsV2(RouteBase):
 
     self.assertDictEqual(data, {
       'apple': {
-        'blue': str(image.id),
-        'red': str(image.id)
+        'blue': str(image_id),
+        'red': str(image_id)
       }
     })
     db_container = Container.query.get(container_id)
@@ -149,7 +149,7 @@ class TestTagsV2(RouteBase):
       ret = self.client.post(f"/v2/tags/{container.id}", json={'c64': { 'oink': None }})
     self.assertEqual(ret.status_code, 200)
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.archImageTags(), {'c64': {}})
+    self.assertDictEqual(db_container.archImageTags(), {})
 
   def test_remove_v2_case(self):
     image, container, _, _ = _create_image()
@@ -163,7 +163,7 @@ class TestTagsV2(RouteBase):
       ret = self.client.post(f"/v2/tags/{container.id}", json={'c64': { 'OiNK': None }})
     self.assertEqual(ret.status_code, 200)
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.archImageTags(), {'c64': {}})
+    self.assertDictEqual(db_container.archImageTags(), {})
 
   def test_remove_v2_multiple(self):
     image, container, _, _ = _create_image()
@@ -181,7 +181,7 @@ class TestTagsV2(RouteBase):
       ret = self.client.post(f"/v2/tags/{container.id}", json={'c64': { 'oink': None }})
     self.assertEqual(ret.status_code, 200)
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.archImageTags(), {'c64': {}, 'amiga': { 'oink': str(image2_id) }})
+    self.assertDictEqual(db_container.archImageTags(), {'amiga': { 'oink': str(image2_id) }})
   
   def test_update_v2_multiple(self):
     image1, container, _, _ = _create_image()

@@ -5,12 +5,13 @@ classDiagram
   Entity "1" --> "0..n" Collection
   Collection "1" --> "0..n" Container
   Container "1" --> "0..n" Image
+  Container "1" --> "0..n" Tag
   Image "1" --> "0..n" Tag
   Image "1" --> "0..n" ImageUploadUrl
-  File "1" --> "n" Image
+  File "0..1" --> "n" Image
+  Manifest "0..1" --> "0..n" Tag
+  Container "1" --> "0..n" Manifest
   ImageUploadUrl "1" --> "0..n" ImageUploadUrl : Chunks
-  Manifest "0..1" --> "n" Tag
-  Container "m" .. "n" Manifest
 
   class Entity {
     +id: int

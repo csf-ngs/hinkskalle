@@ -1,3 +1,4 @@
+from Hinkskalle.models.Manifest import Manifest
 from typing import List
 
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -139,6 +140,39 @@ class Image(db.Model):
   uploads_ref = db.relationship('ImageUploadUrl', back_populates='image_ref', lazy='dynamic', cascade="all, delete", passive_deletes=True)
 
   __table_args__ = (db.UniqueConstraint('hash', 'container_id', name='hash_container_id_idx'),)
+
+  def generate_manifest(self) -> Manifest:
+    if not self.media_type == Image.singularity_media_type:
+      raise Exception(f"Refusing to create manifest for non-singularity media type {self.media_type}")
+    data = {
+      'schemaVersion': 2,
+      'config': {
+        'mediaType': 'application/vnd.sylabs.sif.config.v1',
+      },
+      'layers': [{
+        # see https://github.com/opencontainers/image-spec/blob/master/descriptor.md
+        'mediaType': self.media_type,
+        'digest': self.hash.replace('sha256.', 'sha256:'),
+        'size': self.size,
+        # singularity does not pull without a name
+        # could provide more annotations!
+        'annotations': {
+          # singularity oras pull needs this!
+          'org.opencontainers.image.title': self.container_ref.name,
+        }
+      }]
+    }
+    with db.session.no_autoflush:
+      manifest = Manifest(content=data)
+      existing = Manifest.query.filter(Manifest.hash == manifest.hash).first()
+      if existing:
+        manifest = existing
+    
+    db.session.add(manifest)
+    manifest.container_ref=self.container_ref
+    db.session.commit()
+    
+    return manifest
 
   @hybrid_property
   def media_type(self) -> str:

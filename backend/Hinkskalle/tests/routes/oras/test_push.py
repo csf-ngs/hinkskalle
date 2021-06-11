@@ -386,7 +386,7 @@ class TestOrasPush(RouteBase):
   def test_push_manifest_existing(self):
     image, container, collection, entity = _create_image()
     tag1 = Tag(name='v2', image_ref=image)
-    manifest = Manifest(content={'oi': 'nk'})
+    manifest = Manifest(content={'oi': 'nk'}, container_ref=container)
     tag1.manifest_ref=manifest
     db.session.add(tag1, manifest)
     db.session.commit()
@@ -419,7 +419,7 @@ class TestOrasPush(RouteBase):
     }
     test_manifest_text = json.dumps(test_manifest)
 
-    manifest = Manifest(content=test_manifest_text)
+    manifest = Manifest(content=test_manifest_text, container_ref=container)
     tag1.manifest_ref=manifest
     db.session.add(tag1)
     db.session.add(tag2)
@@ -451,13 +451,13 @@ class TestOrasPush(RouteBase):
     }
     test_manifest_text = json.dumps(test_manifest)
 
-    manifest = Manifest(content=test_manifest_text)
+    manifest = Manifest(content=test_manifest_text, container_ref=container)
     tag1.manifest_ref=manifest
     db.session.add(tag1)
     db.session.add(tag2)
     db.session.add(manifest)
 
-    manifest2 = Manifest(content={'oi': 'nk'})
+    manifest2 = Manifest(content={'oi': 'nk'}, container_ref=container)
     tag2.manifest_ref=manifest2
     db.session.add(manifest2)
     db.session.commit()
@@ -562,6 +562,7 @@ class TestOrasPush(RouteBase):
 
   def test_push_manifest_layer_not_found(self):
     image, container, collection, entity = _create_image()
+    image_id = image.id
     test_manifest = {
       "schemaVersion": 2,
       "layers": [{ 
@@ -573,7 +574,7 @@ class TestOrasPush(RouteBase):
       ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
     self.assertEqual(ret.status_code, 404)
 
-    tag1 = Tag(name='v2', image_ref=image)
+    tag1 = Tag(name='v2', image_ref=Image.query.get(image_id))
     db.session.add(tag1)
     with self.fake_admin_auth():
       ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)

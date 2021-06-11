@@ -10,11 +10,11 @@ from Hinkskalle.tests.models.test_Image import _create_image
 class TestManifest(ModelBase):
   def test_manifest(self):
     image = _create_image()[0]
-    tag = Tag(name='v1', image_ref=image)
+    tag = Tag(name='v1', image_ref=image, container_ref=image.container_ref)
     db.session.add(tag)
     db.session.commit()
 
-    manifest = Manifest(content='blubb')
+    manifest = Manifest(content='blubb', container_ref=image.container_ref)
     tag.manifest_ref=manifest
     db.session.add(manifest)
     db.session.commit()
@@ -24,7 +24,7 @@ class TestManifest(ModelBase):
 
     self.assertIsNotNone(tag.manifest_ref)
 
-    manifest2 = Manifest(content='blubb')
+    manifest2 = Manifest(content='blubb', container_ref=image.container_ref)
     tag.manifest_ref=manifest2
     db.session.add(manifest2)
     with self.assertRaises(IntegrityError):
@@ -32,8 +32,9 @@ class TestManifest(ModelBase):
     
   def test_manifest_stale(self):
     image = _create_image()[0]
-    tag = Tag(name='v1', image_ref=image)
-    manifest = tag.generate_manifest()
+    tag = Tag(name='v1', image_ref=image, container_ref=image.container_ref)
+    manifest = image.generate_manifest()
+    tag.manifest_ref=manifest
     db.session.add(tag)
 
     self.assertFalse(manifest.stale)
@@ -41,15 +42,19 @@ class TestManifest(ModelBase):
     image.hash = 'sha256:somethingelse'
     self.assertTrue(manifest.stale)
 
+  def test_manifest_stale_unreferenced(self):
+    image = _create_image()[0]
+    manifest = image.generate_manifest()
+
+    self.assertFalse(manifest.stale)
+
+    image.hash = 'sha256:somethingelse'
+    self.assertTrue(manifest.stale)
 
   def test_manifest_json(self):
     image = _create_image()[0]
-    tag = Tag(name='v1', image_ref=image)
-    db.session.add(tag)
-    db.session.commit()
 
-    manifest = Manifest(content={'oi': 'nk'})
-    tag.manifest_ref=manifest
+    manifest = Manifest(content={'oi': 'nk'}, container_ref=image.container_ref)
     db.session.add(manifest)
     db.session.commit()
 

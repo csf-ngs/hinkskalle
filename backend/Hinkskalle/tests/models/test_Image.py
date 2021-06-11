@@ -69,12 +69,9 @@ class TestImage(ModelBase):
   
   def test_manifest(self):
     image = _create_image(media_type='application/vnd.sylabs.sif.layer.v1.sif')[0]
-    tag1 = Tag(name='v1', image_ref=image)
-    db.session.add(tag1)
     image.size = 666
-    db.session.commit()
 
-    manifest = tag1.generate_manifest()
+    manifest = image.generate_manifest()
 
     self.assertRegex(manifest.content, r'"schemaVersion": 2')
     self.assertRegex(manifest.content, rf'"digest": "sha256:{image.hash.replace("sha256.", "")}"')
@@ -83,33 +80,11 @@ class TestImage(ModelBase):
 
   def test_manifest_mediatype(self):
     image = _create_image(media_type='application/vnd.docker.image.rootfs.diff.tar.gzip')[0]
-    tag1 = Tag(name='v1', image_ref=image)
-    db.session.add(tag1)
     image.size = 666
     db.session.commit()
 
     with self.assertRaises(Exception):
-      tag1.generate_manifest()
-
-
-  def test_manifest_multiple(self):
-    image = _create_image(media_type='application/vnd.sylabs.sif.layer.v1.sif')[0]
-    tag1 = Tag(name='v1', image_ref=image)
-    tag2 = Tag(name='v2', image_ref=image)
-
-    db.session.add(tag1)
-    db.session.add(tag2)
-
-    manifest1 = tag1.generate_manifest()
-    manifest2 = tag2.generate_manifest()
-
-    db.session.add(manifest1)
-    db.session.add(manifest2)
-    db.session.commit()
-
-    self.assertEqual(manifest1.id, manifest2.id)
-    self.assertEqual(tag1.manifest_id, manifest1.id)
-    self.assertEqual(tag2.manifest_id, manifest1.id)
+      image.generate_manifest()
 
 
   def test_tags(self):

@@ -33,6 +33,11 @@ class ManifestSchema(Schema):
   layers = fields.Nested(ManifestLayerSchema(), many=True)
   annotations = fields.Dict()
 
+manifest_to_container = db.Table('containers_manifests', db.metadata,
+    db.Column('container_id', db.Integer, db.ForeignKey('container.id')),
+    db.Column('manifest_id', db.Integer, db.ForeignKey('manifest.id'))
+)
+
 class Manifest(db.Model):
   id = db.Column(db.Integer, primary_key=True)
 
@@ -41,12 +46,19 @@ class Manifest(db.Model):
   hash = db.Column(db.String(), nullable=False, unique=True)
   _content = db.Column('content', db.String(), nullable=False)
 
+  containers_ref = db.relationship('Container', secondary=manifest_to_container, backref='manifests_ref')
+
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
   @property
   def stale(self) -> bool:
+    # singularity images can also be pushed via library protocol.
+    # if any of those has a hash that is different from the one in our layer
+    # we have to update the manifest.
+    # all other layer types can only be pushed via the OCI API and should not
+    # be out of date.
     content = self.content_json
     if not 'layers' in content:
       return False

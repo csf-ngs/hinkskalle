@@ -1,9 +1,10 @@
+from Hinkskalle.models.Manifest import Manifest
 from datetime import datetime, timedelta
 from typing import Tuple
 from unittest.case import skip
 
 from Hinkskalle.models import Entity, Collection, Container, ContainerSchema, Image, Tag
-from Hinkskalle.tests.models.test_Collection import _create_collection
+from .test_Collection import _create_collection
 from Hinkskalle.tests.model_base import ModelBase, _create_user
 from Hinkskalle import db
 
@@ -396,3 +397,6 @@ class TestContainer(ModelBase):
     schema = ContainerSchema()
     serialized = schema.dump(container)
     self.assertDictEqual(serialized.data['imageTags'], { 'v1': str(image1.id), 'v2': str(image2.id) })
+  
+
+

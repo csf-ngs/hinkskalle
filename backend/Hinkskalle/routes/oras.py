@@ -38,6 +38,11 @@ class OrasListTagQuerySchema(RequestSchema):
   n = fields.Integer(required=False)
   last = fields.String(required=False)
 
+class OrasBlobMountQuerySchema(RequestSchema):
+  digest = fields.String(required=False)
+  mount = fields.String(required=False)
+  _from = fields.String(load_from='from', dump_to='from', attribute='from', required=False)
+
 # see https://github.com/opencontainers/distribution-spec/blob/main/spec.md#error-codes
 class OrasError(Exception):
   status_code = 500
@@ -350,7 +355,7 @@ def oras_push_manifest(name, reference):
 @registry.handles(
   rule='/v2/<distname:name>/blobs/uploads/',
   method='POST',
-  query_string_schema=OrasPushBlobQuerySchema(partial=True),
+  query_string_schema=OrasBlobMountQuerySchema(),
   authenticators=authenticator.with_scope(Scopes.user),
 )
 def oras_start_upload_session(name):
@@ -397,7 +402,9 @@ def oras_start_upload_session(name):
   
   if container.readOnly:
     raise OrasDenied(f"Container is readonly")
-
+  
+  if args.get('from') and args.get('mount'):
+    return _do_mount(container=container, _from=args.get('from'), mount=args.get('mount'))
 
   upload_tmp = os.path.join(current_app.config['IMAGE_PATH'], '_tmp')
   os.makedirs(upload_tmp, exist_ok=True)
@@ -416,23 +423,58 @@ def oras_start_upload_session(name):
   db.session.add(upload)
   db.session.commit()
 
+  if headers.get('content_type')=='application/octet-stream' and int(headers.get('content_length', 0)) > 0: 
+    return _do_single_post_upload(upload, digest=args.get('digest'))
+
   upload_url = _get_service_url()+f"/v2/__uploads/{upload.id}"
 
-  if headers.get('content_type')=='application/octet-stream' and int(headers.get('content_length', 0)) > 0:
-    upload.type = UploadTypes.single
-    if not args.get('digest'):
-      raise OrasDigestInvalid(f"need digest for single push upload")
-    digest = args['digest'].replace('sha256:', 'sha256.')
-    image = _receive_upload(upload, digest)
-    blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName()}/{image.container_ref.collectionName()}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
-    response = make_response('', 201)
-    response.headers['Location']=blob_url
-    response.headers['Docker-Content-Digest']=f"{image.hash.replace('sha256.', 'sha256:')}"
-    return response
 
   response = make_response('', 202)
   response.headers.remove('Content-Type')
   response.headers['Location']=upload_url
+  return response
+
+def _do_single_post_upload(upload: ImageUploadUrl, digest: str):
+  current_app.logger.debug(f"single POST update")
+  upload.type = UploadTypes.single
+  if not digest:
+    raise OrasDigestInvalid(f"need digest for single push upload")
+  digest = digest.replace('sha256:', 'sha256.')
+  image = _receive_upload(upload, digest)
+  blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName()}/{image.container_ref.collectionName()}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
+  response = make_response('', 201)
+  response.headers['Location']=blob_url
+  response.headers['Docker-Content-Digest']=f"{image.hash.replace('sha256.', 'sha256:')}"
+  return response
+
+
+def _do_mount(container: Container, _from: str, mount: str):
+  current_app.logger.debug('cross repo mount')
+  from_container = _get_container(_from)
+  try:
+    from_image = Image.query.filter(Image.container_id==from_container.id, Image.hash==mount.replace('sha256:', 'sha256.')).one()
+  except NoResultFound:
+    raise OrasBlobUnknwon(f"mounting blob {mount} from {_from}: not found")
+  image = Image(
+    container_ref=container, 
+    owner=g.authenticated_user, 
+    hash=from_image.hash,
+    size=from_image.size,
+    uploaded=from_image.uploaded,
+    arch=from_image.arch,
+    signed=from_image.signed,
+    signatureVerified=from_image.signatureVerified,
+    encrypted=from_image.encrypted,
+    sigdata=from_image.sigdata,
+    media_type=from_image.media_type,
+    location=from_image.location,
+  )
+  db.session.add(image)
+  db.session.commit()
+  blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName()}/{image.container_ref.collectionName()}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
+  response = make_response('', 201)
+  response.headers['Location']=blob_url
+  response.headers['Docker-Content-Digest']=f"{image.hash.replace('sha256.', 'sha256:')}"
   return response
 
 @registry.handles(

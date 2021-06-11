@@ -54,7 +54,34 @@ class TestOrasPush(RouteBase):
     container = collection.containers_ref.filter(Container.name=='hase').first()
     self.assertIsNotNone(container)
     self.assertEqual(container.createdBy, self.admin_username)
-    
+   
+  def test_push_monolith_mount(self):
+    image1 = _create_image(postfix='1')[0]
+    image1_id = image1.id
+    image2 = _create_image(postfix='2', hash='sha256.muh')[0]
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}/blobs/uploads/?mount={image2.hash.replace('sha256.', 'sha256:')}&from={image2.entityName()}/{image2.collectionName()}/{image2.containerName()}")
+    self.assertEqual(ret.status_code, 201)
+    digest = ret.headers.get('Docker-Content-Digest')
+    self.assertEqual(digest.replace('sha256:', 'sha256.'), 'sha256.muh')
+    image1 = Image.query.get(image1_id)
+    self.assertRegexpMatches(ret.headers.get('location', ''), rf'/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}/blobs/{digest}')
+    new_image = Image.query.filter(Image.hash=='sha256.muh', Image.container_ref==image1.container_ref).one()
+
+  def test_push_monolith_mount_not_found(self):
+    image1 = _create_image(postfix='1')[0]
+    image1_id = image1.id
+    image2 = _create_image(postfix='2', hash='sha256.muh')[0]
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}/blobs/uploads/?mount={image2.hash.replace('sha256.', 'sha256:')}&from={image2.entityName()}/{image2.collectionName()}oink/{image2.containerName()}")
+    self.assertEqual(ret.status_code, 404)
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}/blobs/uploads/?mount={image2.hash.replace('sha256.', 'sha256:')}oink&from={image2.entityName()}/{image2.collectionName()}/{image2.containerName()}")
+    self.assertEqual(ret.status_code, 404)
+
   def test_push_monolith_get_session_existing(self):
     _, container, collection, entity = _create_image(postfix='1')
     with self.fake_admin_auth():

@@ -77,6 +77,17 @@ class TestImagefiles(RouteBase):
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"oink c64/v1")
     ret.close()
+  
+  def test_pull_no_sif(self):
+    image = _create_image(media_type='something')[0]
+    image_tag = Tag(name='v1', image_ref=image, arch='c64')
+    image.arch='c64'
+    db.session.add(image_tag)
+    tmpf1 = _fake_img_file(image, data=b"oink c64/v1")
+
+    ret = self.client.get(f"/v1/imagefile/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image_tag.name}")
+    self.assertEqual(ret.status_code, 406)
+
 
   
   def test_pull_private(self):

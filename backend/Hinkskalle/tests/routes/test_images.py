@@ -93,6 +93,17 @@ class TestImages(RouteBase):
     self.assertEqual(data['id'], str(image.id))
     self.assertListEqual(data['tags'], ['latest'])
   
+  def test_get_not_sif(self):
+    image = _create_image(media_type='pr0n')[0]
+    latest_tag = Tag(name='latest', image_ref=image)
+    db.session.add(latest_tag)
+    ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}", headers={'User-Agent': 'Singularity/3.7.3 (Darwin amd64) Go/1.13.3'})
+    self.assertEqual(ret.status_code, 406)
+
+    ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}", headers={'User-Agent': 'lynx'})
+    self.assertEqual(ret.status_code, 200)
+
+  
   def test_get_case(self):
     image, container, collection, entity = _create_image()
     db.session.execute(update(Container).where(Container.id==container.id).values(name='oInK'))

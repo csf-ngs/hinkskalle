@@ -2,7 +2,7 @@ from Hinkskalle import registry, rebar, authenticator
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
-from flask import current_app, g
+from flask import current_app, g, request
 import re
 from sqlalchemy import and_
 
@@ -70,6 +70,9 @@ def search():
     entities = []
     collections = []
     containers = []
+  
+  if request.headers.get('User-Agent', '').lower().startswith('singularity'):
+    images = images.filter(Image.media_type==Image.singularity_media_type)
 
   return {
     'data': {

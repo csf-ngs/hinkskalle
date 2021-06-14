@@ -1,3 +1,4 @@
+from typing import Tuple
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
@@ -71,13 +72,13 @@ class ImageInspectResponseSchema(ResponseSchema):
 class ImageDeleteResponseSchema(ResponseSchema):
   status = fields.String()
 
-def _parse_tag(tagged_container_id):
+def _parse_tag(tagged_container_id: str) -> Tuple[str, str]:
   tokens = tagged_container_id.split(":", maxsplit=1)
   if len(tokens) == 1:
     tokens.append('latest')
   return tokens[0], tokens[1]
 
-def _get_image(entity_id, collection_id, tagged_container_id, arch=None):
+def _get_image(entity_id: str, collection_id: str, tagged_container_id: str, arch: str=None) -> Image:
   container_id, tag = _parse_tag(tagged_container_id)
   container = _get_container(entity_id, collection_id, container_id)
 
@@ -137,9 +138,12 @@ def list_images(entity_id, collection_id, container_id):
 def get_image(entity_id, collection_id, tagged_container_id):
   args = rebar.validated_args
   image = _get_image(entity_id, collection_id, tagged_container_id, arch=args.get('arch'))
-  current_app.logger.debug("get image")
   if not image.check_access(g.authenticated_user):
       raise errors.Forbidden('Private image, access denied.')
+  
+  if request.headers.get('User-Agent', '').lower().startswith('singularity') and image.media_type != Image.singularity_media_type:
+    current_app.logger.debug(f"Attempting to get {image.media_type} image with {request.headers.get('User-Agent')}")
+    raise errors.NotAcceptable(f"Not a singularity image")
 
   if image.uploaded and (not image.location or not os.path.exists(image.location)):
     current_app.logger.debug(f"{image.location} does not exist, resetting uploaded flag.")

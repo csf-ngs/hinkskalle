@@ -98,6 +98,7 @@ def create_app():
   rq.init_app(app)
 
   app.url_map.converters['distname']=OrasNameConverter
+  generator.register_flask_converter_to_swagger_type('distname', 'path')
 
 
   with app.app_context():

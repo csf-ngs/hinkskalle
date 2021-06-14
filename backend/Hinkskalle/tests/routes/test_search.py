@@ -6,7 +6,9 @@ from Hinkskalle.tests.models.test_Image import _create_image
 from Hinkskalle.tests.models.test_Container import _create_container
 
 from Hinkskalle import db
-from Hinkskalle.models import ContainerSchema, EntitySchema, CollectionSchema, ImageSchema
+from Hinkskalle.models import EntitySchema, CollectionSchema, ImageSchema
+from Hinkskalle.models.Container import ContainerSchema, Container
+from Hinkskalle.models.Image import ImageSchema, Image
 
 class TestSearch(RouteBase):
   def test_search_noauth(self):
@@ -91,9 +93,12 @@ class TestSearch(RouteBase):
 
   def test_search_image_not_sif(self):
     image1, container, _, _ = _create_image()
+    container_id = container.id
+    image1_id = image1.id
     container.name='anKYLOsaurus'
 
     image2 = _create_image(hash='sha256.bla', media_type='pr0n')[0]
+    image2_id = image2.id
     image2.container_ref = container
     db.session.commit()
 
@@ -109,6 +114,21 @@ class TestSearch(RouteBase):
       self.assertEqual(ret.status_code, 200)
       json = ret.get_json().get('data')
       self.assertDictEqual(json, expected)
+    
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/search?value={container.name}", headers={'User-Agent': 'lynx'})
+    container = Container.query.get(container_id)
+    image1 = Image.query.get(image1_id)
+    image2 = Image.query.get(image2_id)
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertDictEqual(json, {
+      'container': [ContainerSchema().dump(container).data],
+      'image': [ImageSchema().dump(image1).data, ImageSchema().dump(image2).data],
+      'entity': [],
+      'collection': [],
+    })
+
 
   def test_search_hash(self):
     image1, container, _, _ = _create_image()

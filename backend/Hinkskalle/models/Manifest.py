@@ -1,3 +1,4 @@
+import enum
 from typing import List, Union
 
 from sqlalchemy.orm.exc import NoResultFound
@@ -8,6 +9,14 @@ import json
 import hashlib
 from sqlalchemy.ext.hybrid import hybrid_property
 from marshmallow import Schema, fields
+
+class ManifestTypes(enum.Enum):
+  docker = 'docker'
+  singularity = 'singularity'
+  oras = 'oras'
+  other = 'other'
+  invalid = 'invalid'
+
 
 class ManifestLayerSchema(Schema):
   """https://github.com/opencontainers/image-spec/blob/v1.0.1/descriptor.md"""
@@ -42,6 +51,8 @@ class ManifestSchema(Schema):
   updatedAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(dump_only=True)
 
+  type = fields.String(dump_only=True)
+
   container = fields.String(required=True)
   containerName = fields.String(dump_only=True)
 
@@ -65,6 +76,20 @@ class Manifest(db.Model):
   updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
   __table_args__ = (db.UniqueConstraint('hash', 'container_id', name='manifest_hash_container_idx'),)
+
+  @property
+  def type(self) -> str:
+    config_type = self.content_json.get('config', {}).get('mediaType')
+    if config_type is None:
+      return ManifestTypes.invalid.name
+    elif config_type == 'application/vnd.sylabs.sif.config.v1':
+      return ManifestTypes.singularity.name
+    elif config_type == 'application/vnd.docker.container.image.v1+json':
+      return ManifestTypes.docker.name
+    elif config_type == 'application/vnd.unknown.config.v1+json':
+      return ManifestTypes.oras.name
+    else:
+      return ManifestTypes.other.name
 
   @property
   def container(self) -> str:

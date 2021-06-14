@@ -1,6 +1,6 @@
 from sqlalchemy.exc import IntegrityError
 
-from Hinkskalle.models.Manifest import Manifest, ManifestContentSchema, ManifestSchema
+from Hinkskalle.models.Manifest import Manifest, ManifestContentSchema, ManifestSchema, ManifestTypes
 from Hinkskalle.models.Tag import Tag
 
 from Hinkskalle import db
@@ -83,3 +83,25 @@ class TestManifest(ModelBase):
     tag = Tag(name='v1', image_ref=image, manifest_ref=manifest)
     dumped = ManifestSchema().dump(manifest)
     self.assertListEqual(dumped.data['tags'], ['v1'])
+
+  def test_manifest_type(self):
+    image = _create_image()[0]
+    manifest = Manifest(container_ref=image.container_ref, content={ 'some': 'thing' })
+    self.assertEqual(manifest.type, ManifestTypes.invalid.name)
+
+    manifest.content={
+      'config': {
+        'some': 'thing',
+      }
+    }
+    self.assertEqual(manifest.type, ManifestTypes.invalid.name)
+
+    manifest.content={
+      'config': {
+        'mediaType': 'something'
+      }
+    }
+    self.assertEqual(manifest.type, ManifestTypes.other.name)
+
+    manifest = image.generate_manifest()
+    self.assertEqual(manifest.type, ManifestTypes.singularity.name)

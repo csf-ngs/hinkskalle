@@ -105,6 +105,7 @@ class Container {
   public readOnly!: boolean
   public size!: number
   public stars!: number
+  public type!: string
   public updatedAt!: Date | null
   public vcsUrl!: string
   
@@ -147,6 +148,7 @@ export function plainToContainer(json: any): Container {
     obj.readOnly = json['readOnly'];
     obj.size = json['size'];
     obj.stars = json['stars'];
+    obj.type = json['type'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
       obj.vcsUrl = json['vcsUrl'];
     
@@ -601,6 +603,47 @@ export function serializeLdapPing(obj: LdapPing, unroll=false): any {
 }
 
 export { LdapPing };
+
+
+class Manifest {
+  public container!: string
+  public containerName!: string
+  public content!: object
+  public createdAt!: Date | null
+  public createdBy!: string
+  public hash!: string
+  public id!: string
+  public images!: string[]
+  public tags!: string[]
+  public updatedAt!: Date | null
+  
+}
+
+export function plainToManifest(json: any): Manifest {
+  const obj = new Manifest();
+  obj.container = json['container'];
+    obj.containerName = json['containerName'];
+    obj.content = json['content'];
+    obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
+      obj.createdBy = json['createdBy'];
+    obj.hash = json['hash'];
+    obj.id = json['id'];
+    obj.images = json['images'];
+    obj.tags = json['tags'];
+    obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
+      
+  return obj;
+}
+export function serializeManifest(obj: Manifest, unroll=false): any {
+  const json: any = {};
+  json['container'] = obj.container
+      json['content'] = obj.content
+      json['hash'] = obj.hash
+      
+  return json;
+}
+
+export { Manifest };
 
 
 export interface AdmLdapSyncResults {

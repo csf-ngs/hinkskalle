@@ -404,22 +404,34 @@ class TestContainer(ModelBase):
   
   def test_type(self):
     image = _create_image()[0]
-    self.assertEqual(image.container_ref.type, ContainerTypes.singularity)
+    self.assertEqual(image.container_ref.type, ContainerTypes.singularity.name)
 
-    image.media_type='pr0n'
-    self.assertEqual(image.container_ref.type, ContainerTypes.generic)
+    image.media_type='application/vnd.oci.image.layer.v1.tar+gzip'
+    self.assertEqual(image.container_ref.type, ContainerTypes.generic.name)
 
     image.media_type='application/vnd.docker.image.rootfs.diff.tar.gzip'
-    self.assertEqual(image.container_ref.type, ContainerTypes.docker)
+    self.assertEqual(image.container_ref.type, ContainerTypes.docker.name)
 
     image2 = _create_image(hash='sha256.gunz')[0]
     image2.container_ref=image.container_ref
     image2.media_type = Image.singularity_media_type
     image.media_type = Image.singularity_media_type
 
-    self.assertEqual(image.container_ref.type, ContainerTypes.singularity)
-    image2.media_type='pr0n'
-    self.assertEqual(image.container_ref.type, ContainerTypes.mixed)
+    self.assertEqual(image.container_ref.type, ContainerTypes.singularity.name)
+    image2.media_type='application/vnd.oci.image.layer.v1.tar+gzip'
+    self.assertEqual(image.container_ref.type, ContainerTypes.mixed.name)
+  
+  def test_type_hidden(self):
+    image = _create_image()[0]
+    self.assertEqual(image.container_ref.type, ContainerTypes.singularity.name)
+
+    image2 = _create_image(hash='sha256.grunz')[0]
+    image2.container_ref=image.container_ref
+    image2.media_type = 'application/vnd.oci.image.layer.v1.tar+gzip'
+    self.assertEqual(image.container_ref.type, ContainerTypes.mixed.name)
+    image2.hide = True
+    self.assertEqual(image.container_ref.type, ContainerTypes.singularity.name)
+
 
     
 

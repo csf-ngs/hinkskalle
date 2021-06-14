@@ -93,16 +93,16 @@ class Container(db.Model):
   __table_args__ = (db.UniqueConstraint('name', 'collection_id', name='name_collection_id_idx'),)
 
   @property
-  def type(self) -> ContainerTypes:
-    media_types = db.session.query(Image.media_type, func.count(Image.media_type)).filter(Image.container_id==self.id).group_by(Image.media_type).all()
+  def type(self) -> str:
+    media_types = db.session.query(Image.media_type, func.count(Image.media_type)).filter(Image.container_id==self.id, Image.hide==False).group_by(Image.media_type).all()
     if len(media_types) == 1:
       if media_types[0][0] == Image.singularity_media_type:
-        return ContainerTypes.singularity
+        return ContainerTypes.singularity.name
       elif media_types[0][0].startswith('application/vnd.docker.image.rootfs.diff'):
-        return ContainerTypes.docker
+        return ContainerTypes.docker.name
       else:
-        return ContainerTypes.generic
-    return ContainerTypes.mixed
+        return ContainerTypes.generic.name
+    return ContainerTypes.mixed.name
 
   def size(self):
     if not self.id:

@@ -159,6 +159,18 @@
                       <v-card-title class="text-h6">
                         <v-icon v-if="item.private">mdi-eye-off</v-icon>
                         <v-icon v-if="item.readOnly">mdi-lock</v-icon>
+                        <span style="margin-right: 0.35rem;">
+                          <v-tooltip bottom>
+                            <template v-slot:activator="{ on, attrs }">
+                              <v-icon v-bind="attrs" v-on="on" v-if="item.type=='singularity'">mdi-adjust</v-icon>
+                              <v-icon v-bind="attrs" v-on="on" v-else-if="item.type=='docker'">mdi-ferry</v-icon>
+                              <v-icon v-bind="attrs" v-on="on" v-else-if="item.type=='generic'">mdi-folder</v-icon>
+                              <v-icon v-bind="attrs" v-on="on" v-else-if="item.type=='mixed'">mdi-folder-multiple</v-icon>
+                            </template>
+                            <span>{{ item.type }}</span>
+                          </v-tooltip>
+                        </span>
+
                         {{item.name}}
                         <template v-if="item.vcsUrl">
                           <v-spacer></v-spacer>
@@ -229,7 +241,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import moment from 'moment';
-import { clone as _clone, find as _find } from 'lodash';
+import { clone as _clone, } from 'lodash';
 
 import { Container, Collection, User, checkName } from '../store/models';
 import UserInput from '@/components/UserInput.vue';
@@ -351,7 +363,7 @@ export default Vue.extend({
       this.localState.editItem.collectionName = this.$route.params.collection;
 
       this.$store.dispatch(action, this.localState.editItem)
-        .then(upd => this.$store.commit('snackbar/showSuccess', 'Yay!'))
+        .then(() => this.$store.commit('snackbar/showSuccess', 'Yay!'))
         .catch(err => this.$store.commit('snackbar/showError', err));
       this.closeEdit();
     },

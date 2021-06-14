@@ -7,7 +7,7 @@ import { getEnv } from '@/util/env'
 
 Vue.use(Vuex);
 
-import { User, plainToUser, serializeUser } from './models';
+import { User, plainToUser, serializeUser, Manifest } from './models';
 import snackbarModule, { State as SnackbarState } from './modules/snackbar';
 import entitiesModule, { State as EntitiesState } from './modules/entities';
 import containersModule, { State as ContainersState } from './modules/containers';
@@ -17,6 +17,7 @@ import tokensModule, { State as TokensState } from './modules/tokens';
 import usersModule, { State as UsersState } from './modules/users';
 import searchModule, { State as SearchState } from './modules/search';
 import admModule, { State as AdmState } from './modules/adm';
+import manifestsModule, { State as ManifestsState } from './modules/manifests';
 
 interface State {
   backend: AxiosInstance;
@@ -32,6 +33,7 @@ interface State {
   entities?: EntitiesState;
   search?: SearchState;
   adm?: AdmState;
+  manifests?: ManifestsState;
 }
 
 const token = localStorage.getItem('token') || '';
@@ -127,5 +129,6 @@ export default new Vuex.Store({
     entities: entitiesModule,
     search: searchModule,
     adm: admModule,
+    manifests: manifestsModule,
   }
 });

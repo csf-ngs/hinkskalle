@@ -92,18 +92,33 @@
       </v-row>
       <v-row>
         <v-col cols="12" md="10" offset-md="1">
-          <h2 class="mb-2 d-flex">
-            Images
-            <v-spacer></v-spacer>
-            <v-btn text color="primary darken-1" @click="loadContainer()"><v-icon>mdi-refresh</v-icon></v-btn>
-          </h2>
-          <v-expansion-panels inset>
-            <image-details 
-              v-for="image in images"
-              :key="image.id"
-              :readonly="localState.container.readOnly"
-              :image="image"></image-details>
-          </v-expansion-panels>
+          <template v-if="localState.container.type==='singularity'">
+            <h2 class="mb-2 d-flex">
+              Images
+              <v-spacer></v-spacer>
+              <v-btn text color="primary darken-1" @click="loadImages()"><v-icon>mdi-refresh</v-icon></v-btn>
+            </h2>
+            <v-expansion-panels inset>
+              <image-details 
+                v-for="image in images"
+                :key="image.id"
+                :readonly="localState.container.readOnly"
+                :image="image"></image-details>
+            </v-expansion-panels>
+          </template>
+          <template v-else>
+            <h2 class="mb-2 d-flex">
+              Manifests
+              <v-spacer></v-spacer>
+              <v-btn text color="primary darken-1" @click="loadManifests()"><v-icon>mdi-refresh</v-icon></v-btn>
+            </h2>
+            <v-expansion-panels inset>
+              <manifest-details
+                v-for="manifest in manifests"
+                :key="manifest.id"
+                :manifest="manifest"></manifest-details>
+            </v-expansion-panels>
+          </template>
         </v-col>
       </v-row>
     </v-container>
@@ -111,8 +126,10 @@
 </template>
 <script lang="ts">
 import ImageDetails from '@/components/ImageDetails.vue';
+import ManifestDetails from '@/components/ManifestDetails.vue';
+
 import Vue from 'vue';
-import { Container, Image, User } from '../store/models';
+import { Container, Image, Manifest, User } from '../store/models';
 
 import { orderBy as _orderBy } from 'lodash';
 
@@ -121,7 +138,7 @@ interface State {
 }
 
 export default Vue.extend({
-  components: { ImageDetails, },
+  components: { ImageDetails, ManifestDetails, },
   name: 'ContainerDetails',
   mounted() {
     this.loadContainer();
@@ -146,11 +163,14 @@ export default Vue.extend({
     images(): Image[] {
       return _orderBy(this.$store.getters['images/list'], 'createdAt', 'desc');
     },
+    manifests(): Manifest[] {
+      return _orderBy(this.$store.getters['manifests/list'], 'createdAt', 'desc');
+    },
     currentUser(): User {
       return this.$store.getters.currentUser;
     },
     canEdit(): boolean {
-      return !this.localState.container?.readOnly && this.localState.container!.canEdit(this.currentUser)
+      return this.localState.container !== null && !this.localState.container.readOnly && this.localState.container.canEdit(this.currentUser)
     }
   },
   methods: {
@@ -158,12 +178,29 @@ export default Vue.extend({
       this.$store.dispatch('containers/get', { entityName: this.$route.params.entity, collectionName: this.$route.params.collection, containerName: this.$route.params.container })
         .then((container: Container) => {
           this.localState.container = container;
-          return this.$store.dispatch('images/list', container);
+          if (container.type === 'singularity') {
+            this.loadImages();
+          }
+          else {
+            this.loadManifests();
+          }
         })
         .catch(err => {
           this.$store.commit('snackbar/showError', err);
         });
     },
+    loadManifests() {
+      this.$store.dispatch('manifests/list', this.localState.container)
+        .catch(err => {
+          this.$store.commit('snackbar/showError', err);
+        });
+    },
+    loadImages() {
+      this.$store.dispatch('images/list', this.localState.container)
+        .catch(err => {
+          this.$store.commit('snackbar/showError', err);
+        });
+    }
   },
 });
 </script>

@@ -615,6 +615,7 @@ class Manifest {
   public id!: string
   public images!: string[]
   public tags!: string[]
+  public type!: string
   public updatedAt!: Date | null
   
 }
@@ -630,6 +631,7 @@ export function plainToManifest(json: any): Manifest {
     obj.id = json['id'];
     obj.images = json['images'];
     obj.tags = json['tags'];
+    obj.type = json['type'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
       
   return obj;

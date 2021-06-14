@@ -83,6 +83,15 @@ describe('Containers.vue', () => {
     done();
   });
 
+  it('renders container types', async done => {
+    const wrapper = mount(Containers, { localVue, vuetify, store, router });
+    await Vue.nextTick();
+    await Vue.nextTick();
+    expect(wrapper.findAll('div#containers .container i.mdi-folder-multiple')).toHaveLength(1);
+    expect(wrapper.findAll('div#containers .container i.mdi-adjust')).toHaveLength(1);
+    done();
+  });
+
 
   it('searches container names', async done => {
     const wrapper = mount(Containers, { localVue, vuetify, store, router });

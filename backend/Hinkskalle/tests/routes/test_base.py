@@ -4,7 +4,9 @@ import os.path
 
 from Hinkskalle.tests.route_base import RouteBase
 from Hinkskalle.tests.models.test_Image import _create_image
-from Hinkskalle.models import Image
+from Hinkskalle.tests.models.test_Container import _create_container
+from Hinkskalle.models.Image import Image
+from Hinkskalle.models.Tag import Tag
 from Hinkskalle import db
 
 class TestBase(RouteBase):
@@ -72,6 +74,7 @@ class TestBase(RouteBase):
 
   def test_latest(self):
     image1, container1, _, _ = _create_image()
+    image1_id = image1.id
     container1.tag_image('v1.0', image1.id)
 
     with self.fake_auth():
@@ -79,6 +82,7 @@ class TestBase(RouteBase):
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
 
+    image1 = Image.query.get(image1_id)
     self.assertListEqual([ c['container']['id'] for c in json ], [ str(image1.container_ref.id), ] )
 
     images=[]
@@ -87,13 +91,24 @@ class TestBase(RouteBase):
       cont.tag_image('oink', img.id)
       images.append(img)
     images.reverse()
+
+    expected = [ str(img.container_ref.id) for img in images[:10] ]
     
     with self.fake_admin_auth():
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
 
-    self.assertListEqual([ c['container']['id'] for c in json ], [ str(img.container_ref.id) for img in images[:10] ] )
+    self.assertListEqual([ c['container']['id'] for c in json ], expected)
+  
+  def test_latest_tag_no_image(self):
+    container = _create_container()[0]
+    tag = Tag(name='v1', container_ref=container)
+    with self.fake_admin_auth():
+      ret = self.client.get('/v1/latest')
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertListEqual([ c['container']['id'] for c in json ], [ str(container.id) ])
   
   def test_latest_collect_images(self):
     image1, container1, _, _ = _create_image(postfix='hase1')

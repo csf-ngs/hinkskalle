@@ -87,15 +87,15 @@ def latest_container():
   tags = Tag.query.order_by(desc(Tag.createdAt))
   ret = {}
   for tag in tags:
-    if not tag.image_ref.check_access(g.authenticated_user):
+    if tag.container_ref.private and not tag.container_ref.check_access(g.authenticated_user):
       continue
-    if not tag.image_ref.container_ref.id in ret:
+    if not tag.container_ref.id in ret:
       #current_app.logger.debug(f"return image {tag.name}/{tag.image_ref.container_ref.name}")
-      ret[tag.image_ref.container_ref.id] = {
+      ret[tag.container_ref.id] = {
         'tags': [],
-        'container': tag.image_ref.container_ref,
+        'container': tag.container_ref,
       }
-    ret[tag.image_ref.container_ref.id]['tags'].append(tag.name)
+    ret[tag.container_ref.id]['tags'].append(tag.name)
     if len(ret) >= 10:
       break
 

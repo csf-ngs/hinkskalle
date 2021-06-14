@@ -10,6 +10,7 @@ import Hinkskalle.routes.tags
 import Hinkskalle.routes.search
 import Hinkskalle.routes.shub
 import Hinkskalle.routes.oras
+import Hinkskalle.routes.manifests
 
 import Hinkskalle.routes.users
 import Hinkskalle.routes.tokens

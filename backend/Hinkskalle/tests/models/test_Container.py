@@ -3,9 +3,13 @@ from datetime import datetime, timedelta
 from typing import Tuple
 from unittest.case import skip
 
-from Hinkskalle.models import Entity, Collection, Container, ContainerSchema, Image, Tag
+from Hinkskalle.models.Entity import Entity
+from Hinkskalle.models.Container import ContainerTypes
+from Hinkskalle.models import Collection, Container, ContainerSchema, Image, Tag
 from .test_Collection import _create_collection
+from .test_Image import _create_image
 from Hinkskalle.tests.model_base import ModelBase, _create_user
+
 from Hinkskalle import db
 
 
@@ -398,5 +402,28 @@ class TestContainer(ModelBase):
     serialized = schema.dump(container)
     self.assertDictEqual(serialized.data['imageTags'], { 'v1': str(image1.id), 'v2': str(image2.id) })
   
+  def test_type(self):
+    image = _create_image()[0]
+    self.assertEqual(image.container_ref.type, ContainerTypes.singularity)
+
+    image.media_type='pr0n'
+    self.assertEqual(image.container_ref.type, ContainerTypes.generic)
+
+    image.media_type='application/vnd.docker.image.rootfs.diff.tar.gzip'
+    self.assertEqual(image.container_ref.type, ContainerTypes.docker)
+
+    image2 = _create_image(hash='sha256.gunz')[0]
+    image2.container_ref=image.container_ref
+    image2.media_type = Image.singularity_media_type
+    image.media_type = Image.singularity_media_type
+
+    self.assertEqual(image.container_ref.type, ContainerTypes.singularity)
+    image2.media_type='pr0n'
+    self.assertEqual(image.container_ref.type, ContainerTypes.mixed)
+
+    
+
+
+
 
 

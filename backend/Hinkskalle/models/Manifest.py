@@ -1,4 +1,4 @@
-from typing import Union
+from typing import List, Union
 
 from sqlalchemy.orm.exc import NoResultFound
 from Hinkskalle import db
@@ -13,7 +13,7 @@ class ManifestLayerSchema(Schema):
   """https://github.com/opencontainers/image-spec/blob/v1.0.1/descriptor.md"""
   mediaType = fields.String()
   digest = fields.String()
-  size = fields.Integer()
+  size = fields.Integer(allow_none=True)
   urls = fields.Nested(fields.String(), many=True)
   annotations = fields.Dict()
 
@@ -28,11 +28,26 @@ class ManifestConfigSchema(Schema):
   rootfs = fields.Dict()
   history = fields.Nested(fields.Dict(), many=True)
 
-class ManifestSchema(Schema):
-  schemaVersion = fields.String(required=True)
+class ManifestContentSchema(Schema):
+  schemaVersion = fields.Integer(required=True)
   config = fields.Nested(ManifestConfigSchema())
-  layers = fields.Nested(ManifestLayerSchema(), many=True)
+  layers = fields.Nested(ManifestLayerSchema, many=True)
   annotations = fields.Dict()
+
+class ManifestSchema(Schema):
+  id = fields.String(dump_only=True)
+  hash = fields.String()
+  content = fields.Dict(attribute='content_json')
+  createdAt = fields.DateTime(dump_only=True)
+  updatedAt = fields.DateTime(dump_only=True)
+  createdBy = fields.String(dump_only=True)
+
+  container = fields.String(required=True)
+  containerName = fields.String(dump_only=True)
+
+  tags = fields.List(fields.String(), attribute='tags_list', dump_only=True)
+  images = fields.List(fields.String(), dump_only=True)
+
 
 class Manifest(db.Model):
   id = db.Column(db.Integer, primary_key=True)
@@ -50,6 +65,14 @@ class Manifest(db.Model):
   updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
   __table_args__ = (db.UniqueConstraint('hash', 'container_id', name='manifest_hash_container_idx'),)
+
+  @property
+  def container(self) -> str:
+    return self.container_ref.id
+  
+  @property
+  def containerName(self) -> str:
+    return self.container_ref.name
 
   @property
   def stale(self) -> bool:
@@ -97,3 +120,16 @@ class Manifest(db.Model):
   @property
   def content_json(self) -> dict:
     return json.loads(self._content)
+
+  @property
+  def tags_list(self) -> List[str]:
+    return [ t.name for t in self.tags ]
+  
+  @property
+  def images(self) -> List[str]:
+    ret = []
+    for img in self.content_json.get('layers', []):
+      ret.append(img.get('digest', '(none)'))
+    return ret
+
+    

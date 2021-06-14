@@ -1,6 +1,6 @@
 from sqlalchemy.exc import IntegrityError
 
-from Hinkskalle.models.Manifest import Manifest
+from Hinkskalle.models.Manifest import Manifest, ManifestContentSchema, ManifestSchema
 from Hinkskalle.models.Tag import Tag
 
 from Hinkskalle import db
@@ -61,3 +61,25 @@ class TestManifest(ModelBase):
     self.assertEqual(manifest.content, '{"oi": "nk"}')
     self.assertEqual(manifest.hash, '4fad2eb67a3846eefe75b6c40a0e0b727b16101db41713afa0f7039edcd0727c')
     self.assertDictEqual(manifest.content_json, {'oi': 'nk'})
+  
+  def test_manifest_content_schema(self):
+    image = _create_image()[0]
+    manifest = image.generate_manifest()
+
+    content_load = ManifestContentSchema().load(manifest.content_json)
+    self.assertDictEqual(content_load.errors, {})
+
+  def test_manifest_schema(self):
+    image = _create_image()[0]
+    manifest = image.generate_manifest()
+
+    dumped = ManifestSchema().dump(manifest)
+    self.assertDictEqual(dumped.errors, {})
+    self.assertListEqual(dumped.data['tags'], [])
+    self.assertListEqual(dumped.data['images'], ['sha256:oink'])
+    self.assertEquals(dumped.data['containerName'], image.container_ref.name)
+    self.assertEquals(type(dumped.data['content']), dict)
+
+    tag = Tag(name='v1', image_ref=image, manifest_ref=manifest)
+    dumped = ManifestSchema().dump(manifest)
+    self.assertListEqual(dumped.data['tags'], ['v1'])

@@ -2,13 +2,22 @@ from flask import current_app
 from Hinkskalle import db
 from datetime import datetime
 from sqlalchemy.orm import validates
+from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
+import enum
 
 from Hinkskalle.models.Image import Image
 from Hinkskalle.models.Tag import Tag
 
 from marshmallow import fields, Schema, validates_schema, ValidationError
 from Hinkskalle.util.name_check import validate_name
+
+class ContainerTypes(enum.Enum):
+  singularity = 'singularity'
+  docker = 'docker'
+  generic = 'generic'
+  mixed = 'mixed'
+
 
 class ContainerSchema(Schema):
   id = fields.String(dump_only=True, required=True)
@@ -18,6 +27,7 @@ class ContainerSchema(Schema):
   private = fields.Boolean()
   readOnly = fields.Boolean()
   size = fields.Integer(dump_only=True)
+  type = fields.String(dump_only=True)
   downloadCount = fields.Integer(dump_only=True)
   stars = fields.Integer(dump_only=True)
   customData = fields.String(allow_none=True)
@@ -81,6 +91,18 @@ class Container(db.Model):
     return self.starred_sth.count()
 
   __table_args__ = (db.UniqueConstraint('name', 'collection_id', name='name_collection_id_idx'),)
+
+  @property
+  def type(self) -> ContainerTypes:
+    media_types = db.session.query(Image.media_type, func.count(Image.media_type)).filter(Image.container_id==self.id).group_by(Image.media_type).all()
+    if len(media_types) == 1:
+      if media_types[0][0] == Image.singularity_media_type:
+        return ContainerTypes.singularity
+      elif media_types[0][0].startswith('application/vnd.docker.image.rootfs.diff'):
+        return ContainerTypes.docker
+      else:
+        return ContainerTypes.generic
+    return ContainerTypes.mixed
 
   def size(self):
     if not self.id:

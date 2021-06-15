@@ -1,3 +1,4 @@
+from Hinkskalle.routes import manifests
 from Hinkskalle.models.User import Token
 from flask import current_app, make_response, send_file, jsonify, g, request
 from flask_rebar import errors
@@ -251,8 +252,11 @@ def oras_manifest(name: str, reference: str):
       raise OrasManifestUnknown(f"Tag {reference} not found")
     
     if not tag.manifest_ref or tag.manifest_ref.stale:
-      manifest = tag.image_ref.generate_manifest()
-      tag.manifest_ref=manifest
+      if tag.image_ref.media_type == Image.singularity_media_type:
+        manifest = tag.image_ref.generate_manifest()
+        tag.manifest_ref=manifest
+      else:
+        raise OrasManifestUnknown(f"Tag {reference} not found")
     else:
       manifest = tag.manifest_ref
 
@@ -307,9 +311,10 @@ def oras_push_manifest(name, reference):
   try:
     manifest_data = request.json
   except BadRequest:
+    current_app.logger.debug('Invalid JSON')
     raise OrasManifestInvalid()
-
   current_app.logger.debug(manifest_data)
+
   # XXX validate with schema
 
   if not tag:

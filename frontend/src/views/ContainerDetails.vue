@@ -36,13 +36,10 @@
       </v-row>
       <v-row>
         <v-col cols="12" md="10" offset-md="1">
-          <h2 class="mb-2">
-            Details
-          </h2>
           <v-expansion-panels>
             <v-expansion-panel>
               <v-expansion-panel-header>
-                <h5><v-icon>mdi-dots-horizontal-circle-outline</v-icon></h5>
+                Details
               </v-expansion-panel-header>
               <v-expansion-panel-content>
                 <v-row>
@@ -109,11 +106,11 @@
       <v-row>
         <v-col cols="12" md="10" offset-md="1">
           <template v-if="localState.container.type==='singularity'">
-            <h2 class="mb-2 d-flex">
+            <h3 class="mb-2 d-flex">
               Images
               <v-spacer></v-spacer>
               <v-btn text color="primary darken-1" @click="loadImages()"><v-icon>mdi-refresh</v-icon></v-btn>
-            </h2>
+            </h3>
             <v-expansion-panels inset>
               <image-details 
                 v-for="image in images"
@@ -123,11 +120,11 @@
             </v-expansion-panels>
           </template>
           <template v-else>
-            <h2 class="mb-2 d-flex">
-              Manifests
+            <h4 class="mb-2 d-flex">
+              Tags
               <v-spacer></v-spacer>
               <v-btn text color="primary darken-1" @click="loadManifests()"><v-icon>mdi-refresh</v-icon></v-btn>
-            </h2>
+            </h4>
             <v-expansion-panels inset>
               <manifest-details
                 v-for="manifest in manifests"

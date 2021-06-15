@@ -39,6 +39,8 @@ class ModelRenderer(TypescriptRenderer):
         field['type'] = 'Date | null'
       elif prop_def['type'] == 'integer':
         field['type'] = 'number'
+      elif prop_def['type'] == 'object':
+        field['type'] = 'any'
       elif prop_def['type'] == 'array':
         ndef = field_def(prop_def['items'])
         field['multi'] = True

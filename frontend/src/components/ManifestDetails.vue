@@ -19,7 +19,9 @@
           </span>
         </v-col>
         <v-col class="d-flex justify-center align-center">
-          <span class="font-weight-medium">Filename:</span> {{manifest.filename}}&nbsp;|&nbsp;
+          <span v-if="manifest.filename!=='(none)'">
+            <span class="font-weight-medium">Filename:</span> {{manifest.filename}}&nbsp;|&nbsp;
+          </span>
           <span class="font-weight-medium">Size:</span> {{manifest.total_size | prettyBytes() }}
         </v-col>
         <v-col class="d-flex justify-end align-center mr-4">
@@ -47,14 +49,19 @@
         </v-col>
       </v-row>
     </v-expansion-panel-header>
+    <v-expansion-panel-content v-if="manifest.type=='docker'">
+      <docker-details :manifest="manifest"></docker-details>
+      
+    </v-expansion-panel-content>
   </v-expansion-panel>
 </template>
 <script lang="ts">
 import { Manifest } from '@/store/models';
+import DockerDetails from '@/components/DockerDetails.vue';
 import Vue from 'vue';
-import { getEnv } from '@/util/env';
 
 export default Vue.extend({
+  components: { DockerDetails },
   name: 'ManifestDetails',
   props: {
     manifest: {
@@ -71,25 +78,9 @@ export default Vue.extend({
   }),
   computed: {},
   methods: {
-    pullCmd(tag: string): string {
-      const backend = (getEnv('VUE_APP_BACKEND_URL') as string).replace(/^https?:\/\//, '');
-      const hasHttps = (getEnv('VUE_APP_BACKEND_URL') as string).startsWith('https');
-      const path = `${this.manifest.entityName}/${this.manifest.collectionName}/${this.manifest.containerName}:${tag}`
-      switch(this.manifest.type) {
-        case('singularity'):
-          return `singularity pull oras://${backend}${path}`
-        case('docker'):
-          return `docker pull ${backend}${path}`
-        case('oras'):
-          return `oras pull ${hasHttps ? '' : '--plain-http '}${backend}${path}`
-        default:
-          return `curl something`
-      }
-    },
     copyTag(tag: string) {
-      this.$copyText(this.pullCmd(tag))
+      this.$copyText(this.manifest.pullCmd(tag))
         .then(() => this.$store.commit('snackbar/showSuccess', "Copied to clipboard"))
-
     }
   },
 });

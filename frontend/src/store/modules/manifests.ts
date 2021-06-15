@@ -51,6 +51,23 @@ const manifestsModule: Module<State, any> = {
           });
       });
     },
+    getConfig: ({ commit, rootState }, manifest: Manifest): Promise<any> => {
+      return new Promise<any>((resolve, reject) => {
+        if (!manifest.content.config || !manifest.content.config.digest) {
+          reject("Invalid manifest config");
+        }
+        commit('loading');
+        rootState.backend.get(`/v2/${manifest.path}/blobs/${manifest.content.config.digest}`)
+          .then((response: AxiosResponse) => {
+            commit(`succeeded`);
+            resolve(response.data)
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
   }
 }
 

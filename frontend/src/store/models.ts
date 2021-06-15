@@ -84,7 +84,7 @@ export { Collection };
 
 
 class Container {
-  public archTags!: object
+  public archTags!: any
   public collection!: string
   public collectionName!: string
   public createdAt!: Date | null
@@ -98,7 +98,7 @@ class Container {
   public entityName!: string
   public fullDescription!: string
   public id!: string
-  public imageTags!: object
+  public imageTags!: any
   public images!: string
   public name!: string
   public private!: boolean
@@ -268,15 +268,23 @@ class Image {
   public uploaded!: boolean
   
 
+  public get path(): string {
+    return `${this.entityName}/${this.collectionName}/${this.containerName}`
+  }
+
   public get fullPath(): string {
-    return `${this.entityName}/${this.collectionName}/${this.containerName}:${this.hash}`
+    return `${this.path}:${this.hash}`
   }
   public get prettyPath(): string {
-    return `${this.entityName}/${this.collectionName}/${this.containerName}:${this.tags.length>0 ? this.tags.join(",") : this.hash}`
+    return `${this.path}:${this.tags.length>0 ? this.tags.join(",") : this.hash}`
   }
 
   public canEdit(user: User | null): boolean {
     return !!user && (user.isAdmin || this.createdBy===user.username);
+  }
+
+  public pullUrl(tag: string) {
+    return `${this.path}:${tag}`
   }
 }
 
@@ -500,7 +508,7 @@ class Job {
   public failureTTL!: number
   public funcName!: string
   public id!: string
-  public meta!: object
+  public meta!: any
   public origin!: string
   public result!: string
   public resultTTL!: number
@@ -558,7 +566,7 @@ export { Job };
 
 
 class LdapStatus {
-  public config!: object
+  public config!: any
   public status!: string
   
 }
@@ -605,12 +613,14 @@ export function serializeLdapPing(obj: LdapPing, unroll=false): any {
 export { LdapPing };
 
 
+import { getEnv } from '@/util/env';
+
 class Manifest {
   public collection!: string
   public collectionName!: string
   public container!: string
   public containerName!: string
-  public content!: object
+  public content!: any
   public createdAt!: Date | null
   public createdBy!: string
   public entity!: string
@@ -624,6 +634,25 @@ class Manifest {
   public type!: string
   public updatedAt!: Date | null
   
+
+  public get path(): string {
+    return `${this.entityName}/${this.collectionName}/${this.containerName}`
+  }
+
+  public pullCmd(tag: string): string {
+    const backend = (getEnv('VUE_APP_BACKEND_URL') as string).replace(/^https?:\/\//, '');
+    const hasHttps = (getEnv('VUE_APP_BACKEND_URL') as string).startsWith('https');
+    switch(this.type) {
+      case('singularity'):
+        return `singularity pull oras://${backend}${this.path}:${tag}`
+      case('docker'):
+        return `docker pull ${backend}${this.path}:${tag}`
+      case('oras'):
+        return `oras pull ${hasHttps ? '' : '--plain-http '}${backend}${this.path}:${tag}`
+      default:
+        return `curl something`
+    }
+  }
 }
 
 export function plainToManifest(json: any): Manifest {

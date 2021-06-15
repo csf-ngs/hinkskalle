@@ -3,15 +3,23 @@
 class {{classname}} {
   {{utils.auto_attributes(fields)}}
 
+  public get path(): string {
+    return `${this.entityName}/${this.collectionName}/${this.containerName}`
+  }
+
   public get fullPath(): string {
-    return `${this.entityName}/${this.collectionName}/${this.containerName}:${this.hash}`
+    return `${this.path}:${this.hash}`
   }
   public get prettyPath(): string {
-    return `${this.entityName}/${this.collectionName}/${this.containerName}:${this.tags.length>0 ? this.tags.join(",") : this.hash}`
+    return `${this.path}:${this.tags.length>0 ? this.tags.join(",") : this.hash}`
   }
 
   public canEdit(user: User | null): boolean {
     return !!user && (user.isAdmin || this.createdBy===user.username);
+  }
+
+  public pullUrl(tag: string) {
+    return `${this.path}:${tag}`
   }
 }
 

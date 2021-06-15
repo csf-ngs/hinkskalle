@@ -238,6 +238,8 @@ class Image(db.Model):
   # metadata partitions are a thing of the future!
   def inspect(self) -> str:
     self._check_file()
+    if self.media_type != self.singularity_media_type:
+      raise Exception(f"not a singularity image: {self.media_type}")
     inspect = subprocess.run(["singularity", "sif", "dump", "1", self.location], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if not inspect.returncode == 0:
       raise Exception(f"{inspect.args} failed: {inspect.stderr}")

@@ -41,6 +41,7 @@ class TestOrasPush(RouteBase):
     self.assertTrue(os.path.exists(db_upload.path))
     self.assertFalse(db_upload.image_ref.uploaded)
     self.assertEqual(db_upload.createdBy, self.admin_username)
+    self.assertEqual(db_upload.image_ref.media_type, 'unknown')
 
     self.assertEqual(db_upload.image_ref.createdBy, self.admin_username)
 
@@ -475,8 +476,8 @@ class TestOrasPush(RouteBase):
   
   def test_push_manifest_update_images(self):
     image, container, collection, entity = _create_image()
-    config_image = Image(container_ref=container, hash='sha256.config')
-    other_image = Image(container_ref=container, hash='sha256.other')
+    config_image = Image(container_ref=container, hash='sha256.config', media_type='unknown')
+    other_image = Image(container_ref=container, hash='sha256.other', media_type='unknown')
     db.session.add(config_image)
     db.session.add(other_image)
     db.session.commit()

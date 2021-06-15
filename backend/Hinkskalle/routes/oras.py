@@ -413,7 +413,7 @@ def oras_start_upload_session(name):
   os.makedirs(upload_tmp, exist_ok=True)
   _, tmpf = tempfile.mkstemp(dir=upload_tmp)
 
-  image = Image(container_ref=container, owner=g.authenticated_user)
+  image = Image(container_ref=container, owner=g.authenticated_user, media_type='unknown')
   db.session.add(image)
 
   upload = ImageUploadUrl(

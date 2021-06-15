@@ -427,7 +427,9 @@ def _move_image(tmpf, image):
   except Exception as err:
     current_app.logger.warning(f"Image signature check failed: {err}")
    
-  image.container_ref.tag_image('latest', image.id, arch=current_app.config.get('DEFAULT_ARCH', 'amd64'))
+  # XXX another race condition
+  if image.media_type == Image.singularity_media_type:
+    image.container_ref.tag_image('latest', image.id, arch=current_app.config.get('DEFAULT_ARCH', 'amd64'))
   return image
 
 

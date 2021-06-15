@@ -53,11 +53,15 @@ class ManifestSchema(Schema):
   createdBy = fields.String(dump_only=True)
 
   type = fields.String(dump_only=True)
-  size = fields.Integer(dump_only=True)
+  total_size = fields.Integer(dump_only=True)
   filename = fields.String(dump_only=True)
 
   container = fields.String(required=True)
   containerName = fields.String(dump_only=True)
+  collection = fields.String(required=True)
+  collectionName = fields.String(dump_only=True)
+  entity = fields.String(required=True)
+  entityName = fields.String(dump_only=True)
 
   tags = fields.List(fields.String(), attribute='tags_list', dump_only=True)
   images = fields.List(fields.String(), dump_only=True)
@@ -122,6 +126,23 @@ class Manifest(db.Model):
   @property
   def containerName(self) -> str:
     return self.container_ref.name
+  
+  @property
+  def collection(self) -> str:
+    return self.container_ref.collection
+  
+  @property
+  def collectionName(self) -> str:
+    return self.container_ref.collectionName
+
+  @property
+  def entity(self) -> str:
+    return self.container_ref.entity
+
+  @property
+  def entityName(self) -> str:
+    return self.container_ref.entityName
+
 
   @property
   def stale(self) -> bool:

@@ -606,17 +606,21 @@ export { LdapPing };
 
 
 class Manifest {
+  public collection!: string
+  public collectionName!: string
   public container!: string
   public containerName!: string
   public content!: object
   public createdAt!: Date | null
   public createdBy!: string
+  public entity!: string
+  public entityName!: string
   public filename!: string
   public hash!: string
   public id!: string
   public images!: string[]
-  public size!: number
   public tags!: string[]
+  public total_size!: number
   public type!: string
   public updatedAt!: Date | null
   
@@ -624,17 +628,21 @@ class Manifest {
 
 export function plainToManifest(json: any): Manifest {
   const obj = new Manifest();
-  obj.container = json['container'];
+  obj.collection = json['collection'];
+    obj.collectionName = json['collectionName'];
+    obj.container = json['container'];
     obj.containerName = json['containerName'];
     obj.content = json['content'];
     obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
       obj.createdBy = json['createdBy'];
+    obj.entity = json['entity'];
+    obj.entityName = json['entityName'];
     obj.filename = json['filename'];
     obj.hash = json['hash'];
     obj.id = json['id'];
     obj.images = json['images'];
-    obj.size = json['size'];
     obj.tags = json['tags'];
+    obj.total_size = json['total_size'];
     obj.type = json['type'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
       
@@ -642,8 +650,10 @@ export function plainToManifest(json: any): Manifest {
 }
 export function serializeManifest(obj: Manifest, unroll=false): any {
   const json: any = {};
-  json['container'] = obj.container
+  json['collection'] = obj.collection
+      json['container'] = obj.container
       json['content'] = obj.content
+      json['entity'] = obj.entity
       json['hash'] = obj.hash
       
   return json;

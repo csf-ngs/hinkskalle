@@ -32,62 +32,78 @@
               <hsk-text-input label="Created By" :static-value="localState.container.createdBy"></hsk-text-input>
             </v-col>
           </v-row>
-          <v-row>
-            <v-col>
-              <hsk-text-input 
-                label="Git/VCS URL" 
-                field="vcsUrl" 
-                :obj="localState.container" 
-                action="containers/update"
-                :readonly="!canEdit"
-                @updated="localState.container=$event"></hsk-text-input>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col>
-              <hsk-text-input 
-                label="Description" 
-                field="description" 
-                :obj="localState.container" 
-                action="containers/update"
-                :readonly="!canEdit"
-                @updated="localState.container=$event"></hsk-text-input>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col>
-              <hsk-text-input 
-                type="textarea"
-                label="Full Description" 
-                field="fullDescription" 
-                :obj="localState.container" 
-                action="containers/update"
-                :readonly="!canEdit"
-                @updated="localState.container=$event"></hsk-text-input>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col>
-              <hsk-text-input
-                type="yesno"
-                label="Private"
-                field="private"
-                :obj="localState.container"
-                action="containers/update"
-                :readonly="!canEdit"
-                @updated="localState.container=$event"></hsk-text-input>
-            </v-col>
-            <v-col>
-              <hsk-text-input
-                type="yesno"
-                label="Readonly"
-                field="readOnly"
-                :obj="localState.container"
-                action="containers/update"
-                :readonly="!localState.container.canEdit(currentUser)"
-                @updated="localState.container=$event"></hsk-text-input>
-            </v-col>
-          </v-row>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12" md="10" offset-md="1">
+          <h2 class="mb-2">
+            Details
+          </h2>
+          <v-expansion-panels>
+            <v-expansion-panel>
+              <v-expansion-panel-header>
+                <h5><v-icon>mdi-dots-horizontal-circle-outline</v-icon></h5>
+              </v-expansion-panel-header>
+              <v-expansion-panel-content>
+                <v-row>
+                  <v-col>
+                    <hsk-text-input 
+                      label="Git/VCS URL" 
+                      field="vcsUrl" 
+                      :obj="localState.container" 
+                      action="containers/update"
+                      :readonly="!canEdit"
+                      @updated="localState.container=$event"></hsk-text-input>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <hsk-text-input 
+                      label="Description" 
+                      field="description" 
+                      :obj="localState.container" 
+                      action="containers/update"
+                      :readonly="!canEdit"
+                      @updated="localState.container=$event"></hsk-text-input>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <hsk-text-input 
+                      type="textarea"
+                      label="Full Description" 
+                      field="fullDescription" 
+                      :obj="localState.container" 
+                      action="containers/update"
+                      :readonly="!canEdit"
+                      @updated="localState.container=$event"></hsk-text-input>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <hsk-text-input
+                      type="yesno"
+                      label="Private"
+                      field="private"
+                      :obj="localState.container"
+                      action="containers/update"
+                      :readonly="!canEdit"
+                      @updated="localState.container=$event"></hsk-text-input>
+                  </v-col>
+                  <v-col>
+                    <hsk-text-input
+                      type="yesno"
+                      label="Readonly"
+                      field="readOnly"
+                      :obj="localState.container"
+                      action="containers/update"
+                      :readonly="!localState.container.canEdit(currentUser)"
+                      @updated="localState.container=$event"></hsk-text-input>
+                  </v-col>
+                </v-row>
+              </v-expansion-panel-content>
+            </v-expansion-panel>
+          </v-expansion-panels>
         </v-col>
       </v-row>
       <v-row>

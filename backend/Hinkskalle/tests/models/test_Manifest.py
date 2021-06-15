@@ -105,3 +105,128 @@ class TestManifest(ModelBase):
 
     manifest = image.generate_manifest()
     self.assertEqual(manifest.type, ManifestTypes.singularity.name)
+  
+  def test_manifest_total_size(self):
+    image = _create_image()[0]
+    manifest = Manifest(container_ref=image.container_ref)
+    self.assertEqual(manifest.total_size, 0)
+
+    manifest.content = {
+      'layers': [
+        {
+          'mediaType': 'application/vnd.oci.image.layer.v1.tar+gzip', 
+          'digest': 'sha256:1', 
+          'size': 170, 
+          'annotations': {'org.opencontainers.image.title': 'orasgrunz'}
+        }
+      ]
+    }
+
+    self.assertEqual(manifest.total_size, 170)
+
+    manifest.content={
+      'layers': [
+        {
+          'mediaType': 'application/vnd.oci.image.layer.v1.tar+gzip', 
+          'digest': 'sha256:1', 
+          'size': 170, 
+          'annotations': { 'org.opencontainers.image.title': 'orasgrunz'}
+        },
+        {
+          'mediaType': 'application/vnd.oci.image.layer.v1.tar+gzip', 
+          'digest': 'sha256:2', 
+          'size': 30, 
+          'annotations': {'org.opencontainers.image.title': 'orasoink'}
+        },
+      ]
+    }
+    self.assertEqual(manifest.total_size, 200)
+
+    manifest.content={
+      'layers': [
+        {
+          'mediaType': 'application/vnd.oci.image.layer.v1.tar+gzip', 
+          'digest': 'sha256:1', 
+          'size': 170, 
+          'annotations': { 'org.opencontainers.image.title': 'orasgrunz'}
+        },
+        {
+          'mediaType': 'application/vnd.oci.image.layer.v1.tar+gzip', 
+          'digest': 'sha256:2', 
+          'annotations': {'org.opencontainers.image.title': 'orasoink'}
+        },
+      ]
+    }
+    self.assertEqual(manifest.total_size, 170)
+
+
+  def test_manifest_filename(self):
+    image = _create_image()[0]
+    manifest = Manifest(container_ref=image.container_ref)
+    self.assertEqual(manifest.filename, '(none)')
+
+    manifest.content = {
+      'layers': [
+        {
+          'mediaType': 'application/vnd.oci.image.layer.v1.tar+gzip', 
+          'digest': 'sha256:1', 
+          'size': 170, 
+          'annotations': {'org.opencontainers.image.title': 'orasgrunz'}
+        }
+      ]
+    }
+
+    self.assertEqual(manifest.filename, 'orasgrunz')
+
+    manifest.content={
+      'layers': [
+        {
+          'mediaType': 'application/vnd.oci.image.layer.v1.tar+gzip', 
+          'digest': 'sha256:1', 
+          'size': 170, 
+          'annotations': { 'org.opencontainers.image.title': 'orasgrunz'}
+        },
+        {
+          'mediaType': 'application/vnd.oci.image.layer.v1.tar+gzip', 
+          'digest': 'sha256:2', 
+          'size': 30, 
+          'annotations': {'org.opencontainers.image.title': 'orasoink'}
+        },
+      ]
+    }
+    self.assertEqual(manifest.filename, '(multiple)')
+
+    manifest.content={
+      'layers': [
+        {
+          'mediaType': 'application/vnd.oci.image.layer.v1.tar+gzip', 
+          'digest': 'sha256:1', 
+          'size': 170, 
+          'annotations': { 'org.opencontainers.image.title': 'orasgrunz'}
+        },
+        {
+          'mediaType': 'application/vnd.oci.image.layer.v1.tar+gzip', 
+          'digest': 'sha256:2', 
+          'size': 30, 
+          'annotations': {}
+        },
+      ]
+    }
+    self.assertEqual(manifest.filename, 'orasgrunz')
+
+    manifest.content={
+      'layers': [
+        {
+          'mediaType': 'application/vnd.oci.image.layer.v1.tar+gzip', 
+          'digest': 'sha256:1', 
+          'size': 170, 
+          'annotations': { 'org.opencontainers.image.title': 'orasgrunz'}
+        },
+        {
+          'mediaType': 'application/vnd.oci.image.layer.v1.tar+gzip', 
+          'digest': 'sha256:2', 
+          'size': 30, 
+        },
+      ]
+    }
+    self.assertEqual(manifest.filename, 'orasgrunz')

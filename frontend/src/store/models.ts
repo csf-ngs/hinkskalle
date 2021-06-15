@@ -611,9 +611,11 @@ class Manifest {
   public content!: object
   public createdAt!: Date | null
   public createdBy!: string
+  public filename!: string
   public hash!: string
   public id!: string
   public images!: string[]
+  public size!: number
   public tags!: string[]
   public type!: string
   public updatedAt!: Date | null
@@ -627,9 +629,11 @@ export function plainToManifest(json: any): Manifest {
     obj.content = json['content'];
     obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
       obj.createdBy = json['createdBy'];
+    obj.filename = json['filename'];
     obj.hash = json['hash'];
     obj.id = json['id'];
     obj.images = json['images'];
+    obj.size = json['size'];
     obj.tags = json['tags'];
     obj.type = json['type'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);

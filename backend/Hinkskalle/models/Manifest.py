@@ -1,5 +1,6 @@
 import enum
 from typing import List, Union
+from functools import reduce
 
 from sqlalchemy.orm.exc import NoResultFound
 from Hinkskalle import db
@@ -52,6 +53,8 @@ class ManifestSchema(Schema):
   createdBy = fields.String(dump_only=True)
 
   type = fields.String(dump_only=True)
+  size = fields.Integer(dump_only=True)
+  filename = fields.String(dump_only=True)
 
   container = fields.String(required=True)
   containerName = fields.String(dump_only=True)
@@ -90,6 +93,27 @@ class Manifest(db.Model):
       return ManifestTypes.oras.name
     else:
       return ManifestTypes.other.name
+    
+  @property 
+  def total_size(self) -> int:
+    def accumulate(x: int, y: dict) -> int:
+      return x+int(y.get('size', 0))
+    return reduce(accumulate, self.content_json.get('layers', []), 0)
+  
+  @property
+  def filename(self) -> str:
+    def accumulate(x: str, y: dict) -> str:
+      y_title = y.get('annotations', {}).get('org.opencontainers.image.title', None)
+      if not y_title:
+        return x
+      elif x == '(none)':
+        return y_title
+      elif x != y_title:
+        return '(multiple)'
+      else:
+        return x
+    return reduce(accumulate, self.content_json.get('layers', []), '(none)')
+
 
   @property
   def container(self) -> str:
@@ -144,6 +168,8 @@ class Manifest(db.Model):
 
   @property
   def content_json(self) -> dict:
+    if not self._content:
+      return {}
     return json.loads(self._content)
 
   @property

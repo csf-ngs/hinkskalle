@@ -316,3 +316,12 @@ class TestImage(ModelBase):
     image.hide = True
     image.media_type = None
     self.assertFalse(image.hide)
+
+  def test_make_filename(self):
+    image = _create_image()[0]
+    fn = image.make_filename()
+    self.assertEquals(fn, f"{image.hash}.sif")
+
+    image.media_type='grunz'
+    fn = image.make_filename()
+    self.assertEquals(fn, f"{image.hash}")

@@ -222,7 +222,10 @@ class Image(db.Model):
     return os.path.join(self.entityName(), self.collectionName(), f"{self.containerName}_{tag}.sif")
 
   def make_filename(self) -> str:
-    return f"{self.hash}.sif"
+    fn=self.hash
+    if self.media_type == self.singularity_media_type:
+      fn+=".sif"
+    return fn
   
   def _check_file(self) -> None:
     if not self.uploaded or not self.location:

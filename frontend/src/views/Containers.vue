@@ -2,6 +2,13 @@
   <div class="containers">
     <top-bar title="Containers"></top-bar>
     <v-container>
+      <v-row cols="12" md="10" offset-md="1">
+        <v-col>
+          <h1 class="justify-center d-flex">
+            <router-link class="text-decoration-none" :to="{ name: 'Collections', params: { entity: collection.entityName } }">{{collection.entityName}}</router-link>/{{collection.name}}
+          </h1>
+        </v-col>
+      </v-row>
       <v-row>
         <v-col cols="12" md="10" offset-md="1">
           <v-data-iterator
@@ -162,8 +169,8 @@
                         <span style="margin-right: 0.35rem;">
                           <v-tooltip bottom>
                             <template v-slot:activator="{ on, attrs }">
-                              <v-icon v-bind="attrs" v-on="on" v-if="item.type=='singularity'">mdi-adjust</v-icon>
-                              <v-icon v-bind="attrs" v-on="on" v-else-if="item.type=='docker'">mdi-ferry</v-icon>
+                              <img v-if="item.type=='docker'" v-bind="attrs" v-on="on" src="/docker-logo.png" style="height: 1.2rem;">
+                              <img v-else-if="item.type=='singularity'" v-bind="attrs" v-on="on" src="/singularity-logo.png" style="height: 1.2rem;">
                               <v-icon v-bind="attrs" v-on="on" v-else-if="item.type=='generic'">mdi-folder</v-icon>
                               <v-icon v-bind="attrs" v-on="on" v-else-if="item.type=='mixed'">mdi-folder-multiple</v-icon>
                             </template>

@@ -4,7 +4,7 @@
     <v-container>
         <v-row>
           <v-col cols="12">
-            <h2>How To Use Me</h2>
+            <h2>This is How You Use Me</h2>
           </v-col>
         </v-row>
         <v-row>

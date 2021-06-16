@@ -26,11 +26,11 @@
         </v-col>
         <v-col class="d-flex justify-end align-center mr-4">
           <div v-if="manifest.type=='singularity'">
-            <v-icon>mdi-adjust</v-icon>
+            <img src="/singularity-logo.png" style="height: 1.2rem;">
             Singularity
           </div>
           <div v-else-if="manifest.type=='docker'">
-            <v-icon>mdi-ferry</v-icon>
+            <img src="/docker-logo.png" style="height: 1.2rem;">
             Docker
           </div>
           <div v-else-if="manifest.type=='oras'">

@@ -8,7 +8,7 @@
           <v-row>
             <v-col>
               <h1 class="justify-center d-flex">
-                {{title}}
+                <router-link class="text-decoration-none" :to="{ name: 'Collections', params: { entity: localState.container.entityName } }">{{localState.container.entityName}}</router-link>/<router-link class="text-decoration-none" :to="{ name: 'Containers', params: { entity: localState.container.entityName, collection: localState.container.collectionName } }">{{localState.container.collectionName}}</router-link>/{{localState.container.name}}
                 <container-stars :container="localState.container"></container-stars>
                 <v-badge :content="localState.container.downloadCount || '0'" inline color="blue-grey lighten-1" class="px-1">
                   <v-icon>mdi-download</v-icon>

@@ -101,7 +101,7 @@ class Manifest(db.Model):
   @property 
   def total_size(self) -> int:
     def accumulate(x: int, y: dict) -> int:
-      return x+int(y.get('size', 0))
+      return x+int(y.get('size') or 0)
     return reduce(accumulate, self.content_json.get('layers', []), 0)
   
   @property

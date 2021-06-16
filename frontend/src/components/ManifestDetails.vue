@@ -14,7 +14,7 @@
               color="green lighten-1"
               v-for="tag in manifest.tags" :key="tag"
               @click.stop="copyTag(tag)">
-                {{tag}}
+                {{tag | abbreviate(20)}}
             </v-chip>
           </span>
         </v-col>

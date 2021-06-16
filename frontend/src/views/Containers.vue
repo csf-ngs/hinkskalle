@@ -1,7 +1,7 @@
 <template>
   <div class="containers">
     <top-bar title="Containers"></top-bar>
-    <v-container>
+    <v-container v-if="collection">
       <v-row cols="12" md="10" offset-md="1">
         <v-col>
           <h1 class="justify-center d-flex">

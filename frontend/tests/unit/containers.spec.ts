@@ -10,15 +10,17 @@ import { localVue, localVueNoRouter } from '../setup';
 
 import { clone as _clone } from 'lodash';
 
-import { makeTestContainersObj } from '../_data';
-import {Container} from '@/store/models';
+import { makeTestCollectionsObj, makeTestContainersObj } from '../_data';
+import {Collection, Container} from '@/store/models';
 
 // needed to silence vuetify dialog warnings
 document.body.setAttribute('data-app', 'true');
 
 let testContainersObj: Container[];
+let testCollection: Collection;
 beforeAll(() => {
   testContainersObj = makeTestContainersObj();
+  testCollection = makeTestCollectionsObj()[0];
 })
 
 
@@ -41,6 +43,7 @@ describe('Containers.vue', () => {
 
     getters = {
       'containers/list': jest.fn().mockReturnValue(testContainersObj),
+      'containers/currentCollection': jest.fn().mockReturnValue(testCollection),
       'users/starred': jest.fn().mockReturnValue([ testContainersObj[0] ]),
     };
     mutations = {
@@ -88,7 +91,6 @@ describe('Containers.vue', () => {
     await Vue.nextTick();
     await Vue.nextTick();
     expect(wrapper.findAll('div#containers .container i.mdi-folder-multiple')).toHaveLength(1);
-    expect(wrapper.findAll('div#containers .container i.mdi-adjust')).toHaveLength(1);
     done();
   });
 

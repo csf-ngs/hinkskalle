@@ -646,6 +646,7 @@ class Manifest {
       case('singularity'):
         return `singularity pull oras://${backend}${this.path}:${tag}`
       case('docker'):
+      case('oci'):
         return `docker pull ${backend}${this.path}:${tag}`
       case('oras'):
         return `oras pull ${hasHttps ? '' : '--plain-http '}${backend}${this.path}:${tag}`

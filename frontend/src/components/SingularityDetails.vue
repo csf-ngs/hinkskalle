@@ -71,6 +71,17 @@
       </v-row>
       <v-row>
         <v-col>
+          <hsk-text-input type="yesno" label="Signed" :static-value="image.signed"></hsk-text-input>
+        </v-col>
+        <v-col>
+          <hsk-text-input type="yesno" label="Verified" :static-value="image.signatureVerified"></hsk-text-input>
+        </v-col>
+        <v-col>
+          <hsk-text-input type="yesno" label="Encrypted" :static-value="image.encrypted"></hsk-text-input>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col>
           <hsk-text-input type="yesno" label="Uploaded" :static-value="image.uploaded"></hsk-text-input>
         </v-col>
         <v-col>

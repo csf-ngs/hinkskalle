@@ -55,6 +55,21 @@ const imagesModule: Module<State, any> = {
           });
       });
     },
+    get: ({ commit, rootState }, img: { path: string; tag: string }): Promise<Image> => {
+      return new Promise<Image>((resolve, reject) => {
+        commit('loading');
+        rootState.backend.get(`/v1/images/${img.path}:${img.tag}`)
+          .then((response: AxiosResponse) => {
+            const img = plainToImage(response.data.data);
+            commit('succeeded');
+            resolve(img);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
     inspect: ({ commit, rootState }, image: { fullPath: string }): Promise<InspectAttributes> => {
       return new Promise<InspectAttributes>((resolve, reject) => {
         commit('loading');

@@ -6,10 +6,11 @@
         </v-col>
       </v-row>
         <v-row justify="center" v-if="localState.imgConfig">
-          <v-col cols="8">
+          <v-col cols="12">
             <hsk-text-input label="Created" :static-value="localState.imgConfig.created | moment('YYYY-MM-DD HH:mm:ss')"></hsk-text-input>
             <hsk-text-input label="Docker Version" :static-value="localState.imgConfig.dockerVersion"></hsk-text-input>
             <hsk-text-input label="OS" :static-value="localState.imgConfig.os"></hsk-text-input>
+            <hsk-text-input label="VCS Link" :static-value="vcsLink"></hsk-text-input>
             <hsk-text-input v-for="(value, label) in localState.imgConfig.labels" :key="label"
               :static-value="value" :label="label"></hsk-text-input>
           </v-col>
@@ -89,6 +90,14 @@ export default Vue.extend({
       layers: [],
     },
   }),
+  computed: {
+    vcsLink: function(): string {
+      if (!this.localState.imgConfig || !this.localState.imgConfig.labels) {
+        return '';
+      }
+      return this.localState.imgConfig.labels['org.label-schema.vcs-url'];
+    }
+  },
   methods: {
     loadConfig() {
       this.$store.dispatch('manifests/getConfig', this.manifest)

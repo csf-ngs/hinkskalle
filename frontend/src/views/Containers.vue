@@ -171,7 +171,7 @@
                             <template v-slot:activator="{ on, attrs }">
                               <img v-if="item.type=='docker'" v-bind="attrs" v-on="on" src="/docker-logo.png" style="height: 1.2rem;">
                               <img v-else-if="item.type=='singularity'" v-bind="attrs" v-on="on" src="/singularity-logo.png" style="height: 1.2rem;">
-                              <v-icon v-bind="attrs" v-on="on" v-else-if="item.type=='generic'">mdi-folder</v-icon>
+                              <img v-else-if="item.type=='generic'" v-bind="attrs" v-on="on" src="/oras-logo.png" style="height: 1.2rem;">
                               <v-icon v-bind="attrs" v-on="on" v-else-if="item.type=='mixed'">mdi-folder-multiple</v-icon>
                             </template>
                             <span>{{ item.type }}</span>

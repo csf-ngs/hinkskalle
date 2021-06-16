@@ -295,10 +295,10 @@ describe('container store actions', () => {
     mockAxios.delete.mockResolvedValue({
       data: { status: 'ok' },
     });
-    const promise = store.dispatch('containers/delete', testContainersObj[0]);
+    const promise = store.dispatch('containers/delete', { container: testContainersObj[0] });
     expect(store.state.containers!.status).toBe('loading');
     promise.then(() => {
-      expect(mockAxios.delete).toHaveBeenLastCalledWith(`/v1/containers/${testContainersObj[0].entityName}/${testContainersObj[0].collectionName}/${testContainersObj[0].name}`)
+      expect(mockAxios.delete).toHaveBeenLastCalledWith(`/v1/containers/${testContainersObj[0].entityName}/${testContainersObj[0].collectionName}/${testContainersObj[0].name}`, { params: { cascade: false } })
       expect(store.state.containers!.status).toBe('success');
       expect(store.state.containers!.list).toHaveLength(1);
       const deleted = _find(store.state.containers!.list, c => c.id === testContainersObj[0].id);
@@ -308,7 +308,7 @@ describe('container store actions', () => {
   });
   it('has delete fail', done => {
     mockAxios.delete.mockRejectedValue({ fail: 'fail' });
-    store.dispatch(`containers/delete`, testContainersObj[0])
+    store.dispatch(`containers/delete`, { container: testContainersObj[0] })
       .catch(err => {
         expect(store.state.containers!.status).toBe('failed');
         expect(err).toStrictEqual({ fail: 'fail' });

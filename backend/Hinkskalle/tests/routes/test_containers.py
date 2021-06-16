@@ -1,4 +1,6 @@
 
+from Hinkskalle.models.Manifest import Manifest
+from Hinkskalle.models.Tag import Tag
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Collection import Collection
 import unittest
@@ -433,6 +435,26 @@ class TestContainers(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.delete(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
     self.assertEqual(ret.status_code, 412)
+  
+  def test_delete_cascade(self):
+    container, coll, entity = _create_container()
+    image = Image(hash="test-conti1", container_id=coll.id)
+    db.session.add(image)
+    db.session.commit()
+    image_id = image.id
+    tag = container.tag_image('v1', image.id)
+    tag_id = tag.id
+    manifest = image.generate_manifest()
+    manifest_id = manifest.id
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/containers/{entity.name}/{coll.name}/{container.name}?cascade=1")
+    self.assertEqual(ret.status_code, 200)
+
+    self.assertIsNone(Container.query.filter(Container.name==container.name).first())
+    self.assertIsNone(Tag.query.get(tag_id))
+    self.assertIsNone(Manifest.query.get(manifest_id))
+    self.assertIsNone(Image.query.get(image_id))
 
   def test_delete_user(self):
     container, coll, entity = _create_container()

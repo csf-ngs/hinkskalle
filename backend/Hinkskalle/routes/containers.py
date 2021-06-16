@@ -24,6 +24,9 @@ class ContainerUpdateSchema(ContainerSchema, RequestSchema):
   name = fields.String(dump_only=True)
   collection = fields.String(dump_only=True)
 
+class ContainerDeleteQuerySchema(RequestSchema):
+  cascade = fields.Bool(required=False)
+
 class ContainerDeleteResponseSchema(ResponseSchema):
   status = fields.String()
 
@@ -134,17 +137,19 @@ def update_container(entity_id, collection_id, container_id):
 @registry.handles(
   rule='/v1/containers/<string:entity_id>/<string:collection_id>/<string:container_id>',
   method='DELETE',
+  query_string_schema=ContainerDeleteQuerySchema(),
   response_body_schema=ContainerDeleteResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user),
 )
 def delete_container(entity_id, collection_id, container_id):
+  args = rebar.validated_args
   container = _get_container(entity_id, collection_id, container_id)
   if not container.check_update_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to container")
 
-  if container.images_ref.count() > 0:
-    raise errors.PreconditionFailed(f"Container {container.name} still has images.")
-  
+  if container.images_ref.count() > 0 and not args.get('cascade', False):
+      raise errors.PreconditionFailed(f"Container {container.name} still has images.")
+    
   db.session.delete(container)
   db.session.commit()
   return { 'status': 'ok' }

@@ -5,7 +5,7 @@
       <v-row cols="12" md="10" offset-md="1">
         <v-col>
           <h1 class="justify-center d-flex">
-            <router-link class="text-decoration-none" :to="{ name: 'Collections', params: { entity: collection.entityName } }">{{collection.entityName}}</router-link>/{{collection.name}}
+            <router-link class="text-decoration-none" :to="{ name: 'EntityCollections', params: { entity: collection.entityName } }">{{collection.entityName}}</router-link>/{{collection.name}}
           </h1>
         </v-col>
       </v-row>
@@ -139,12 +139,15 @@
                     </v-card-actions>
                   </v-card>
                 </v-dialog>
-                <v-dialog v-model="localState.showDelete" max-width="500px">
+                <v-dialog v-model="localState.showDelete" max-width="600px">
                   <v-card>
                     <v-card-title class="headline">You really want to kill it?</v-card-title>
+                    <v-card-text>
+                      <v-checkbox v-model="localState.deleteCascade" label="Nuke Images & Tags"></v-checkbox>
+                    </v-card-text>
                     <v-card-actions>
-                      <v-spacer></v-spacer>
                       <v-btn color="secondary darken-1" text @click="closeDelete">Let mercy rule.</v-btn>
+                      <v-spacer></v-spacer>
                       <v-btn color="warning darken-1" text @click="deleteContainerConfirm">Get it out of my sight.</v-btn>
                     </v-card-actions>
                   </v-card>
@@ -261,6 +264,7 @@ interface State {
   editValid: boolean;
   showEdit: boolean;
   showDelete: boolean;
+  deleteCascade: boolean;
 }
 
 function defaultItem(): Container {
@@ -283,6 +287,7 @@ export default Vue.extend({
       sortDesc: false,
       showEdit: false,
       showDelete: false,
+      deleteCascade: false,
       editItem: defaultItem(),
       editValid: true,
     },
@@ -343,10 +348,11 @@ export default Vue.extend({
     },
     deleteContainer(container: Container) {
       this.localState.editItem = _clone(container);
+      this.localState.deleteCascade = false;
       this.localState.showDelete = true;
     },
     deleteContainerConfirm() {
-      this.$store.dispatch('containers/delete', this.localState.editItem)
+      this.$store.dispatch('containers/delete', { container: this.localState.editItem, cascade: this.localState.deleteCascade })
         .then(() => this.$store.commit('snackbar/showSuccess', "It's gone!"))
         .catch(err => this.$store.commit('snackbar/showError', err));
       this.closeDelete();

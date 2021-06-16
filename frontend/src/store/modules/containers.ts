@@ -151,10 +151,10 @@ const containersModule: Module<State, any> = {
           });
       });
     },
-    delete: ({ commit, rootState }, container: Container): Promise<void> => {
+    delete: ({ commit, rootState }, { container: container, cascade: cascade = false }): Promise<void> => {
       return new Promise<void>((resolve, reject) => {
         commit('loading');
-        rootState.backend.delete(`/v1/containers/${container.entityName}/${container.collectionName}/${container.name}`)
+        rootState.backend.delete(`/v1/containers/${container.entityName}/${container.collectionName}/${container.name}`, { params: { cascade } })
           .then((response: AxiosResponse) => {
             commit('succeeded');
             commit('remove', container.id);

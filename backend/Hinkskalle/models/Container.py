@@ -73,9 +73,9 @@ class Container(db.Model):
   updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
   collection_ref = db.relationship('Collection', back_populates='containers_ref')
-  images_ref = db.relationship('Image', back_populates='container_ref', lazy='dynamic')
-  tags_ref = db.relationship('Tag', back_populates='container_ref')
-  manifests_ref = db.relationship('Manifest', back_populates='container_ref')
+  images_ref = db.relationship('Image', back_populates='container_ref', lazy='dynamic', cascade='all, delete-orphan')
+  tags_ref = db.relationship('Tag', back_populates='container_ref', cascade='all, delete-orphan')
+  manifests_ref = db.relationship('Manifest', back_populates='container_ref', cascade='all, delete-orphan')
 
   owner = db.relationship('User', back_populates='containers')
 
@@ -130,7 +130,7 @@ class Container(db.Model):
     return cur_tags.first()
 
 
-  def tag_image(self, tag, image_id, arch=None):
+  def tag_image(self, tag: str, image_id: int, arch: str=None):
     errors = validate_name({ 'name': tag })
     if errors:
       raise ValidationError(errors)

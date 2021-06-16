@@ -15,6 +15,7 @@ class ManifestTypes(enum.Enum):
   docker = 'docker'
   singularity = 'singularity'
   oras = 'oras'
+  oci = 'oci'
   other = 'other'
   invalid = 'invalid'
 
@@ -95,6 +96,8 @@ class Manifest(db.Model):
       return ManifestTypes.docker.name
     elif config_type == 'application/vnd.unknown.config.v1+json':
       return ManifestTypes.oras.name
+    elif config_type == 'application/vnd.oci.image.config.v1+json':
+      return ManifestTypes.oci.name
     else:
       return ManifestTypes.other.name
     

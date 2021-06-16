@@ -53,17 +53,15 @@ class TestOrasPull(RouteBase):
     self.assertEqual(manifest.get('layers')[0].get('digest'), image.hash.replace('sha256.', 'sha256:'))
 
 
-
-  def test_manifest_auth(self):
+  def test_manifest_noauth(self):
     image = _create_image()[0]
     latest_tag = Tag(name='latest', image_ref=image)
     db.session.add(latest_tag)
 
     db.session.commit()
 
-    with self.fake_auth():
-      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/latest")
-    self.assertEqual(ret.status_code, 200)
+    ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/latest")
+    self.assertEqual(ret.status_code, 401)
 
   def test_manifest_private(self):
     image, container, collection, entity = _create_image(postfix='1')
@@ -265,13 +263,12 @@ class TestOrasPull(RouteBase):
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b'Hello Dorian!')
 
-  def test_blob_auth(self):
+  def test_blob_noauth(self):
     image = _create_image()[0]
     file = _fake_img_file(image)
 
-    with self.fake_auth():
-      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
-    self.assertEqual(ret.status_code, 200)
+    ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
+    self.assertEqual(ret.status_code, 401)
 
   def test_blob_private(self):
     image, container, collection, entity = _create_image()

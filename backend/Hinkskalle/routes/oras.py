@@ -231,7 +231,7 @@ def oras_list_tags(name: str):
 @registry.handles(
   rule='/v2/<distname:name>/manifests/<string:reference>',
   method='GET',
-  authenticators=authenticator.with_scope(Scopes.optional),
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def oras_manifest(name: str, reference: str):
   # should check accept header for 
@@ -274,7 +274,7 @@ def oras_manifest(name: str, reference: str):
 @registry.handles(
   rule='/v2/<distname:name>/blobs/<string:digest>',
   method='GET',
-  authenticators=authenticator.with_scope(Scopes.optional),
+  authenticators=authenticator.with_scope(Scopes.user),
 )
 def oras_blob(name, digest):
   # check accept header for

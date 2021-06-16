@@ -108,6 +108,8 @@ const router = new VueRouter({
   routes
 });
 
+const DEFAULT_TITLE = 'Hinkskalle';
+
 router.beforeEach((to, from, next) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
     return isAuthenticated(to, from, next);
@@ -116,6 +118,11 @@ router.beforeEach((to, from, next) => {
     return isAdmin(to, from, next);
   }
   next();
+});
+router.afterEach((to) => {
+  Vue.nextTick(() => {
+    document.title = to.meta.title || to.fullPath || DEFAULT_TITLE;
+  });
 });
 
 export default router

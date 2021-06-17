@@ -15,6 +15,7 @@ setup(
         'passlib',
         'Flask-RQ2',
         'ldap3',
+        'pyjwt',
     ],
     extras_require={
       'dev': ['Jinja2','nose2','fakeredis','psycopg2'],

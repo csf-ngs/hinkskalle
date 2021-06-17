@@ -3,7 +3,7 @@ import { Module } from 'vuex';
 import { Token, plainToToken, serializeToken } from '../models';
 
 import { map as _map, filter as _filter, concat as _concat } from 'lodash';
-import {AxiosError, AxiosResponse} from 'axios';
+import {AxiosError, AxiosInstance, AxiosResponse} from 'axios';
 
 export interface State {
   status: '' | 'loading' | 'failed' | 'success';
@@ -100,6 +100,17 @@ const tokenModule: Module<State, any> = {
           })
           .catch((err: AxiosError) => {
             commit('tokensLoadingFailed', err);
+            reject(err);
+          });
+      });
+    },
+    requestDownload: ({ commit, rootState }, req: { id: string; type: string }): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        (rootState.backend as AxiosInstance).post(`/v1/get-download-token`, req, { maxRedirects: 0})
+          .then((response: AxiosResponse) => {
+            resolve(response.data.location);
+          })
+          .catch((err: AxiosError) => {
             reject(err);
           });
       });

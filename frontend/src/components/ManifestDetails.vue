@@ -20,7 +20,15 @@
         </v-col>
         <v-col md="auto" class="d-flex justify-center align-center">
           <span v-if="manifest.filename!=='(none)'">
-            <span class="font-weight-medium">Filename:</span> {{manifest.filename}}&nbsp;|&nbsp;
+            <span v-if="manifest.type === 'singularity' || manifest.type === 'oras'" class="mr-2">
+              <v-btn raised @click.stop="downloadManifest()">
+                <v-icon>mdi-download</v-icon>
+                {{manifest.filename}}
+              </v-btn>
+            </span>
+            <span v-else>
+              <span class="font-weight-medium">Filename:</span> {{manifest.filename}}&nbsp;|&nbsp;
+            </span>
           </span>
           <span class="font-weight-medium">Size:</span> {{manifest.total_size | prettyBytes() }}
         </v-col>
@@ -109,6 +117,16 @@ export default Vue.extend({
     copyTag(tag: string) {
       this.$copyText(this.manifest.pullCmd(tag))
         .then(() => this.$store.commit('snackbar/showSuccess', "Copied to clipboard"))
+    },
+    downloadManifest() {
+      this.$store.dispatch('tokens/requestDownload', { id: this.manifest.id, type: 'manifest' })
+        .then((location: string) => {
+          console.log(location);
+          window.location.href=location;
+        })
+        .catch(err => {
+          this.$store.commit('snackbar/showError', err);
+        });
     }
   },
 });

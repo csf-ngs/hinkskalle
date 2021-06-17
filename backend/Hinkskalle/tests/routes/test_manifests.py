@@ -126,7 +126,7 @@ class TestManifests(RouteBase):
       'exp': timegm(datetime.utcnow().utctimetuple())+60,
     }, self.app.config['SECRET_KEY'], algorithm='HS256')
 
-    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token.decode('utf8')}")
+    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token}")
     self.assertEqual(ret.status_code, 200)
 
   def test_download_token_user(self):
@@ -142,7 +142,7 @@ class TestManifests(RouteBase):
       'exp': timegm(datetime.utcnow().utctimetuple())+60,
     }, self.app.config['SECRET_KEY'], algorithm='HS256')
 
-    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token.decode('utf8')}")
+    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token}")
     self.assertEqual(ret.status_code, 200)
 
   def test_download_token_user_denied(self):
@@ -158,7 +158,7 @@ class TestManifests(RouteBase):
       'exp': timegm(datetime.utcnow().utctimetuple())+60,
     }, self.app.config['SECRET_KEY'], algorithm='HS256')
 
-    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token.decode('utf8')}")
+    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token}")
     self.assertEqual(ret.status_code, 403)
 
   def test_download_token_expired(self):
@@ -173,7 +173,7 @@ class TestManifests(RouteBase):
       'exp': timegm(datetime.utcnow().utctimetuple())-60,
     }, self.app.config['SECRET_KEY'], algorithm='HS256')
 
-    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token.decode('utf8')}")
+    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token}")
     self.assertEqual(ret.status_code, 401)
 
   def test_download_token_invalid_type(self):
@@ -188,7 +188,7 @@ class TestManifests(RouteBase):
       'exp': timegm(datetime.utcnow().utctimetuple())+60,
     }, self.app.config['SECRET_KEY'], algorithm='HS256')
 
-    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token.decode('utf8')}")
+    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token}")
     self.assertEqual(ret.status_code, 406)
 
   def test_download_token_invalid_type(self):
@@ -203,7 +203,7 @@ class TestManifests(RouteBase):
       'exp': timegm(datetime.utcnow().utctimetuple())+60,
     }, self.app.config['SECRET_KEY'], algorithm='HS256')
 
-    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token.decode('utf8')}")
+    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token}")
     self.assertEqual(ret.status_code, 406)
 
   

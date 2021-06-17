@@ -27,6 +27,7 @@ class ImageSchema(Schema):
   signed = fields.Boolean(allow_none=True)
   signatureVerified = fields.Boolean(allow_none=True)
   encrypted = fields.Boolean(allow_none=True)
+  type = fields.String(dump_only=True)
 
   containerStars = fields.Integer(dump_only=True)
   containerDownloads = fields.Integer(dump_only=True)
@@ -97,6 +98,12 @@ class ImageUploadUrl(db.Model):
       return True
     else:
       return False
+
+class ImageTypes(enum.Enum):
+  singularity = 'singularity'
+  docker = 'docker'
+  oci = 'oci'
+  other = 'other'
 
 class Image(db.Model):
   valid_media_types = {
@@ -185,6 +192,18 @@ class Image(db.Model):
     elif upd is not None:
       self.hide = True
     self._media_type = upd
+
+  @property
+  def type(self) -> str:
+    if self.media_type == 'application/vnd.docker.image.rootfs.diff.tar.gzip':
+      return ImageTypes.docker.name
+    elif self.media_type == 'application/vnd.oci.image.layer.v1.tar+gzip' or self.media_type == 'application/vnd.oci.image.layer.v1.tar':
+      return ImageTypes.oci.name
+    elif self.media_type == self.singularity_media_type:
+      return ImageTypes.singularity.name
+    else:
+      return ImageTypes.other.name
+
 
   @property
   def fingerprints(self) -> set:

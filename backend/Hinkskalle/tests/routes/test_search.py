@@ -90,6 +90,25 @@ class TestSearch(RouteBase):
       self.assertEqual(ret.status_code, 200)
       json = ret.get_json().get('data')
       self.assertDictEqual(json, expected)
+  
+  def test_search_image_hide(self):
+    image1 = _create_image()[0]
+    image1.container_ref.name='Ankylosaurus'
+    image2 = _create_image(hash='sha256.bla', media_type='pr0n')[0]
+    image2.container_ref = image1.container_ref
+    db.session.commit()
+
+    expected = {
+      'container': [ContainerSchema().dump(image1.container_ref).data],
+      'image': [ImageSchema().dump(image1).data],
+      'entity': [],
+      'collection': [],
+    }
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/search?value=ankylo")
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data')
+    self.assertDictEqual(json, expected)
 
   def test_search_image_not_sif(self):
     image1, container, _, _ = _create_image()
@@ -97,7 +116,7 @@ class TestSearch(RouteBase):
     image1_id = image1.id
     container.name='anKYLOsaurus'
 
-    image2 = _create_image(hash='sha256.bla', media_type='pr0n')[0]
+    image2 = _create_image(hash='sha256.bla', media_type='application/vnd.docker.image.rootfs.diff.tar.gzip')[0]
     image2_id = image2.id
     image2.container_ref = container
     db.session.commit()
@@ -124,7 +143,7 @@ class TestSearch(RouteBase):
     json = ret.get_json().get('data')
     self.assertDictEqual(json, {
       'container': [ContainerSchema().dump(container).data],
-      'image': [ImageSchema().dump(image1).data, ImageSchema().dump(image2).data],
+      'image': [ImageSchema().dump(image2).data, ImageSchema().dump(image1).data],
       'entity': [],
       'collection': [],
     })

@@ -18,10 +18,20 @@
         solo flat>
       <template v-slot:item="{ item }">
         <v-list-item-avatar>
-          <v-icon v-if="item.value.type=='Entity'">mdi-account-box-multiple</v-icon>
-          <v-icon v-if="item.value.type=='Collection'">mdi-folder-multiple</v-icon>
-          <v-icon v-if="item.value.type=='Container'">mdi-package</v-icon>
-          <v-icon v-if="item.value.type=='Image'">mdi-file</v-icon>
+          <v-icon v-if="item.value.ctype=='Entity'">mdi-account-box-multiple</v-icon>
+          <v-icon v-else-if="item.value.ctype=='Collection'">mdi-folder-multiple</v-icon>
+          <template v-else-if="item.value.ctype=='Container'">
+            <img v-if="item.value.type=='docker'" v-bind="attrs" v-on="on" src="/docker-logo.png" style="height: 1.2rem; width: 1.7rem;">
+            <img v-else-if="item.value.type=='singularity'" v-bind="attrs" v-on="on" src="/singularity-logo.png" style="height: 1.2rem; width: 1.2rem;">
+            <img v-else-if="item.value.type=='generic'" v-bind="attrs" v-on="on" src="/oras-logo.png" style="height: 1.2rem; width: 1.2rem;">
+            <v-icon v-bind="attrs" v-on="on" v-else-if="item.value.type=='mixed'">mdi-folder-multiple</v-icon>
+          </template>
+          <template v-else-if="item.value.ctype=='Image'">
+            <img v-if="item.value.type=='docker'" v-bind="attrs" v-on="on" src="/docker-logo.png" style="height: 1.2rem; width: 1.7rem;">
+            <img v-else-if="item.value.type=='singularity'" v-bind="attrs" v-on="on" src="/singularity-logo.png" style="height: 1.2rem; width: 1.2rem;">
+            <img v-else-if="item.value.type=='oci'" v-bind="attrs" v-on="on" src="/oci-logo.png" style="height: 1.2rem; width: 1.2rem;">
+            <v-icon v-bind="attrs" v-on="on" v-else-if="item.value.type=='other'">mdi-file-question</v-icon>
+          </template>
         </v-list-item-avatar>
         <v-list-item-content>
           {{item.value.prettyPath}}
@@ -66,13 +76,13 @@ export default Vue.extend({
       const res = this.$store.getters['search/results'] as SearchResult;
       const ret = res ? _flatten([
         [{ header: 'Entities' }],
-        _map(res.entity, e => ({ text: e.name, value: _set(e, 'type', 'Entity') })) as any,
+        _map(res.entity, e => ({ text: e.name, value: _set(e, 'ctype', 'Entity') })) as any,
         [{ header: 'Collections' }],
-        _map(res.collection, e => ({ text: e.name, value: _set(e, 'type', 'Collection') })) as any,
+        _map(res.collection, e => ({ text: e.name, value: _set(e, 'ctype', 'Collection') })) as any,
         [{ header: 'Containers' }],
-        _map(res.container, e => ({ text: e.name, value: _set(e, 'type', 'Container') })) as any,
+        _map(res.container, e => ({ text: e.name, value: _set(e, 'ctype', 'Container') })) as any,
         [{ header: 'Images' }],
-        _map(res.image, i => ({ text: i.containerName, value: _set(i, 'type', 'Image') })) as any,
+        _map(res.image, i => ({ text: i.containerName, value: _set(i, 'ctype', 'Image') })) as any,
       ]) : [];
       return ret;
     },
@@ -98,7 +108,7 @@ export default Vue.extend({
       if (!obj) {
         return;
       }
-      switch(obj.type) {
+      switch(obj.ctype) {
         case 'Entity':
           this.$router.push({ name: 'EntityCollections', params: { entity: obj.entityName }})
           break;

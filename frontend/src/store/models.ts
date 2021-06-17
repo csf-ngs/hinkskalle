@@ -264,6 +264,7 @@ class Image {
   public signed!: boolean
   public size!: number
   public tags!: string[]
+  public type!: string
   public updatedAt!: Date | null
   public uploaded!: boolean
   
@@ -315,6 +316,7 @@ export function plainToImage(json: any): Image {
     obj.signed = json['signed'];
     obj.size = json['size'];
     obj.tags = json['tags'];
+    obj.type = json['type'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
       obj.uploaded = json['uploaded'];
     

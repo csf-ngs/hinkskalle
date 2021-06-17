@@ -1,3 +1,9 @@
+# v4.0.1 (2021-06-17)
+
+- close (all) temporary upload filehandles
+- container/image type symbols in search results
+- direct downloads for singularity + oras manifests
+
 # v4.0.0 (2021-06-17)
 
 - first release with full OCI/ORAS support (OCI conformance tests passing)

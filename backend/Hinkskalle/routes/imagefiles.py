@@ -493,7 +493,7 @@ def _rebuild_chunks(upload: ImageUploadUrl):
   if upload.image_ref.hash != f"sha256.{digest}":
     current_app.logger.error(f"Invalid checksum {upload.image_ref.hash}/{digest}")
     raise errors.UnprocessableEntity(f"Announced hash {upload.image_ref.hash} does not match final hash {digest}")
-  _move_image(tmpf.name, upload.image_ref)
   tmpf.close()
+  _move_image(tmpf.name, upload.image_ref)
   upload.state = UploadStates.completed
   db.session.commit()

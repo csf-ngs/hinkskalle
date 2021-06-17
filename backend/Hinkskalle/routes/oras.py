@@ -416,18 +416,18 @@ def oras_start_upload_session(name):
 
   upload_tmp = os.path.join(current_app.config['IMAGE_PATH'], '_tmp')
   os.makedirs(upload_tmp, exist_ok=True)
-  _, tmpf = tempfile.mkstemp(dir=upload_tmp)
 
   image = Image(container_ref=container, owner=g.authenticated_user, media_type='unknown')
   db.session.add(image)
 
-  upload = ImageUploadUrl(
-    path=tmpf,
-    state=UploadStates.initialized,
-    owner=g.authenticated_user,
-    type=UploadTypes.undetermined,
-    image_ref=image
-  )
+  with tempfile.NamedTemporaryFile(dir=upload_tmp, delete=False) as tmpf:
+    upload = ImageUploadUrl(
+      path=tmpf.name,
+      state=UploadStates.initialized,
+      owner=g.authenticated_user,
+      type=UploadTypes.undetermined,
+      image_ref=image
+    )
   db.session.add(upload)
   db.session.commit()
 
@@ -513,16 +513,15 @@ def oras_push_chunk_init(upload_id):
   os.makedirs(upload_tmp, exist_ok=True)
   upload.path = tempfile.mkdtemp(dir=upload_tmp)
 
-  _, tmpf = tempfile.mkstemp(dir=upload.path)
-
-  chunk = ImageUploadUrl(
-    image_id = upload.image_id,
-    partNumber = 1,
-    path=tmpf,
-    state=UploadStates.initialized,
-    type=UploadTypes.multipart_chunk,
-    parent_ref=upload
-  )
+  with tempfile.NamedTemporaryFile(dir=upload.path, delete=False) as tmpf:
+    chunk = ImageUploadUrl(
+      image_id = upload.image_id,
+      partNumber = 1,
+      path=tmpf.name,
+      state=UploadStates.initialized,
+      type=UploadTypes.multipart_chunk,
+      parent_ref=upload
+    )
   db.session.add(chunk)
   db.session.commit()
   _handle_chunk(chunk)
@@ -655,15 +654,15 @@ def _handle_chunk(chunk: ImageUploadUrl):
   #current_app.logger.debug(f"uploaded {chunk.size}b part {chunk.partNumber} for upload {chunk.parent_ref.id}")
   
 def _next_chunk(upload, chunk):
-  _, tmpf = tempfile.mkstemp(dir=upload.path)
-  next_part = ImageUploadUrl(
-    image_id = upload.image_id,
-    partNumber = chunk.partNumber +1,
-    path = tmpf,
-    state = UploadStates.initialized,
-    type = UploadTypes.multipart_chunk,
-    parent_ref = upload,
-  )
+  with tempfile.NamedTemporaryFile(dir=upload.path, delete=False) as tmpf:
+    next_part = ImageUploadUrl(
+      image_id = upload.image_id,
+      partNumber = chunk.partNumber +1,
+      path = tmpf.name,
+      state = UploadStates.initialized,
+      type = UploadTypes.multipart_chunk,
+      parent_ref = upload,
+    )
   db.session.add(next_part)
 
   db.session.commit()

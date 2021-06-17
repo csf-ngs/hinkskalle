@@ -4,6 +4,7 @@ from flask_rebar import errors, RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
 from sqlalchemy.orm.exc import NoResultFound
 from flask import request, current_app, safe_join, send_file, g, make_response
+from typing import IO, Tuple
 from .images import _get_image
 from .util import _get_service_url
 from Hinkskalle.models import Image, Container, ImageUploadUrl, UploadStates, UploadTypes
@@ -159,18 +160,18 @@ def push_image_v2_init(image_id):
 
   upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
   os.makedirs(upload_tmp, exist_ok=True)
-  _, tmpf = tempfile.mkstemp(dir=upload_tmp)
 
-  upload = ImageUploadUrl(
-    image_id=image.id,
-    size=body.get('filesize'),
-    md5sum=body.get('md5sum'),
-    sha256sum=body.get('sha256sum'),
-    path=tmpf,
-    state=UploadStates.initialized,
-    owner=g.authenticated_user,
-    type=UploadTypes.single,
-  )
+  with tempfile.NamedTemporaryFile(delete=False) as tmpf:
+    upload = ImageUploadUrl(
+      image_id=image.id,
+      size=body.get('filesize'),
+      md5sum=body.get('md5sum'),
+      sha256sum=body.get('sha256sum'),
+      path=tmpf.name,
+      state=UploadStates.initialized,
+      owner=g.authenticated_user,
+      type=UploadTypes.single,
+    )
   db.session.add(upload)
   db.session.commit()
 
@@ -246,19 +247,19 @@ def push_image_v2_multi_part(image_id):
   ).first()
 
   if not part:
-    _, tmpf = tempfile.mkstemp(dir=upload.path)
-    part = ImageUploadUrl(
-      image_id=image.id,
-      size=body.get('partSize'),
-      partNumber=body.get('partNumber'),
-      totalParts=upload.totalParts,
-      sha256sum=body.get('sha256sum'),
-      path=tmpf,
-      state=UploadStates.initialized,
-      type=UploadTypes.multipart_chunk,
-      owner=g.authenticated_user,
-      parent_ref=upload,
-    )
+    with tempfile.NamedTemporaryFile(dir=upload.path, delete=False) as tmpf:
+      part = ImageUploadUrl(
+        image_id=image.id,
+        size=body.get('partSize'),
+        partNumber=body.get('partNumber'),
+        totalParts=upload.totalParts,
+        sha256sum=body.get('sha256sum'),
+        path=tmpf.name,
+        state=UploadStates.initialized,
+        type=UploadTypes.multipart_chunk,
+        owner=g.authenticated_user,
+        parent_ref=upload,
+      )
     db.session.add(part)
 
   upload.state=UploadStates.uploading
@@ -289,7 +290,7 @@ def push_image_v2_upload(upload_id):
   
   upload.state=UploadStates.uploading
   db.session.commit()
-  _, read = _receive_upload(open(upload.path, "wb"), f"sha256.{upload.sha256sum}")
+  fd, read = _receive_upload(open(upload.path, "wb"), f"sha256.{upload.sha256sum}")
 
   if read != upload.size:
     current_app.logger.error(f"Upload size mismatch {read}!={upload.size}")
@@ -399,19 +400,19 @@ def push_image(image_id):
   upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
   os.makedirs(upload_tmp, exist_ok=True)
 
-  tmpf, _ = _receive_upload(tempfile.NamedTemporaryFile(delete=False, dir=upload_tmp), image.hash)
+  tmpf, _ = _receive_upload(tempfile.NamedTemporaryFile('wb', delete=False, dir=upload_tmp), image.hash)
   _move_image(tmpf.name, image)
 
   return 'Danke!'
 
-def _make_filename(image):
+def _make_filename(image: Image) -> str:
   outfn = safe_join(current_app.config.get('IMAGE_PATH'), '_imgs', image.make_filename())
   os.makedirs(os.path.dirname(outfn), exist_ok=True)
   return outfn
 
-def _move_image(tmpf, image):
+def _move_image(tmpf: str, image: Image) -> Image:
   outfn = _make_filename(image)
-  current_app.logger.debug(f"moving image to {outfn}")
+  current_app.logger.debug(f"moving image from {tmpf} to {outfn}")
   shutil.move(tmpf, outfn)
   image.location=os.path.abspath(outfn)
   image.size=os.path.getsize(image.location)
@@ -433,7 +434,7 @@ def _move_image(tmpf, image):
   return image
 
 
-def _receive_upload(tmpf, checksum=None):
+def _receive_upload(tmpf: IO, checksum: str=None) -> Tuple[IO, int]:
   m = hashlib.sha256()
   #current_app.logger.debug(f"starting upload to {tmpf.name}")
 
@@ -474,25 +475,25 @@ def _rebuild_chunks(upload: ImageUploadUrl):
   os.makedirs(upload_tmp, exist_ok=True)
 
   m = hashlib.sha256()
-  _, tmpf = tempfile.mkstemp(dir=upload_tmp)
-  with open(tmpf, "wb") as tmpfh:
-    for chunk in chunks:
-      try:
-        with open(chunk.path, "rb") as chunk_fh:
-          chunk_data = chunk_fh.read()
-          m.update(chunk_data)
-          tmpfh.write(chunk_data)
+  tmpf = tempfile.NamedTemporaryFile('wb', dir=upload_tmp, delete=False)
+  for chunk in chunks:
+    try:
+      with open(chunk.path, "rb") as chunk_fh:
+        chunk_data = chunk_fh.read()
+        m.update(chunk_data)
+        tmpf.file.write(chunk_data)
 
-        chunk.state=UploadStates.completed
-      except FileNotFoundError:
-        db.session.rollback()
-        chunk.state=UploadStates.failed
-        db.session.commit()
-        raise errors.InternalError(f"file not found: {chunk.path}")
+      chunk.state=UploadStates.completed
+    except FileNotFoundError:
+      db.session.rollback()
+      chunk.state=UploadStates.failed
+      db.session.commit()
+      raise errors.InternalError(f"file not found: {chunk.path}")
   digest = m.hexdigest()
   if upload.image_ref.hash != f"sha256.{digest}":
     current_app.logger.error(f"Invalid checksum {upload.image_ref.hash}/{digest}")
     raise errors.UnprocessableEntity(f"Announced hash {upload.image_ref.hash} does not match final hash {digest}")
-  _move_image(tmpf, upload.image_ref)
+  _move_image(tmpf.name, upload.image_ref)
+  tmpf.close()
   upload.state = UploadStates.completed
   db.session.commit()

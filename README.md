@@ -12,7 +12,8 @@ Hinkskalle is supposed to be lightweight!
 
 - full library:// protocol (should be compatible to sylabs cloud), including architecture specific tags and signed containers (with public pgp keyserver or additional software)
 - shub:// *pull only* for legacy clients and pipelines
-- oras:// *pull only* for fancy new technology (full ORAS support in progress)
+- oras:// protocol support for push and pull (not very well tested)
+- [OCI distribution spec compliance](https://github.com/opencontainers/distribution-spec) for [docker](https://docs.docker.com/registry/introduction/) and [oras](https://oras.land/) (not very well tested)
 - simple container storage on local or network filesystems
 - LDAP authentication
 - Minimal permission system
@@ -39,9 +40,9 @@ recommended, but entirely optional (sqlite is fine).
 
 Using docker-compose.
 
-- Get a docker-compose file
+- Get a docker-compose file (e.g. [share/deploy/docker-compose.yml](share/deploy/docker-compose.yml))
 
-- Set up conf/hinkskalle.env, conf/secrets.env, conf/db_secrets.env
+- Set up conf/hinkskalle.env, conf/secrets.env, conf/db_secrets.env (see examples in [share/deploy](share/deploy/))
 
 - docker-compose run api bash
 
@@ -53,9 +54,10 @@ flask localdb add-user # admin
 
 - fire up whole stack
 
-- if using ldap docker-compose exec api bash
+- if using ldap 
 
 ```
+docker-compose exec api bash
 cd backend
 flask ldap sync
 ```
@@ -152,6 +154,8 @@ The necessary patch is provided in
 [share/singularity-plain-http.patch](share/singularity-plain-http.patch) and
 should work an all versions.
 
+ORAS requires a similar patch. If you want to play around with that, apply [share/oras-plain-http.patch](share/oras-plain-http.patch).
+
 Follow the instructions on
 [https://sylabs.io/guides/3.7/admin-guide/installation.html](https://sylabs.io/guides/3.7/admin-guide/installation.html)
 (adjust for the version you would like) and apply the patch between the steps
@@ -160,6 +164,7 @@ Follow the instructions on
 ```bash
 cd ${GOPATH}/src/github.com/sylabs/singularity
 patch -p1 < /path/to/singularity-plain-http.patch
+patch -p1 < /path/to/oras-plain-http.patch
 ```
 
 ## Start Development Server
@@ -184,6 +189,15 @@ nose2
 
 ```bash
 yarn test:unit
+```
+
+## OCI Conformance Tests
+
+Requires a docker image built from [https://github.com/opencontainers/distribution-spec/tree/main/conformance](https://github.com/opencontainers/distribution-spec/tree/main/conformance). The current docker URL points to our internal registry, which you might not have access to.
+
+```bash
+cd share/oci
+./conformance-test.sh
 ```
 
 # Built With

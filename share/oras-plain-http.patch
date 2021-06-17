@@ -1,0 +1,23 @@
+diff --git a/internal/pkg/client/oras/oras.go b/internal/pkg/client/oras/oras.go
+index 812cf4ab2..3e70c904f 100644
+--- a/internal/pkg/client/oras/oras.go
++++ b/internal/pkg/client/oras/oras.go
+@@ -69,7 +69,7 @@ func getResolver(ociAuth *ocitypes.DockerAuthConfig) (remotes.Resolver, error) {
+ 		return docker.NewResolver(opts), nil
+ 	}
+ 
+-	return cli.Resolver(context.Background(), &http.Client{}, false)
++	return cli.Resolver(context.Background(), &http.Client{}, true)
+ }
+ 
+ // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
+@@ -202,6 +202,9 @@ func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
+ 	// majority of registries.
+ 	if _, err := oras.Push(orasctx.Background(), resolver, spec.String(), store, descriptors, oras.WithConfig(conf)); err == nil {
+ 		return nil
++	} else {
++		sylog.Debugf("ORAS push error %s", err)
++
+ 	}
+ 
+ 	// If we fail, try to push without a config at all. This will work with e.g.

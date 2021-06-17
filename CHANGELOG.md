@@ -1,3 +1,12 @@
+# v4.0.0 (2021-06-17)
+
+- first release with full OCI/ORAS support (OCI conformance tests passing)
+
+## Smaller Changes
+
+- frontend uses current URL as window title
+- cascading delete for containers
+
 # v3.1.0 (2021-06-01)
 
 - support for ORAS pull

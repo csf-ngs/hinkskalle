@@ -230,3 +230,33 @@ class TestManifest(ModelBase):
       ]
     }
     self.assertEqual(manifest.filename, 'orasgrunz')
+
+    manifest.content={
+      'layers': [
+        {
+          'mediaType': 'application/vnd.oci.image.layer.v1.tar+gzip', 
+          'digest': 'sha256:1', 
+          'size': 170, 
+          'annotations': { 
+            'org.opencontainers.image.title': 'orasgrunz', 
+            'io.deis.oras.content.unpack': True
+          }
+        },
+      ]
+    }
+    self.assertEqual(manifest.filename, 'orasgrunz.tar.gz')
+
+    manifest.content={
+      'layers': [
+        {
+          'mediaType': 'application/vnd.oci.image.layer.v1.tar', 
+          'digest': 'sha256:1', 
+          'size': 170, 
+          'annotations': { 
+            'org.opencontainers.image.title': 'orasgrunz', 
+            'io.deis.oras.content.unpack': True
+          }
+        },
+      ]
+    }
+    self.assertEqual(manifest.filename, 'orasgrunz.tar')

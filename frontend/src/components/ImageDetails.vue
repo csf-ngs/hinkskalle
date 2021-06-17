@@ -14,7 +14,8 @@
               color="green lighten-1" 
               v-for="tag in image.tags" :key="tag" 
               @click.stop="copyTag(tag)">
-                {{tag}}
+                <v-icon>mdi-content-copy</v-icon>
+                {{tag | abbreviate(20)}}
             </v-chip>
           </span>
         </v-col>

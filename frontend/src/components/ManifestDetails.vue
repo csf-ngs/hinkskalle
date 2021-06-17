@@ -14,6 +14,7 @@
               color="green lighten-1"
               v-for="tag in manifest.tags" :key="tag"
               @click.stop="copyTag(tag)">
+                <v-icon>mdi-content-copy</v-icon>
                 {{tag | abbreviate(20)}}
             </v-chip>
           </span>
@@ -21,7 +22,7 @@
         <v-col md="auto" class="d-flex justify-center align-center">
           <span v-if="manifest.filename!=='(none)'">
             <span v-if="manifest.type === 'singularity' || manifest.type === 'oras'" class="mr-2">
-              <v-btn raised @click.stop="downloadManifest()">
+              <v-btn raised @click.stop="downloadManifest()" class="download-button">
                 <v-icon>mdi-download</v-icon>
                 {{manifest.filename}}
               </v-btn>
@@ -30,7 +31,7 @@
               <span class="font-weight-medium">Filename:</span> {{manifest.filename}}&nbsp;|&nbsp;
             </span>
           </span>
-          <span class="font-weight-medium">Size:</span> {{manifest.total_size | prettyBytes() }}
+          {{manifest.total_size | prettyBytes() }}
         </v-col>
         <v-col class="d-flex justify-end align-center mr-4">
           <div v-if="manifest.type=='singularity'">
@@ -72,6 +73,13 @@
     </v-expansion-panel-content>
   </v-expansion-panel>
 </template>
+<style lang="scss">
+button.download-button {
+  letter-spacing: inherit;
+  text-transform: none;
+  font-family: Roboto Mono, monospace;
+}
+</style>
 <script lang="ts">
 import { Image, Manifest } from '@/store/models';
 import DockerDetails from '@/components/DockerDetails.vue';
@@ -121,7 +129,6 @@ export default Vue.extend({
     downloadManifest() {
       this.$store.dispatch('tokens/requestDownload', { id: this.manifest.id, type: 'manifest' })
         .then((location: string) => {
-          console.log(location);
           window.location.href=location;
         })
         .catch(err => {

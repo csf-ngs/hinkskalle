@@ -17,7 +17,15 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-chip pill class="mr-1" color="pink lighten-4" v-for="tag in up.tags" :key="tag" @click.stop.prevent="copyTag(up.container, tag)">{{tag}}</v-chip>
+            <v-chip pill 
+              class="mr-1" 
+              color="pink lighten-4" 
+              v-for="tag in up.tags" 
+              :key="tag" 
+              @click.stop.prevent="copyTag(up.container, tag)">
+                <v-icon>mdi-content-copy</v-icon>
+                {{tag | abbreviate(20)}}
+            </v-chip>
           </v-card-actions>
         </v-card>
       </v-col>

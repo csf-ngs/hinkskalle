@@ -1,8 +1,14 @@
 from Hinkskalle import db
 from ..route_base import RouteBase
+import re
+import jwt
+from datetime import datetime
+from calendar import timegm
 
 from Hinkskalle.tests.models.test_Image import _create_image
+from .test_imagefiles import _fake_img_file
 from Hinkskalle.models.Manifest import Manifest
+from Hinkskalle.models.Image import Image
 
 class TestManifests(RouteBase):
   def test_list_noauth(self):
@@ -54,4 +60,183 @@ class TestManifests(RouteBase):
 
     with self.fake_auth():
       ret = self.client.get(f'/v1/containers/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}/manifests')
+    self.assertEqual(ret.status_code, 403)
+  
+
+  def test_download(self):
+    image = _create_image()[0]
+    image_id = image.id
+    tmpf = _fake_img_file(image, data=b'oink')
+    manifest = image.generate_manifest()
+
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/manifests/{manifest.id}/download")
+    self.assertEqual(ret.status_code, 200)
+    image = Image.query.get(image_id)
+    self.assertEqual(ret.headers['Content-Disposition'], f'attachment; filename={image.containerName()}')
+    self.assertEqual(ret.headers['Content-Type'], 'application/octet-stream')
+    self.assertEqual(ret.data, b'oink')
+
+  def test_download_not_found(self):
+    image = _create_image()[0]
+    tmpf = _fake_img_file(image, data=b'oink')
+    manifest = image.generate_manifest()
+
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/manifests/{manifest.id+666}/download")
+    self.assertEqual(ret.status_code, 404)
+
+  def test_download_image_not_found(self):
+    image = _create_image()[0]
+    tmpf = _fake_img_file(image, data=b'oink')
+    manifest = image.generate_manifest()
+    cfg = manifest.content_json
+    cfg['layers'][0]['digest'] += 'oink'
+    manifest.content = cfg
+
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/manifests/{manifest.id}/download")
+    self.assertEqual(ret.status_code, 404)
+
+  def test_download_image_not_uploaded(self):
+    image = _create_image()[0]
+    manifest = image.generate_manifest()
+
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/manifests/{manifest.id}/download")
+    self.assertEqual(ret.status_code, 406)
+
+  def test_download_token(self):
+    image = _create_image()[0]
+    tmpf = _fake_img_file(image, data=b'oink')
+    manifest = image.generate_manifest()
+    db.session.commit()
+    token = jwt.encode({
+      'id': manifest.id,
+      'type': 'manifest',
+      'username': self.admin_username,
+      'exp': timegm(datetime.utcnow().utctimetuple())+60,
+    }, self.app.config['SECRET_KEY'], algorithm='HS256')
+
+    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token.decode('utf8')}")
+    self.assertEqual(ret.status_code, 200)
+
+  def test_download_token_user(self):
+    image = _create_image()[0]
+    image.container_ref.owner = self.user
+    tmpf = _fake_img_file(image, data=b'oink')
+    manifest = image.generate_manifest()
+    db.session.commit()
+    token = jwt.encode({
+      'id': manifest.id,
+      'type': 'manifest',
+      'username': self.username,
+      'exp': timegm(datetime.utcnow().utctimetuple())+60,
+    }, self.app.config['SECRET_KEY'], algorithm='HS256')
+
+    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token.decode('utf8')}")
+    self.assertEqual(ret.status_code, 200)
+
+  def test_download_token_user_denied(self):
+    image = _create_image()[0]
+    image.container_ref.owner = self.other_user
+    tmpf = _fake_img_file(image, data=b'oink')
+    manifest = image.generate_manifest()
+    db.session.commit()
+    token = jwt.encode({
+      'id': manifest.id,
+      'type': 'manifest',
+      'username': self.username,
+      'exp': timegm(datetime.utcnow().utctimetuple())+60,
+    }, self.app.config['SECRET_KEY'], algorithm='HS256')
+
+    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token.decode('utf8')}")
+    self.assertEqual(ret.status_code, 403)
+
+  def test_download_token_expired(self):
+    image = _create_image()[0]
+    tmpf = _fake_img_file(image, data=b'oink')
+    manifest = image.generate_manifest()
+    db.session.commit()
+    token = jwt.encode({
+      'id': manifest.id,
+      'type': 'manifest',
+      'username': self.admin_username,
+      'exp': timegm(datetime.utcnow().utctimetuple())-60,
+    }, self.app.config['SECRET_KEY'], algorithm='HS256')
+
+    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token.decode('utf8')}")
+    self.assertEqual(ret.status_code, 401)
+
+  def test_download_token_invalid_type(self):
+    image = _create_image()[0]
+    tmpf = _fake_img_file(image, data=b'oink')
+    manifest = image.generate_manifest()
+    db.session.commit()
+    token = jwt.encode({
+      'id': manifest.id,
+      'type': 'grunz',
+      'username': self.admin_username,
+      'exp': timegm(datetime.utcnow().utctimetuple())+60,
+    }, self.app.config['SECRET_KEY'], algorithm='HS256')
+
+    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token.decode('utf8')}")
+    self.assertEqual(ret.status_code, 406)
+
+  def test_download_token_invalid_type(self):
+    image = _create_image()[0]
+    tmpf = _fake_img_file(image, data=b'oink')
+    manifest = image.generate_manifest()
+    db.session.commit()
+    token = jwt.encode({
+      'id': 'grunz',
+      'type': 'manifest',
+      'username': self.admin_username,
+      'exp': timegm(datetime.utcnow().utctimetuple())+60,
+    }, self.app.config['SECRET_KEY'], algorithm='HS256')
+
+    ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token.decode('utf8')}")
+    self.assertEqual(ret.status_code, 406)
+
+  
+  def test_download_no_auth(self):
+    image = _create_image()[0]
+    tmpf = _fake_img_file(image, data=b'oink')
+    manifest = image.generate_manifest()
+
+    db.session.commit()
+
+    ret = self.client.get(f"/v1/manifests/{manifest.id}/download")
+    self.assertEqual(ret.status_code, 401)
+
+  def test_download_user(self):
+    image = _create_image()[0]
+    image.container_ref.owner = self.user
+    tmpf = _fake_img_file(image, data=b'oink')
+    manifest = image.generate_manifest()
+
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.get(f"/v1/manifests/{manifest.id}/download")
+    self.assertEqual(ret.status_code, 200)
+
+  def test_download_user_denied(self):
+    image = _create_image()[0]
+    image.container_ref.owner = self.other_user
+    tmpf = _fake_img_file(image, data=b'oink')
+    manifest = image.generate_manifest()
+
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.get(f"/v1/manifests/{manifest.id}/download")
     self.assertEqual(ret.status_code, 403)

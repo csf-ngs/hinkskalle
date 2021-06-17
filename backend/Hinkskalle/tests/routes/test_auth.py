@@ -1,4 +1,3 @@
-import unittest
 import datetime
 from flask import g
 from Hinkskalle.tests.route_base import RouteBase
@@ -6,6 +5,8 @@ from Hinkskalle.tests.route_base import RouteBase
 from Hinkskalle.tests.model_base import _create_user
 from Hinkskalle.models import User, Token, Entity
 from Hinkskalle import db
+import re
+import jwt
 
 class TestPasswordAuth(RouteBase):
   def test_password(self):
@@ -81,6 +82,39 @@ class TestPasswordAuth(RouteBase):
       self.assertEqual(ret.status_code, 401)
       self.assertIsNone(g.get('authenticated_user'))
   
+
+
+class TestDownloadToken(RouteBase):
+  def test_get_download_token(self):
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v1/get-download-token", json={ 'type': 'manifest', 'id': '1' })
+    self.assertEqual(ret.status_code, 202)
+    data = ret.get_json()
+    location = ret.headers.get('Location')
+    self.assertTrue(location.endswith(data['location']))
+    temp_token = re.search(r'(.*)\?temp_token=(.*)', location)
+    self.assertIsNotNone(temp_token)
+    self.assertIsNotNone(temp_token[1])
+    self.assertTrue(temp_token[1].endswith('/manifests/1/download'))
+    self.assertIsNotNone(temp_token[2])
+    decoded = jwt.decode(temp_token[2], self.app.config['SECRET_KEY'], algorithms=["HS256"])
+    self.assertEqual(decoded.get('id'), '1')
+    self.assertEqual(decoded.get('type'), 'manifest')
+    self.assertEqual(decoded.get('username'), self.admin_username)
+
+  def test_get_download_token_user(self):
+    with self.fake_auth():
+      ret = self.client.post(f"/v1/get-download-token", json={ 'type': 'manifest', 'id': '1' })
+    self.assertEqual(ret.status_code, 202)
+
+  def test_get_download_noauth(self):
+    ret = self.client.post(f"/v1/get-download-token", json={ 'type': 'manifest', 'id': '1' })
+    self.assertEqual(ret.status_code, 401)
+
+  def test_get_download_token_invalid_type(self):
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v1/get-download-token", json={ 'type': 'oink', 'id': '1' })
+    self.assertEqual(ret.status_code, 406)
 
 
       

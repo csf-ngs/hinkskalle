@@ -55,6 +55,49 @@ class TestOrasPush(RouteBase):
     container = collection.containers_ref.filter(Container.name=='hase').first()
     self.assertIsNotNone(container)
     self.assertEqual(container.createdBy, self.admin_username)
+  
+  def test_push_monolith_create_private(self):
+    image = _create_image('1')[0]
+    image.container_ref.collection_ref.private=True
+    db.session.commit()
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/fintitax1/blobs/uploads/")
+    self.assertEqual(ret.status_code, 202)
+    db_container = Container.query.filter(Container.name=='fintitax1').one()
+    self.assertTrue(db_container.private)
+
+    image = _create_image('2')[0]
+    image.container_ref.collection_ref.private=False
+    db.session.commit()
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/fintitax2/blobs/uploads/")
+    self.assertEqual(ret.status_code, 202)
+    db_container = Container.query.filter(Container.name=='fintitax2').one()
+    self.assertFalse(db_container.private)
+
+  def test_push_monolith_create_private_collection(self):
+    image, container, collection, entity = _create_image('1')
+    entity.defaultPrivate = True
+    db.session.commit()
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/{image.entityName()}/fintitax-coll1/fintitax-cont1/blobs/uploads/")
+    self.assertEqual(ret.status_code, 202)
+    db_collection = Collection.query.filter(Collection.name=='fintitax-coll1').one()
+    self.assertTrue(db_collection.private)
+    db_container = Container.query.filter(Container.name=='fintitax-cont1').one()
+    self.assertTrue(db_container.private)
+
+    image, container, collection, entity = _create_image('2')
+    entity.defaultPrivate = False
+    db.session.commit()
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/{image.entityName()}/fintitax-coll2/fintitax-cont2/blobs/uploads/")
+    self.assertEqual(ret.status_code, 202)
+    db_collection = Collection.query.filter(Collection.name=='fintitax-coll2').one()
+    self.assertFalse(db_collection.private)
+    db_container = Container.query.filter(Container.name=='fintitax-cont2').one()
+    self.assertFalse(db_container.private)
+
    
   def test_push_monolith_mount(self):
     image1 = _create_image(postfix='1')[0]

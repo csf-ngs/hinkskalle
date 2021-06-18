@@ -238,7 +238,7 @@ def oras_manifest(name: str, reference: str):
   # application/vnd.oci.image.manifest.v1+json
   container = _get_container(name)
   if container.private or container.collection_ref.private:
-    if not g.authenticated_user or not container.check_access(g.authenticated_user):
+    if not container.check_access(g.authenticated_user):
       raise OrasDenied(f"Container is private.")
 
   if reference.startswith('sha256:'):
@@ -284,7 +284,7 @@ def oras_blob(name, digest):
   
   container = _get_container(name)
   if container.private or container.collection_ref.private:
-    if not g.authenticated_user or not container.check_access(g.authenticated_user):
+    if not container.check_access(g.authenticated_user):
       raise OrasDenied(f"Private container denied")
   try:
     image = container.images_ref.filter(Image.hash == f"sha256.{digest.replace('sha256:', '')}").one()
@@ -391,6 +391,8 @@ def oras_start_upload_session(name):
       except NoResultFound:
         current_app.logger.debug(f"... creating collection {collection_id}")
         collection = Collection(name=collection_id, entity_ref=entity, owner=g.authenticated_user)
+        if entity.defaultPrivate:
+          collection.private=True
         db.session.add(collection)
         db.session.commit()
       try:
@@ -398,6 +400,8 @@ def oras_start_upload_session(name):
       except NoResultFound:
         current_app.logger.debug(f"... creating container {container_id}")
         container = Container(name=container_id, collection_ref=collection, owner=g.authenticated_user)
+        if collection.private:
+          container.private=True
         db.session.add(container)
         db.session.commit()
     except IntegrityError:

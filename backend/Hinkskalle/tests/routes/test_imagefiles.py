@@ -89,6 +89,17 @@ class TestImagefiles(RouteBase):
     self.assertEqual(ret.status_code, 406)
 
 
+  def test_pull_private_noauth(self):
+    image, container, _, _ = _create_image()
+    latest_tag = Tag(name='latest', image_ref=image)
+    db.session.add(latest_tag)
+    container.private = True
+    db.session.commit()
+
+    tmpf = _fake_img_file(image)
+    ret = self.client.get(f"/v1/imagefile/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 403)
+
   
   def test_pull_private(self):
     image, container, _, _ = _create_image()
@@ -137,6 +148,21 @@ class TestImagefiles(RouteBase):
     ret.close()
     
     tmpf.close()
+
+  def test_pull_private_denied(self):
+    image, container, _, _ = _create_image()
+    latest_tag = Tag(name='latest', image_ref=image)
+    db.session.add(latest_tag)
+    container.private = True
+    container.owner=self.other_user
+    db.session.commit()
+
+    tmpf = _fake_img_file(image)
+    
+    with self.fake_auth():
+      ret = self.client.get(f"/v1/imagefile/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 403)
+    
 
   def test_pull_default_entity(self):
     image, _, _, entity = _create_image()

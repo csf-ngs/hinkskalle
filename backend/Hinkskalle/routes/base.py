@@ -71,7 +71,7 @@ def config():
   }
 
 class LatestContainerSchema(Schema):
-  tags = fields.List(fields.String())
+  tags = fields.List(fields.Dict())
   container = fields.Nested(ContainerSchema)
 
 class LatestContainerListResponseSchema(ResponseSchema):
@@ -95,7 +95,12 @@ def latest_container():
         'tags': [],
         'container': tag.container_ref,
       }
-    ret[tag.container_ref.id]['tags'].append(tag.name)
+    ret[tag.container_ref.id]['tags'].append({
+      'name': tag.name,
+      'arch': tag.arch,
+      'imageType': tag.image_ref.type if tag.image_id else None,
+      'manifestType': tag.manifest_ref.type if tag.manifest_id else None,
+    })
     if len(ret) >= 10:
       break
 

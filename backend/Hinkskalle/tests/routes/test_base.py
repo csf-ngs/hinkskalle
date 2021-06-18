@@ -139,7 +139,7 @@ class TestBase(RouteBase):
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
-    self.assertCountEqual(json[0]['tags'], [ 'v1.0', 'oink'])
+    self.assertCountEqual([ t['name'] for t in json[0]['tags'] ], [ 'v1.0', 'oink'])
 
   def test_latest_user(self):
     image1, container1, _, _ = _create_image()
@@ -149,7 +149,7 @@ class TestBase(RouteBase):
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
-    self.assertCountEqual(json[0]['tags'], [ 'oink' ])
+    self.assertCountEqual([ t['name'] for t in json[0]['tags'] ], [ 'oink' ])
 
   def test_latest_private(self):
     image1, container1, _, _ = _create_image()
@@ -174,7 +174,7 @@ class TestBase(RouteBase):
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
-    self.assertCountEqual(json[0]['tags'], [ 'oink' ])
+    self.assertCountEqual([ t['name'] for t in json[0]['tags'] ], [ 'oink' ])
 
   def test_latest_admin_private(self):
     image1, container1, _, _ = _create_image()
@@ -186,4 +186,4 @@ class TestBase(RouteBase):
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
-    self.assertCountEqual(json[0]['tags'], [ 'oink' ])
+    self.assertCountEqual([ t['name'] for t in json[0]['tags'] ], [ 'oink' ])

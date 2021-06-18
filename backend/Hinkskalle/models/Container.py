@@ -164,10 +164,11 @@ class Container(db.Model):
   def archImageTags(self):
     tags = {}
     for tag in self.tags_ref:
-      if not tag.arch:
+      arch = tag.arch or current_app.config.get('DEFAULT_ARCH')
+      if not arch:
         continue
-      tags[tag.arch] = tags.get(tag.arch, {})
-      tags[tag.arch][tag.name]=str(tag.image_id)
+      tags[arch] = tags.get(arch, {})
+      tags[arch][tag.name]=str(tag.image_id)
     return tags
   
   def check_access(self, user):

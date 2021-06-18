@@ -51,6 +51,8 @@ def create_app():
   if os.path.exists(secrets_conf):
     app.config.from_json(secrets_conf)
 
+  if not app.config.get('DEFAULT_ARCH'):
+    app.config['DEFAULT_ARCH']='amd64'
   if 'HINKSKALLE_SECRET_KEY' in os.environ:
     app.config['SECRET_KEY'] = os.getenv('HINKSKALLE_SECRET_KEY')
   if 'DB_PASSWORD' in os.environ:

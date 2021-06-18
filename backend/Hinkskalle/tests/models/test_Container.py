@@ -241,6 +241,23 @@ class TestContainer(ModelBase):
       'c64': { 'v1': str(image2.id) },
     })
 
+  def test_tag_default_arch(self):
+    container = _create_container()[0]
+    image1 = Image(hash='test-image-1', container_ref=container, arch=None)
+    tag1 = Tag(image_ref=image1, container_ref=container, name='noarch')
+    tag2 = Tag(image_ref=image1, container_ref=container, name='yesarch', arch='c64')
+    db.session.add(image1)
+    db.session.add(tag1)
+    db.session.add(tag2)
+    db.session.commit()
+
+    self.assertDictEqual(container.archImageTags(), {
+      'c64': { 'yesarch': str(image1.id) },
+      self.app.config['DEFAULT_ARCH']: { 'noarch': str(image1.id) },
+    })
+    print(container.archImageTags())
+
+    
 
 
 
@@ -313,6 +330,7 @@ class TestContainer(ModelBase):
     self.assertDictEqual(container.archImageTags(), {
       'powerpc': {'v1': str(image1.id)},
       'alpha': {'v1': str(image2.id)},
+      'amd64': {'v1': str(no_arch.id)},
     })
 
   def test_access(self):

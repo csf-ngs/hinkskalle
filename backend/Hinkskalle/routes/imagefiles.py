@@ -158,7 +158,7 @@ def push_image_v2_init(image_id):
   image = _get_image_id(image_id)
   body = rebar.validated_body
 
-  upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
+  upload_tmp = os.path.join(current_app.config['IMAGE_PATH'], '_tmp')
   os.makedirs(upload_tmp, exist_ok=True)
 
   with tempfile.NamedTemporaryFile(delete=False) as tmpf:
@@ -194,7 +194,7 @@ def push_image_v2_multi_init(image_id):
   image = _get_image_id(image_id)
   body = rebar.validated_body
 
-  upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
+  upload_tmp = os.path.join(current_app.config['IMAGE_PATH'], '_tmp')
   os.makedirs(upload_tmp, exist_ok=True)
   tmpd = tempfile.mkdtemp(dir=upload_tmp)
 
@@ -318,7 +318,14 @@ def push_image_v2_complete(image_id):
   if not upload.check_access(g.authenticated_user):
     raise errors.Forbidden(f"Not allowed to access image")
 
-  _move_image(upload.path, image)
+  try:
+    _move_image(upload.path, image)
+  except Exception as exc:
+    db.session.rollback()
+    upload.state = UploadStates.failed
+    db.session.commit()
+    raise exc
+
   upload.state = UploadStates.completed
   db.session.commit()
   return {
@@ -352,7 +359,13 @@ def push_image_v2_multi_complete(image_id):
   if not upload.type == UploadTypes.multipart:
     raise errors.NotAcceptable(f"Not a multipart upload")
 
-  _rebuild_chunks(upload)
+  try:
+    _rebuild_chunks(upload)
+  except Exception as exc:
+    db.session.rollback()
+    upload.state = UploadStates.failed
+    db.session.commit()
+    raise exc
 
   return {
     'data': {
@@ -397,7 +410,7 @@ def push_image_v2_multi_abort(image_id):
 def push_image(image_id):
   image = _get_image_id(image_id)
 
-  upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
+  upload_tmp = os.path.join(current_app.config['IMAGE_PATH'], '_tmp')
   os.makedirs(upload_tmp, exist_ok=True)
 
   tmpf, _ = _receive_upload(tempfile.NamedTemporaryFile('wb', delete=False, dir=upload_tmp), image.hash)
@@ -412,11 +425,18 @@ def _make_filename(image: Image) -> str:
 
 def _move_image(tmpf: str, image: Image) -> Image:
   outfn = _make_filename(image)
+
+  new_size = os.path.getsize(tmpf)
+  entity = image.container_ref.collection_ref.entity_ref
+  if entity.quota != 0 and entity.used_quota + new_size > entity.quota:
+    raise errors.RequestEntityTooLarge(f'quota exceeded')
+
   current_app.logger.debug(f"moving image from {tmpf} to {outfn}")
   shutil.move(tmpf, outfn)
   image.location=os.path.abspath(outfn)
   image.size=os.path.getsize(image.location)
   image.uploaded=True
+  entity.calculate_used()
   db.session.commit()
 
   try:

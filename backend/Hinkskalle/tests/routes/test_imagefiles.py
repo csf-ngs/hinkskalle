@@ -7,6 +7,7 @@ import hashlib
 from Hinkskalle.tests.route_base import RouteBase
 
 from Hinkskalle.models import Image, Tag, Container
+from Hinkskalle.models.Entity import Entity
 from Hinkskalle.tests.models.test_Image import _create_image
 from Hinkskalle import db
 
@@ -219,7 +220,7 @@ class TestImagefiles(RouteBase):
     # singularity requests with double slash
     ret = self.client.get(f"/v1/imagefile//{image.entityName()}//{image.containerName()}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location', None), rf"/v1/imagefile//{image.entityName()}/default/{image.containerName()}:{latest_tag.name}$")
+    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/imagefile//{image.entityName()}/default/{image.containerName()}:{latest_tag.name}$")
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 308)
     ret = self.client.get(ret.headers.get('Location'))
@@ -242,7 +243,7 @@ class TestImagefiles(RouteBase):
 
     ret = self.client.get(f"/v1/imagefile///{image.containerName()}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location', None), rf"/v1/imagefile//default/{image.containerName()}:{latest_tag.name}$")
+    self.assertRegex(ret.headers.get('Location',''), rf"/v1/imagefile//default/{image.containerName()}:{latest_tag.name}$")
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 308)
     ret = self.client.get(ret.headers.get('Location'))
@@ -254,10 +255,10 @@ class TestImagefiles(RouteBase):
     # singularity requests with double slash
     ret = self.client.get(f"/v1/imagefile////{image.containerName()}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location', None), rf"/v1/imagefile//default//{image.containerName()}:{latest_tag.name}$")
+    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/imagefile//default//{image.containerName()}:{latest_tag.name}$")
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location', None), rf"/v1/imagefile//default/default/{image.containerName()}:{latest_tag.name}$")
+    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/imagefile//default/default/{image.containerName()}:{latest_tag.name}$")
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 308)
     ret = self.client.get(ret.headers.get('Location'))
@@ -267,7 +268,7 @@ class TestImagefiles(RouteBase):
 
     ret = self.client.get(f"/v1/imagefile//{image.containerName()}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location', None), rf"/v1/imagefile/{image.containerName()}:{latest_tag.name}$")
+    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/imagefile/{image.containerName()}:{latest_tag.name}$")
 
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
@@ -310,6 +311,37 @@ class TestImagefiles(RouteBase):
     )
     db_image = Image.query.get(image_id)
     self.assertEqual(db_image.arch, 'amd64')
+  
+  def test_push_quota(self):
+    image, container, _, entity = _create_image()
+    self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
+    img_data, digest = _prepare_img_data()
+    image.hash = digest
+    db.session.commit()
+    entity_id = entity.id
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
+    self.assertEqual(ret.status_code, 200)
+    entity = Entity.query.get(entity_id)
+    self.assertEqual(entity.used_quota, len(img_data))
+
+  def test_push_quota_check(self):
+    image, _, _, entity = _create_image()
+    self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
+    img_data, digest = _prepare_img_data()
+    image.hash = digest
+    entity.quota = len(img_data)-1
+    db.session.commit()
+    image_id = image.id
+    entity_id = entity.id
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
+    self.assertEqual(ret.status_code, 413)
+    image = Image.query.get(image_id)
+    self.assertFalse(image.uploaded)
+
 
   def test_push_readonly(self):
     image, container, _, _ = _create_image()

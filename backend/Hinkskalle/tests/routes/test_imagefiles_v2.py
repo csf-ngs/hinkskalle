@@ -1,3 +1,4 @@
+from Hinkskalle.models.Entity import Entity
 from urllib.parse import urlparse
 import tempfile
 import datetime
@@ -196,6 +197,64 @@ class TestImagefilesV2(RouteBase):
     
     read_upload = ImageUploadUrl.query.get(upload_id)
     self.assertEqual(read_upload.state, UploadStates.completed)
+
+  def test_push_v2_complete_quota(self):
+    self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
+    image, _, _, entity = _create_image()
+    entity_id = entity.id
+    img_data, digest = _prepare_img_data()
+    _, temp_path = tempfile.mkstemp()
+    with open(temp_path, "wb") as temp_fh:
+      temp_fh.write(img_data)
+
+    upload = ImageUploadUrl(
+      image_id = image.id,
+      path = temp_path,
+      sha256sum=digest.replace("sha256.", ""),
+      size=len(img_data),
+      state=UploadStates.uploaded,
+      owner=self.admin_user,
+      type=UploadTypes.single,
+    )
+    db.session.add(upload)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_complete", json={})
+    self.assertEqual(ret.status_code, 200)
+    entity = Entity.query.get(entity_id)
+    self.assertEqual(entity.used_quota, len(img_data))
+
+  def test_push_v2_complete_quota_check(self):
+    self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
+    image, _, _, entity = _create_image()
+    image_id = image.id
+    img_data, digest = _prepare_img_data()
+    entity.quota = len(img_data)-1
+    _, temp_path = tempfile.mkstemp()
+    with open(temp_path, "wb") as temp_fh:
+      temp_fh.write(img_data)
+
+    upload = ImageUploadUrl(
+      image_id = image.id,
+      path = temp_path,
+      sha256sum=digest.replace("sha256.", ""),
+      size=len(img_data),
+      state=UploadStates.uploaded,
+      owner=self.admin_user,
+      type=UploadTypes.single,
+    )
+    db.session.add(upload)
+    db.session.commit()
+    upload_id = upload.id
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_complete", json={})
+    self.assertEqual(ret.status_code, 413)
+    image = Image.query.get(image_id)
+    self.assertFalse(image.uploaded)
+    upload = ImageUploadUrl.query.get(upload_id)
+    self.assertEqual(upload.state, UploadStates.failed)
 
   def test_push_v2_complete_upload_state(self):
     image = _create_image()[0]
@@ -689,6 +748,45 @@ class TestImagefilesV2(RouteBase):
     read_upload = ImageUploadUrl.query.get(upload_id)
     self.assertEqual(read_upload.state, UploadStates.completed)
   
+  def test_push_v2_multi_complete_quota(self):
+    image, upload, parts, complete_data = self._setup_multi_upload()
+    entity_id = image.container_ref.collection_ref.entity_id
+
+    complete_json = {
+      'uploadID': upload.id,
+      'completedParts': [
+        { 'partNumber': p.partNumber, 'token': p.sha256sum } for p in parts
+      ]
+    }
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_json)
+    self.assertEqual(ret.status_code, 200)
+    entity = Entity.query.get(entity_id)
+    self.assertEqual(entity.used_quota, len(complete_data))
+
+  def test_push_v2_multi_complete_quota_check(self):
+    image, upload, parts, complete_data = self._setup_multi_upload()
+    entity = image.container_ref.collection_ref.entity_ref
+    entity.quota = len(complete_data)-1
+    db.session.commit()
+    image_id = image.id
+    upload_id = upload.id
+
+    complete_json = {
+      'uploadID': upload.id,
+      'completedParts': [
+        { 'partNumber': p.partNumber, 'token': p.sha256sum } for p in parts
+      ]
+    }
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_json)
+    self.assertEqual(ret.status_code, 413)
+    image = Image.query.get(image_id)
+    self.assertFalse(image.uploaded)
+    upload = ImageUploadUrl.query.get(upload_id)
+    self.assertEqual(upload.state, UploadStates.failed)
   def test_push_v2_multi_complete_type_invalid(self):
     image, upload, parts, _ = self._setup_multi_upload()
     upload.type = UploadTypes.single

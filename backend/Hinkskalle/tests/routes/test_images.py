@@ -590,6 +590,21 @@ class TestImages(RouteBase):
     self.assertEqual(ret.status_code, 200)
     self.assertIsNone(Image.query.get(image.id))
     self.assertFalse(os.path.exists(image.location))
+
+  def test_delete_quota(self):
+    image, _, _, entity = _create_image()
+    entity_id = entity.id
+    self._fake_uploaded_image(image)
+    image.size=100
+    entity.calculate_used()
+    db.session.commit()
+
+    self.assertEqual(entity.used_quota, 100)
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+    self.assertEqual(ret.status_code, 200)
+    entity = Entity.query.get(entity_id)
+    self.assertEqual(entity.used_quota, 0)
   
   def test_delete_file_ref(self):
     image = _create_image(postfix='polarbear')[0]

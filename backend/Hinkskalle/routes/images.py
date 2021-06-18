@@ -284,6 +284,8 @@ def delete_image(entity_id, collection_id, tagged_container_id):
 def _delete_image(image: Image):
   db.session.delete(image)
   db.session.commit()
+  image.container_ref.collection_ref.entity_ref.calculate_used()
+  db.session.commit()
   if image.uploaded and image.location and os.path.exists(image.location):
     other_refs = Image.query.filter(Image.location==image.location).count()
     if other_refs == 0:

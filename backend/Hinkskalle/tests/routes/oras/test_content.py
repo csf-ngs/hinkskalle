@@ -1,3 +1,4 @@
+from Hinkskalle.models.Entity import Entity
 import os.path
 
 from Hinkskalle.tests.route_base import RouteBase
@@ -342,6 +343,21 @@ class TestOrasContent(RouteBase):
     self.assertEqual(ret.status_code, 202)
     self.assertIsNone(Image.query.get(image_id))
     self.assertFalse(os.path.exists(image.location))
+
+  def test_delete_blob_quota(self):
+    image, _, _, entity = _create_image()
+    _fake_img_file(image)
+    image.size = 100
+    entity.calculate_used()
+    entity_id = entity.id
+    db.session.commit()
+    self.assertEqual(entity.used_quota, 100)
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
+    self.assertEqual(ret.status_code, 202)
+    entity = Entity.query.get(entity_id)
+    self.assertEqual(entity.used_quota, 0)
 
   def test_delete_blob_user(self):
     image, container, collection, entity = _create_image()

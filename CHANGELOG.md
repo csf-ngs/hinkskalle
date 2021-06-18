@@ -1,3 +1,16 @@
+# v4.1.0 (unreleased)
+
+- used size of entities, collections, containers
+- can enforce quotas now
+- latest uploads with container/tag types
+
+### Bugfixes
+
+- default arch for tags with null arch
+- respect entity defaultPrivate and collection private setting when creating containers by oci push
+- deny entity/collection/container create by oci push for users where they should not be able to
+
+
 # v4.0.1 (2021-06-17)
 
 - close (all) temporary upload filehandles

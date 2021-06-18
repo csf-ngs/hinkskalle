@@ -71,6 +71,7 @@ class TestEntities(RouteBase):
       'updatedAt': entity.updatedAt,
       'deletedAt': None,
       'deleted': False,
+      'usedQuota': 0,
     })
   
   def test_get_case(self):

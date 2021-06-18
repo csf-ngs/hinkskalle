@@ -45,6 +45,17 @@ class TestEntity(ModelBase):
     db.session.commit()
 
     self.assertEqual(ent.size(), 1)
+
+  def test_used_quota_null(self):
+    ent = Entity(name='test-quota')
+    self.assertEqual(ent.calculate_used(), 0)
+    self.assertEqual(ent.used_quota, 0)
+
+    image1 = _create_image(postfix='1')[0]
+    image1.container_ref.collection_ref.entity_ref=ent
+    image1.size = None
+    image1.uploaded = True
+    self.assertEqual(ent.calculate_used(), 0)
   
   def test_used_quota(self):
     ent = Entity(name='test-quota')

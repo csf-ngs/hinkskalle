@@ -66,7 +66,7 @@ class Entity(db.Model):
         container_size = 0
         container_counted = {}
         for img in container.images_ref:
-          if not img.uploaded:
+          if not img.uploaded or img.size is None:
             continue
           if not counted.get(img.location):
             counted[img.location]=True

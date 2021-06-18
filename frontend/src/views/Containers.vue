@@ -183,17 +183,7 @@
                     </router-link>
                     <v-divider></v-divider>
                     <v-list dense>
-                      <v-list-item two-line>
-                        <v-list-item-content>
-                          <v-list-item-title>
-                            {{item.description}}
-                          </v-list-item-title>
-                          <v-list-item-subtitle>
-                            {{item.fullDescription}}
-                          </v-list-item-subtitle>
-                        </v-list-item-content>
-                      </v-list-item>
-                      <v-list-item two-line>
+                      <v-list-item>
                         <v-list-item-content>
                           <v-list-item-title class="d-flex justify-space-between">
                             <div>
@@ -205,16 +195,35 @@
                               </v-badge>
                               <container-stars :container="item"></container-stars>
                             </div>
+                            <div>
+                              {{item.usedQuota || 0 | prettyBytes()}}
+                            </div>
                           </v-list-item-title>
+                        </v-list-item-content>
+                      </v-list-item>
+                      <v-list-item two-line>
+                        <v-list-item-content>
+                          <v-list-item-title>
+                            {{item.description || '-'}}
+                          </v-list-item-title>
+                          <v-list-item-subtitle>
+                            {{item.fullDescription || '-'}}
+                          </v-list-item-subtitle>
                         </v-list-item-content>
                       </v-list-item>
                       <v-list-item two-lines>
                         <v-list-item-content>
-                          <v-list-item-title>
-                            {{item.createdAt | moment('YYYY-MM-DD HH:mm')}} | {{item.createdBy}}
+                          <v-list-item-title class="d-flex justify-space-between">
+                            <div>
+                              {{item.createdAt | moment('YYYY-MM-DD HH:mm')}} | {{item.createdBy}}
+                            </div>
+                            <div>
+                              {{item.updatedAt | moment('YYYY-MM-DD HH:mm')}} 
+                            </div>
                           </v-list-item-title>
-                          <v-list-item-subtitle>
-                            Created
+                          <v-list-item-subtitle class="d-flex justify-space-between">
+                            <div>Created</div>
+                            <div>Updated</div>
                           </v-list-item-subtitle>
                         </v-list-item-content>
                       </v-list-item>

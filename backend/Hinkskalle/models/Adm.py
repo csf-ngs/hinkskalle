@@ -6,6 +6,7 @@ from marshmallow import fields, Schema, validate, pre_dump
 
 class AdmKeys(enum.Enum):
   ldap_sync_results = 'ldap_sync_results'
+  check_quotas = 'check_quotas'
 
 class AdmSchema(Schema):
   key = fields.String(required=True, dump_only=True, validate=validate.OneOf([k.name for k in AdmKeys ]))
@@ -22,5 +23,5 @@ class Adm(db.Model):
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String())
-  updatedAt = db.Column(db.DateTime)
+  updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
   updatedBy = db.Column(db.String())

@@ -4,9 +4,9 @@ from flask.cli import AppGroup
 from Hinkskalle import db
 from Hinkskalle import registry, generator
 from Hinkskalle.util.typescript import ModelRenderer
-import os
-import re
+from Hinkskalle.models.Entity import Entity
 import click
+import humanize
 
 ldap_cli = AppGroup('ldap', short_help='manage ldap integration')
 
@@ -16,6 +16,23 @@ def sync_ldap():
   click.echo("starting sync...")
   job = sync_ldap.queue()
   click.echo(f"started sync with job id {job.id}")
+
+quota_cli = AppGroup('quota', short_help='manage quotas')
+@quota_cli.command('all', short_help='update quota usage of all entities')
+def calc_all_quotas():
+  from Hinkskalle.util.jobs import update_quotas
+  click.echo('starting quota calculation...')
+  job = update_quotas.queue()
+  click.echo(f"started quota calc job with id {job.id}")
+
+@quota_cli.command('calc', short_help='calc quota usage for entity')
+@click.argument('username')
+def calc_quota(username: str):
+  entity = Entity.query.filter(Entity.name==username).one()
+  entity.calculate_used()
+  click.echo(f"Entity {entity.name} uses {humanize.naturalsize(entity.used_quota)}/{humanize.naturalsize(entity.quota) if entity.quota else 'unlimited'}")
+
+
 
 db_cli = AppGroup('localdb', short_help='hinkskalle specific db commands')
 
@@ -49,6 +66,7 @@ def remove_user(username):
 
 current_app.cli.add_command(db_cli)
 current_app.cli.add_command(ldap_cli)
+current_app.cli.add_command(quota_cli)
 
 @current_app.cli.command()
 @click.option('--out', default='../frontend/src/store/models.ts', type=click.File(mode='wb'))

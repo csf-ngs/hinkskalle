@@ -16,6 +16,7 @@ setup(
         'Flask-RQ2',
         'ldap3',
         'pyjwt',
+        'humanize',
     ],
     extras_require={
       'dev': ['Jinja2','nose2','fakeredis','psycopg2'],

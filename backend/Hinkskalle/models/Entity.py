@@ -2,6 +2,7 @@ from Hinkskalle import db
 from marshmallow import fields, Schema, validates_schema, ValidationError
 from datetime import datetime
 from sqlalchemy.orm import validates
+from flask import current_app
 from Hinkskalle.util.name_check import validate_name
 
 class EntitySchema(Schema):
@@ -34,7 +35,7 @@ class Entity(db.Model):
   customData = db.Column(db.String())
 
   defaultPrivate = db.Column(db.Boolean, default=False)
-  quota= db.Column(db.BigInteger, default=0)
+  quota= db.Column(db.BigInteger, default=lambda: current_app.config.get('DEFAULT_USER_QUOTA', 0))
   used_quota= db.Column(db.BigInteger, default=0)
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
@@ -54,21 +55,32 @@ class Entity(db.Model):
     return self.collections_ref.count()
 
   def calculate_used(self) -> int:
-    size = 0
+    entity_size = 0
     counted = {}
     # naive implementation. could be faster if we let
     # the db do the heavy lifiting. let's see.
-    for coll in self.collections_ref:
-      for cont in coll.containers_ref:
-        for img in cont.images_ref:
+    for collection in self.collections_ref:
+      collection_size = 0
+      collection_counted = {}
+      for container in collection.containers_ref:
+        container_size = 0
+        container_counted = {}
+        for img in container.images_ref:
           if not img.uploaded:
             continue
-          if counted.get(img.location):
-            continue
-          counted[img.location]=True
-          size += img.size
-    self.used_quota=size
-    return size
+          if not counted.get(img.location):
+            counted[img.location]=True
+            entity_size += img.size
+          if not container_counted.get(img.location):
+            container_counted[img.location]=True
+            container_size += img.size
+          if not collection_counted.get(img.location):
+            collection_counted[img.location]=True
+            collection_size += img.size
+        container.used_quota = container_size
+      collection.used_quota=collection_size
+    self.used_quota=entity_size
+    return entity_size
 
   def check_access(self, user):
     if user.is_admin:

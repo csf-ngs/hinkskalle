@@ -18,6 +18,7 @@ class CollectionSchema(Schema):
   size = fields.Integer(dump_only=True)
   private = fields.Boolean()
   customData = fields.String(allow_none=True)
+  usedQuota = fields.Integer(dump_only=True, attribute='used_quota')
 
   entity = fields.String(required=True)
   entityName = fields.String(dump_only=True)
@@ -37,6 +38,7 @@ class Collection(db.Model):
   description = db.Column(db.String())
   customData = db.Column(db.String())
   private = db.Column(db.Boolean, default=False)
+  used_quota = db.Column(db.BigInteger(), default=0)
 
   entity_id = db.Column(db.Integer, db.ForeignKey('entity.id'), nullable=False)
 

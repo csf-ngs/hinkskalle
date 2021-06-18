@@ -32,6 +32,7 @@ class ContainerSchema(Schema):
   stars = fields.Integer(dump_only=True)
   customData = fields.String(allow_none=True)
   vcsUrl = fields.String(allow_none=True)
+  usedQuota = fields.Integer(dump_only=True, attribute='used_quota')
   createdAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(allow_none=True)
   updatedAt = fields.DateTime(dump_only=True, allow_none=True)
@@ -65,6 +66,7 @@ class Container(db.Model):
   #stars = db.Column(db.Integer, default=0)
   customData = db.Column(db.String())
   vcsUrl = db.Column(db.String())
+  used_quota = db.Column(db.BigInteger(), default=0)
 
   collection_id = db.Column(db.Integer, db.ForeignKey('collection.id'), nullable=False)
 

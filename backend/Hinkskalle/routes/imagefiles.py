@@ -101,7 +101,7 @@ def pull_image(entity_id, collection_id, tagged_container_id):
   if not image.uploaded or not image.location:
     raise errors.NotAcceptable('Image is not uploaded yet?')
   
-  if not image.media_type == Image.singularity_media_type:
+  if image.media_type != Image.singularity_media_type:
     current_app.logger.debug(f"attempting to pull {image.media_type} via library api")
     raise errors.NotAcceptable(f"Not a singularity image")
   

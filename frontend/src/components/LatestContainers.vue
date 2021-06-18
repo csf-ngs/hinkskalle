@@ -13,7 +13,6 @@
             <div class="text-h6">
               {{up.container.fullPath}}
             </div>
-            <v-
             <div>
               <container-type :container="up.container"></container-type>
             </div>

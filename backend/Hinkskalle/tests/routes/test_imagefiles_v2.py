@@ -225,6 +225,44 @@ class TestImagefilesV2(RouteBase):
     entity = Entity.query.get(entity_id)
     self.assertEqual(entity.used_quota, len(img_data))
 
+    data = ret.get_json().get('data')
+    self.assertDictEqual(data.get('quota'), {
+      'quotaTotal': 0,
+      'quotaUsage': len(img_data),
+    })
+
+  def test_push_v2_complete_quota_signal(self):
+    self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
+    image, _, _, entity = _create_image()
+    entity_id = entity.id
+    img_data, digest = _prepare_img_data()
+    entity.quota = len(img_data)*2
+    _, temp_path = tempfile.mkstemp()
+    with open(temp_path, "wb") as temp_fh:
+      temp_fh.write(img_data)
+
+    upload = ImageUploadUrl(
+      image_id = image.id,
+      path = temp_path,
+      sha256sum=digest.replace("sha256.", ""),
+      size=len(img_data),
+      state=UploadStates.uploaded,
+      owner=self.admin_user,
+      type=UploadTypes.single,
+    )
+    db.session.add(upload)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_complete", json={})
+    self.assertEqual(ret.status_code, 200)
+
+    data = ret.get_json().get('data')
+    self.assertDictEqual(data.get('quota'), {
+      'quotaTotal': len(img_data)*2,
+      'quotaUsage': len(img_data),
+    })
+
   def test_push_v2_complete_quota_check(self):
     self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
     image, _, _, entity = _create_image()
@@ -764,6 +802,36 @@ class TestImagefilesV2(RouteBase):
     self.assertEqual(ret.status_code, 200)
     entity = Entity.query.get(entity_id)
     self.assertEqual(entity.used_quota, len(complete_data))
+
+    data = ret.get_json().get('data')
+    self.assertDictEqual(data.get('quota'), {
+      'quotaTotal': 0,
+      'quotaUsage': len(complete_data)
+    })
+
+  def test_push_v2_multi_complete_quota_signal(self):
+    image, upload, parts, complete_data = self._setup_multi_upload()
+    entity = image.container_ref.collection_ref.entity_ref
+    entity.quota = len(complete_data)*2
+    db.session.commit()
+    entity_id = entity.id
+
+    complete_json = {
+      'uploadID': upload.id,
+      'completedParts': [
+        { 'partNumber': p.partNumber, 'token': p.sha256sum } for p in parts
+      ]
+    }
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_json)
+    self.assertEqual(ret.status_code, 200)
+
+    data = ret.get_json().get('data')
+    self.assertDictEqual(data.get('quota'), {
+      'quotaTotal': len(complete_data)*2,
+      'quotaUsage': len(complete_data)
+    })
 
   def test_push_v2_multi_complete_quota_check(self):
     image, upload, parts, complete_data = self._setup_multi_upload()

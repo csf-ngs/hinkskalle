@@ -243,6 +243,54 @@ class TestOrasPush(RouteBase):
       content = infh.read()
       self.assertEqual(content, img_data)
 
+  def test_push_monolith_do_quota(self):
+    image, container, collection, entity = _create_image()
+    entity_id = entity.id
+    img_data, digest = _prepare_img_data()
+
+    _, temp_path = tempfile.mkstemp()
+    upload = ImageUploadUrl(
+      image_id = image.id,
+      path = temp_path,
+      state = UploadStates.initialized,
+      type = UploadTypes.undetermined,
+    )
+    db.session.add(upload)
+    db.session.commit()
+
+    digest = digest.replace('sha256.', 'sha256:')
+    ret = self.client.put(f"/v2/__uploads/{upload.id}?digest={digest}", data=img_data, content_type='application/octet-stream')
+    self.assertEqual(ret.status_code, 201)
+
+    entity = Entity.query.get(entity_id)
+    self.assertEqual(entity.used_quota, len(img_data))
+
+  def test_push_monolith_do_quota_check(self):
+    image, container, collection, entity = _create_image()
+    img_data, digest = _prepare_img_data()
+    image_id = image.id
+    entity.quota = len(img_data)-1
+
+    _, temp_path = tempfile.mkstemp()
+    upload = ImageUploadUrl(
+      image_id = image.id,
+      path = temp_path,
+      state = UploadStates.initialized,
+      type = UploadTypes.undetermined,
+    )
+    db.session.add(upload)
+    db.session.commit()
+    upload_id = upload.id
+
+    digest = digest.replace('sha256.', 'sha256:')
+    ret = self.client.put(f"/v2/__uploads/{upload.id}?digest={digest}", data=img_data, content_type='application/octet-stream')
+    self.assertEqual(ret.status_code, 413)
+    upload = ImageUploadUrl.query.get(upload_id)
+    self.assertEqual(upload.state, UploadStates.failed)
+    image = Image.query.get(image_id)
+    self.assertFalse(image.uploaded)
+
+
   def test_push_monolith_checksum_mismatch(self):
     image = _create_image()[0]
     img_data, digest = _prepare_img_data()
@@ -308,6 +356,31 @@ class TestOrasPush(RouteBase):
     upload = ImageUploadUrl.query.filter(ImageUploadUrl.image_id==db_image.id).first()
     self.assertEqual(upload.type, UploadTypes.single)
     self.assertEqual(upload.state, UploadStates.completed)
+
+  def test_push_single_post_quota(self):
+    image, _, _, entity = _create_image()
+    entity_id = entity.id
+    img_data, digest = _prepare_img_data()
+    digest = digest.replace('sha256.', 'sha256:')
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
+    self.assertEqual(ret.status_code, 201)
+    entity = Entity.query.get(entity_id)
+    self.assertEqual(entity.used_quota, len(img_data))
+
+  def test_push_single_post_quota_check(self):
+    image, _, _, entity = _create_image()
+    image_id = image.id
+    img_data, digest = _prepare_img_data()
+    entity.quota = len(img_data)-1
+    digest = digest.replace('sha256.', 'sha256:')
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
+    self.assertEqual(ret.status_code, 413)
+    image = Image.query.get(image_id)
+    self.assertFalse(image.uploaded)
 
   def test_push_single_post_user(self):
     image, container, collection, entity = _create_image()

@@ -585,11 +585,23 @@ def oras_push_chunk_finish(upload_id, chunk_id):
   try:
     _rebuild_chunks(upload)
   except errors.NotAcceptable as err:
+    db.session.rollback()
+    upload.state = UploadStates.failed
+    db.session.commit()
     current_app.logger.debug(f"rebuild chunks {err}")
     raise OrasBlobUploadInvalid(err.error_message)
   except errors.UnprocessableEntity as err:
+    db.session.rollback()
+    upload.state = UploadStates.failed
+    db.session.commit()
     current_app.logger.debug(f"rebuild chunks {err}")
     raise OrasDigestInvalid(err.error_message)
+  except Exception as err:
+    db.session.rollback()
+    upload.state = UploadStates.failed
+    db.session.commit()
+    raise err
+
   
   blob_url = _get_service_url()+f"/v2/{upload.image_ref.entityName()}/{upload.image_ref.collectionName()}/{upload.image_ref.containerName()}/blobs/{upload.image_ref.hash.replace('sha256.', 'sha256:')}"
   response = make_response('', 201)
@@ -714,19 +726,25 @@ def oras_push_registered(upload_id):
 
   # fresh upload, can still become single upload
   # if we had received a PATCH before this would have been changed to multipart
-  if upload.type == UploadTypes.undetermined:
-    if upload.state != UploadStates.initialized:
-      current_app.logger.debug(f"Upload {upload.id} has invalid state")
-      raise OrasBlobUploadInvalid(f"Upload {upload.id} has invalid state")
-    if upload.expiresAt < datetime.now():
-      current_app.logger.debug(f"Upload {upload.id} expired")
-      raise OrasBlobUploadInvalid(f"Upload already expired. Please to be faster.")
-    upload.type = UploadTypes.single
-
-    image = _receive_upload(upload, digest)
-  else:
+  if upload.type != UploadTypes.undetermined:
     current_app.logger.debug(f"Invalid upload type {upload.type} for {upload.id}")
     raise OrasBlobUploadInvalid(f"Invalid upload type {upload.type}")
+
+  if upload.state != UploadStates.initialized:
+    current_app.logger.debug(f"Upload {upload.id} has invalid state")
+    raise OrasBlobUploadInvalid(f"Upload {upload.id} has invalid state")
+  if upload.expiresAt < datetime.now():
+    current_app.logger.debug(f"Upload {upload.id} expired")
+    raise OrasBlobUploadInvalid(f"Upload already expired. Please to be faster.")
+  upload.type = UploadTypes.single
+
+  try:
+    image = _receive_upload(upload, digest)
+  except Exception as exc:
+    db.session.rollback()
+    upload.state = UploadStates.failed
+    db.session.commit()
+    raise exc
   
   blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName()}/{image.container_ref.collectionName()}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
   response = make_response('', 201)

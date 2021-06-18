@@ -170,6 +170,36 @@ class TestOrasPushChunked(RouteBase):
     header_digest = ret.headers.get('docker-content-digest', '')
     self.assertEqual(header_digest, complete_digest.replace('sha256.', 'sha256:'))
 
+  def test_push_chunk_finish_quota(self):
+    self.app.config['IMAGE_PATH'] = tempfile.mkdtemp()
+    test_data = b'grunz oink muh MUH'
+    image, upload, last_chunk, complete_digest = _prepare_chunked_upload(test_data)
+    entity = image.container_ref.collection_ref.entity_ref
+    entity_id = entity.id
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/__uploads/{upload.id}/{last_chunk.id}?digest={complete_digest.replace('sha256.', 'sha256:')}")
+    self.assertEqual(ret.status_code, 201)
+    entity = Entity.query.get(entity_id)
+    self.assertEqual(entity.used_quota, len(test_data))
+
+  def test_push_chunk_finish_quota_check(self):
+    self.app.config['IMAGE_PATH'] = tempfile.mkdtemp()
+    test_data = b'grunz oink muh MUH'
+    image, upload, last_chunk, complete_digest = _prepare_chunked_upload(test_data)
+    entity = image.container_ref.collection_ref.entity_ref
+    entity.quota = len(test_data)-1
+    db.session.commit()
+    image_id = image.id
+    upload_id = upload.id
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v2/__uploads/{upload.id}/{last_chunk.id}?digest={complete_digest.replace('sha256.', 'sha256:')}")
+    self.assertEqual(ret.status_code, 413)
+    image = Image.query.get(image_id)
+    self.assertFalse(image.uploaded)
+    upload = ImageUploadUrl.query.get(upload_id)
+    self.assertEqual(upload.state, UploadStates.failed)
   def test_push_chunk_finish_checksum(self):
     self.app.config['IMAGE_PATH'] = tempfile.mkdtemp()
     test_data = b'grunz oink muh MUH'

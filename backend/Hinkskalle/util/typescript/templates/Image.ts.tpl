@@ -1,5 +1,7 @@
 {% import '_util.ts.tpl' as utils %}
 
+import { libraryUrl } from '@/util/pullCmds';
+
 class {{classname}} {
   {{utils.auto_attributes(fields)}}
 
@@ -19,7 +21,7 @@ class {{classname}} {
   }
 
   public pullUrl(tag: string) {
-    return `${this.path}:${tag}`
+    return libraryUrl(this, tag);
   }
 }
 

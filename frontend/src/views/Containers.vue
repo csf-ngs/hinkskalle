@@ -170,17 +170,8 @@
                         <v-icon v-if="item.private">mdi-eye-off</v-icon>
                         <v-icon v-if="item.readOnly">mdi-lock</v-icon>
                         <span style="margin-right: 0.35rem;">
-                          <v-tooltip bottom>
-                            <template v-slot:activator="{ on, attrs }">
-                              <img v-if="item.type=='docker'" v-bind="attrs" v-on="on" src="/docker-logo.png" style="height: 1.2rem;">
-                              <img v-else-if="item.type=='singularity'" v-bind="attrs" v-on="on" src="/singularity-logo.png" style="height: 1.2rem;">
-                              <img v-else-if="item.type=='generic'" v-bind="attrs" v-on="on" src="/oras-logo.png" style="height: 1.2rem;">
-                              <v-icon v-bind="attrs" v-on="on" v-else-if="item.type=='mixed'">mdi-folder-multiple</v-icon>
-                            </template>
-                            <span>{{ item.type }}</span>
-                          </v-tooltip>
+                          <container-type :container="item"></container-type>
                         </span>
-
                         {{item.name}}
                         <template v-if="item.vcsUrl">
                           <v-spacer></v-spacer>
@@ -255,6 +246,7 @@ import { clone as _clone, } from 'lodash';
 
 import { Container, Collection, User, checkName } from '../store/models';
 import UserInput from '@/components/UserInput.vue';
+import ContainerType from '@/components/ContainerType.vue';
 
 interface State {
   search: string;
@@ -276,7 +268,7 @@ function defaultItem(): Container {
 
 export default Vue.extend({
   name: 'Containers',
-  components: { 'hsk-user-input': UserInput },
+  components: { 'hsk-user-input': UserInput, ContainerType },
   mounted() {
     this.loadContainers();
   },

@@ -1,6 +1,6 @@
 import { Module } from 'vuex';
 
-import { has as _has } from 'lodash';
+import { has as _has, each as _each, isString as _isString } from 'lodash';
 import { AxiosError } from 'axios';
 
 export function generateMsg(error: AxiosError): string {
@@ -8,8 +8,16 @@ export function generateMsg(error: AxiosError): string {
   if (error.response) {
     msg = `Code ${error.response.status}: `
     const data = error.response.data;
+    console.log(data);
     if (_has(data, 'errors')) {
-      msg += data.errors[0].message;
+      _each(data.errors, (v,k) => {
+        if (_isString(v)) {
+          msg += `${k}: ${v}; `;
+        }
+        else {
+          msg += v.message;
+        }
+      });
     }
     else if (_has(data, 'message')) {
       msg += data.message;

@@ -238,6 +238,8 @@ export function serializeEntity(obj: Entity, unroll=false): any {
 export { Entity };
 
 
+import { libraryUrl } from '@/util/pullCmds';
+
 class Image {
   public arch!: string
   public blob!: string
@@ -285,7 +287,7 @@ class Image {
   }
 
   public pullUrl(tag: string) {
-    return `${this.path}:${tag}`
+    return libraryUrl(this, tag);
   }
 }
 
@@ -615,7 +617,7 @@ export function serializeLdapPing(obj: LdapPing, unroll=false): any {
 export { LdapPing };
 
 
-import { getEnv } from '@/util/env';
+import { pullCmd } from '@/util/pullCmds';
 
 class Manifest {
   public collection!: string
@@ -642,20 +644,10 @@ class Manifest {
   }
 
   public pullCmd(tag: string): string {
-    const backend = (getEnv('VUE_APP_BACKEND_URL') as string).replace(/^https?:\/\//, '');
-    const hasHttps = (getEnv('VUE_APP_BACKEND_URL') as string).startsWith('https');
-    switch(this.type) {
-      case('singularity'):
-        return `singularity pull oras://${backend}${this.path}:${tag}`
-      case('docker'):
-      case('oci'):
-        return `docker pull ${backend}${this.path}:${tag}`
-      case('oras'):
-        return `oras pull ${hasHttps ? '' : '--plain-http '}${backend}${this.path}:${tag}`
-      default:
-        return `curl something`
-    }
+    return pullCmd(this, tag);
   }
+
+ 
 }
 
 export function plainToManifest(json: any): Manifest {
@@ -719,8 +711,15 @@ export interface AdmKey {
 }
 
 
+export interface UploadTag {
+  name: string;
+  arch: string;
+  imageType: string;
+  manifestType: string;
+}
+
 export interface Upload {
-  tags: string[];
+  tags: UploadTag[];
   container: Container;
 }
 

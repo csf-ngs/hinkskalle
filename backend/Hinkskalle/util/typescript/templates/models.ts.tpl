@@ -43,8 +43,15 @@ export interface AdmKey {
 }
 
 
+export interface UploadTag {
+  name: string;
+  arch: string;
+  imageType: string;
+  manifestType: string;
+}
+
 export interface Upload {
-  tags: string[];
+  tags: UploadTag[];
   container: Container;
 }
 

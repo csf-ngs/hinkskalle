@@ -383,12 +383,20 @@ def oras_start_upload_session(name):
       try:
         entity = Entity.query.filter(func.lower(Entity.name)==entity_id.lower()).one()
       except NoResultFound:
+        if not g.authenticated_user.is_admin and entity_id.lower() != g.authenticated_user.username.lower():
+          current_app.logger.debug(f"User {g.authenticated_user.username} tried to create {entity_id}")
+          raise OrasDenied(f"Can only push to username entity")
+
         current_app.logger.debug(f"... creating entity {entity_id}")
         entity = Entity(name=entity_id, owner=g.authenticated_user)
         db.session.add(entity)
       try:
         collection = entity.collections_ref.filter(func.lower(Collection.name)==collection_id.lower()).one()
       except NoResultFound:
+        if not entity.check_update_access(g.authenticated_user):
+          current_app.logger.debug(f"User {g.authenticated_user.username} tried to create {entity_id}/{collection_id}")
+          raise OrasDenied(f"Cannot create collections in {entity.name}")
+
         current_app.logger.debug(f"... creating collection {collection_id}")
         collection = Collection(name=collection_id, entity_ref=entity, owner=g.authenticated_user)
         if entity.defaultPrivate:
@@ -398,6 +406,10 @@ def oras_start_upload_session(name):
       try:
         container = collection.containers_ref.filter(func.lower(Container.name)==container_id.lower()).one()
       except NoResultFound:
+        if not collection.check_update_access(g.authenticated_user):
+          current_app.logger.debug(f"User {g.authenticated_user.username} tried to create {entity_id}/{collection_id}/{container_id}")
+          raise OrasDenied(f"Cannot create containers in {entity_id}/{collection_id}")
+
         current_app.logger.debug(f"... creating container {container_id}")
         container = Container(name=container_id, collection_ref=collection, owner=g.authenticated_user)
         if collection.private:
@@ -409,7 +421,7 @@ def oras_start_upload_session(name):
       current_app.logger.debug(f"race condition alert")
       container = _get_container(name)
 
-  if not container.check_access(g.authenticated_user):
+  if not container.check_update_access(g.authenticated_user):
     raise OrasDenied(f"Not your container")
   
   if container.readOnly:

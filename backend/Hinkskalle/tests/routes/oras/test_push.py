@@ -56,6 +56,33 @@ class TestOrasPush(RouteBase):
     self.assertIsNotNone(container)
     self.assertEqual(container.createdBy, self.admin_username)
   
+  def test_push_monolith_create_user(self):
+    with self.fake_auth():
+      ret = self.client.post(f"/v2/test/hase/stall/blobs/uploads/", headers={'Content-Length': 0 })
+    self.assertEqual(ret.status_code, 403)
+    with self.fake_auth():
+      ret = self.client.post(f"/v2/{self.username}/hase/stall/blobs/uploads/", headers={'Content-Length': 0 })
+    self.assertEqual(ret.status_code, 202)
+
+    entity = Entity(name='test', owner=self.other_user)
+    db.session.add(entity)
+    with self.fake_auth():
+      ret = self.client.post(f"/v2/{entity.name}/hase/stall/blobs/uploads/", headers={'Content-Length': 0 })
+    self.assertEqual(ret.status_code, 403)
+    self.assertIsNone(Collection.query.filter(Collection.name=='hase', Collection.entity_id==entity.id).first())
+
+    _, _, collection, entity = _create_image()
+    entity.owner = self.other_user
+    collection.owner = self.other_user
+
+    db.session.commit()
+    with self.fake_auth():
+      ret = self.client.post(f"/v2/{entity.name}/{collection.name}/stall/blobs/uploads/", headers={'Content-Length': 0 })
+    self.assertEqual(ret.status_code, 403)
+    self.assertIsNone(Container.query.filter(Container.name=='stall', Container.collection_id==collection.id).first())
+    
+
+  
   def test_push_monolith_create_private(self):
     image = _create_image('1')[0]
     image.container_ref.collection_ref.private=True

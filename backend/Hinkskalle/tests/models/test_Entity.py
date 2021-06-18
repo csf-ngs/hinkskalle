@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta
+from enum import Enum
 
 from Hinkskalle.tests.model_base import ModelBase, _create_user
 from Hinkskalle.models import Entity, EntitySchema, Collection
 from Hinkskalle import db
+from .test_Image import _create_image
 
 class TestEntity(ModelBase):
 
@@ -43,6 +45,44 @@ class TestEntity(ModelBase):
     db.session.commit()
 
     self.assertEqual(ent.size(), 1)
+  
+  def test_used_quota(self):
+    ent = Entity(name='test-quota')
+    self.assertEqual(ent.calculate_used(), 0)
+    self.assertEqual(ent.used_quota, 0)
+
+    image1 = _create_image('1')[0]
+    image1.container_ref.collection_ref.entity_ref=ent
+    image1.size=200
+    image1.location='/da/ham1'
+    image1.uploaded=True
+    
+    self.assertEqual(ent.calculate_used(), 200)
+    self.assertEqual(ent.used_quota, 200)
+
+    image2 = _create_image('2')[0]
+    image2.container_ref.collection_ref.entity_ref=ent
+    image2.size=300
+    image2.location='/da/ham2'
+    image2.uploaded=True
+
+    self.assertEqual(ent.calculate_used(), 500)
+
+    image2_same = _create_image('2_same')[0]
+    image2_same.container_ref.collection_ref.entity_ref=ent
+    image2_same.size=300
+    image2_same.location='/da/ham2'
+    image2_same.uploaded=True
+
+    self.assertEqual(ent.calculate_used(), 500)
+
+    image3_upl = _create_image('3')[0]
+    image3_upl.container_ref.collection_ref.entity_ref=ent
+    image3_upl.size=300
+    image3_upl.location='/da/ham3'
+    image3_upl.uploaded=False
+
+    self.assertEqual(ent.calculate_used(), 500)
 
   def test_access(self):
     admin = _create_user(name='admin.oink', is_admin=True)
@@ -81,4 +121,8 @@ class TestEntity(ModelBase):
 
     self.assertIsNone(serialized.data['deletedAt'])
     self.assertFalse(serialized.data['deleted'])
+
+    entity.used_quota = 999
+    serialized = schema.dump(entity)
+    self.assertEqual(serialized.data['usedQuota'], 999)
 

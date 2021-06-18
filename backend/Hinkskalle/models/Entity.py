@@ -14,7 +14,8 @@ class EntitySchema(Schema):
   deletedAt = fields.DateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
   size = fields.Integer(dump_only=True)
-  quota = fields.Integer(dump_only=True)
+  quota = fields.Integer()
+  usedQuota = fields.Integer(dump_only=True, attribute='used_quota')
   defaultPrivate = fields.Boolean()
   customData = fields.String(allow_none=True)
 
@@ -33,7 +34,8 @@ class Entity(db.Model):
   customData = db.Column(db.String())
 
   defaultPrivate = db.Column(db.Boolean, default=False)
-  quota = db.Column(db.Integer, default=0)
+  quota= db.Column(db.BigInteger, default=0)
+  used_quota= db.Column(db.BigInteger, default=0)
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
@@ -50,6 +52,23 @@ class Entity(db.Model):
 
   def size(self):
     return self.collections_ref.count()
+
+  def calculate_used(self) -> int:
+    size = 0
+    counted = {}
+    # naive implementation. could be faster if we let
+    # the db do the heavy lifiting. let's see.
+    for coll in self.collections_ref:
+      for cont in coll.containers_ref:
+        for img in cont.images_ref:
+          if not img.uploaded:
+            continue
+          if counted.get(img.location):
+            continue
+          counted[img.location]=True
+          size += img.size
+    self.used_quota=size
+    return size
 
   def check_access(self, user):
     if user.is_admin:

@@ -31,6 +31,7 @@ class Collection {
   public private!: boolean
   public size!: number
   public updatedAt!: Date | null
+  public usedQuota!: number
   
 
   public get collectionName(): string {
@@ -64,7 +65,8 @@ export function plainToCollection(json: any): Collection {
     obj.private = json['private'];
     obj.size = json['size'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
-      
+      obj.usedQuota = json['usedQuota'];
+    
   return obj;
 }
 export function serializeCollection(obj: Collection, unroll=false): any {
@@ -107,6 +109,7 @@ class Container {
   public stars!: number
   public type!: string
   public updatedAt!: Date | null
+  public usedQuota!: number
   public vcsUrl!: string
   
 
@@ -150,7 +153,8 @@ export function plainToContainer(json: any): Container {
     obj.stars = json['stars'];
     obj.type = json['type'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
-      obj.vcsUrl = json['vcsUrl'];
+      obj.usedQuota = json['usedQuota'];
+    obj.vcsUrl = json['vcsUrl'];
     
   return obj;
 }
@@ -173,6 +177,7 @@ export function serializeContainer(obj: Container, unroll=false): any {
 export { Container };
 
 
+import { prettyBytes, unPrettyBytes } from '@/util/pretty';
 class Entity {
   public collections!: string
   public createdAt!: Date | null
@@ -187,6 +192,7 @@ class Entity {
   public quota!: number
   public size!: number
   public updatedAt!: Date | null
+  public usedQuota!: number
   
 
   public get entityName(): string {
@@ -201,6 +207,13 @@ class Entity {
 
   public canEdit(user: User | null): boolean {
     return !!user && (user.isAdmin || this.createdBy===user.username);
+  }
+
+  public get prettyQuota(): string {
+    return prettyBytes(this.quota);
+  }
+  public set prettyQuota(quota: string) {
+    this.quota = unPrettyBytes(quota);
   }
   
 }
@@ -220,7 +233,8 @@ export function plainToEntity(json: any): Entity {
     obj.quota = json['quota'];
     obj.size = json['size'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
-      
+      obj.usedQuota = json['usedQuota'];
+    
   return obj;
 }
 export function serializeEntity(obj: Entity, unroll=false): any {
@@ -230,6 +244,7 @@ export function serializeEntity(obj: Entity, unroll=false): any {
       json['defaultPrivate'] = obj.defaultPrivate
       json['description'] = obj.description
       json['name'] = obj.name
+      json['quota'] = obj.quota
       
   return json;
 }

@@ -1,5 +1,6 @@
 {% import '_util.ts.tpl' as utils %}
 
+import { prettyBytes, unPrettyBytes } from '@/util/pretty';
 class {{classname}} {
   {{utils.auto_attributes(fields)}}
 
@@ -15,6 +16,13 @@ class {{classname}} {
 
   public canEdit(user: User | null): boolean {
     return !!user && (user.isAdmin || this.createdBy===user.username);
+  }
+
+  public get prettyQuota(): string {
+    return prettyBytes(this.quota);
+  }
+  public set prettyQuota(quota: string) {
+    this.quota = unPrettyBytes(quota);
   }
   
 }

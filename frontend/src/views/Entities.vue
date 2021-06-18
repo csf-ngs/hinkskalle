@@ -64,8 +64,23 @@
                               label="Description"
                               field="description"
                               :obj="localState.editItem"
-                              required
                               @updated="localState.editItem=$event"></hsk-text-input>
+                          </v-col>
+                        </v-row>
+                        <v-row>
+                          <v-col cols="12" md="6">
+                            <hsk-text-input
+                              id="quota"
+                              label="Quota (0 = unlimited)"
+                              field="prettyQuota"
+                              :obj="localState.editItem"
+                              @updated="localState.editItem=$event"></hsk-text-input>
+                          </v-col>
+                          <v-col cols="12" md="6">
+                            <hsk-text-input
+                              id="usedQuota"
+                              label="Space Used"
+                              :static-value="localState.editItem.usedQuota || 0 | prettyBytes()"></hsk-text-input>
                           </v-col>
                         </v-row>
                         <v-row>
@@ -136,12 +151,25 @@
                       <v-card-title class="headline">
                         <v-icon v-if="item.defaultPrivate">mdi-eye-off</v-icon>
                         {{item.name}}
-                        ({{item.size}} {{item.size | pluralize('collection')}})
                       </v-card-title>
                     </router-link>
                     <v-divider></v-divider>
                     <v-list dense>
-                      <v-list-item two-line>
+                      <v-list-item>
+                        <v-list-item-content>
+                          <v-list-item-title class="d-flex justify-space-between">
+                            <div>
+                              {{item.size}} {{item.size | pluralize('collection')}}
+                            </div>
+                            <div>
+                              {{item.usedQuota | prettyBytes()}}
+                              <span v-if="item.quota === 0">/ &infin;</span>
+                              <span v-else>/ {{item.quota | prettyBytes()}}</span>
+                            </div>
+                          </v-list-item-title>
+                        </v-list-item-content>
+                      </v-list-item>
+                      <v-list-item>
                         <v-list-item-content>
                           <v-list-item-title>
                             {{item.description}}
@@ -150,11 +178,17 @@
                       </v-list-item>
                       <v-list-item two-lines>
                         <v-list-item-content>
-                          <v-list-item-title>
-                            {{item.createdAt | moment('YYYY-MM-DD HH:mm')}} | {{item.createdBy}}
+                          <v-list-item-title class="d-flex justify-space-between">
+                            <div>
+                              {{item.createdAt | moment('YYYY-MM-DD HH:mm')}} | {{item.createdBy}}
+                            </div>
+                            <div>
+                              {{item.updatedAt | moment('YYYY-MM-DD HH:mm')}} 
+                            </div>
                           </v-list-item-title>
-                          <v-list-item-subtitle>
-                            Created
+                          <v-list-item-subtitle class="d-flex justify-space-between">
+                            <div>Created</div>
+                            <div>Updated</div>
                           </v-list-item-subtitle>
                         </v-list-item-content>
                       </v-list-item>

@@ -1,7 +1,7 @@
 from flask.helpers import url_for
 from flask_rebar.validation import RequestSchema
 from Hinkskalle.util import auth
-from Hinkskalle import registry, authenticator, rebar
+from Hinkskalle import registry, authenticator, rebar, db
 
 from Hinkskalle.util.auth.token import Scopes
 
@@ -86,5 +86,10 @@ def download_manifest(manifest_id):
   
   if not image.uploaded:
     raise errors.NotAcceptable(f"Image not uploaded")
+  
+  image.downloadCount += 1
+  image.container_ref.downloadCount += 1
+  manifest.downloadCount += 1
+  db.session.commit()
   
   return send_file(image.location, as_attachment=True, attachment_filename=fn)

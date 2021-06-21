@@ -263,6 +263,9 @@ def oras_manifest(name: str, reference: str):
 
   manifest_type = manifest.content_json.get('mediaType', 'application/vnd.oci.image.manifest.v1+json')
 
+  manifest.downloadCount += 1
+  db.session.commit()
+
   response = make_response(manifest.content)
   response.headers['Content-Type']=manifest_type
   response.headers['Docker-Content-Digest']=f'sha256:{manifest.hash}'
@@ -291,6 +294,10 @@ def oras_blob(name, digest):
   except NoResultFound:
     current_app.logger.debug(f"hash {digest} for container {container.id} not found")
     raise OrasBlobUnknwon(f"Blob {digest} not found")
+
+  image.downloadCount += 1
+  container.downloadCount += 1
+  db.session.commit()
   
   return send_file(image.location) 
 

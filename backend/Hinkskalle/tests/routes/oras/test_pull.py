@@ -235,12 +235,16 @@ class TestOrasPull(RouteBase):
 
     manifest = Manifest(content='{"oi": "nk"}', container_ref=image.container_ref)
     latest_tag.manifest_ref=manifest
+    db.session.commit()
+    manifest_id = manifest.id
 
     with self.fake_auth():
       ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/sha256:{manifest.hash}")
     self.assertEqual(ret.status_code, 200)
 
     self.assertDictEqual(ret.get_json(), {'oi': 'nk'})
+    manifest = Manifest.query.get(manifest_id)
+    self.assertEqual(manifest.downloadCount, 1)
 
   def test_manifest_hash_notfound(self):
     image = _create_image()[0]
@@ -256,12 +260,17 @@ class TestOrasPull(RouteBase):
 
   def test_blob(self):
     image = _create_image()[0]
+    image_id = image.id
     file = _fake_img_file(image)
 
     with self.fake_auth():
       ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b'Hello Dorian!')
+    image = Image.query.get(image_id)
+    self.assertEqual(image.downloadCount, 1)
+    self.assertEqual(image.container_ref.downloadCount, 1)
+
 
   def test_blob_noauth(self):
     image = _create_image()[0]

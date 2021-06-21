@@ -68,6 +68,7 @@ class TestManifests(RouteBase):
     image_id = image.id
     tmpf = _fake_img_file(image, data=b'oink')
     manifest = image.generate_manifest()
+    manifest_id = manifest.id
 
     db.session.commit()
 
@@ -78,6 +79,11 @@ class TestManifests(RouteBase):
     self.assertEqual(ret.headers['Content-Disposition'], f'attachment; filename={image.containerName()}')
     self.assertEqual(ret.headers['Content-Type'], 'application/octet-stream')
     self.assertEqual(ret.data, b'oink')
+    self.assertEqual(image.downloadCount, 1)
+    self.assertEqual(image.container_ref.downloadCount, 1)
+
+    manifest = Manifest.query.get(manifest_id)
+    self.assertEqual(manifest.downloadCount, 1)
 
   def test_download_not_found(self):
     image = _create_image()[0]

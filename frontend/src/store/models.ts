@@ -642,6 +642,7 @@ class Manifest {
   public content!: any
   public createdAt!: Date | null
   public createdBy!: string
+  public downloadCount!: number
   public entity!: string
   public entityName!: string
   public filename!: string
@@ -674,6 +675,7 @@ export function plainToManifest(json: any): Manifest {
     obj.content = json['content'];
     obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
       obj.createdBy = json['createdBy'];
+    obj.downloadCount = json['downloadCount'];
     obj.entity = json['entity'];
     obj.entityName = json['entityName'];
     obj.filename = json['filename'];

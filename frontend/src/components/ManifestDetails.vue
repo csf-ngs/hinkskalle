@@ -32,6 +32,9 @@
             </span>
           </span>
           {{manifest.total_size | prettyBytes() }}
+          <v-badge :content="manifest.downloadCount || '0'" :color="badgeColor">
+            <v-icon>mdi-download</v-icon>
+          </v-badge>
         </v-col>
         <v-col class="d-flex justify-end align-center mr-4">
           <div v-if="manifest.type=='singularity'">
@@ -120,6 +123,12 @@ export default Vue.extend({
       .catch(err => {
         this.$store.commit('snackbar/showError', err);
       });
+  },
+  computed: {
+    badgeColor() {
+      return this.manifest.downloadCount ?
+        'blue darken-1' : 'blue-grey lighten-1'
+    }
   },
   methods: {
     copyTag(tag: string) {

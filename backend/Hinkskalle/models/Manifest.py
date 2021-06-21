@@ -56,6 +56,7 @@ class ManifestSchema(Schema):
   type = fields.String(dump_only=True)
   total_size = fields.Integer(dump_only=True)
   filename = fields.String(dump_only=True)
+  downloadCount = fields.Integer(dump_only=True)
 
   container = fields.String(required=True)
   containerName = fields.String(dump_only=True)
@@ -77,6 +78,7 @@ class Manifest(db.Model):
   tags = db.relationship('Tag', back_populates='manifest_ref')
 
   hash = db.Column(db.String(), nullable=False)
+  downloadCount = db.Column(db.Integer, default=0)
   _content = db.Column('content', db.String(), nullable=False)
 
   createdAt = db.Column(db.DateTime, default=datetime.now)

@@ -1,4 +1,4 @@
-# v4.1.0 (unreleased)
+# v4.1.0 (2021-06-21)
 
 - used size of entities, collections, containers
 - can enforce quotas now
@@ -9,6 +9,7 @@
 - default arch for tags with null arch
 - respect entity defaultPrivate and collection private setting when creating containers by oci push
 - deny entity/collection/container create by oci push for users where they should not be able to
+- oci pulls increment download counters
 
 
 # v4.0.1 (2021-06-17)

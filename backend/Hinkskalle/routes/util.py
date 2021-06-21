@@ -2,8 +2,13 @@ from flask import current_app, request
 from flask_rebar import errors
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
+from flask_rebar import RequestSchema
+from marshmallow import fields
 
 from Hinkskalle.models import Entity, Collection, Container
+
+class DownloadQuerySchema(RequestSchema):
+  temp_token = fields.String(required=False)
 
 def _get_service_url():
   service_url = request.url_root.rstrip('/')

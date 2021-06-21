@@ -11,12 +11,12 @@ import os
 import os.path
 import json
 import datetime
+import jwt
 
+from Hinkskalle.models.User import User
 from Hinkskalle.models.Image import Image
-from Hinkskalle.models.Entity import Entity
-from Hinkskalle.models.Collection import Collection
 from Hinkskalle.models import ImageSchema, Container
-from .util import _get_container
+from .util import _get_container, DownloadQuerySchema
 
 class ImageQuerySchema(RequestSchema):
   arch = fields.String(required=False)

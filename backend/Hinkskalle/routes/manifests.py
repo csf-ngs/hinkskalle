@@ -17,7 +17,7 @@ from Hinkskalle.models.Manifest import Manifest, ManifestSchema, ManifestTypes
 from Hinkskalle.models.Image import Image
 from Hinkskalle.models.User import User
 
-from .util import _get_container
+from .util import _get_container, DownloadQuerySchema
 
 class ManifestListResponseSchema(ResponseSchema):
   data = fields.Nested(ManifestSchema, many=True)
@@ -35,14 +35,10 @@ def list_manifests(entity_id, collection_id, container_id):
   
   return { 'data': list(container.manifests_ref) }
 
-class DownloadManifestQuerySchema(RequestSchema):
-  temp_token=fields.String(required=False)
-
-
 @registry.handles(
   rule='/v1/manifests/<string:manifest_id>/download',
   method='GET',
-  query_string_schema=DownloadManifestQuerySchema(),
+  query_string_schema=DownloadQuerySchema(),
   authenticators=authenticator.with_scope(Scopes.optional)
 )
 def download_manifest(manifest_id):

@@ -682,6 +682,3 @@ class TestImages(RouteBase):
     db.session.commit()
     with open(image.location, 'w') as outfh:
       outfh.write('I am Testhase!')
-
-
-

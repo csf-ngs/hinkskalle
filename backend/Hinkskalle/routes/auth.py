@@ -1,6 +1,7 @@
 from flask.helpers import make_response
 from Hinkskalle import registry, password_checkers, authenticator, rebar, db
-from Hinkskalle.models import TokenSchema, User, Token, Entity
+from Hinkskalle.models.Entity import Entity
+from Hinkskalle.models.User import TokenSchema, Token, User
 from Hinkskalle.util.auth.token import Scopes
 from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword
 from flask_rebar import RequestSchema, ResponseSchema, errors
@@ -25,6 +26,8 @@ class GetTokenResponseSchema(ResponseSchema):
 class GetDownloadTokenSchema(RequestSchema):
   type = fields.String(required=True)
   id = fields.String(required=True)
+  username = fields.String(required=False)
+  exp = fields.Integer(required=False)
 
 @registry.handles(
   rule='/v1/token-status',
@@ -73,12 +76,16 @@ def get_token():
 )
 def get_download_token():
   data = rebar.validated_body
+  if not g.authenticated_user.is_admin:
+    if data.get('exp') or data.get('username'):
+      raise errors.Forbidden(f"cannot override username and expiration date")
+
   if data['type'] == 'manifest':
     encoded_jwt = jwt.encode({ 
       'id': data['id'],
       'type': 'manifest',
-      'username': g.authenticated_user.username,
-      'exp': timegm(datetime.utcnow().utctimetuple())+60,
+      'username': data.get('username', g.authenticated_user.username),
+      'exp': data.get('exp', timegm(datetime.utcnow().utctimetuple())+60),
     }, current_app.config['SECRET_KEY'], algorithm="HS256")
     target = url_for('download_manifest', manifest_id=data['id'], temp_token=encoded_jwt)
   else:

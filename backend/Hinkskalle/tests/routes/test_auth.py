@@ -3,7 +3,8 @@ from flask import g
 from Hinkskalle.tests.route_base import RouteBase
 
 from Hinkskalle.tests.model_base import _create_user
-from Hinkskalle.models import User, Token, Entity
+from Hinkskalle.models.User import Token
+from Hinkskalle.models.Entity import Entity
 from Hinkskalle import db
 import re
 import jwt
@@ -90,7 +91,7 @@ class TestDownloadToken(RouteBase):
       ret = self.client.post(f"/v1/get-download-token", json={ 'type': 'manifest', 'id': '1' })
     self.assertEqual(ret.status_code, 202)
     data = ret.get_json()
-    location = ret.headers.get('Location')
+    location = ret.headers.get('Location', '')
     self.assertTrue(location.endswith(data['location']))
     temp_token = re.search(r'(.*)\?temp_token=(.*)', location)
     self.assertIsNotNone(temp_token)
@@ -101,11 +102,35 @@ class TestDownloadToken(RouteBase):
     self.assertEqual(decoded.get('id'), '1')
     self.assertEqual(decoded.get('type'), 'manifest')
     self.assertEqual(decoded.get('username'), self.admin_username)
+    self.assertLessEqual(decoded.get('exp'), int(datetime.datetime.now().timestamp()+60))
+  
+  def test_get_handout_token(self):
+    override_exp = datetime.datetime.now().timestamp()+120
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v1/get-download-token", json={ 'type': 'manifest', 'id': '1', 'username': self.username, 'exp': override_exp })
+    self.assertEqual(ret.status_code, 202)
+    location = ret.headers.get('Location', '')
+    self.assertTrue(location.endswith(ret.get_json()['location']))
+    temp_token = re.search(r'(.*)\?temp_token=(.*)', location)
+    decoded = jwt.decode(temp_token[2], self.app.config['SECRET_KEY'], algorithms=["HS256"])
 
+    self.assertEqual(decoded.get('username'), self.username)
+    self.assertEqual(decoded.get('exp'), int(override_exp))
+
+  #OINK:
   def test_get_download_token_user(self):
-    with self.fake_auth():
+    with self.fake_auth(): 
       ret = self.client.post(f"/v1/get-download-token", json={ 'type': 'manifest', 'id': '1' })
     self.assertEqual(ret.status_code, 202)
+
+  def test_get_download_token_user_no_override(self):
+    with self.fake_auth():
+      ret = self.client.post(f"/v1/get-download-token", json={ 'type': 'manifest', 'id': '1', 'username': self.other_username })
+    self.assertEqual(ret.status_code, 403)
+
+    with self.fake_auth():
+      ret = self.client.post(f"/v1/get-download-token", json={ 'type': 'manifest', 'id': '1', 'exp': 4711 })
+    self.assertEqual(ret.status_code, 403)
 
   def test_get_download_noauth(self):
     ret = self.client.post(f"/v1/get-download-token", json={ 'type': 'manifest', 'id': '1' })

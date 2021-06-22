@@ -20,6 +20,20 @@ Hinkskalle is supposed to be lightweight!
 
 If you need more features, take a look at [https://github.com/singularityhub/sregistry](sregistry)!
 
+## Clients
+
+We can talk to:
+
+- [singularity](https://sylabs.io/singularity/)
+- [docker](https://docker.com/)
+- [podman](https://podman.io/)
+- [oras](https://oras.land/)
+
+Also check out the Hinkskalle API + CLI:
+
+- [hinkskalle-api](https://github.com/csf-ngs/hinkskalle-api)
+
+
 # Getting Started
 
 ## Using a singularity library:

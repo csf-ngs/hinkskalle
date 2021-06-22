@@ -23,6 +23,7 @@ from Hinkskalle.models.Tag import Tag
 from Hinkskalle.models.Image import Image
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Collection import Collection
+from Hinkskalle.models.User import User
 from Hinkskalle.models import Manifest, Container, UploadTypes, UploadStates, ImageUploadUrl
 from Hinkskalle import db, registry, authenticator, rebar, password_checkers
 
@@ -340,6 +341,7 @@ def oras_push_manifest(name, reference):
         if not image.hide:
           tag.image_ref=image
       except NoResultFound:
+        current_app.logger.debug(f"Blob hash {layer.get('digest')} not found in container {container.id}")
         raise OrasBlobUnknwon(f"Blob hash {layer.get('digest')} not found in container {container.id}")
 
   with db.session.no_autoflush:
@@ -382,6 +384,12 @@ def oras_start_upload_session(name):
   except OrasNameUnknown:
     current_app.logger.debug(f"creating {name}...")
     entity_id, collection_id, container_id = _split_name(name)
+    owner = g.authenticated_user
+    if g.authenticated_user.is_admin:
+      entity_user = User.query.filter(User.username==entity_id).first()
+      if entity_user:
+        owner = entity_user
+
     # XXX superhack-altert
     # singularity starts two uploads immediately (config + container)
     # this causes a race condition if container/... did not exist
@@ -389,13 +397,15 @@ def oras_start_upload_session(name):
     try:
       try:
         entity = Entity.query.filter(func.lower(Entity.name)==entity_id.lower()).one()
+        if g.authenticated_user.is_admin:
+          owner = entity.owner
       except NoResultFound:
         if not g.authenticated_user.is_admin and entity_id.lower() != g.authenticated_user.username.lower():
           current_app.logger.debug(f"User {g.authenticated_user.username} tried to create {entity_id}")
           raise OrasDenied(f"Can only push to username entity")
 
         current_app.logger.debug(f"... creating entity {entity_id}")
-        entity = Entity(name=entity_id, owner=g.authenticated_user)
+        entity = Entity(name=entity_id, owner=owner)
         db.session.add(entity)
       try:
         collection = entity.collections_ref.filter(func.lower(Collection.name)==collection_id.lower()).one()
@@ -405,7 +415,7 @@ def oras_start_upload_session(name):
           raise OrasDenied(f"Cannot create collections in {entity.name}")
 
         current_app.logger.debug(f"... creating collection {collection_id}")
-        collection = Collection(name=collection_id, entity_ref=entity, owner=g.authenticated_user)
+        collection = Collection(name=collection_id, entity_ref=entity, owner=owner)
         if entity.defaultPrivate:
           collection.private=True
         db.session.add(collection)
@@ -418,7 +428,7 @@ def oras_start_upload_session(name):
           raise OrasDenied(f"Cannot create containers in {entity_id}/{collection_id}")
 
         current_app.logger.debug(f"... creating container {container_id}")
-        container = Container(name=container_id, collection_ref=collection, owner=g.authenticated_user)
+        container = Container(name=container_id, collection_ref=collection, owner=owner)
         if collection.private:
           container.private=True
         db.session.add(container)

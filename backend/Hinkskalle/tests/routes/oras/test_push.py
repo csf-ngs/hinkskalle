@@ -56,6 +56,31 @@ class TestOrasPush(RouteBase):
     self.assertIsNotNone(container)
     self.assertEqual(container.createdBy, self.admin_username)
   
+  def test_push_monolith_behalf(self):
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/{self.username}/hase/grase/blobs/uploads/")
+    self.assertEqual(ret.status_code, 202)
+
+    entity = Entity.query.filter(Entity.name==self.username).first()
+    self.assertEqual(entity.owner.username, self.username)
+    collection = entity.collections_ref.filter(Collection.name=='hase').first()
+    self.assertEqual(collection.owner.username, self.username)
+    container = collection.containers_ref.filter(Container.name=='grase').first()
+    self.assertEqual(container.owner.username, self.username)
+
+  def test_push_monolith_behalf_existing(self):
+    entity = Entity(name='schlumpf.hase', owner=self.user)
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/schlumpf.hase/hase/grase/blobs/uploads/")
+    self.assertEqual(ret.status_code, 202)
+
+    entity = Entity.query.filter(Entity.name=='schlumpf.hase').first()
+    self.assertEqual(entity.owner.username, self.username)
+    collection = entity.collections_ref.filter(Collection.name=='hase').first()
+    self.assertEqual(collection.owner.username, self.username)
+    container = collection.containers_ref.filter(Container.name=='grase').first()
+    self.assertEqual(container.owner.username, self.username)
+  
   def test_push_monolith_create_user(self):
     with self.fake_auth():
       ret = self.client.post(f"/v2/test/hase/stall/blobs/uploads/", headers={'Content-Length': 0 })

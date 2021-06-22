@@ -158,7 +158,9 @@ class TestTokenAuth(RouteBase):
       ret = c.get('/v1/token-status', headers={ 'Authorization': f"bearer {token_text}"})
       self.assertEqual(ret.status_code, 200)
       self.assertEqual(g.authenticated_user, user)
-      self.assertDictEqual(ret.get_json(), { 'status': 'welcome' })
+      self.assertEqual(ret.get_json().get('status'), 'welcome')
+      json_user = ret.get_json().get('data')
+      self.assertEqual(json_user.get('username'), 'test.hase')
 
     with self.app.test_client() as c:
       ret = c.get('/v1/token-status', headers={ 'Authorization': f"Bearer {token_text}"})

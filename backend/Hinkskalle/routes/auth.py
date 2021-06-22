@@ -1,7 +1,7 @@
 from flask.helpers import make_response
 from Hinkskalle import registry, password_checkers, authenticator, rebar, db
 from Hinkskalle.models.Entity import Entity
-from Hinkskalle.models.User import TokenSchema, Token, User
+from Hinkskalle.models.User import TokenSchema, UserSchema
 from Hinkskalle.util.auth.token import Scopes
 from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword
 from flask_rebar import RequestSchema, ResponseSchema, errors
@@ -13,12 +13,13 @@ from calendar import timegm
 
 from datetime import datetime
 
-class TokenResponseSchema(ResponseSchema):
-  status = fields.String()
-
 class GetTokenRequestSchema(RequestSchema):
   username = fields.String(required=True)
   password = fields.String(required=True)
+
+class TokenStatusResponseSchema(ResponseSchema):
+  data = fields.Nested(UserSchema)
+  status = fields.String()
 
 class GetTokenResponseSchema(ResponseSchema):
   data = fields.Nested(TokenSchema)
@@ -33,11 +34,12 @@ class GetDownloadTokenSchema(RequestSchema):
   rule='/v1/token-status',
   method='GET',
   authenticators=authenticator.with_scope(Scopes.user),
-  response_body_schema=TokenResponseSchema(),
+  response_body_schema=TokenStatusResponseSchema(),
 )
 def token_status():
   return {
-    'status': 'welcome'
+    'status': 'welcome',
+    'data': g.authenticated_user
   }
 
 @registry.handles(

@@ -3,6 +3,7 @@
   "PERMANENT_SESSION_LIFETIME": 604800,
   "SESSION_COOKIE_NAME": "hinkskalle",
   "IMAGE_PATH": "../tmp/",
+  "STAGING_PATH": "../tmp/_stage",
   "UPLOAD_CHUNK_SIZE": 16384,
   "SQLALCHEMY_TRACK_MODIFICATIONS": false
 }

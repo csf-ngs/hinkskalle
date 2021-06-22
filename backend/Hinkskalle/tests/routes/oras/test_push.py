@@ -382,6 +382,57 @@ class TestOrasPush(RouteBase):
     self.assertEqual(upload.type, UploadTypes.single)
     self.assertEqual(upload.state, UploadStates.completed)
 
+  def test_push_single_post_stage(self):
+    self.app.config['STAGING_PATH']=tempfile.mkdtemp()
+    image = _create_image()[0]
+    img_data, digest = _prepare_img_data()
+    digest = digest.replace('sha256.', 'sha256:')
+    with open(os.path.join(self.app.config['STAGING_PATH'], digest), 'w') as outfh:
+      outfh.write(img_data.decode('utf8'))
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}&staged=1", content_type='application/octet-stream')
+    print(ret.get_json())
+    self.assertEqual(ret.status_code, 201)
+    self.assertEqual(ret.headers.get('Docker-Content-Digest'), digest)
+    db_image: Image = Image.query.filter(Image.hash==digest.replace('sha256:', 'sha256.')).one()
+    self.assertTrue(db_image.uploaded)
+
+    with open(db_image.location, "rb") as infh:
+      content = infh.read()
+      self.assertEqual(content, img_data)
+
+    upload = ImageUploadUrl.query.filter(ImageUploadUrl.image_id==db_image.id).first()
+    self.assertEqual(upload.type, UploadTypes.single)
+    self.assertEqual(upload.state, UploadStates.completed)
+
+  def test_push_single_post_stage_invalid(self):
+    self.app.config['STAGING_PATH']=tempfile.mkdtemp()
+    image = _create_image()[0]
+    img_data, digest = _prepare_img_data()
+    digest = digest.replace('sha256.', 'sha256:')
+    with open(os.path.join(self.app.config['STAGING_PATH'], f"oink{digest}"), 'w') as outfh:
+      outfh.write(img_data.decode('utf8'))
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}&staged=1", content_type='application/octet-stream')
+    self.assertEqual(ret.status_code, 400)
+
+  def test_push_single_post_stage_user(self):
+    self.app.config['STAGING_PATH']=tempfile.mkdtemp()
+    image, container, collection, entity = _create_image()
+    entity.owner = self.user
+    collection.owner = self.user
+    container.owner = self.user
+    img_data, digest = _prepare_img_data()
+    digest = digest.replace('sha256.', 'sha256:')
+    with open(os.path.join(self.app.config['STAGING_PATH'], digest), 'w') as outfh:
+      outfh.write(img_data.decode('utf8'))
+
+    with self.fake_auth():
+      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}&staged=1", content_type='application/octet-stream')
+    self.assertEqual(ret.status_code, 403)
+
   def test_push_single_post_quota(self):
     image, _, _, entity = _create_image()
     entity_id = entity.id

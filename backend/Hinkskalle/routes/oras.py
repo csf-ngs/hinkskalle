@@ -41,6 +41,7 @@ class OrasListTagQuerySchema(RequestSchema):
   last = fields.String(required=False)
 
 class OrasBlobMountQuerySchema(RequestSchema):
+  staged = fields.Bool(required=False)
   digest = fields.String(required=False)
   mount = fields.String(required=False)
   _from = fields.String(load_from='from', dump_to='from', attribute='from', required=False)
@@ -464,8 +465,8 @@ def oras_start_upload_session(name):
   db.session.add(upload)
   db.session.commit()
 
-  if headers.get('content_type')=='application/octet-stream' and int(headers.get('content_length', 0)) > 0: 
-    return _do_single_post_upload(upload, digest=args.get('digest'))
+  if args.get('staged', False) or (headers.get('content_type')=='application/octet-stream' and int(headers.get('content_length', 0)) > 0): 
+    return _do_single_post_upload(upload, digest=args.get('digest'), staged=args.get('staged', False))
 
   upload_url = _get_service_url()+f"/v2/__uploads/{upload.id}"
 
@@ -475,13 +476,16 @@ def oras_start_upload_session(name):
   response.headers['Location']=upload_url
   return response
 
-def _do_single_post_upload(upload: ImageUploadUrl, digest: str):
+def _do_single_post_upload(upload: ImageUploadUrl, digest: str, staged: bool = False):
   current_app.logger.debug(f"single POST update")
+  if staged and not g.authenticated_user.is_admin:
+    current_app.logger.debug("deny staged upload for user")
+    raise OrasDenied('cannot use staged upload')
   upload.type = UploadTypes.single
   if not digest:
     raise OrasDigestInvalid(f"need digest for single push upload")
   digest = digest.replace('sha256:', 'sha256.')
-  image = _receive_upload(upload, digest)
+  image = _receive_upload(upload, digest, staged=staged)
   blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName()}/{image.container_ref.collectionName()}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
   response = make_response('', 201)
   response.headers['Location']=blob_url
@@ -668,7 +672,7 @@ def _handle_chunk(chunk: ImageUploadUrl):
     # conformance tests don't send one?!
     #raise OrasBlobUploadInvalid(f"No content-range header found")
   else:
-    range = request.headers.get('content_range')
+    range = request.headers.get('content_range', '')
     if not re.match(r'^[0-9]+-[0-9]+$', range):
       current_app.logger.debug(f"Invalid content range {range}")
       raise OrasBlobUploadInvalid(f"Invalid content range")
@@ -853,7 +857,7 @@ def _get_container(name: str) -> Container:
     raise OrasNameUnknown(f"name {name} not found")
   return container
 
-def _receive_upload(upload: ImageUploadUrl, digest: str) -> Image:
+def _receive_upload(upload: ImageUploadUrl, digest: str, staged: bool=False) -> Image:
   # we don't know the hash when upload is initialized
   # so we have to check if there is already an image in the container
   # with the same hash. If yes, re-use that one and get rid of the
@@ -871,14 +875,24 @@ def _receive_upload(upload: ImageUploadUrl, digest: str) -> Image:
   upload.state = UploadStates.uploading
   db.session.commit()
 
-  try:
-    _, read = __receive_upload(open(upload.path, 'wb'), digest)
-  except errors.UnprocessableEntity:
-    upload.state = UploadStates.failed
-    db.session.commit()
-    raise OrasDigestInvalid()
+  if staged:
+    staged_path = os.path.join(current_app.config['STAGING_PATH'], digest.replace('sha256.', 'sha256:'))
+    if not os.path.exists(staged_path):
+      current_app.logger.debug(f"Staged path {staged_path} not found")
+      upload.state = UploadStates.failed
+      db.session.commit()
+      raise OrasBlobUploadInvalid(f"Staged path {staged_path} not found")
+    read = os.path.getsize(staged_path)
+    upload.path = staged_path
+  else:
+    try:
+      _, read = __receive_upload(open(upload.path, 'wb'), digest)
+    except errors.UnprocessableEntity:
+      upload.state = UploadStates.failed
+      db.session.commit()
+      raise OrasDigestInvalid()
   # OCI spec says content-length is MUST, but ORAS push PUTs without??
-  if request.headers.get('content_length') is not None and read != int(request.headers['content_length']):
+  if not staged and request.headers.get('content_length') is not None and read != int(request.headers['content_length']):
     current_app.logger.debug(f"content length {read} did not match header {request.headers['content_length']}")
     upload.state = UploadStates.failed
     db.session.commit()

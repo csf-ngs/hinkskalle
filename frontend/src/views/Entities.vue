@@ -256,7 +256,8 @@ export default Vue.extend({
       { key: 'name', desc: 'Name' }, 
       { key :'createdAt', desc: "Create Date" }, 
       { key: 'updatedAt', desc: "Last Updated" },
-      { key: 'size', desc: '# Collections' } 
+      { key: 'size', desc: '# Collections' },
+      { key: 'usedQuota', desc: 'Size' },
     ]
   }),
   computed: {

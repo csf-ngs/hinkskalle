@@ -298,7 +298,8 @@ export default Vue.extend({
       { key: 'updatedAt', desc: "Last Updated" },
       { key: 'downloadCount', desc: "Downloads" },
       { key: 'stars', desc: "Stars" },
-      { key: 'size', desc: '# Images' } 
+      { key: 'size', desc: '# Images' } ,
+      { key: 'usedQuota', desc: 'Size' },
     ],
   }),
   computed: {

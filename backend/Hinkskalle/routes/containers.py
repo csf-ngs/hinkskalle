@@ -95,9 +95,12 @@ def create_container():
   if not collection.check_update_access(g.authenticated_user):
     raise errors.Forbidden(f"access denied.")
   body.pop('collection')
+  owner = g.authenticated_user
+  if g.authenticated_user.is_admin and collection.entity_ref.owner:
+    owner = collection.entity_ref.owner
   new_container = Container(**body)
   new_container.collection_ref=collection
-  new_container.owner=g.authenticated_user
+  new_container.owner=owner
   db.session.expire(collection)
   if collection.private:
     new_container.private = True

@@ -217,6 +217,19 @@ class TestCollections(RouteBase):
     db_collection = Collection.query.get(data['id'])
     self.assertTrue(abs(db_collection.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
 
+  def test_create_behalf(self):
+    entity = Entity(name='test-hase', owner=self.user)
+    db.session.add(entity)
+    db.session.commit()
+    with self.fake_admin_auth():
+      ret = self.client.post('/v1/collections', json={
+        'name': 'oink',
+        'entity': str(entity.id),
+      })
+    self.assertEqual(ret.status_code, 200)
+    db_collection = Collection.query.filter(Collection.name=='oink', Collection.entity_id==entity.id).first()
+    self.assertEqual(db_collection.owner.username, self.username)
+
   def test_create_check_name(self):
     entity  = Entity(name='test-hase')
     db.session.add(entity)

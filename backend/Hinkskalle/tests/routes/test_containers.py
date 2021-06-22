@@ -217,6 +217,20 @@ class TestContainers(RouteBase):
     data = ret.get_json().get('data')
     self.assertEqual(data['collection'], str(coll.id))
     self.assertEqual(data['createdBy'], self.admin_username)
+  
+  def test_create_sticky(self):
+    coll, entity = _create_collection()
+    entity.owner = self.user
+    db.session.commit()
+    with self.fake_admin_auth():
+      ret = self.client.post('/v1/containers', json={
+        'name': 'oink',
+        'collection': str(coll.id),
+      })
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data')
+    self.assertEqual(data['collection'], str(coll.id))
+    self.assertEqual(data['createdBy'], self.username)
 
   def test_create_check_name(self):
     coll = _create_collection()[0]

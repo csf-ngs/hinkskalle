@@ -4,7 +4,8 @@ import json
 import datetime
 from Hinkskalle.tests.route_base import RouteBase
 
-from Hinkskalle.models import Entity, Collection
+from Hinkskalle.models.Entity import Entity
+from Hinkskalle.models.Collection import Collection
 from Hinkskalle import db
 
 class TestEntities(RouteBase):
@@ -173,6 +174,15 @@ class TestEntities(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data')
     self.assertEqual(data['name'], 'default')
+  
+  def test_create_behalf(self):
+    with self.fake_admin_auth():
+      ret = self.client.post('/v1/entities', json={
+        'name': self.username
+      })
+    self.assertEqual(ret.status_code, 200)
+    entity = Entity.query.filter(Entity.name==self.username).first()
+    self.assertEqual(entity.owner.username, self.username)
 
   def test_create_not_unique(self):
     entity = Entity(name='grunz')

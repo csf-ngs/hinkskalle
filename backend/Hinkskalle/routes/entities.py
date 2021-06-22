@@ -8,7 +8,7 @@ from sqlalchemy import or_, func
 from flask import request, current_app, g
 import datetime
 
-from Hinkskalle.models import EntitySchema, Entity
+from Hinkskalle.models import EntitySchema, Entity, User
 from .util import _get_entity
 
 class EntityResponseSchema(ResponseSchema):
@@ -76,9 +76,14 @@ def create_entity():
   
   if not g.authenticated_user.is_admin and body['name'] != g.authenticated_user.username:
     raise errors.Forbidden('You can only create an entity with your username.')
+  
+  owner = g.authenticated_user
+  if g.authenticated_user.is_admin:
+    entity_user = User.query.filter(User.username==body.get('name')).first()
+    if entity_user:
+      owner = entity_user
 
-  new_entity = Entity(**body)
-  new_entity.owner = g.authenticated_user
+  new_entity = Entity(**body, owner=owner)
 
   try:
     db.session.add(new_entity)

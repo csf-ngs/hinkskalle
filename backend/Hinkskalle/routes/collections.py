@@ -51,11 +51,17 @@ def create_collection():
   if entity.name == 'default' and not g.authenticated_user.is_admin:
     if body['name'] == 'default' or body['name'] == 'pipeline':
       raise errors.Forbidden("Trying to use a reserved name in the default namespace.")
+
+  owner = g.authenticated_user
+  if g.authenticated_user.is_admin and entity.owner:
+    owner = entity.owner
+
   new_collection = Collection(**body)
   new_collection.entity_ref=entity
   if entity.defaultPrivate:
     new_collection.private=True
-  new_collection.owner=g.authenticated_user
+  
+  new_collection.owner=owner
 
   try:
     db.session.add(new_collection)

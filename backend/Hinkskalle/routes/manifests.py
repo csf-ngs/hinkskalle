@@ -92,4 +92,6 @@ def download_manifest(manifest_id):
   manifest.downloadCount += 1
   db.session.commit()
   
-  return send_file(image.location, as_attachment=True, attachment_filename=fn)
+  response = send_file(image.location, as_attachment=True, attachment_filename=fn, conditional=True)
+  response.headers['Docker-Content-Digest'] = image.hash.replace('sha256.', 'sha256:')
+  return response

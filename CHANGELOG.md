@@ -3,6 +3,8 @@
 - used size of entities, collections, containers
 - can enforce quotas now
 - latest uploads with container/tag types
+- admin entity creates chowns to username corresponding to entity name; collection and container ownership sticky to entity
+- token-status route returns user info
 
 ### Bugfixes
 

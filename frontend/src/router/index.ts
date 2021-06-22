@@ -121,7 +121,7 @@ router.beforeEach((to, from, next) => {
 });
 router.afterEach((to) => {
   Vue.nextTick(() => {
-    document.title = to.meta.title || to.fullPath || DEFAULT_TITLE;
+    document.title = (to.meta && to.meta.title) || to.fullPath || DEFAULT_TITLE;
   });
 });
 

@@ -876,7 +876,7 @@ def _receive_upload(upload: ImageUploadUrl, digest: str, staged: bool=False) -> 
   db.session.commit()
 
   if staged:
-    staged_path = os.path.join(current_app.config['STAGING_PATH'], digest.replace('sha256.', 'sha256:'))
+    staged_path = os.path.join(current_app.config['STAGING_PATH'], digest)
     if not os.path.exists(staged_path):
       current_app.logger.debug(f"Staged path {staged_path} not found")
       upload.state = UploadStates.failed

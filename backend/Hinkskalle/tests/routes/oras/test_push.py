@@ -386,7 +386,6 @@ class TestOrasPush(RouteBase):
     self.app.config['STAGING_PATH']=tempfile.mkdtemp()
     image = _create_image()[0]
     img_data, digest = _prepare_img_data()
-    digest = digest.replace('sha256.', 'sha256:')
     with open(os.path.join(self.app.config['STAGING_PATH'], digest), 'w') as outfh:
       outfh.write(img_data.decode('utf8'))
 
@@ -394,7 +393,7 @@ class TestOrasPush(RouteBase):
       ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}&staged=1", content_type='application/octet-stream')
     print(ret.get_json())
     self.assertEqual(ret.status_code, 201)
-    self.assertEqual(ret.headers.get('Docker-Content-Digest'), digest)
+    self.assertEqual(ret.headers.get('Docker-Content-Digest'), digest.replace('sha256.', 'sha256:'))
     db_image: Image = Image.query.filter(Image.hash==digest.replace('sha256:', 'sha256.')).one()
     self.assertTrue(db_image.uploaded)
 
@@ -410,7 +409,6 @@ class TestOrasPush(RouteBase):
     self.app.config['STAGING_PATH']=tempfile.mkdtemp()
     image = _create_image()[0]
     img_data, digest = _prepare_img_data()
-    digest = digest.replace('sha256.', 'sha256:')
     with open(os.path.join(self.app.config['STAGING_PATH'], f"oink{digest}"), 'w') as outfh:
       outfh.write(img_data.decode('utf8'))
 
@@ -425,7 +423,6 @@ class TestOrasPush(RouteBase):
     collection.owner = self.user
     container.owner = self.user
     img_data, digest = _prepare_img_data()
-    digest = digest.replace('sha256.', 'sha256:')
     with open(os.path.join(self.app.config['STAGING_PATH'], digest), 'w') as outfh:
       outfh.write(img_data.decode('utf8'))
 

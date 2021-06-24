@@ -4,9 +4,10 @@ from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.User import TokenSchema, UserSchema
 from Hinkskalle.util.auth.token import Scopes
 from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword
+from .util import _get_service_url
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from flask import current_app, g, redirect, url_for
+from flask import current_app, g
 from sqlalchemy.orm.exc import NoResultFound
 import jwt
 from calendar import timegm
@@ -89,7 +90,7 @@ def get_download_token():
       'username': data.get('username', g.authenticated_user.username),
       'exp': data.get('exp', timegm(datetime.utcnow().utctimetuple())+60),
     }, current_app.config['SECRET_KEY'], algorithm="HS256")
-    target = url_for('download_manifest', manifest_id=data['id'], temp_token=encoded_jwt)
+    target = f"{_get_service_url()}/v1/manifests/{data['id']}/download?temp_token={encoded_jwt}"
   else:
     raise errors.NotAcceptable('Invalid type')
   response = make_response({'location': target }, 202)

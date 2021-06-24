@@ -48,15 +48,22 @@ def download_manifest(manifest_id):
   elif args.get('temp_token'):
     try:
       decoded = jwt.decode(args.get('temp_token'), current_app.config['SECRET_KEY'], algorithms=["HS256"])
-    except jwt.ExpiredSignatureError:
+    except jwt.InvalidSignatureError as err:
+      current_app.logger.debug(err)
+      raise errors.Unauthorized('invalid signature')
+    except jwt.ExpiredSignatureError as err:
+      current_app.logger.debug(err)
       raise errors.Unauthorized('token invalid')
     if decoded.get('type') != 'manifest':
+      current_app.logger.debug('token type mismatch')
       raise errors.NotAcceptable('invalid token, type should be manifest')
     if manifest_id != str(decoded.get('id')):
+      current_app.logger.debug('token id mismatch')
       raise errors.NotAcceptable('invalid token, id mismatch')
     try:
       user = User.query.filter(User.username==decoded.get('username')).one()
     except NoResultFound:
+      current_app.logger.debug(f"token username {decoded.get('username')} not found")
       raise errors.NotAcceptable('Invalid username')
   else:
     raise errors.Unauthorized()

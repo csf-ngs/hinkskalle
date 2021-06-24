@@ -265,8 +265,9 @@ def oras_manifest(name: str, reference: str):
 
   manifest_type = manifest.content_json.get('mediaType', 'application/vnd.oci.image.manifest.v1+json')
 
-  manifest.downloadCount += 1
-  db.session.commit()
+  if request.method != 'HEAD':
+    manifest.downloadCount += 1
+    db.session.commit()
 
   response = make_response(manifest.content)
   response.headers['Content-Type']=manifest_type
@@ -297,11 +298,14 @@ def oras_blob(name, digest):
     current_app.logger.debug(f"hash {digest} for container {container.id} not found")
     raise OrasBlobUnknwon(f"Blob {digest} not found")
 
-  image.downloadCount += 1
-  container.downloadCount += 1
-  db.session.commit()
+  if request.method != 'HEAD':
+    image.downloadCount += 1
+    container.downloadCount += 1
+    db.session.commit()
   
-  return send_file(image.location) 
+  ret = send_file(image.location)
+  ret.headers['Docker-Content-Digest']=f"sha256:{image.hash}"
+  return ret
 
 @registry.handles(
   rule='/v2/<distname:name>/manifests/<string:reference>',
@@ -350,8 +354,8 @@ def oras_push_manifest(name, reference):
     manifest.content = request.data.decode('utf8')
     existing = Manifest.query.filter(Manifest.hash == manifest.hash, Manifest.container_ref==container).first()
     if existing:
-      if manifest.id:
-        db.session.delete(manifest)
+      if manifest in db.session:
+        db.session.expunge(manifest)
       manifest = existing
     else:
       db.session.add(manifest)

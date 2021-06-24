@@ -529,6 +529,7 @@ class TestOrasPush(RouteBase):
     digest: str = ret.headers.get('Docker-Content-Digest', '')
     self.assertEqual(digest, f"sha256:{hash}")
   
+  
   def test_push_manifest_readonly(self):
     image = _create_image()[0]
     image.container_ref.readOnly = True
@@ -621,6 +622,31 @@ class TestOrasPush(RouteBase):
     self.assertEqual(ret.status_code, 201)
     db_manifest = Manifest.query.get(manifest_id)
     self.assertDictEqual(db_manifest.content_json, test_manifest)
+
+  def test_push_manifest_existing_same_content(self):
+    image, container, collection, entity = _create_image()
+    test_manifest = { "schemaVersion": 2 }
+    manifest = Manifest(
+      content = test_manifest,
+      container_ref=container,
+    )
+    tag1 = Tag(name='v2', image_ref=image, manifest_ref=manifest)
+    db.session.add(tag1)
+    db.session.add(manifest)
+    db.session.commit()
+    manifest_id = manifest.id
+    manifest_hash = manifest.hash
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f'/v2/{entity.name}/{collection.name}/{container.name}/manifests/v2', json=test_manifest)
+    self.assertEqual(ret.status_code, 201)
+
+    db_manifest = Manifest.query.get(manifest_id)
+    self.assertEqual(db_manifest.hash, manifest_hash)
+
+
+
+
 
   def test_push_manifest_existing_other_tag(self):
     image, container, collection, entity = _create_image()

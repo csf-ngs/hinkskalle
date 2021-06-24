@@ -14,8 +14,14 @@ export function generateMsg(error: AxiosError): string {
         if (_isString(v)) {
           msg += `${k}: ${v}; `;
         }
-        else {
+        else if (_has(v, 'detail')) {
+          msg += v.detail;
+        }
+        else if (_has(v, 'message')) {
           msg += v.message;
+        }
+        else {
+          msg += v.code;
         }
       });
     }

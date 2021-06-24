@@ -18,7 +18,7 @@ from .util import _get_service_url
 @current_app.route('/<path:path>')
 def frontend(path):
   orig_path=path
-  if path.startswith('v1/'):
+  if path.startswith('v1/') or path.startswith('v2/'):
     raise errors.NotFound
   if path=="" or not os.path.exists(safe_join(current_app.config.get('FRONTEND_PATH'), path)):
     path="index.html"

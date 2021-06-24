@@ -246,6 +246,23 @@ class TestOrasPull(RouteBase):
     manifest = Manifest.query.get(manifest_id)
     self.assertEqual(manifest.downloadCount, 1)
 
+  def test_manifest_refetch_head(self):
+    image = _create_image()[0]
+    latest_tag = Tag(name='latest', image_ref=image)
+    db.session.add(latest_tag)
+
+    manifest = Manifest(content='{"oi": "nk"}', container_ref=image.container_ref)
+    latest_tag.manifest_ref=manifest
+    db.session.commit()
+    manifest_id = manifest.id
+
+    with self.fake_auth():
+      ret = self.client.head(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/sha256:{manifest.hash}")
+    self.assertEqual(ret.status_code, 200)
+
+    manifest = Manifest.query.get(manifest_id)
+    self.assertEqual(manifest.downloadCount, 0)
+
   def test_manifest_hash_notfound(self):
     image = _create_image()[0]
     latest_tag = Tag(name='latest', image_ref=image)
@@ -271,6 +288,17 @@ class TestOrasPull(RouteBase):
     self.assertEqual(image.downloadCount, 1)
     self.assertEqual(image.container_ref.downloadCount, 1)
 
+  def test_blob(self):
+    image = _create_image()[0]
+    image_id = image.id
+    file = _fake_img_file(image)
+
+    with self.fake_auth():
+      ret = self.client.head(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
+    self.assertEqual(ret.status_code, 200)
+    image = Image.query.get(image_id)
+    self.assertEqual(image.downloadCount, 0)
+    self.assertEqual(image.container_ref.downloadCount, 0)
 
   def test_blob_noauth(self):
     image = _create_image()[0]

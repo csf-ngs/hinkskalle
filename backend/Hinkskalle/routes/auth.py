@@ -88,7 +88,7 @@ def get_download_token():
       'id': data['id'],
       'type': 'manifest',
       'username': data.get('username', g.authenticated_user.username),
-      'exp': data.get('exp', timegm(datetime.utcnow().utctimetuple())+60),
+      'exp': data.get('exp', timegm(datetime.utcnow().utctimetuple())+current_app.config['DOWNLOAD_TOKEN_EXPIRATION']),
     }, current_app.config['SECRET_KEY'], algorithm="HS256")
     target = f"{_get_service_url()}/v1/manifests/{data['id']}/download?temp_token={encoded_jwt}"
   else:

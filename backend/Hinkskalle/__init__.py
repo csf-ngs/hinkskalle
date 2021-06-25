@@ -91,6 +91,8 @@ def create_app():
     app.config['AUTH']['LDAP'] = app.config['AUTH'].get('LDAP', {})
     for k, v in ldap_conf.items():
       app.config['AUTH']['LDAP'][k]=v
+  
+  app.config['DOWNLOAD_TOKEN_EXPIRATION'] = app.config.get('DOWNLOAD_TOKEN_EXPIRATION', 86400)
 
 
   db.init_app(app)

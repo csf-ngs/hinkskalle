@@ -102,7 +102,8 @@ class TestDownloadToken(RouteBase):
     self.assertEqual(decoded.get('id'), '1')
     self.assertEqual(decoded.get('type'), 'manifest')
     self.assertEqual(decoded.get('username'), self.admin_username)
-    self.assertLessEqual(decoded.get('exp'), int(datetime.datetime.now().timestamp()+60))
+    self.assertLessEqual(decoded.get('exp'), int(datetime.datetime.now().timestamp()+self.app.config['DOWNLOAD_TOKEN_EXPIRATION']))
+    self.assertGreaterEqual(decoded.get('exp'), int(datetime.datetime.now().timestamp()+self.app.config['DOWNLOAD_TOKEN_EXPIRATION']))
   
   def test_get_handout_token(self):
     override_exp = datetime.datetime.now().timestamp()+120

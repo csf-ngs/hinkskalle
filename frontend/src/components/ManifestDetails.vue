@@ -22,19 +22,45 @@
         <v-col md="auto" class="d-flex justify-center align-center">
           <span v-if="manifest.filename!=='(none)'">
             <span v-if="manifest.type === 'singularity' || manifest.type === 'oras'" class="mr-2">
-              <v-btn raised @click.stop="downloadManifest()" class="download-button">
-                <v-icon>mdi-download</v-icon>
-                {{manifest.filename}}
-              </v-btn>
+              <v-menu offset-y>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn raised class="download-button" v-bind="attrs" v-on="on">
+                    <span style="margin-right: 0.2rem;">
+                      {{manifest.filename}}: {{manifest.total_size | prettyBytes() }}
+                    </span>
+                    <v-badge :content="manifest.downloadCount || '0'" :color="badgeColor">
+                      <v-icon>mdi-download</v-icon>
+                    </v-badge>
+                  </v-btn>
+                </template>
+                <v-list>
+                  <v-list-item @click.stop="downloadManifest()">
+                    <v-list-item-icon><v-icon>mdi-download</v-icon></v-list-item-icon>
+                    <v-list-item-content>Download</v-list-item-content>
+                  </v-list-item>
+                  <v-list-item @click.stop="copyDownload()">
+                    <v-list-item-icon><v-icon>mdi-content-copy</v-icon></v-list-item-icon>
+                    <v-list-item-content>Copy URL</v-list-item-content>
+                  </v-list-item>
+                  <v-list-item @click.stop="copyDownload('curl')">
+                    <v-list-item-icon><v-icon>mdi-bash</v-icon></v-list-item-icon>
+                    <v-list-item-content>Copy cURL</v-list-item-content>
+                  </v-list-item>
+                  <v-list-item @click.stop="copyDownload('wget')">
+                    <v-list-item-icon><v-icon>mdi-bash</v-icon></v-list-item-icon>
+                    <v-list-item-content>Copy wget</v-list-item-content>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
             </span>
             <span v-else>
               <span class="font-weight-medium">Filename:</span> {{manifest.filename}}&nbsp;|&nbsp;
+              {{manifest.total_size | prettyBytes() }}
+              <v-badge :content="manifest.downloadCount || '0'" :color="badgeColor">
+                <v-icon>mdi-download</v-icon>
+              </v-badge>
             </span>
           </span>
-          {{manifest.total_size | prettyBytes() }}
-          <v-badge :content="manifest.downloadCount || '0'" :color="badgeColor">
-            <v-icon>mdi-download</v-icon>
-          </v-badge>
         </v-col>
         <v-col class="d-flex justify-end align-center mr-4">
           <div v-if="manifest.type=='singularity'">
@@ -139,10 +165,29 @@ export default Vue.extend({
       this.$store.dispatch('tokens/requestDownload', { id: this.manifest.id, type: 'manifest' })
         .then((location: string) => {
           window.location.href=location;
+          // cheating
+          this.manifest.downloadCount++;
         })
         .catch(err => {
           this.$store.commit('snackbar/showError', err);
         });
+    },
+    copyDownload(what: string | null = null) {
+      this.$store.dispatch('tokens/requestDownload', { id: this.manifest.id, type: 'manifest' })
+        .then((location: string) => {
+          switch(what) {
+            case 'curl':
+              location = `curl -JOf ${location}`;
+              break;
+            case 'wget':
+              location = `wget -O ${this.manifest.filename} ${location}`
+              break;
+          }
+          this.$copyText(location).then(() => this.$store.commit('snackbar/showSuccess', "Copied to clipboard"))
+        })
+        .catch(err => {
+          this.$store.commit('snackbar/showError', err);
+        })
     }
   },
 });

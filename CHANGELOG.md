@@ -1,3 +1,24 @@
+# v4.2.3 (2021-06-27)
+
+- more download options (cmd lines, ...)
+- config for download token expiration 
+- blob pulls get docker-content-digest headers to better check HEAD success
+- allow caps in distribution names, convert to lower case
+
+# v4.2.2 (2021-06-24)
+
+- api error parsing, better token fail signaling
+- return absolute location URLs for download tokens
+
+# v4.2.1 (2021-06-23)
+
+- cannot use : in staging filenames (CIFS don't like)
+
+# v4.2.0 (2021-06-22)
+
+- staged uploads if hinkskalle api and server have shared access to filesystem (config)
+- sort by size
+
 # v4.1.0 (2021-06-21)
 
 - used size of entities, collections, containers

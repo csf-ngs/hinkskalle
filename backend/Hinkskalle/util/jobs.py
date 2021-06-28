@@ -102,13 +102,17 @@ def sync_ldap():
       count = count + 1
       job.meta['progress']=f"{count} of {len(ldap_users)}"
       job.save_meta()
+      cn = _get_attr(ldap_user.get('attributes').get('cn'))
       try:
         db_user = svc.sync_user(ldap_user)
         result['synced'].append(db_user.username)
       except UserConflict:
-        result['conflict'].append(_get_attr(ldap_user.get('attributes').get('cn')))
-      except:
-        result['failed'].append(_get_attr(ldap_user.get('attributes').get('cn')))
+        db.session.rollback()
+        result['conflict'].append(cn)
+      except Exception as exc:
+        db.session.rollback()
+        current_app.logger.warn(f"sync {cn}: {exc}")
+        result['failed'].append(cn)
 
     _finish_job(job, result, AdmKeys.ldap_sync_results)
   except Exception as exc:

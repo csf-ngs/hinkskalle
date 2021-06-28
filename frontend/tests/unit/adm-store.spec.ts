@@ -139,6 +139,8 @@ describe('adm actions', () => {
         synced: ['eins', 'zwei'],
         conflict: ['drei'],
         failed: ['vier', 'funf'],
+        success: true,
+        exception: undefined,
       },
     };
     const expectResponse = {
@@ -148,6 +150,8 @@ describe('adm actions', () => {
       synced: [ 'eins', 'zwei' ],
       conflict: [ 'drei' ],
       failed: [ 'vier', 'funf' ],
+      success: true,
+      exception: undefined,
     };
 
     mockAxios.get.mockResolvedValue({ data: { data: testResponse }});

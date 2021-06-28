@@ -3,7 +3,7 @@
     <v-toolbar-title>{{title}}</v-toolbar-title>
     <slot></slot>
     <v-spacer></v-spacer>
-    <v-autocomplete class="mr-3" style="max-width: 300px"
+    <v-autocomplete v-if="isLoggedIn" class="mr-3" style="max-width: 300px"
         v-model="localState.select"
         :loading="loading"
         :items="result"
@@ -69,6 +69,9 @@ export default Vue.extend({
     }
   },
   computed: {
+    isLoggedIn(): boolean {
+      return this.$store.getters.isLggedIn;
+    },
     loading(): boolean {
       return this.$store.getters['search/status'] === 'loading';
     },

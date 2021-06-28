@@ -119,10 +119,12 @@ export default Vue.extend({
         throw err;
       });
     });
-    this.$store.dispatch('adm/ldapStatus')
-      .catch(err => {
-        this.$store.commit('snackbar/showError', err);
-      });
+    if (this.isLoggedIn && this.currentUser.isAdmin) {
+      this.$store.dispatch('adm/ldapStatus')
+        .catch(err => {
+          this.$store.commit('snackbar/showError', err);
+        });
+    }
   },
   computed: {
     isLoggedIn(): boolean {

@@ -71,7 +71,6 @@
                               label="Description"
                               field="description"
                               :obj="localState.editItem"
-                              required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                           <v-col cols="12">

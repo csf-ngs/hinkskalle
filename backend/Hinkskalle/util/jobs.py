@@ -31,15 +31,20 @@ def update_quotas():
   }
   job.meta['progress']='starting'
   job.save_meta()
-  total_entites = Entity.query.count()
-  for entity in Entity.query.all():
-    size = entity.calculate_used()
-    db.session.commit()
-    result['total_space'] += size
-    result['updated'] += 1
-    job.meta['progress']=f"{result['updated']}/{total_entites}"
-    job.save_meta()
-  _finish_job(job, result, AdmKeys.check_quotas)
+  try:
+    total_entites = Entity.query.count()
+    for entity in Entity.query.all():
+      size = entity.calculate_used()
+      db.session.commit()
+      result['total_space'] += size
+      result['updated'] += 1
+      job.meta['progress']=f"{result['updated']}/{total_entites}"
+      job.save_meta()
+    _finish_job(job, result, AdmKeys.check_quotas)
+  except Exception as exc:
+    current_app.logger.error(exc)
+    _fail_job(job, result, AdmKeys.check_quotas, exc)
+    raise exc
   return f"updated {len(result['updated'])}"
   
 
@@ -100,7 +105,6 @@ def sync_ldap():
         result['conflict'].append(_get_attr(ldap_user.get('attributes').get('cn')))
       except:
         result['failed'].append(_get_attr(ldap_user.get('attributes').get('cn')))
-      raise Exception("oink")
 
     _finish_job(job, result, AdmKeys.ldap_sync_results)
   except Exception as exc:

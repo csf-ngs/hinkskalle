@@ -20,6 +20,7 @@ def get_job_info(id):
 
 @rq.job
 def update_quotas():
+  current_app.logger.debug(f"starting quota check...")
   job: typing.Optional[Job] = get_current_job()
   if not job:
     return
@@ -45,6 +46,8 @@ def update_quotas():
     current_app.logger.error(exc)
     _fail_job(job, result, AdmKeys.check_quotas, exc)
     raise exc
+  current_app.logger.debug(f"quota check finished.")
+  current_app.logger.debug(result)
   return f"updated {len(result['updated'])}"
   
 
@@ -74,6 +77,7 @@ def _fail_job(job, result, key, exc: Exception):
 
 @rq.job
 def sync_ldap():
+  current_app.logger.debug(f"starting ldap sync...")
   job: typing.Optional[Job] = get_current_job()
   if not job:
     return
@@ -111,6 +115,8 @@ def sync_ldap():
     _fail_job(job, result, AdmKeys.ldap_sync_results, exc)
     raise exc
   
+  current_app.logger.debug(f"ldap sync finished")
+  current_app.logger.debug(result)
   return f"synced {len(result['synced'])}"
 
 

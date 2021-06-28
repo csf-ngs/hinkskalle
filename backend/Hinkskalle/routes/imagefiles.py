@@ -289,6 +289,8 @@ def push_image_v2_upload(upload_id):
     raise errors.NotAcceptable(f"Upload already expired. Please to be faster.")
   
   upload.state=UploadStates.uploading
+  if not upload.sha256sum:
+    upload.sha256sum = upload.image_ref.hash.replace('sha256.', '')
   db.session.commit()
   fd, read = _receive_upload(open(upload.path, "wb"), f"sha256.{upload.sha256sum}")
 

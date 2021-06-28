@@ -87,6 +87,32 @@ class TestImagefilesV2(RouteBase):
       content = infh.read()
       self.assertEqual(content, img_data)
 
+  def test_push_v2_single_hash_from_image(self):
+    image = _create_image()[0]
+    img_data, digest = _prepare_img_data()
+    image.hash = digest
+    db.session.commit()
+
+    _, temp_path = tempfile.mkstemp()
+    upload = ImageUploadUrl(
+      image_id=image.id,
+      path=temp_path,
+      sha256sum=None,
+      size=len(img_data),
+      state=UploadStates.initialized,
+    )
+    db.session.add(upload)
+    db.session.commit()
+    upload_id = upload.id
+
+    ret = self.client.put(f"/v2/imagefile/_upload/"+upload_id, data=img_data)
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.headers.get('ETag', None), upload.sha256sum)
+
+    read_upload = ImageUploadUrl.query.get(upload_id)
+    self.assertEqual(read_upload.state, UploadStates.uploaded)
+
+
   def test_push_v2_single_do_state_check(self):
     image = _create_image()[0]
     img_data, digest = _prepare_img_data()

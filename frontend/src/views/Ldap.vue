@@ -115,6 +115,12 @@
                     <v-list-item-subtitle>Progress</v-list-item-subtitle>
                   </v-list-item-content>
                 </v-list-item>
+                <v-list-item v-if="ldapSyncJob.excInfo" tw-line>
+                  <v-list-item-content>
+                    <pre><code>{{ldapSyncJob.excInfo}}</code></pre>
+                    <v-list-item-subtitle>Exception</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
               </v-col>
             </v-row>
           </v-alert>
@@ -144,6 +150,12 @@
                     <v-list-item-subtitle>Finished</v-list-item-subtitle>
                   </v-list-item-content>
                 </v-list-item>
+              </v-col>
+            </v-row>
+            <v-row dense v-if="!ldapSyncResults.success">
+              <v-col cols="12" class="yellow lighten-4">
+                <h3 class="red--text darken-1--text">Exception</h3>
+                <pre><code>{{ldapSyncResults.exception}}</code></pre>
               </v-col>
             </v-row>
             <v-row dense>

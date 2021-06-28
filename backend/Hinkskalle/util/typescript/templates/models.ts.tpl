@@ -25,6 +25,8 @@ export interface AdmLdapSyncResults {
   synced: string[];
   conflict: string[];
   failed: string[];
+  success: boolean;
+  exception: string;
 }
 export function plainToAdmLdapSyncResults(json: any): AdmLdapSyncResults {
   return {
@@ -34,6 +36,8 @@ export function plainToAdmLdapSyncResults(json: any): AdmLdapSyncResults {
     synced: json['synced'],
     conflict: json['conflict'],
     failed: json['failed'],
+    success: json['success'],
+    exception: json['exception'],
   };
 }
 

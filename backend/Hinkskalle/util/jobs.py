@@ -43,6 +43,7 @@ def update_quotas():
       job.save_meta()
     _finish_job(job, result, AdmKeys.check_quotas)
   except Exception as exc:
+    db.session.rollback()
     current_app.logger.error(exc)
     _fail_job(job, result, AdmKeys.check_quotas, exc)
     raise exc

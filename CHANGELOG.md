@@ -1,5 +1,8 @@
-# v4.2.3 (2021-06-27)
+# v4.2.4 (2021-06-27)
 
+- description field not required (containers, collections)
+- take hash from image if not specified in v2 upload init
+- catch exceptions during rq job execution, log in job result
 - more download options (cmd lines, ...)
 - config for download token expiration 
 - blob pulls get docker-content-digest headers to better check HEAD success

@@ -15,10 +15,14 @@ describe('Home.vue', () => {
   let isLoggedIn = true;
   let router: any;
 
+  const OLDENV = process.env;
   beforeEach(() => {
+    process.env = { ...OLDENV  };
+    process.env['VUE_APP_BACKEND_URL']='http://testha.se/'
     vuetify = new Vuetify();
     getters = {
       isLoggedIn: () => isLoggedIn,
+      currentUser: () => jest.fn().mockReturnValue({ username: 'test.hase' }),
     };
     actions = {
       'containers/latest': jest.fn(),
@@ -26,6 +30,9 @@ describe('Home.vue', () => {
     }
     store = new Vuex.Store({ getters, actions });
     router = new VueRouter();
+  });
+  afterAll(() => {
+    process.env = OLDENV;
   });
 
   it('renders not logged in message', () => {

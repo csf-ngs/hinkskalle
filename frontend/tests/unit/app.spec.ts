@@ -78,14 +78,26 @@ describe('App.vue', () => {
     getters['currentUser'].mockReturnValue({
       fullname: 'Test Hase',
       isAdmin: true,
-    });
+    }); 
     const wrapper = mount(App, { localVue, store, vuetify, router });
     expect(wrapper.findAll('a#user-admin').length).toBe(1);
   });
 
-  it('calls get ldap status', () => {
+  it('does not call get ldap status', () => {
+    isLoggedIn = false;
     const wrapper = mount(App, { localVue, store, vuetify, router });
-    expect(actions['adm/ldapStatus']).toBeCalled();
+    expect(actions['adm/ldapStatus']).not.toHaveBeenCalled();
+  });
+  it('does not call get ldap status', () => {
+    isLoggedIn = true;
+    const wrapper = mount(App, { localVue, store, vuetify, router });
+    expect(actions['adm/ldapStatus']).not.toHaveBeenCalled();
+  });
+  it('does call get ldap status for admins', () => {
+    isLoggedIn = true;
+    getters['currentUser'] = jest.fn().mockReturnValue({ fullname: 'Test Hase' });
+    const wrapper = mount(App, { localVue, store, vuetify, router });
+    expect(actions['adm/ldapStatus']).not.toHaveBeenCalled();
   });
   it('renders ldap menu item', () => {
     getters['adm/ldapStatus'].mockReturnValue({

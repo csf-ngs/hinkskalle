@@ -1,3 +1,8 @@
+# v4.2.5 (2021-06-29)
+
+- better handling of unauthenticated access
+- oras/cli/docker usage info
+
 # v4.2.4 (2021-06-27)
 
 - description field not required (containers, collections)

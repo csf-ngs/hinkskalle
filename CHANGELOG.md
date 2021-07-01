@@ -1,3 +1,7 @@
+# v4.2.6 (2021-07-01)
+
+- hopefully fixed env override for backend url
+
 # v4.2.5 (2021-06-29)
 
 - better handling of unauthenticated access

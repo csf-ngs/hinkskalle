@@ -5,7 +5,7 @@ if [ "$1" = "--rebuild" ]; then
   yarn install
 fi
 
-JSON_STRING='window_configs = { \
+JSON_STRING='window.configs = { \
   "VUE_APP_BACKEND_URL": "'$VUE_APP_BACKEND_URL'", \
   "VUE_APP_ENABLE_REGISTER": '$VUE_APP_ENABLE_REGISTER' \
 }'

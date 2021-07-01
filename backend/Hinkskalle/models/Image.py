@@ -72,7 +72,7 @@ class ImageUploadUrl(db.Model):
   id = db.Column(db.String(), primary_key=True, default=generate_uuid, unique=True)
   expiresAt = db.Column(db.DateTime, default=upload_expiration)
   path = db.Column(db.String(), nullable=False)
-  size = db.Column(db.BigInteger)
+  size = db.Column(db.BigInteger())
   md5sum = db.Column(db.String())
   sha256sum = db.Column(db.String())
   state = db.Column(db.Enum(UploadStates, name="upload_state_types"))
@@ -119,7 +119,7 @@ class Image(db.Model):
 
   hash = db.Column(db.String())
   blob = db.Column(db.String())
-  size = db.Column(db.Integer)
+  size = db.Column(db.BigInteger())
   uploaded = db.Column(db.Boolean, default=False)
   customData = db.Column(db.String())
   downloadCount = db.Column(db.Integer, default=0)

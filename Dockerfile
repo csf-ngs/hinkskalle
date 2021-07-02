@@ -3,7 +3,7 @@ WORKDIR /app
 COPY frontend/package*.json ./
 RUN yarn install
 COPY ./frontend/ .
-RUN JSON_STRING='window_configs = { "VUE_APP_BACKEND_URL":"%VUE_APP_BACKEND_URL%", "VUE_APP_ENABLE_REGISTER":%VUE_APP_ENABLE_REGISTER% }' \
+RUN JSON_STRING='window.configs = { "VUE_APP_BACKEND_URL":"%VUE_APP_BACKEND_URL%", "VUE_APP_ENABLE_REGISTER":%VUE_APP_ENABLE_REGISTER% }' \
   && sed "s@// RUNTIME_CONFIG@${JSON_STRING}@" public/index.html.tpl > public/index.html
 RUN yarn build
 

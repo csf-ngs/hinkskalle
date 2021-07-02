@@ -4,6 +4,7 @@ import os.path
 import json
 import tempfile
 import hashlib
+from tempfile import mkdtemp
 
 from flask.globals import current_app
 from Hinkskalle.tests.route_base import RouteBase
@@ -32,19 +33,20 @@ def _fake_img_file(image, data=b"Hello Dorian!"):
 class TestImagefiles(RouteBase):
 
   def test_make_filename(self):
+    self.app.config['IMAGE_PATH']=mkdtemp()
     self.app.config['IMAGE_PATH_HASH_LEVEL']=2
     image = _create_image(hash='sha256.oink')[0]
     from Hinkskalle.routes.imagefiles import _make_filename
     fn = _make_filename(image)
-    self.assertEqual(fn, f"{self.app.config.get('IMAGE_PATH')}_imgs/o/i/sha256.oink.sif")
+    self.assertEqual(fn, f"{self.app.config.get('IMAGE_PATH')}/_imgs/o/i/sha256.oink.sif")
 
     self.app.config['IMAGE_PATH_HASH_LEVEL']=99
     fn = _make_filename(image)
-    self.assertEqual(fn, f"{self.app.config.get('IMAGE_PATH')}_imgs/o/i/n/k/sha256.oink.sif")
+    self.assertEqual(fn, f"{self.app.config.get('IMAGE_PATH')}/_imgs/o/i/n/k/sha256.oink.sif")
 
     self.app.config['IMAGE_PATH_HASH_LEVEL']=0
     fn = _make_filename(image)
-    self.assertEqual(fn, f"{self.app.config.get('IMAGE_PATH')}_imgs/sha256.oink.sif")
+    self.assertEqual(fn, f"{self.app.config.get('IMAGE_PATH')}/_imgs/sha256.oink.sif")
 
 
   def test_pull(self):

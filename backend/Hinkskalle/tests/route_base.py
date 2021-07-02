@@ -4,6 +4,9 @@ from unittest import mock
 from flask import g
 from contextlib import contextmanager
 
+from flask.app import Flask
+from flask.testing import FlaskClient
+
 from Hinkskalle import create_app, db
 from Hinkskalle.models import Entity, Collection, Container, Image, Tag, User
 
@@ -12,8 +15,8 @@ from Hinkskalle.tests.model_base import _create_user
 from . import app
 
 class RouteBase(unittest.TestCase):
-  app = None
-  client = None
+  app: Flask
+  client: FlaskClient
 
   @classmethod
   def setUpClass(cls):

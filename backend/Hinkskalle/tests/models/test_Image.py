@@ -325,3 +325,12 @@ class TestImage(ModelBase):
     image.media_type='grunz'
     fn = image.make_filename()
     self.assertEquals(fn, f"{image.hash}")
+  
+  def test_make_prettyname(self):
+    image = _create_image()[0]
+    fn = image.make_prettyname('v1')
+    self.assertEquals(fn, f"{image.entityName()}/{image.collectionName()}/{image.containerName()}_v1.sif")
+
+    image.media_type='grunz'
+    fn = image.make_prettyname('v1')
+    self.assertEquals(fn, f"{image.entityName()}/{image.collectionName()}/{image.containerName()}_v1")

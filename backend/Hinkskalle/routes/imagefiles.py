@@ -419,7 +419,11 @@ def push_image(image_id):
   return 'Danke!'
 
 def _make_filename(image: Image) -> str:
-  outfn = safe_join(current_app.config.get('IMAGE_PATH'), '_imgs', image.make_filename())
+  hash_subs = ''
+  imghash = image.hash.replace('sha256.', '').replace('md5.', '')
+  for i in range(0, min(len(imghash), current_app.config.get('IMAGE_PATH_HASH_LEVEL',0))):
+    hash_subs = os.path.join(hash_subs, imghash[i])
+  outfn = safe_join(current_app.config.get('IMAGE_PATH'), '_imgs', hash_subs, image.make_filename())
   os.makedirs(os.path.dirname(outfn), exist_ok=True)
   return outfn
 

@@ -238,7 +238,10 @@ class Image(db.Model):
     return self.container_ref.collection_ref.entity_ref.name
   
   def make_prettyname(self, tag) -> str:
-    return os.path.join(self.entityName(), self.collectionName(), f"{self.containerName}_{tag}.sif")
+    fn = os.path.join(self.entityName(), self.collectionName(), f"{self.containerName()}_{tag}")
+    if self.media_type == self.singularity_media_type:
+      fn+='.sif'
+    return fn
 
   def make_filename(self) -> str:
     fn=self.hash

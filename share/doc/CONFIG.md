@@ -15,6 +15,7 @@ You might want to set these:
 ### Hinskalle Config Values
 
 - `IMAGE_PATH` - where should we store the uploaded images?
+- `IMAGE_PATH_HASH_LEVEL` - how many subdirectories should be created below IMAGE_PATH using the image has. Eg. the default: `2` would produce `IMAGE_PATH/a/b/sha256.abxxxxx`. Some file system types don't like directories with too many files in them. Applies only to new uploads. 
 - `FRONTEND_PATH` - where can we find `index.html` and the js bundles for the frontend, usually `../frontend/dist/`
 - `PREFERRED_URL_SCHEME` - `(http|https)`: for generating URLs. If we run behind a reverse proxy we might think that we are on plain http. Use this to force https
 - `UPLOAD_CHUNK_SIZE` - buffer this many bytes before dumping to disk during upload. Find a balance between upload speed and memory usage!

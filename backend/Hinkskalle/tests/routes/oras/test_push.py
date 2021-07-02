@@ -1,4 +1,5 @@
 from Hinkskalle.models.Image import Image
+from unittest import mock
 import tempfile
 from Hinkskalle.models.Container import Container
 from Hinkskalle.models.Entity import Entity
@@ -248,10 +249,14 @@ class TestOrasPush(RouteBase):
     upload_id = upload.id
 
     digest = digest.replace('sha256.', 'sha256:')
-    ret = self.client.put(f"/v2/__uploads/{upload.id}?digest={digest}", data=img_data, content_type='application/octet-stream')
+    # just make sure that we use the same filename generation method as library push
+    with mock.patch('Hinkskalle.routes.imagefiles._make_filename') as mock_make_fn:
+      mock_make_fn.return_value=f"{self.app.config['IMAGE_PATH']}/_imgs/{digest}"
+      ret = self.client.put(f"/v2/__uploads/{upload.id}?digest={digest}", data=img_data, content_type='application/octet-stream')
     self.assertEqual(ret.status_code, 201)
     self.assertRegexpMatches(ret.headers.get('location', ''), rf'/{entity.name}/{collection.name}/{container.name}/blobs/{digest}')
     self.assertIsNotNone(ret.headers.get('location'))
+    mock_make_fn.assert_called()
 
     upload_digest = ret.headers.get('Docker-Content-Digest', '')
     self.assertEqual(upload_digest, digest)

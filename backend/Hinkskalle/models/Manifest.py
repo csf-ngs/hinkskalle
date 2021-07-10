@@ -25,7 +25,7 @@ class ManifestLayerSchema(Schema):
   mediaType = fields.String()
   digest = fields.String()
   size = fields.Integer(allow_none=True)
-  urls = fields.Nested(fields.String(), many=True)
+  urls = fields.List(fields.String())
   annotations = fields.Dict()
 
 class ManifestConfigSchema(Schema):
@@ -37,7 +37,7 @@ class ManifestConfigSchema(Schema):
   os = fields.String() # required
   config = fields.Dict() # could be specified 
   rootfs = fields.Dict()
-  history = fields.Nested(fields.Dict(), many=True)
+  history = fields.List(fields.Dict())
 
 class ManifestContentSchema(Schema):
   schemaVersion = fields.Integer(required=True)

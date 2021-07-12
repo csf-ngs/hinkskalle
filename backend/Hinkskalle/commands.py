@@ -2,8 +2,6 @@ import click
 from flask import current_app
 from flask.cli import AppGroup
 from Hinkskalle import db
-from Hinkskalle import registry, generator
-from Hinkskalle.util.typescript import ModelRenderer
 from Hinkskalle.models.Entity import Entity
 import click
 import humanize
@@ -67,11 +65,3 @@ def remove_user(username):
 current_app.cli.add_command(db_cli)
 current_app.cli.add_command(ldap_cli)
 current_app.cli.add_command(quota_cli)
-
-@current_app.cli.command()
-@click.option('--out', default='../frontend/src/store/models.ts', type=click.File(mode='wb'))
-def generate_typescript_models(out):
-  swagger = generator.generate(registry)
-  class_renderer = ModelRenderer()
-  models = class_renderer.render(swagger['definitions'])
-  out.write(models.encode('utf-8'))

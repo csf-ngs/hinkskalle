@@ -214,6 +214,14 @@ cd share/oci
 ./conformance-test.sh
 ```
 
+## Generate Typescript Classes for models
+
+```bash
+pip3 install -e git+https://github.com/csf-ngs/swagspotta
+# make sure your local dev server is running at localhost:7660
+share/generate-models.sh
+```
+
 # Built With
 
 - [Python Flask](https://flask.palletsprojects.com/en/1.1.x/)

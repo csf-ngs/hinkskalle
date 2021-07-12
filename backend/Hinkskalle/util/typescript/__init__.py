@@ -1,1 +1,0 @@
-from Hinkskalle.util.typescript.models import *

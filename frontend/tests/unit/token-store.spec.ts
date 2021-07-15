@@ -11,12 +11,19 @@ const mockAxios = axios as jest.Mocked<typeof axios>;
 import { makeTestUserObj } from '../_data';
 
 let testUserObj: User;
+let otherUserObj: User;
 beforeAll(() => {
   testUserObj = makeTestUserObj();
+  otherUserObj = makeTestUserObj();
+  otherUserObj.username = 'finti.tax';
 });
+beforeEach(() => {
+  store.state.tokens!.user = null;
+})
 
 store.state.backend = mockAxios;
 
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 const testTokens = [
   { id: '1', token: 'supersecret', createdAt: new Date(), comment: 'eins', },
   { id: '2', token: 'auchgeheim', createdAt: new Date(), comment: 'zwei', },
@@ -31,6 +38,20 @@ describe('token store getters', () => {
   it('has token list getter', () => {
     store.state.tokens!.tokens = _clone(testTokenObj);
     expect(store.getters['tokens/tokens']).toStrictEqual(testTokenObj);
+  });
+  it('has active user getter', () => {
+    store.state.tokens!.user = _clone(otherUserObj);
+    expect(store.getters['tokens/user']).toStrictEqual(otherUserObj);
+  });
+  it('returns rootState user by default', () => {
+    store.state.tokens!.user = null;
+    store.state.currentUser = testUserObj;
+    expect(store.getters['tokens/user']).toStrictEqual(testUserObj);
+  });
+  it('return override user', () => {
+    store.state.currentUser = testUserObj;
+    store.state.tokens!.user = _clone(otherUserObj)
+    expect(store.getters['tokens/user']).toStrictEqual(otherUserObj);
   });
 });
 
@@ -67,6 +88,15 @@ describe('token store mutations', () => {
     expect(updated).toStrictEqual(updateToken);
   });
 
+  it('has setActiveUser mutation', () => {
+    store.state.tokens!.user = null;
+    store.commit('tokens/setActiveUser', _clone(otherUserObj));
+    expect(store.state.tokens!.user).toStrictEqual(otherUserObj);
+
+    store.commit('tokens/setActiveUser', null);
+    expect(store.state.tokens!.user).toBeNull();
+  })
+
 });
 
 describe('token store actions', () => {
@@ -83,6 +113,11 @@ describe('token store actions', () => {
       expect(store.state.tokens!.tokens).toStrictEqual(testTokenObj);
       done();
     });
+
+    store.state.tokens!.user = otherUserObj;
+    store.dispatch('tokens/list');
+    expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/users/${otherUserObj.username}/tokens`);
+
   });
   it('has load token list fail handling', done => {
     mockAxios.get.mockRejectedValue({ fail: 'fail' });
@@ -117,6 +152,10 @@ describe('token store actions', () => {
       expect(created).toStrictEqual(createTokenObj);
       done();
     });
+
+    store.state.tokens!.user = otherUserObj;
+    store.dispatch('tokens/create', createTokenObj);
+    expect(mockAxios.post).toHaveBeenLastCalledWith(`/v1/users/${otherUserObj.username}/tokens`, serializeToken(createTokenObj));
   });
   it('has create token fail handling', done => {
     mockAxios.post.mockRejectedValue({ fail: 'fail' });
@@ -151,6 +190,10 @@ describe('token store actions', () => {
       expect(updated).toStrictEqual(updateTokenObj);
       done();
     });
+
+    store.state.tokens!.user = otherUserObj;
+    store.dispatch('tokens/update', updateTokenObj);
+    expect(mockAxios.put).toHaveBeenLastCalledWith(`/v1/users/${otherUserObj.username}/tokens/${updateToken.id}`, serializeToken(updateTokenObj));
   });
   it('has update token fail handling', done => {
     mockAxios.put.mockRejectedValue({ fail: 'fail' });
@@ -178,6 +221,10 @@ describe('token store actions', () => {
       expect(deleted).toBeUndefined();
       done();
     });
+    store.state.tokens!.user = otherUserObj;
+    store.dispatch('tokens/delete', testTokenObj[0].id);
+    expect(mockAxios.delete).toHaveBeenLastCalledWith(`/v1/users/${otherUserObj.username}/tokens/${testTokenObj[0].id}`);
+
   });
   it('has delete token fail handling', done => {
     mockAxios.delete.mockRejectedValue({ fail: 'fail' });

@@ -15,7 +15,7 @@ export function makeTestUser() {
   }
 }
 
-export function makeTestUserObj(from:any=null): User {
+export function makeTestUserObj(from: any=null): User {
   return plainToUser(from || makeTestUser());
 }
 
@@ -26,7 +26,7 @@ export function makeTestContainers() {
   ]
 }
 
-export function makeTestContainersObj(from:any=null): Container[] {
+export function makeTestContainersObj(from: any=null): Container[] {
   return _map(from || makeTestContainers(), plainToContainer);
 }
 
@@ -46,7 +46,7 @@ export function makeTestLatest() {
     }
   ];
 }
-export function makeTestLatestObj(from:any=null): Upload[] {
+export function makeTestLatestObj(from: any=null): Upload[] {
   return _map(from || makeTestLatest(), plainToUpload);
 }
 
@@ -61,7 +61,7 @@ export function makeTestCollections() {
   ];
 }
 
-export function makeTestCollectionsObj(from:any=null): Collection[] {
+export function makeTestCollectionsObj(from: any=null): Collection[] {
   return _map(from || makeTestCollections(), plainToCollection);
 }
 
@@ -76,7 +76,7 @@ export function makeTestEntities() {
   ];
 }
 
-export function makeTestEntitiesObj(from:any=null): Entity[] {
+export function makeTestEntitiesObj(from: any=null): Entity[] {
   return _map(from || makeTestEntities(), plainToEntity);
 }
 
@@ -88,6 +88,6 @@ export function makeTestSearchResult() {
     image: []
   }
 }
-export function makeTestSearchResultObj(from:any=null): SearchResult {
+export function makeTestSearchResultObj(from: any=null): SearchResult {
   return plainToSearchResult(from || makeTestSearchResult());
 }

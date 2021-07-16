@@ -166,8 +166,8 @@
                   <v-card class="container">
                     <router-link class="text-decoration-none" :to="{ name: 'ContainerDetails', params: { entity: item.entityName, collection: item.collectionName, container: item.name } }">
                       <v-card-title class="text-h6">
-                        <v-icon v-if="item.private">mdi-eye-off</v-icon>
-                        <v-icon v-if="item.readOnly">mdi-lock</v-icon>
+                        <v-icon v-if="item.private">mdi-lock</v-icon>
+                        <v-icon v-if="item.readOnly">mdi-pencil-off-outline</v-icon>
                         <span style="margin-right: 0.35rem;">
                           <container-type :container="item"></container-type>
                         </span>

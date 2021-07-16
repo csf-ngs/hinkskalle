@@ -149,7 +149,7 @@
                   <v-card class="entity">
                     <router-link :to="{ name: 'EntityCollections', params: { entity: item.name } }" class="text-decoration-none">
                       <v-card-title class="headline">
-                        <v-icon v-if="item.defaultPrivate">mdi-eye-off</v-icon>
+                        <v-icon v-if="item.defaultPrivate">mdi-lock</v-icon>
                         {{item.name}}
                       </v-card-title>
                     </router-link>

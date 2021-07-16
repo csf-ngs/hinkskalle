@@ -10,7 +10,7 @@
       :error="localState.status=='failed'"
       :disabled="disabled"
       :readonly="localState.static || readonly" 
-      :append-icon="readonly || localState.static ? 'mdi-lock-outline' : ''"
+      :append-icon="readonly || localState.static ? 'mdi-pencil-off-outline' : ''"
       :rules="rules"
       :required="required"
       @change="saveValue()"
@@ -31,7 +31,7 @@
       :readonly="localState.static || readonly" 
       :rules="rules"
       :required="required"
-      :append-icon="readonly || localState.static ? 'mdi-lock-outline' : ''"
+      :append-icon="readonly || localState.static ? 'mdi-pencil-off-outline' : ''"
       @change="saveValue()"
     ></v-textarea>
     <v-select v-if="type=='yesno'"
@@ -46,7 +46,7 @@
       :readonly="localState.static || readonly" 
       :rules="rules"
       :required="required"
-      :append-icon="readonly || localState.static ? 'mdi-lock-outline' : ''"
+      :append-icon="readonly || localState.static ? 'mdi-pencil-off-outline' : ''"
       :items="[ { value: false, text: 'No' }, { value: true, text: 'Yes' } ]"
       @change="saveValue()"
     ></v-select>

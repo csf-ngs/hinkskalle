@@ -11,7 +11,7 @@
     no-filter
     item-value="username"
     item-text="username"
-    :append-icon="readonly ? 'mdi-lock-outline': ''"
+    :append-icon="readonly ? 'mdi-pencil-off-outline': ''"
     :readonly="readonly"
     :outlined="!readonly">
   </v-autocomplete>

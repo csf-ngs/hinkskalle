@@ -77,6 +77,20 @@ const userModule: Module<State, any> = {
           });
       });
     },
+    get: ({ commit, rootState }, username: string): Promise<User> => {
+      return new Promise<User>((resolve, reject) => {
+        commit('loading');
+        rootState.backend.get(`/v1/users/${username}`)
+          .then((response: AxiosResponse) => {
+            commit('succeeded');
+            resolve(plainToUser(response.data.data));
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
     search: ({ commit, rootState}, search: UserQuery): Promise<User[]> => {
       return new Promise<User[]>((resolve, reject) => {
         commit('loading');

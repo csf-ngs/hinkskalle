@@ -1,6 +1,6 @@
 import { Module } from 'vuex';
 
-import { Token, plainToToken, serializeToken } from '../models';
+import { Token, plainToToken, serializeToken, User } from '../models';
 
 import { map as _map, filter as _filter, concat as _concat } from 'lodash';
 import {AxiosError, AxiosInstance, AxiosResponse} from 'axios';
@@ -8,6 +8,7 @@ import {AxiosError, AxiosInstance, AxiosResponse} from 'axios';
 export interface State {
   status: '' | 'loading' | 'failed' | 'success';
   tokens: Token[];
+  user: User | null;
 }
 
 const tokenModule: Module<State, any> = {
@@ -15,10 +16,12 @@ const tokenModule: Module<State, any> = {
   state: {
     status: '',
     tokens: [],
+    user: null,
   },
   getters: {
     status: (state): string => state.status,
     tokens: (state): Token[] => state.tokens,
+    user: (state, getters, rootState): User => state.user || rootState.currentUser,
   },
   mutations: {
     tokensLoading(state: State) {
@@ -38,13 +41,16 @@ const tokenModule: Module<State, any> = {
     },
     removeToken(state: State, id: string) {
       state.tokens = _filter(state.tokens, t => t.id !== id);
+    },
+    setActiveUser(state: State, user: User | null) {
+      state.user = user;
     }
   },
   actions: {
-    list: ({ commit, rootState }): Promise<Token[]> => {
+    list: ({ commit, rootState, getters }): Promise<Token[]> => {
       return new Promise((resolve, reject) => {
         commit('tokensLoading');
-        rootState.backend.get(`/v1/users/${rootState.currentUser.username}/tokens`)
+        rootState.backend.get(`/v1/users/${getters.user.username}/tokens`)
           .then((response: AxiosResponse) => {
             const list = _map(response.data.data, plainToToken);
             commit('tokensLoadingSucceeded');
@@ -57,10 +63,10 @@ const tokenModule: Module<State, any> = {
           })
       });
     },
-    update: ({ commit, rootState }, update: Token): Promise<Token> => {
+    update: ({ commit, rootState, getters }, update: Token): Promise<Token> => {
       return new Promise((resolve, reject) => {
         commit('tokensLoading');
-        rootState.backend.put(`/v1/users/${rootState.currentUser.username}/tokens/${update.id}`, serializeToken(update))
+        rootState.backend.put(`/v1/users/${getters.user.username}/tokens/${update.id}`, serializeToken(update))
           .then((response: AxiosResponse) => {
             const updated = plainToToken(response.data.data);
             commit('tokensLoadingSucceeded');
@@ -73,10 +79,10 @@ const tokenModule: Module<State, any> = {
           });
       });
     },
-    create: ({ commit, rootState }, create: Token): Promise<Token> => {
+    create: ({ commit, rootState, getters }, create: Token): Promise<Token> => {
       return new Promise((resolve, reject) => {
         commit('tokensLoading');
-        rootState.backend.post(`/v1/users/${rootState.currentUser.username}/tokens`, serializeToken(create))
+        rootState.backend.post(`/v1/users/${getters.user.username}/tokens`, serializeToken(create))
           .then((response: AxiosResponse) => {
             const created = plainToToken(response.data.data)
             commit('tokensLoadingSucceeded');
@@ -89,10 +95,10 @@ const tokenModule: Module<State, any> = {
           });
       });
     },
-    delete: ({ commit, rootState }, id: string): Promise<void> => {
+    delete: ({ commit, rootState, getters }, id: string): Promise<void> => {
       return new Promise((resolve, reject) => {
         commit('tokensLoading');
-        rootState.backend.delete(`/v1/users/${rootState.currentUser.username}/tokens/${id}`)
+        rootState.backend.delete(`/v1/users/${getters.user.username}/tokens/${id}`)
           .then((response: AxiosResponse) => {
             commit('tokensLoadingSucceeded');
             commit('removeToken', id);

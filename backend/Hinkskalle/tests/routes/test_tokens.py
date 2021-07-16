@@ -58,7 +58,7 @@ class TestTokens(RouteBase):
 
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/users/{self.other_username}/tokens")
-    self.assertEqual(ret.status_code, 403)
+    self.assertEqual(ret.status_code, 200)
   
   def test_create(self):
     with self.fake_auth():
@@ -95,7 +95,7 @@ class TestTokens(RouteBase):
 
     with self.fake_admin_auth():
       ret = self.client.post(f"/v1/users/{user.username}/tokens", json={})
-    self.assertEqual(ret.status_code, 403)
+    self.assertEqual(ret.status_code, 200)
   
   def test_update(self):
     now = datetime.datetime.now()
@@ -125,7 +125,7 @@ class TestTokens(RouteBase):
 
     with self.fake_admin_auth():
       ret = self.client.put(f"/v1/users/{self.other_username}/tokens/{new_token.id}", json={"comment": "something"})
-    self.assertEqual(ret.status_code, 403)
+    self.assertEqual(ret.status_code, 200)
 
 
   
@@ -150,7 +150,7 @@ class TestTokens(RouteBase):
 
     with self.fake_admin_auth():
       ret = self.client.delete(f"/v1/users/{self.other_username}/tokens/{new_token.id}")
-    self.assertEqual(ret.status_code, 403)
+    self.assertEqual(ret.status_code, 200)
 
 
   

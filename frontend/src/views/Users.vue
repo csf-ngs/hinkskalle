@@ -152,7 +152,6 @@
             <template v-slot:item.actions="{ item }">
               <v-icon
                 small
-                class="mr-2"
                 @click="editUser(item)">
                 mdi-pencil
               </v-icon>
@@ -161,6 +160,12 @@
                 @click="deleteUser(item)">
                 mdi-delete
               </v-icon>
+              <router-link :to="{ name: 'AdminTokens', params: { user: item.username } }" class="text-decoration-none">
+              <v-icon
+                small>
+                mdi-key-chain-variant
+              </v-icon>
+              </router-link>
             </template>
           </v-data-table>
         </v-col>
@@ -204,14 +209,14 @@ export default Vue.extend({
   },
   data: (): { headers: DataTableHeader[]; localState: State } => ({
     headers: [
-      { text: 'id', value: 'id', sortable: true, filterable: false, width: '5%' },
+      { text: 'id', value: 'id', sortable: true, filterable: false, width: '3%' },
       { text: 'Username', value: 'username', sortable: true, filterable: true, width: '15%' },
       { text: 'Email', value: 'email', sortable: true, filterable: true, width: '15%' },
       { text: 'Name', value: 'lastname', sortable: true, filterable: true, width: '', },
       { text: 'Admin', value: 'isAdmin', sortable: true, filterable: false, width: '5%' },
       { text: 'Active', value: 'isActive', sortable: true, filterable: false, width: '5%' },
-      { text: 'Source', value: 'source', sortable: true, filterable: true, width: '9%' },
-      { text: 'Actions', value: 'actions', sortable: false, filterable: false, width: '1%' },
+      { text: 'Source', value: 'source', sortable: true, filterable: true, width: '5%' },
+      { text: 'Actions', value: 'actions', sortable: false, filterable: false, width: '9%' },
     ],
     localState: {
       search: '',

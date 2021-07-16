@@ -267,6 +267,7 @@ def oras_manifest(name: str, reference: str):
 
   if request.method != 'HEAD':
     manifest.downloadCount += 1
+    manifest.latestDownload = datetime.now()
     db.session.commit()
 
   response = make_response(manifest.content)
@@ -301,6 +302,8 @@ def oras_blob(name, digest):
   if request.method != 'HEAD':
     image.downloadCount += 1
     container.downloadCount += 1
+    image.latestDownload = datetime.now()
+    container.latestDownload = datetime.now()
     db.session.commit()
   
   ret = send_file(image.location)

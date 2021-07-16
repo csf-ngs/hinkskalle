@@ -123,6 +123,7 @@ class Image(db.Model):
   uploaded = db.Column(db.Boolean, default=False)
   customData = db.Column(db.String())
   downloadCount = db.Column(db.Integer, default=0)
+  latestDownload = db.Column(db.DateTime)
   arch = db.Column(db.String())
   signed = db.Column(db.Boolean, default=False)
   signatureVerified = db.Column(db.Boolean, default=False)

@@ -107,10 +107,14 @@ def pull_image(entity_id, collection_id, tagged_container_id):
   
   if not os.path.exists(image.location):
     raise errors.InternalError(f"Image not found at {image.location}")
-  container = Container.query.filter(Container.id==image.container_id).one()
-  container.downloadCount += 1
-  image.downloadCount += 1
-  db.session.commit()
+  
+  if request.method != 'HEAD':
+    container = Container.query.filter(Container.id==image.container_id).one()
+    container.downloadCount += 1
+    container.latestDownload = datetime.now()
+    image.downloadCount += 1
+    image.latestDownload = datetime.now()
+    db.session.commit()
 
   return send_file(image.location)
   

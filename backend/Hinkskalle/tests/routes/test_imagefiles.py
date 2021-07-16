@@ -5,6 +5,7 @@ import json
 import tempfile
 import hashlib
 from tempfile import mkdtemp
+from datetime import datetime, timedelta
 
 from flask.globals import current_app
 from Hinkskalle.tests.route_base import RouteBase
@@ -61,9 +62,11 @@ class TestImagefiles(RouteBase):
     self.assertEqual(ret.data, b"Hello Dorian!")
     db_container = Container.query.get(container.id)
     self.assertEqual(db_container.downloadCount, 1)
+    self.assertAlmostEqual(db_container.latestDownload, datetime.now(), delta=timedelta(seconds=2))
     db_image = Image.query.get(image.id)
     self.assertEqual(db_image.downloadCount, 1)
     self.assertEqual(db_image.containerDownloads(), 1)
+    self.assertAlmostEqual(db_image.latestDownload, datetime.now(), delta=timedelta(seconds=2))
     ret.close() # avoid unclosed filehandle warning
 
     # singularity requests with double slash
@@ -78,6 +81,13 @@ class TestImagefiles(RouteBase):
     self.assertEqual(db_image.downloadCount, 2)
     self.assertEqual(db_image.containerDownloads(), 2)
     ret.close() # avoid unclosed filehandle warning
+
+    ret = self.client.head(f"/v1/imagefile/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    db_container = Container.query.get(container.id)
+    self.assertEqual(db_container.downloadCount, 2)
+    db_image = Image.query.get(image.id)
+    self.assertEqual(db_image.downloadCount, 2)
+
 
     tmpf.close()
   

@@ -63,6 +63,7 @@ class Container(db.Model):
   private = db.Column(db.Boolean, default=False)
   readOnly = db.Column(db.Boolean, default=False)
   downloadCount = db.Column(db.Integer, default=0)
+  latestDownload = db.Column(db.DateTime)
   #stars = db.Column(db.Integer, default=0)
   customData = db.Column(db.String())
   vcsUrl = db.Column(db.String())

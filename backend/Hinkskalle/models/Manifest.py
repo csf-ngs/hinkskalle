@@ -79,6 +79,7 @@ class Manifest(db.Model):
 
   hash = db.Column(db.String(), nullable=False)
   downloadCount = db.Column(db.Integer, default=0)
+  latestDownload = db.Column(db.DateTime)
   _content = db.Column('content', db.String(), nullable=False)
 
   createdAt = db.Column(db.DateTime, default=datetime.now)

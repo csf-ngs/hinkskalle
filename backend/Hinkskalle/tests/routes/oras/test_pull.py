@@ -7,6 +7,7 @@ from Hinkskalle.models.Tag import Tag
 from Hinkskalle.models.Manifest import Manifest
 from Hinkskalle.models.Image import Image
 
+from datetime import datetime, timedelta
 
 class TestOrasPull(RouteBase):
   def test_manifest(self):
@@ -245,6 +246,7 @@ class TestOrasPull(RouteBase):
     self.assertDictEqual(ret.get_json(), {'oi': 'nk'})
     manifest = Manifest.query.get(manifest_id)
     self.assertEqual(manifest.downloadCount, 1)
+    self.assertAlmostEqual(manifest.latestDownload, datetime.now(), delta=timedelta(seconds=2))
 
   def test_manifest_refetch_head(self):
     image = _create_image()[0]
@@ -262,6 +264,7 @@ class TestOrasPull(RouteBase):
 
     manifest = Manifest.query.get(manifest_id)
     self.assertEqual(manifest.downloadCount, 0)
+    self.assertIsNone(manifest.latestDownload)
 
   def test_manifest_hash_notfound(self):
     image = _create_image()[0]
@@ -287,8 +290,10 @@ class TestOrasPull(RouteBase):
     image = Image.query.get(image_id)
     self.assertEqual(image.downloadCount, 1)
     self.assertEqual(image.container_ref.downloadCount, 1)
+    self.assertAlmostEqual(image.latestDownload, datetime.now(), delta=timedelta(seconds=2))
+    self.assertAlmostEqual(image.container_ref.latestDownload, datetime.now(), delta=timedelta(seconds=2))
 
-  def test_blob(self):
+  def test_blob_head_no_increment(self):
     image = _create_image()[0]
     image_id = image.id
     file = _fake_img_file(image)
@@ -299,6 +304,8 @@ class TestOrasPull(RouteBase):
     image = Image.query.get(image_id)
     self.assertEqual(image.downloadCount, 0)
     self.assertEqual(image.container_ref.downloadCount, 0)
+    self.assertIsNone(image.latestDownload)
+    self.assertIsNone(image.container_ref.latestDownload)
 
   def test_blob_noauth(self):
     image = _create_image()[0]

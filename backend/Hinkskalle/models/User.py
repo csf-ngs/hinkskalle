@@ -92,6 +92,8 @@ class User(db.Model):
     return True
   
   def check_token_access(self, user):
+    if user.is_admin:
+      return True
     if self.id == user.id:
       return True
     else:

@@ -59,6 +59,12 @@ const routes: Array<RouteConfig> = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/tokens/:user',
+    name: 'AdminTokens',
+    component: Tokens,
+    meta: { requiresAdmin: true, requiresAuth: true },
+  },
+  {
     path: '/collections',
     name: 'Collections',
     component: Collections,

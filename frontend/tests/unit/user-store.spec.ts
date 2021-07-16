@@ -300,6 +300,31 @@ describe('user store actions', () => {
       });
   });
 
+  it('has get user', done => {
+    const testUser = makeTestUser();
+    const testObj = makeTestUserObj(testUser);
+    mockAxios.get.mockResolvedValue({
+      data: { data: testUser }
+    });
+    const promise = store.dispatch('users/get', testObj.username);
+    expect(store.state.users!.status).toBe('loading');
+    promise.then(user => {
+      expect(mockAxios.get).toHaveBeenLastCalledWith(`/v1/users/${testObj.username}`);
+      expect(user).toStrictEqual(testObj);
+      expect(store.state.users!.status).toBe('success');
+      done();
+    });
+  });
+  it('has get user fail handling', done => {
+    mockAxios.get.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('users/get', 'test.hase')
+      .catch(err => {
+        expect(store.state.users!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
+  });
+
   it('has search users', done => {
     const testUser = makeTestUser();
     const testUserObj = makeTestUserObj(testUser);

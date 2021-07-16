@@ -2,6 +2,11 @@
   <div class="tokens">
     <top-bar title="Tokens"></top-bar>
     <v-container>
+      <v-row v-if="activeUser">
+        <v-col cols="12" class="text-center">
+          <h1>You are looking at {{activeUser.fullname}}s tokens</h1>
+        </v-col>
+      </v-row>
       <v-row>
         <v-col cols="12" md="10" offset-md="1">
           <v-data-table
@@ -112,7 +117,7 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import { Token } from '../store/models';
+import { Token, User } from '../store/models';
 import { clone as _clone } from 'lodash';
 import moment from 'moment';
 import { DataTableHeader } from 'vuetify';
@@ -131,6 +136,21 @@ export default Vue.extend({
   name: 'Tokens',
   mounted() {
     this.loadTokens();
+  },
+  watch: {
+    $route() {
+      this.loadTokens();
+    },
+    'localState.showEdit': function showEdit(val) {
+      if (!val) {
+        this.closeEdit();
+      }
+    },
+    'localState.showDelete': function showDelete(val) {
+      if (!val) {
+        this.closeDelete();
+      }
+    },
   },
   data: (): { headers: DataTableHeader[]; localState: State } => ({
     headers: [
@@ -151,14 +171,17 @@ export default Vue.extend({
     },
   }),
   computed: {
-    tokens() {
+    tokens(): Token[] {
       return this.$store.getters['tokens/tokens'];
     },
-    loading() {
+    loading(): boolean {
       return this.$store.getters['tokens/status']==='loading';
     },
-    editTitle() {
+    editTitle(): string {
       return this.localState.editItem.id ? 'Edit Token' : 'New Token';
+    },
+    activeUser(): User | null {
+      return this.$route.params.user ? this.$store.getters['tokens/user'] : null;
     },
     editExpiration: {
       get: function(): string {
@@ -171,22 +194,22 @@ export default Vue.extend({
       }
     }
   },
-  watch: {
-    'localState.showEdit': function showEdit(val) {
-      if (!val) {
-        this.closeEdit();
-      }
-    },
-    'localState.showDelete': function showDelete(val) {
-      if (!val) {
-        this.closeDelete();
-      }
-    },
-  },
   methods: {
     loadTokens() {
-      this.$store.dispatch('tokens/list')
-        .catch(err => this.$store.commit('snackbar/showError', err));
+      if (this.$route.params.user) {
+        this.$store.dispatch('users/get', this.$route.params.user)
+          .then(user => {
+            this.$store.commit('tokens/setActiveUser', user);
+            this.$store.dispatch('tokens/list')
+              .catch(err => this.$store.commit('snackbar/showError', err));
+          })
+          .catch(err => this.$store.commit('snackbar/showError', err));
+      }
+      else {
+        this.$store.commit('tokens/setActiveUser', null);
+        this.$store.dispatch('tokens/list')
+          .catch(err => this.$store.commit('snackbar/showError', err));
+      }
     },
     editToken(token: Token) {
       this.localState.editItem = _clone(token);

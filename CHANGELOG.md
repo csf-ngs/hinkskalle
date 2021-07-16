@@ -1,3 +1,7 @@
+# next
+
+- admin tokens of other users
+
 # v4.2.6 (2021-07-01)
 
 - hopefully fixed env override for backend url

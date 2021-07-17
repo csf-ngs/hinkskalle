@@ -197,7 +197,7 @@ class TestManifests(RouteBase):
     ret = self.client.get(f"/v1/manifests/{manifest.id}/download?temp_token={token}")
     self.assertEqual(ret.status_code, 406)
 
-  def test_download_token_invalid_type(self):
+  def test_download_token_invalid_id(self):
     image = _create_image()[0]
     tmpf = _fake_img_file(image, data=b'oink')
     manifest = image.generate_manifest()

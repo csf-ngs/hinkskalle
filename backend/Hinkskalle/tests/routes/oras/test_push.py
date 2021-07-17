@@ -108,7 +108,33 @@ class TestOrasPush(RouteBase):
     self.assertIsNone(Container.query.filter(Container.name=='stall', Container.collection_id==collection.id).first())
     
 
-  
+  def test_push_monolith_create_set_private(self): 
+    with self.fake_auth():
+      ret = self.client.post(f"/v2/{self.username}/hase/stall/blobs/uploads/?private=true", headers={'Content-Length': 0 })
+    self.assertEqual(ret.status_code, 202)
+    db_collection = Collection.query.filter(Collection.name=='hase').one()
+    self.assertTrue(db_collection.private)
+    db_container = Container.query.filter(Container.name=='stall').one()
+    self.assertTrue(db_container.private)
+
+  def test_push_monolith_create_set_private_existing(self): 
+    container, collection, entity = _create_container()
+    entity.name = self.username
+    entity.owner = self.user
+    collection.owner = self.user
+    container.owner = self.user
+    db.session.commit()
+    collection_id = collection.id
+    container_id = container.id
+    with self.fake_auth():
+      ret = self.client.post(f"/v2/{self.username}/{collection.name}/{container.name}/blobs/uploads/?private=true", headers={'Content-Length': 0 })
+    self.assertEqual(ret.status_code, 202)
+    db_collection = Collection.query.get(collection_id)
+    self.assertFalse(db_collection.private)
+    db_container = Container.query.get(container_id)
+    self.assertTrue(db_container.private)
+
+
   def test_push_monolith_create_private(self):
     image = _create_image('1')[0]
     image.container_ref.collection_ref.private=True

@@ -41,6 +41,7 @@ class OrasListTagQuerySchema(RequestSchema):
   last = fields.String(required=False)
 
 class OrasBlobMountQuerySchema(RequestSchema):
+  private = fields.Bool(required=False)
   staged = fields.Bool(required=False)
   digest = fields.String(required=False)
   mount = fields.String(required=False)
@@ -424,7 +425,7 @@ def oras_start_upload_session(name):
 
         current_app.logger.debug(f"... creating collection {collection_id}")
         collection = Collection(name=collection_id, entity_ref=entity, owner=owner)
-        if entity.defaultPrivate:
+        if entity.defaultPrivate or args.get('private'):
           collection.private=True
         db.session.add(collection)
         db.session.commit()
@@ -437,7 +438,7 @@ def oras_start_upload_session(name):
 
         current_app.logger.debug(f"... creating container {container_id}")
         container = Container(name=container_id, collection_ref=collection, owner=owner)
-        if collection.private:
+        if collection.private or args.get('private'):
           container.private=True
         db.session.add(container)
         db.session.commit()
@@ -451,6 +452,10 @@ def oras_start_upload_session(name):
   
   if container.readOnly:
     raise OrasDenied(f"Container is readonly")
+
+  if args.get('private'):
+    current_app.logger.debug('set private')
+    container.private = True
   
   if args.get('from') and args.get('mount'):
     return _do_mount(container=container, _from=args.get('from'), mount=args.get('mount'))

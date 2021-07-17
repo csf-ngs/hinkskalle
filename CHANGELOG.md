@@ -2,6 +2,8 @@
 
 - admin tokens of other users
 - download timestamps for image, container, manifest
+- about/help
+- inline fonts, don't want external loading
 
 # v4.2.6 (2021-07-01)
 

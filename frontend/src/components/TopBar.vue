@@ -38,11 +38,13 @@
         </v-list-item-content>
       </template>
     </v-autocomplete>
-    <v-icon>mdi-help-circle-outline</v-icon>
+    <router-link to="About" class="text-decoration-none">
+      <v-icon>mdi-help-circle-outline</v-icon>
+    </router-link>
   </v-toolbar>
 </template>
 <script lang="ts">
-import { Collection, Container, Entity, SearchResult } from '@/store/models';
+import { SearchResult } from '@/store/models';
 import Vue from 'vue';
 
 import { flatten as _flatten, map as _map, set as _set } from 'lodash';

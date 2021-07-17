@@ -10,6 +10,7 @@ import Containers from '../views/Containers.vue';
 import ContainerDetails from '../views/ContainerDetails.vue';
 import Users from '../views/Users.vue';
 import Ldap from '../views/Ldap.vue';
+import About from '../views/About.vue';
 import store from '../store';
 
 Vue.use(VueRouter);
@@ -45,6 +46,11 @@ const routes: Array<RouteConfig> = [
     path: '/login',
     name: 'Login',
     component: Login,
+  },
+  {
+    path: '/about',
+    name: 'About',
+    component: About,
   },
   {
     path: '/account',

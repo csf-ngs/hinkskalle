@@ -106,7 +106,7 @@
 button.download-button {
   letter-spacing: inherit;
   text-transform: none;
-  font-family: Roboto Mono, monospace;
+  font-family: "Roboto Mono", monospace;
 }
 </style>
 <script lang="ts">

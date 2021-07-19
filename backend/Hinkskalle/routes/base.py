@@ -11,9 +11,6 @@ from sqlalchemy import desc
 from Hinkskalle.models import Tag, ContainerSchema
 from .util import _get_service_url
 
-# for some reason I cannot set up these routes with @current_app in the routes
-# module like the others. They're not found (in the tests) even though
-# flask routes shows them.
 @current_app.route('/', defaults={'path': ''})
 @current_app.route('/<path:path>')
 def frontend(path):

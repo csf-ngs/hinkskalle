@@ -167,7 +167,7 @@
                     <p>Or, for complete lockdown, set your entity to <code>defaultPrivate</code>. This means
                       that anything new(!) you push will be private.</p>
                   <h4>Push is Private</h4>
-                    <p>You can push to your entity {{currentUser.username}}. That's it!</p>
+                    <p>You and only you can push to your entity {{currentUser.username}}. That's it!</p>
                 </v-card-text>
               </v-card>
               <v-card flat>
@@ -175,11 +175,20 @@
                   <h3>All Other Containers</h3>
                 </v-card-subtitle>
                 <v-card-text>
-                  <h4>Push and Pull are Private</h4>
-                  <p>docker, ORAS and stuff pushed with the hinkskalle-cli can only be pulled by you, 
-                    no one else, regardless of the <code>private</code> flag. The idea behind this is 
-                    that you might have more sensitive stuff there. This might change in the future,
-                    so it might be useful if you set your private flags anyways.</p>
+                  <h4>Pull is Authenticated Only</h4>
+                    <p>Docker, ORAS and stuff uploaded with the hinkskalle CLI can be pulled by anyone who is 
+                      known to the registry (authenticated users).</p>
+                    <p>You can set the container or collection to <code>Private</code> to allow pull only for 
+                      yourself.</p>
+                    <p>For complete lockdown set your entity to <code>defaultPrivate</code>. This means 
+                      that anything new(!) you push will be private.</p>
+                  <h4>Push is Private</h4>
+                    <p>You and only you can push to your entity {{currentUser.username}}. That's it!</p>
+                  <h4>Special Case: Download Tokens</h4>
+                    <p>You can generate download URLs with the hinkskalle CLI and the web interface that allow 
+                      downloading of exactly this image for everyone having this URL without further authentication 
+                      or authorization, even for private images. It contains a special token 
+                      that is valid for one day by default (can be configured on the server).</p> 
                 </v-card-text>
               </v-card>
               <v-card flat>

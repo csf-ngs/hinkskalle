@@ -49,7 +49,7 @@ def update_quotas():
     raise exc
   current_app.logger.debug(f"quota check finished.")
   current_app.logger.debug(result)
-  return f"updated {len(result['updated'])}"
+  return f"updated {result['updated']}"
   
 
 def _finish_job(job, result, key):

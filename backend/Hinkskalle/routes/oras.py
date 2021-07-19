@@ -299,6 +299,9 @@ def oras_blob(name, digest):
   except NoResultFound:
     current_app.logger.debug(f"hash {digest} for container {container.id} not found")
     raise OrasBlobUnknwon(f"Blob {digest} not found")
+  
+  if not image.uploaded or not image.location:
+    raise OrasBlobUnknwon(f"Blob {digest} not uploaded or already deleted.")
 
   if request.method != 'HEAD':
     image.downloadCount += 1

@@ -64,6 +64,36 @@ class TestOrasPull(RouteBase):
     ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/latest")
     self.assertEqual(ret.status_code, 401)
 
+  def test_manifest_user(self):
+    image, container, collection, entity = _create_image(postfix='1')
+    container.owner = self.user
+    collection.owner = self.user
+    entity.owner = self.user
+
+    latest_tag = Tag(name='latest', image_ref=image)
+    db.session.add(latest_tag)
+
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/latest")
+    self.assertEqual(ret.status_code, 200)
+
+  def test_manifest_user_other(self):
+    image, container, collection, entity = _create_image(postfix='1')
+    container.owner = self.other_user
+    collection.owner = self.other_user
+    entity.owner = self.other_user
+
+    latest_tag = Tag(name='latest', image_ref=image)
+    db.session.add(latest_tag)
+
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/latest")
+    self.assertEqual(ret.status_code, 200)
+
   def test_manifest_private(self):
     image, container, collection, entity = _create_image(postfix='1')
     container.private=True
@@ -307,6 +337,14 @@ class TestOrasPull(RouteBase):
     self.assertIsNone(image.latestDownload)
     self.assertIsNone(image.container_ref.latestDownload)
 
+  def test_blob_not_uploaded(self):
+    image = _create_image()[0]
+    image_id = image.id
+
+    with self.fake_auth():
+      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
+    self.assertEqual(ret.status_code, 404)
+
   def test_blob_noauth(self):
     image = _create_image()[0]
     file = _fake_img_file(image)
@@ -350,6 +388,18 @@ class TestOrasPull(RouteBase):
     with self.fake_auth():
       ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
     self.assertEqual(ret.status_code, 403)
+
+  def test_blob_private_auth_user_other(self):
+    image, container, collection, entity = _create_image()
+    container.owner = self.other_user
+    collection.owner = self.other_user
+    entity.owner = self.other_user
+    container.private = False
+    file = _fake_img_file(image)
+
+    with self.fake_auth():
+      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
+    self.assertEqual(ret.status_code, 200)
 
   def test_blob_unsupported(self):
     image = _create_image()[0]

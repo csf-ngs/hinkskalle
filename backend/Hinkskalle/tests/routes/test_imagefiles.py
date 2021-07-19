@@ -161,6 +161,42 @@ class TestImagefiles(RouteBase):
     ret.close()
     
     tmpf.close()
+
+  def test_pull_user(self):
+    image, container, collection, _ = _create_image()
+    latest_tag = Tag(name='latest', image_ref=image)
+    db.session.add(latest_tag)
+    container.owner=self.user
+    collection.owner=self.user
+    db.session.commit()
+
+    tmpf = _fake_img_file(image)
+    
+    with self.fake_auth():
+      ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+      self.assertEqual(ret.status_code, 308)
+      ret = self.client.get(ret.headers.get('Location'))
+      self.assertEqual(ret.status_code, 200)
+    ret.close()
+    tmpf.close()
+
+  def test_pull_user_other(self):
+    image, container, collection, _ = _create_image()
+    latest_tag = Tag(name='latest', image_ref=image)
+    db.session.add(latest_tag)
+    container.owner=self.other_user
+    collection.owner=self.other_user
+    db.session.commit()
+
+    tmpf = _fake_img_file(image)
+    
+    with self.fake_auth():
+      ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+      self.assertEqual(ret.status_code, 308)
+      ret = self.client.get(ret.headers.get('Location'))
+      self.assertEqual(ret.status_code, 200)
+    ret.close()
+    tmpf.close()
   
   def test_pull_private_own(self):
     image, container, _, _ = _create_image()

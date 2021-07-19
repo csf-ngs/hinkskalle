@@ -99,7 +99,7 @@ def pull_image(entity_id, collection_id, tagged_container_id):
     raise errors.Forbidden('Private image, access denied.')
 
   if not image.uploaded or not image.location:
-    raise errors.NotAcceptable('Image is not uploaded yet?')
+    raise errors.NotFound('Image is not uploaded yet or already deleted.')
   
   if image.media_type != Image.singularity_media_type:
     current_app.logger.debug(f"attempting to pull {image.media_type} via library api")

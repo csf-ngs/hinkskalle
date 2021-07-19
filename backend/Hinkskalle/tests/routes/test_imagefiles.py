@@ -132,6 +132,15 @@ class TestImagefiles(RouteBase):
     ret = self.client.get(f"/v1/imagefile/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 403)
 
+  def test_pull_not_uploaded(self):
+    image, container, _, _ = _create_image()
+    latest_tag = Tag(name='latest', image_ref=image)
+    db.session.add(latest_tag)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/imagefile/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 404)
   
   def test_pull_private(self):
     image, container, _, _ = _create_image()

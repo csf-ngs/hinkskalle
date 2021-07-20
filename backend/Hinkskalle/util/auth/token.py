@@ -38,7 +38,7 @@ class TokenAuthenticator(Authenticator):
   type = 'Bearer'
   name = 'Authorization Header'
 
-  def with_scope(self, scope) -> Authenticator:
+  def with_scope(self, scope) -> ScopedTokenAuthenticator:
     return ScopedTokenAuthenticator(self, scope)
   
   def authenticate(self):

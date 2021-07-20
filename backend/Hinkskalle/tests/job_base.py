@@ -1,10 +1,12 @@
 import unittest
 from Hinkskalle import db
 import os
+from fakeredis import FakeStrictRedis
+from rq import Queue
+
 from . import app
 
-class ModelBase(unittest.TestCase):
-
+class JobBase(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     os.environ['SQLALCHEMY_DATABASE_URI']='sqlite://'
@@ -12,6 +14,7 @@ class ModelBase(unittest.TestCase):
   
   def setUp(self):
     self.app = app
+    self.queue = Queue(is_async=False, connection=FakeStrictRedis())
     self.app.config['TESTING']=True
     self.app.app_context().push()
     db.create_all()

@@ -1,8 +1,7 @@
-import unittest
-from Hinkskalle.tests.route_base import RouteBase
-from Hinkskalle.tests.model_base import _create_user
+from ..route_base import RouteBase
+from .._util import _create_user
 
-from Hinkskalle.models import User, Token
+from Hinkskalle.models.User import Token
 from Hinkskalle import db
 
 import datetime

@@ -1,6 +1,6 @@
 from Hinkskalle import db
-from Hinkskalle.tests.route_base import RouteBase
-from Hinkskalle.tests.model_base import _create_user
+from ..route_base import RouteBase
+from .._util import _create_user
 
 from flask_rebar import errors
 

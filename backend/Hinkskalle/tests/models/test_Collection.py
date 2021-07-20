@@ -3,21 +3,8 @@ from datetime import datetime, timedelta
 from Hinkskalle.models import Entity, Collection, CollectionSchema, Container
 
 from Hinkskalle import db
-from Hinkskalle.tests.model_base import ModelBase, _create_user
-
-def _create_collection(name='test-collection'):
-  try:
-    entity = Entity.query.filter_by(name='test-hase').one()
-  except:
-    entity = Entity(name='test-hase')
-    db.session.add(entity)
-    db.session.commit()
-
-
-  coll = Collection(name=name, entity_id=entity.id)
-  db.session.add(coll)
-  db.session.commit()
-  return coll, entity
+from ..model_base import ModelBase
+from .._util import _create_user, _create_collection
 
 
 class TestCollection(ModelBase):

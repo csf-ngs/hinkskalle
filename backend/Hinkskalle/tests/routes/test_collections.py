@@ -1,12 +1,11 @@
-
-import unittest
-import os
-import json
 import datetime
-from Hinkskalle.tests.route_base import RouteBase
-from Hinkskalle.models import Entity, Collection, Container
-from Hinkskalle.tests.models.test_Collection import _create_collection
+from Hinkskalle.models.Entity import Entity
+from Hinkskalle.models.Collection import Collection
+from Hinkskalle.models.Container import Container
 from Hinkskalle import db
+
+from ..route_base import RouteBase
+from .._util import _create_collection
 
 class TestCollections(RouteBase):
   def test_list_noauth(self):

@@ -7,10 +7,10 @@ from contextlib import contextmanager
 from flask.app import Flask
 from flask.testing import FlaskClient
 
-from Hinkskalle import create_app, db
-from Hinkskalle.models import Entity, Collection, Container, Image, Tag, User
+from Hinkskalle import db
+from Hinkskalle.models import User
 
-from Hinkskalle.tests.model_base import _create_user
+from ._util import _create_user
 
 from . import app
 

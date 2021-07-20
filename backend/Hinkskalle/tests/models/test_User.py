@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
-from Hinkskalle.tests.model_base import ModelBase, _create_group, _create_user
-from Hinkskalle.tests.models.test_Container import _create_container
+from ..model_base import ModelBase
+from .._util import _create_group, _create_user, _create_container
 
 from Hinkskalle.models import User, UserSchema, Group, Token, TokenSchema, Container
 

@@ -1,25 +1,12 @@
-import unittest
 from unittest import mock
-from fakeredis import FakeStrictRedis
-from rq import Queue
 
-from .. import app
+from ..job_base import JobBase
+
 from Hinkskalle import db
 from Hinkskalle.models.Adm import Adm, AdmKeys
 from Hinkskalle.models.Entity import Entity
 
-class TestQuotaJob(unittest.TestCase):
-  def setUp(self):
-    self.queue = Queue(is_async=False, connection=FakeStrictRedis())
-    self.app = app
-    self.app.app_context().push()
-    db.create_all()
-  
-  def tearDown(self):
-    db.session.rollback()
-    db.session.close()
-    db.drop_all()
-  
+class TestQuotaJob(JobBase):
   def test_job(self):
     from Hinkskalle.util.jobs import update_quotas
     job = self.queue.enqueue(update_quotas)

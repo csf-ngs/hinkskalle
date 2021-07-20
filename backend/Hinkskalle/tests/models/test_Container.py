@@ -6,20 +6,11 @@ from unittest.case import skip
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Container import ContainerTypes
 from Hinkskalle.models import Collection, Container, ContainerSchema, Image, Tag
-from .test_Collection import _create_collection
 from .test_Image import _create_image
-from Hinkskalle.tests.model_base import ModelBase, _create_user
+from ..model_base import ModelBase
+from .._util import _create_user, _create_container, _create_image
 
 from Hinkskalle import db
-
-
-def _create_container(postfix: str ='container') -> Tuple[Container, Collection, Entity]:
-  coll, entity = _create_collection(f"test-collection-{postfix}")
-
-  container = Container(name=f"test-{postfix}", collection_id=coll.id)
-  db.session.add(container)
-  db.session.commit()
-  return container, coll, entity
 
 
 class TestContainer(ModelBase):

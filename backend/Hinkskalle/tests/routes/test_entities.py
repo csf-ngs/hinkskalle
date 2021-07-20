@@ -1,8 +1,5 @@
-import unittest
-import os
-import json
 import datetime
-from Hinkskalle.tests.route_base import RouteBase
+from ..route_base import RouteBase
 
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Collection import Collection

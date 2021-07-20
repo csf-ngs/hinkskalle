@@ -3,17 +3,13 @@ from Hinkskalle.models.Manifest import Manifest
 from Hinkskalle.models.Tag import Tag
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Collection import Collection
-import unittest
-import os
-import json
 import datetime
 from sqlalchemy import update
-from Hinkskalle.tests.route_base import RouteBase
-from Hinkskalle.tests.models.test_Container import _create_container
-from Hinkskalle.tests.models.test_Collection import _create_collection
 from Hinkskalle.models import Container, Image
 from Hinkskalle import db
 
+from ..route_base import RouteBase
+from .._util import _create_container, _create_collection
 class TestContainers(RouteBase):
   def test_list_noauth(self):
     ret = self.client.get('/v1/containers/what/ever')

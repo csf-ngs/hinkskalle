@@ -1,5 +1,7 @@
 from Hinkskalle import db
-from Hinkskalle.tests.model_base import ModelBase, _create_user
+from ..model_base import ModelBase
+from .._util import _create_user
+
 from ldap3 import MOCK_SYNC, OFFLINE_AD_2012_R2
 from rq import Queue
 from fakeredis import FakeStrictRedis

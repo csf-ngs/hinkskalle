@@ -1,13 +1,13 @@
-import unittest
 import tempfile
 import os.path
 
 from Hinkskalle.tests.route_base import RouteBase
-from Hinkskalle.tests.models.test_Image import _create_image
-from Hinkskalle.tests.models.test_Container import _create_container
 from Hinkskalle.models.Image import Image
 from Hinkskalle.models.Tag import Tag
 from Hinkskalle import db
+
+from ..route_base import RouteBase
+from .._util import _create_image, _create_container
 
 class TestBase(RouteBase):
 

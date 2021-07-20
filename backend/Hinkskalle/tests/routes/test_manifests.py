@@ -1,12 +1,12 @@
 from Hinkskalle import db
+
 from ..route_base import RouteBase
-import re
+from .._util import _fake_img_file, _create_image
+
 import jwt
 from datetime import datetime
 from calendar import timegm
 
-from Hinkskalle.tests.models.test_Image import _create_image
-from .test_imagefiles import _fake_img_file
 from Hinkskalle.models.Manifest import Manifest
 from Hinkskalle.models.Image import Image
 

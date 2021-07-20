@@ -3,12 +3,12 @@ from urllib.parse import urlparse
 import tempfile
 import datetime
 import hashlib
+import os
 import os.path
 
 
-from Hinkskalle.tests.route_base import RouteBase
-
-from Hinkskalle.tests.models.test_Image import _create_image
+from ..route_base import RouteBase
+from .._util import _create_image
 
 from Hinkskalle.models import Image, ImageUploadUrl, UploadStates, UploadTypes
 from Hinkskalle import db

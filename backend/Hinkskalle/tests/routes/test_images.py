@@ -1,17 +1,14 @@
 from Hinkskalle.models.Entity import Entity
-import unittest
-import json
 import datetime
 import os
 from tempfile import mkdtemp
-from warnings import warn
-from Hinkskalle.tests.route_base import RouteBase
 from sqlalchemy import update
 
 from Hinkskalle.models import Collection, Image, Tag, Container
-from Hinkskalle.tests.models.test_Image import _create_image
-from Hinkskalle.tests.models.test_Container import _create_container
 from Hinkskalle import db
+
+from ..route_base import RouteBase
+from .._util import _create_image, _create_container
 
 class TestImages(RouteBase):
   def test_list_noauth(self):

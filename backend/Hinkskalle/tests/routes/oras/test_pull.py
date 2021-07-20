@@ -1,6 +1,5 @@
 from Hinkskalle.tests.route_base import RouteBase
-from ..test_imagefiles import _fake_img_file
-from Hinkskalle.tests.models.test_Image import _create_image
+from Hinkskalle.tests._util import _fake_img_file, _create_image
 
 from Hinkskalle import db
 from Hinkskalle.models.Tag import Tag

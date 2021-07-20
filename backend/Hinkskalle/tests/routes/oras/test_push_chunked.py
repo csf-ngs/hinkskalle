@@ -1,20 +1,14 @@
 from typing import Tuple
 from Hinkskalle.models.Image import Image
 import tempfile
-from Hinkskalle.models.Container import Container
 from Hinkskalle.models.Entity import Entity
-from Hinkskalle.models.Collection import Collection
-from Hinkskalle.models.Tag import Tag
-import datetime
 import os.path
-import json
 
 from Hinkskalle.tests.route_base import RouteBase
+from Hinkskalle.tests._util import _create_image, _create_container
 
 from Hinkskalle import db
-from Hinkskalle.models import Manifest, ImageUploadUrl, UploadStates, UploadTypes
-from Hinkskalle.tests.models.test_Image import _create_image
-from Hinkskalle.tests.models.test_Container import _create_container
+from Hinkskalle.models import ImageUploadUrl, UploadStates, UploadTypes
 from ..test_imagefiles import _prepare_img_data
 
 

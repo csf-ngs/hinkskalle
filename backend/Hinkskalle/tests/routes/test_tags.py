@@ -1,13 +1,14 @@
-import unittest
 import os.path
 import os
-from warnings import warn
 from tempfile import mkdtemp
 
 from Hinkskalle import db
-from Hinkskalle.models import Container, Tag, Image
-from Hinkskalle.tests.route_base import RouteBase
-from Hinkskalle.tests.models.test_Image import _create_image
+from Hinkskalle.models.Container import Container
+from Hinkskalle.models.Tag import Tag
+from Hinkskalle.models.Image import Image
+
+from ..route_base import RouteBase
+from .._util import _create_image
 
 
 class TestTags(RouteBase):
@@ -48,7 +49,7 @@ class TestTags(RouteBase):
     container.owner=self.user
     db.session.commit()
 
-    container.tag_image('v1.0', str(image.id))
+    container.tag_image('v1.0', image.id)
     with self.fake_auth():
       ret = self.client.get(f"/v1/tags/{container.id}")
     self.assertEqual(ret.status_code, 200)

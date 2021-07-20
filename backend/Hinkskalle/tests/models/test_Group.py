@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
-from Hinkskalle.tests.model_base import ModelBase, _create_group, _create_user
+from ..model_base import ModelBase
+from .._util import _create_group, _create_user
 
 from Hinkskalle.models import Group, GroupSchema
 

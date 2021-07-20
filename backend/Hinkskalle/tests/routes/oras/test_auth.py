@@ -1,6 +1,6 @@
 from Hinkskalle.models.User import Token
 from Hinkskalle.tests.route_base import RouteBase
-from Hinkskalle.tests.model_base import _create_user
+from Hinkskalle.tests._util import _create_user
 
 from Hinkskalle import db
 

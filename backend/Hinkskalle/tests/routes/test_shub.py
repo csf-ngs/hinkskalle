@@ -1,13 +1,8 @@
-
-import unittest
-import os
-import json
-import tempfile
-from Hinkskalle.tests.route_base import RouteBase
-
 from Hinkskalle import db
-from Hinkskalle.models import Tag
-from Hinkskalle.tests.models.test_Image import _create_image
+from Hinkskalle.models.Tag import Tag
+
+from ..route_base import RouteBase
+from .._util import _create_image
 
 class TestShub(RouteBase):
   def test_manifest(self):

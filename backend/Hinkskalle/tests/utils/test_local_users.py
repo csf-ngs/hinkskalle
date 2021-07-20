@@ -1,5 +1,6 @@
 from Hinkskalle import db
-from Hinkskalle.tests.model_base import ModelBase, _create_user
+from ..model_base import ModelBase
+from .._util import _create_user
 
 from Hinkskalle.util.auth.local import LocalUsers
 from Hinkskalle.util.auth.exceptions import *

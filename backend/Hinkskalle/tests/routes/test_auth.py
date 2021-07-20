@@ -1,8 +1,8 @@
 import datetime
 from flask import g
-from Hinkskalle.tests.route_base import RouteBase
+from ..route_base import RouteBase
 
-from Hinkskalle.tests.model_base import _create_user
+from .._util import _create_user
 from Hinkskalle.models.User import Token
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle import db

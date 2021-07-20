@@ -10,12 +10,10 @@ import os.path
 import json
 
 from Hinkskalle.tests.route_base import RouteBase
+from Hinkskalle.tests._util import _create_image, _create_container, _prepare_img_data
 
 from Hinkskalle import db
 from Hinkskalle.models import Manifest, ImageUploadUrl, UploadStates, UploadTypes
-from Hinkskalle.tests.models.test_Image import _create_image
-from Hinkskalle.tests.models.test_Container import _create_container
-from ..test_imagefiles import _prepare_img_data
 
 
 class TestOrasPush(RouteBase):

@@ -15,26 +15,8 @@ from Hinkskalle.models.Tag import Tag
 from Hinkskalle.tests.models.test_Collection import _create_collection
 
 from Hinkskalle import db
-from Hinkskalle.tests.model_base import ModelBase, _create_user
-
-def _create_image(hash: str='sha256.oink', postfix: str='container', **kwargs) -> Tuple[Image, Container, Collection, Entity]:
-  try:
-    coll = Collection.query.filter_by(name=f"test-coll-{postfix}").one()
-    entity = coll.entity_ref
-  except:
-    coll, entity = _create_collection(f"test-coll-{postfix}")
-
-  try:
-    container = Container.query.filter_by(name=f"test-{postfix}").one()
-  except:
-    container = Container(name=f"test-{postfix}", collection_ref=coll)
-    db.session.add(container)
-    db.session.commit()
-
-  image = Image(container_ref=container, hash=hash, **kwargs)
-  db.session.add(image)
-  db.session.commit()
-  return image, container, coll, entity
+from ..model_base import ModelBase
+from .._util import _create_user, _create_image
 
 class TestImage(ModelBase):
 

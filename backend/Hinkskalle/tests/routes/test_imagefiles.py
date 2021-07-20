@@ -1,35 +1,14 @@
-from typing import Tuple
-import unittest
 import os.path
-import json
 import tempfile
-import hashlib
 from tempfile import mkdtemp
 from datetime import datetime, timedelta
 
-from flask.globals import current_app
-from Hinkskalle.tests.route_base import RouteBase
+from ..route_base import RouteBase
+from .._util import _create_image, _fake_img_file, _prepare_img_data
 
 from Hinkskalle.models import Image, Tag, Container
 from Hinkskalle.models.Entity import Entity
-from Hinkskalle.tests.models.test_Image import _create_image
 from Hinkskalle import db
-
-def _prepare_img_data(data=b"Hello Dorian!") -> Tuple[bytes, str]:
-    img_data=data
-    m = hashlib.sha256()
-    m.update(img_data)
-    return img_data, f"sha256.{m.hexdigest()}"
-
-def _fake_img_file(image, data=b"Hello Dorian!"):
-    tmpf = tempfile.NamedTemporaryFile()
-    tmpf.write(data)
-    tmpf.flush()
-    image.location=tmpf.name
-    image.uploaded=True
-    db.session.commit()
-    return tmpf
-
 
 class TestImagefiles(RouteBase):
 

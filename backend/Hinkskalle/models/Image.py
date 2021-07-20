@@ -36,6 +36,8 @@ class ImageSchema(Schema):
   createdAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(dump_only=True)
   updatedAt = fields.DateTime(dump_only=True, allow_none=True)
+  expiresAt = fields.DateTime(allow_none=True)
+
   deletedAt = fields.DateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
 
@@ -138,6 +140,7 @@ class Image(db.Model):
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
+  expiresAt = db.Column(db.DateTime)
 
   owner = db.relationship('User', back_populates='images')
 

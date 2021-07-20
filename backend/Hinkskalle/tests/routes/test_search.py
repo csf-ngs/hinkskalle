@@ -1,12 +1,12 @@
 import unittest
 
-from Hinkskalle.tests.route_base import RouteBase
-
-from Hinkskalle.tests.models.test_Image import _create_image
-from Hinkskalle.tests.models.test_Container import _create_container
+from ..route_base import RouteBase
+from .._util import _create_image, _create_container
 
 from Hinkskalle import db
-from Hinkskalle.models import EntitySchema, CollectionSchema, ImageSchema
+from Hinkskalle.models.Entity import EntitySchema
+from Hinkskalle.models.Collection import CollectionSchema
+from Hinkskalle.models.Image import ImageSchema
 from Hinkskalle.models.Container import ContainerSchema, Container
 from Hinkskalle.models.Image import ImageSchema, Image
 

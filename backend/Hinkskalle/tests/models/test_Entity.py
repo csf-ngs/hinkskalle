@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
-from enum import Enum
 
-from Hinkskalle.tests.model_base import ModelBase, _create_user
-from Hinkskalle.models import Entity, EntitySchema, Collection
+from Hinkskalle.models.Entity import Entity, EntitySchema
+from Hinkskalle.models.Collection import Collection
 from Hinkskalle import db
-from .test_Image import _create_image
+from ..model_base import ModelBase
+from .._util import _create_user, _create_image
 
 class TestEntity(ModelBase):
 

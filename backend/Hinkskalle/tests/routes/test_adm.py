@@ -1,4 +1,4 @@
-from Hinkskalle.tests.route_base import RouteBase
+from ..route_base import RouteBase
 
 from Hinkskalle.models import Adm, AdmKeys
 from Hinkskalle import db

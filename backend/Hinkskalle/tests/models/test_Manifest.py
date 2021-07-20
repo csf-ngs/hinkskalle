@@ -4,8 +4,8 @@ from Hinkskalle.models.Manifest import Manifest, ManifestContentSchema, Manifest
 from Hinkskalle.models.Tag import Tag
 
 from Hinkskalle import db
-from Hinkskalle.tests.model_base import ModelBase
-from Hinkskalle.tests.models.test_Image import _create_image
+from ..model_base import ModelBase
+from .._util import _create_image
 
 class TestManifest(ModelBase):
   def test_manifest(self):

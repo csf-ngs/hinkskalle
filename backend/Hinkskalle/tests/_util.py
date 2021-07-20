@@ -69,11 +69,12 @@ def _prepare_img_data(data=b"Hello Dorian!") -> typing.Tuple[bytes, str]:
     m.update(img_data)
     return img_data, f"sha256.{m.hexdigest()}"
 
-def _fake_img_file(image, data=b"Hello Dorian!"):
+def _fake_img_file(image: Image, data=b"Hello Dorian!"):
     tmpf = tempfile.NamedTemporaryFile()
     tmpf.write(data)
     tmpf.flush()
     image.location=tmpf.name
+    image.size=len(data)
     image.uploaded=True
     db.session.commit()
     return tmpf

@@ -7,6 +7,7 @@ from marshmallow import fields, Schema, validate, pre_dump
 class AdmKeys(enum.Enum):
   ldap_sync_results = 'ldap_sync_results'
   check_quotas = 'check_quotas'
+  expire_images = 'expire_images'
 
 class AdmSchema(Schema):
   key = fields.String(required=True, dump_only=True, validate=validate.OneOf([k.name for k in AdmKeys ]))

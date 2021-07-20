@@ -1,22 +1,70 @@
 import typing
 from flask_rq2 import RQ
 from Hinkskalle import db
-from Hinkskalle.models import Adm, AdmKeys
-from Hinkskalle.models.Entity import Entity
 from rq import get_current_job
 from flask import current_app
-from time import sleep
 from rq.job import Job
-from .auth.ldap import LDAPUsers, _get_attr
-from .auth.exceptions import UserConflict
 from datetime import datetime, timezone
 import traceback
+
+from Hinkskalle.models.Adm import Adm, AdmKeys
+from Hinkskalle.models.Entity import Entity
+from Hinkskalle.models.Image import Image
+from .auth.ldap import LDAPUsers, _get_attr
+from .auth.exceptions import UserConflict
+import os
+import os.path
 
 rq = RQ()
 
 def get_job_info(id):
   return Job.fetch(id, connection=rq.connection)
 
+@rq.job
+def expire_images():
+  current_app.logger.debug(f"starting image expiration...")
+  job: typing.Optional[Job] = get_current_job()
+  if not job:
+    return
+  result = {
+    'job': job.id,
+    'started': datetime.now(tz=timezone.utc).isoformat(),
+    'updated': 0,
+    'space_reclaimed': 0,
+  }
+  job.meta['progress']='starting'
+  job.save_meta()
+  try:
+    to_delete = Image.query.filter(Image.expiresAt < datetime.now(), Image.uploaded == True)
+    total_count = to_delete.count()
+
+    for image in to_delete:
+      if image.location:
+        try:
+          if not image.size:
+            image.size = os.path.getsize(image.location)
+          os.unlink(image.location)
+          result['space_reclaimed'] += image.size
+        except FileNotFoundError:
+          current_app.logger.debug(f"Image {image.id} path {image.location} not found")
+      else:
+        current_app.logger.debug(f"Image {image.id} had null location")
+
+      image.uploaded = False
+      db.session.commit()
+
+      result['updated'] += 1
+      job.meta['progress']=f"{result['updated']}/{total_count}"
+      job.save_meta()
+    _finish_job(job, result, AdmKeys.expire_images)
+  except Exception as exc:
+    db.session.rollback()
+    current_app.logger.error(exc)
+    _fail_job(job, result, AdmKeys.expire_images, exc)
+    raise exc
+  current_app.logger.debug(f"image expiration finished.")
+  current_app.logger.debug(result)
+  return f"updated {result['updated']}"
 
 @rq.job
 def update_quotas():

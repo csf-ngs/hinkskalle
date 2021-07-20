@@ -1,5 +1,6 @@
 # next
 
+- expiration date for images
 - admin tokens of other users
 - download timestamps for image, container, manifest
 - about/help

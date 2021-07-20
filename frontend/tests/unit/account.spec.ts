@@ -48,7 +48,7 @@ describe('Account.vue', () => {
   });
 
   it('renders something', async done => {
-    const wrapper = mount(Account, { localVue, vuetify, store });
+    const wrapper = mount(Account, { localVue, vuetify, store, router });
     expect(wrapper.text()).toContain('Account');
     await Vue.nextTick();
     expect((wrapper.find("#firstname input").element as HTMLInputElement).value)
@@ -57,7 +57,7 @@ describe('Account.vue', () => {
   });
 
   it('clones currentUser', async done => {
-    const wrapper = mount(Account, { localVue, store, vuetify });
+    const wrapper = mount(Account, { localVue, store, vuetify, router });
     expect(wrapper.vm.$data.localState.editUser.firstname).toBe(testUserObj.firstname);
     await Vue.nextTick();
 
@@ -68,7 +68,7 @@ describe('Account.vue', () => {
   });
 
   it('can reset editUser', async done => {
-    const wrapper = mount(Account, { localVue, store, vuetify });
+    const wrapper = mount(Account, { localVue, store, vuetify, router });
     wrapper.setData({ localState: { editUser: { firstname: 'Oink' }}});
     await Vue.nextTick();
     expect(wrapper.vm.$data.localState.editUser.firstname).not.toBe(testUserObj.firstname);
@@ -78,7 +78,7 @@ describe('Account.vue', () => {
   });
 
   it('saves user', async done => {
-    const wrapper = mount(Account, { localVue, store, vuetify });
+    const wrapper = mount(Account, { localVue, store, vuetify, router });
     await Vue.nextTick();
 
     wrapper.find("#firstname input").setValue('Oink');

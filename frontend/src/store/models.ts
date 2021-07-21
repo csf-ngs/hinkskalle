@@ -274,6 +274,7 @@ class Image {
   public encrypted!: boolean
   public entity!: string
   public entityName!: string
+  public expiresAt!: Date | null
   public fingerprints!: string[]
   public hash!: string
   public id!: string
@@ -326,7 +327,8 @@ export function plainToImage(json: any): Image {
     obj.encrypted = json['encrypted'];
     obj.entity = json['entity'];
     obj.entityName = json['entityName'];
-    obj.fingerprints = json['fingerprints'];
+    obj.expiresAt = _isNil(json['expiresAt']) ? null : new Date(json['expiresAt']);
+      obj.fingerprints = json['fingerprints'];
     obj.hash = json['hash'];
     obj.id = json['id'];
     obj.signatureVerified = json['signatureVerified'];
@@ -347,9 +349,8 @@ export function serializeImage(obj: Image, unroll=false): any {
       json['customData'] = obj.customData
       json['description'] = obj.description
       json['encrypted'] = obj.encrypted
-      json['hash'] = obj.hash
-      json['signatureVerified'] = obj.signatureVerified
-      json['signed'] = obj.signed
+      json['expiresAt'] = _isNil(obj.expiresAt) ? null : obj.expiresAt.toJSON();
+        json['hash'] = obj.hash
       json['uploaded'] = obj.uploaded
       
   return json;

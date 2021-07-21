@@ -24,8 +24,8 @@ class ImageSchema(Schema):
   uploaded = fields.Boolean()
   customData = fields.String(allow_none=True)
   arch = fields.String(allow_none=True)
-  signed = fields.Boolean(allow_none=True)
-  signatureVerified = fields.Boolean(allow_none=True)
+  signed = fields.Boolean(allow_none=True, dump_only=True)
+  signatureVerified = fields.Boolean(allow_none=True, dump_only=True)
   encrypted = fields.Boolean(allow_none=True)
   type = fields.String(dump_only=True)
 

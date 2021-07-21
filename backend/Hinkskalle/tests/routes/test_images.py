@@ -439,6 +439,24 @@ class TestImages(RouteBase):
       })
     self.assertEqual(ret.status_code, 200)
 
+  def test_create_user_expiresAt(self):
+    container, coll, entity = _create_container()
+    entity.owner=self.user
+    coll.owner=self.user
+    container.owner=self.user
+    db.session.commit()
+
+    exp = datetime.datetime.now()
+    with self.fake_auth():
+      ret = self.client.post('/v1/images', json={
+        'hash': 'sha256.oink',
+        'container': str(container.id),
+        'expiresAt': exp.isoformat(),
+      })
+    self.assertEqual(ret.status_code, 200)
+    db_image = Image.query.get(ret.get_json().get('data')['id'])
+    self.assertEqual(db_image.expiresAt, exp)
+
   def test_create_user_other(self):
     container, coll, entity = _create_container()
     entity.owner=self.user
@@ -562,6 +580,60 @@ class TestImages(RouteBase):
       ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:oink", json={
         'description': 'Mei Huat',
         'customData': 'hot drei Eckn',
+      })
+    self.assertEqual(ret.status_code, 200)
+
+  def test_update_user_expiresAt(self):
+    image = _create_image()[0]
+    image.owner = self.user
+    image.container_ref.owner=self.user
+    latest_tag = Tag(name='oink', image_ref=image)
+    db.session.add(latest_tag)
+    db.session.commit()
+    image_id = image.id
+
+    exp = datetime.datetime.now()
+    with self.fake_auth():
+      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:oink", json={
+        'description': 'Mei Huat',
+        'customData': 'hot drei Eckn',
+        'expiresAt': exp.isoformat(),
+      })
+    self.assertEqual(ret.status_code, 200)
+    db_image = Image.query.get(image_id)
+    self.assertEqual(db_image.expiresAt, exp)
+
+  def test_update_user_expiresAt_denied(self):
+    image = _create_image()[0]
+    image.owner = self.admin_user
+    image.container_ref.owner=self.user
+    latest_tag = Tag(name='oink', image_ref=image)
+    db.session.add(latest_tag)
+    db.session.commit()
+
+    exp = datetime.datetime.now()
+    with self.fake_auth():
+      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:oink", json={
+        'description': 'Mei Huat',
+        'customData': 'hot drei Eckn',
+        'expiresAt': exp.isoformat(),
+      })
+    self.assertEqual(ret.status_code, 403)
+
+  def test_update_user_expiresAt_unchanged(self):
+    exp = datetime.datetime.now()
+    image = _create_image(expiresAt=exp)[0]
+    image.owner = self.admin_user
+    image.container_ref.owner=self.user
+    latest_tag = Tag(name='oink', image_ref=image)
+    db.session.add(latest_tag)
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:oink", json={
+        'description': 'Mei Huat',
+        'customData': 'hot drei Eckn',
+        'expiresAt': exp.isoformat(),
       })
     self.assertEqual(ret.status_code, 200)
 

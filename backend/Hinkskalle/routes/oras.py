@@ -42,6 +42,7 @@ class OrasListTagQuerySchema(RequestSchema):
 
 class OrasBlobMountQuerySchema(RequestSchema):
   private = fields.Bool(required=False)
+  expiresAt = fields.DateTime(required=False, allow_none=True)
   staged = fields.Bool(required=False)
   digest = fields.String(required=False)
   mount = fields.String(required=False)
@@ -467,6 +468,8 @@ def oras_start_upload_session(name):
   os.makedirs(upload_tmp, exist_ok=True)
 
   image = Image(container_ref=container, owner=g.authenticated_user, media_type='unknown')
+  if args.get('expiresAt'):
+    image.expiresAt = args.get('expiresAt')
   db.session.add(image)
 
   with tempfile.NamedTemporaryFile(dir=upload_tmp, delete=False) as tmpf:

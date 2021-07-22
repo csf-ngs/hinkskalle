@@ -105,6 +105,15 @@ class TestOrasPush(RouteBase):
     self.assertEqual(ret.status_code, 403)
     self.assertIsNone(Container.query.filter(Container.name=='stall', Container.collection_id==collection.id).first())
     
+  def test_push_monolith_create_set_expiration(self): 
+    exp = '2030-08-05T23:47:45.480581'
+    with self.fake_auth():
+      ret = self.client.post(f"/v2/{self.username}/hase/stall/blobs/uploads/?expiresAt={exp}", headers={'Content-Length': 0 })
+    print(ret.get_json())
+    self.assertEqual(ret.status_code, 202)
+    db_container = Container.query.filter(Container.name=='stall').one()
+    db_image = db_container.images_ref.first()
+    self.assertEquals(db_image.expiresAt, datetime.datetime.fromisoformat(exp))
 
   def test_push_monolith_create_set_private(self): 
     with self.fake_auth():

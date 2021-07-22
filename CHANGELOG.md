@@ -5,6 +5,7 @@
 - download timestamps for image, container, manifest
 - about/help
 - inline fonts, don't want external loading
+- can set expiresAt + private flags on blob push (used by cli)
 
 # v4.2.6 (2021-07-01)
 

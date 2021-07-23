@@ -1,4 +1,4 @@
-# next
+# v4.2.7 (2021-07-23)
 
 - expiration date for images
 - admin tokens of other users

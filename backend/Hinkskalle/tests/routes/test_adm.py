@@ -26,14 +26,15 @@ class TestAdm(RouteBase):
     self.assertEqual(ret.status_code, 403)
 
   def test_get(self):
-    key = Adm(key=AdmKeys.ldap_sync_results, val={ 'oi': 'nk' })
-    db.session.add(key)
-    db.session.commit()
+    for slot in AdmKeys:
+      key = Adm(key=slot, val={ 'oi': 'nk' })
+      db.session.add(key)
+      db.session.commit()
 
-    with self.fake_admin_auth():
-      ret = self.client.get(f"/v1/adm/{AdmKeys.ldap_sync_results.name}")
-    self.assertEqual(ret.status_code, 200)
-    self.assertDictEqual(ret.get_json().get('data'), { 'key': AdmKeys.ldap_sync_results.name, 'val': { 'oi': 'nk' }})
+      with self.fake_admin_auth():
+        ret = self.client.get(f"/v1/adm/{slot.name}")
+      self.assertEqual(ret.status_code, 200, msg=f"get {slot.name}")
+      self.assertDictEqual(ret.get_json().get('data'), { 'key': slot.name, 'val': { 'oi': 'nk' }})
   
   def test_get_invalid(self):
     with self.fake_admin_auth():
@@ -41,26 +42,28 @@ class TestAdm(RouteBase):
     self.assertEqual(ret.status_code, 404)
   
   def test_update(self):
-    key = Adm(key=AdmKeys.ldap_sync_results, val={ 'oi': 'nk' })
-    db.session.add(key)
-    db.session.commit()
+    for slot in AdmKeys:
+      key = Adm(key=slot, val={ 'oi': 'nk' })
+      db.session.add(key)
+      db.session.commit()
 
-    with self.fake_admin_auth():
-      ret = self.client.put(f"/v1/adm/{AdmKeys.ldap_sync_results.name}", json={ 'val': { 'gru': 'nz' }})
-    self.assertEqual(ret.status_code, 200)
+      with self.fake_admin_auth():
+        ret = self.client.put(f"/v1/adm/{slot.name}", json={ 'val': { 'gru': 'nz' }})
+      self.assertEqual(ret.status_code, 200, msg=f"put {slot.name}")
 
-    db_key = Adm.query.get(AdmKeys.ldap_sync_results)
-    self.assertDictEqual(db_key.val, { 'gru': 'nz' })
-    self.assertDictEqual(ret.get_json().get('data').get('val'), { 'gru': 'nz' })
+      db_key = Adm.query.get(slot)
+      self.assertDictEqual(db_key.val, { 'gru': 'nz' })
+      self.assertDictEqual(ret.get_json().get('data').get('val'), { 'gru': 'nz' })
   
   def test_update_new(self):
-    with self.fake_admin_auth():
-      ret = self.client.put(f"/v1/adm/{AdmKeys.ldap_sync_results.name}", json={ 'val': { 'gru': 'nz' }})
-    self.assertEqual(ret.status_code, 200)
+    for slot in AdmKeys:
+      with self.fake_admin_auth():
+        ret = self.client.put(f"/v1/adm/{slot.name}", json={ 'val': { 'gru': 'nz' }})
+      self.assertEqual(ret.status_code, 200, msg=f"put {slot.name} create")
 
-    db_key = Adm.query.get(AdmKeys.ldap_sync_results)
-    self.assertDictEqual(db_key.val, { 'gru': 'nz' })
-    self.assertDictEqual(ret.get_json().get('data').get('val'), { 'gru': 'nz' })
+      db_key = Adm.query.get(slot)
+      self.assertDictEqual(db_key.val, { 'gru': 'nz' })
+      self.assertDictEqual(ret.get_json().get('data').get('val'), { 'gru': 'nz' })
 
   def test_update_invalid(self):
     with self.fake_admin_auth():

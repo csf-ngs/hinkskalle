@@ -15,7 +15,7 @@ module.exports = {
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     '@typescript-eslint/no-explicit-any': "off",
-    '@typescript-eslint/camelcase': ["error", {allow: ["total_size"]}],
+    '@typescript-eslint/camelcase': ["error", {allow: ["total_size", "total_space", "space_reclaimed"]}],
     //'vue/valid-v-slot': ['warn', { allowModifiers: true, }],
     'vue/valid-v-slot': "off",
   },

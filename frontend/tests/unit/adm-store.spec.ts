@@ -1,5 +1,6 @@
 import store from '@/store';
 import {LdapStatus, plainToLdapStatus, LdapPing, plainToLdapPing, plainToAdmLdapSyncResults, Job, plainToJob} from '@/store/models';
+import {AdmKeys} from '@/store/modules/adm';
 
 import axios from 'axios';
 
@@ -37,7 +38,11 @@ describe('adm store getters', () => {
     const testPing = makeTestPingObj();
     store.state.adm!.ldapPingResponse = testPing;
     expect(store.getters['adm/ldapPing']).toStrictEqual(testPing);
-  })
+  });
+  it('has slots getter', () => {
+    const slots = store.getters['adm/slots'];
+    expect(slots).toStrictEqual([AdmKeys.ExpireImages, AdmKeys.CheckQuotas, AdmKeys.LdapSyncResults]);
+  });
 });
 
 describe('adm mutations', () => {

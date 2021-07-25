@@ -2,6 +2,14 @@ import { Module } from 'vuex';
 
 import { AxiosError, AxiosResponse } from 'axios';
 import {Job, plainToJob, AdmLdapSyncResults, LdapPing, LdapStatus, plainToAdmLdapSyncResults, plainToLdapPing, plainToLdapStatus} from '../models';
+import { values as _values } from 'lodash';
+
+export const AdmKeys = {
+  ExpireImages: "expire_images",
+  CheckQuotas: "check_quotas",
+  LdapSyncResults: "ldap_sync_results",
+} as const;
+type AdmKey = typeof AdmKeys[keyof typeof AdmKeys];
 
 export interface State {
   status: '' | 'loading' | 'failed' | 'success';
@@ -9,6 +17,7 @@ export interface State {
   ldapPingResponse: LdapPing | null;
   ldapSyncResults: AdmLdapSyncResults | null;
   ldapSyncJob: Job | null;
+  slots: AdmKey[];
 }
 
 const admModule: Module<State, any> = {
@@ -19,9 +28,11 @@ const admModule: Module<State, any> = {
     ldapPingResponse: null,
     ldapSyncResults: null,
     ldapSyncJob: null,
+    slots: _values(AdmKeys),
   },
   getters: {
     status: (state): string => state.status,
+    slots: (state): string[] => state.slots,
     ldapStatus: (state): LdapStatus | null => state.ldapStatus,
     ldapPing: (state): LdapPing | null => state.ldapPingResponse,
     ldapSyncResults: (state): AdmLdapSyncResults | null => state.ldapSyncResults,
@@ -71,7 +82,7 @@ const admModule: Module<State, any> = {
           });
       });
     },
-    ldapPing: ({ state, commit, rootState }): Promise<LdapPing> => {
+    ldapPing: ({ commit, rootState }): Promise<LdapPing> => {
       return new Promise((resolve, reject) => {
         commit('loading');
         rootState.backend.get(`/v1/ldap/ping`)
@@ -88,10 +99,10 @@ const admModule: Module<State, any> = {
           });
       });
     },
-    ldapSyncResults: ({ state, commit, rootState }): Promise<AdmLdapSyncResults> => {
+    ldapSyncResults: ({ commit, rootState }): Promise<AdmLdapSyncResults> => {
       return new Promise((resolve, reject) => {
         commit('loading');
-        rootState.backend.get(`/v1/adm/ldap_sync_results`)
+        rootState.backend.get(`/v1/adm/${AdmKeys.LdapSyncResults}`)
           .then((response: AxiosResponse) => {
             const result = plainToAdmLdapSyncResults(response.data.data.val);
             commit('succeeded');
@@ -104,7 +115,7 @@ const admModule: Module<State, any> = {
           });
       });
     },
-    syncLdap: ({ state, commit, rootState }): Promise<Job | null> => {
+    syncLdap: ({ commit, rootState }): Promise<Job | null> => {
       return new Promise((resolve, reject) => {
         commit('loading');
         rootState.backend.post(`/v1/ldap/sync`)
@@ -135,7 +146,7 @@ const admModule: Module<State, any> = {
           })
       });
     },
-    jobInfo: ({ state, commit, rootState }, jobId: string): Promise<Job> => {
+    jobInfo: ({ commit, rootState }, jobId: string): Promise<Job> => {
       return new Promise((resolve, reject) => {
         commit('loading');
         rootState.backend.get(`/v1/jobs/${jobId}`)

@@ -1,5 +1,5 @@
 import store from '@/store';
-import {LdapStatus, plainToLdapStatus, LdapPing, plainToLdapPing, plainToAdmLdapSyncResults, Job, plainToJob} from '@/store/models';
+import {LdapStatus, plainToLdapStatus, LdapPing, plainToLdapPing, plainToAdmLdapSyncResults, Job, plainToJob, plainToAdmExpireImagesResults, plainToAdmUpdateQuotasResults} from '@/store/models';
 import {AdmKeys} from '@/store/modules/adm';
 
 import axios from 'axios';
@@ -124,7 +124,7 @@ describe('adm actions', () => {
     });
   });
 
-  it('has ldap ping fail hanlding', done => {
+  it('has ldap ping fail handling', done => {
     mockAxios.get.mockRejectedValue({ fail: 'fail' });
     store.dispatch('adm/ldapPing')
       .catch(err => {
@@ -134,6 +134,58 @@ describe('adm actions', () => {
       });
   });
 
+  it('has admResults expire images', done => {
+    const testResponse = {
+      key: 'expire_images',
+      val: {
+        job: 12,
+        started: '2020-10-12',
+        finished: '2020-10-13',
+        success: true,
+        exception: undefined,
+        updated: 666,
+        space_reclaimed: 999,
+      },
+    };
+    const expectResponse = plainToAdmExpireImagesResults(testResponse.val);
+    mockAxios.get.mockResolvedValue({ data: { data: testResponse }});
+    const promise = store.dispatch('adm/admResults', AdmKeys.ExpireImages);
+    expect(store.state.adm!.status).toBe('loading');
+    promise.then(res => {
+      expect(store.state.adm!.status).toBe('success');
+      expect(mockAxios.get).toHaveBeenCalledWith(`/v1/adm/expire_images`)
+      expect(store.state.adm!.admKeys[AdmKeys.ExpireImages]).toStrictEqual(expectResponse);
+      expect(res).toStrictEqual(expectResponse);
+      done();
+    });
+  });
+
+  it('has admResults check quotas', done => {
+    const testResponse = {
+      key: 'check_quotas',
+      val: {
+        job: 12,
+        started: '2020-10-12',
+        finished: '2020-10-13',
+        success: true,
+        exception: undefined,
+        updated: 666,
+        total_space: 999,
+      },
+    };
+    const expectResponse = plainToAdmUpdateQuotasResults(testResponse.val);
+    mockAxios.get.mockResolvedValue({ data: { data: testResponse }});
+    const promise = store.dispatch('adm/admResults', AdmKeys.CheckQuotas);
+    expect(store.state.adm!.status).toBe('loading');
+    promise.then(res => {
+      expect(store.state.adm!.status).toBe('success');
+      expect(mockAxios.get).toHaveBeenCalledWith(`/v1/adm/check_quotas`)
+      expect(store.state.adm!.admKeys[AdmKeys.CheckQuotas]).toStrictEqual(expectResponse);
+      expect(res).toStrictEqual(expectResponse);
+      done();
+    });
+  });
+
   it('has get ldap sync adm key', done => {
     const testResponse = {
       key: 'ldap_sync_results',
@@ -141,14 +193,14 @@ describe('adm actions', () => {
         job: 12,
         started: '2020-10-12',
         finished: '2020-10-13',
+        success: true,
+        exception: undefined,
         synced: ['eins', 'zwei'],
         conflict: ['drei'],
         failed: ['vier', 'funf'],
-        success: true,
-        exception: undefined,
       },
     };
-    const expectResponse = {
+    const expectResponse = plainToAdmLdapSyncResults({
       job: 12,
       started: new Date('2020-10-12'),
       finished: new Date('2020-10-13'),
@@ -157,7 +209,7 @@ describe('adm actions', () => {
       failed: [ 'vier', 'funf' ],
       success: true,
       exception: undefined,
-    };
+    });
 
     mockAxios.get.mockResolvedValue({ data: { data: testResponse }});
     const promise = store.dispatch('adm/ldapSyncResults')
@@ -165,7 +217,7 @@ describe('adm actions', () => {
     promise.then(res => {
 
       expect(store.state.adm!.status).toBe('success');
-      expect(store.state.adm!.ldapSyncResults).toStrictEqual(expectResponse);
+      expect(store.state.adm!.admKeys[AdmKeys.LdapSyncResults]).toStrictEqual(expectResponse);
       expect(mockAxios.get).toHaveBeenCalledWith(`/v1/adm/ldap_sync_results`)
       expect(res).toStrictEqual(expectResponse);
       done();

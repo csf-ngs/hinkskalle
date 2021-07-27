@@ -30,6 +30,14 @@ def calc_quota(username: str):
   entity.calculate_used()
   click.echo(f"Entity {entity.name} uses {humanize.naturalsize(entity.used_quota)}/{humanize.naturalsize(entity.quota) if entity.quota else 'unlimited'}")
 
+image_cli = AppGroup('images', short_help='manage images')
+@image_cli.command('expire', short_help='delete expired images')
+def expire():
+  from Hinkskalle.util.jobs import expire_images
+  click.echo("starting image expire...")
+  job = expire_images.queue()
+  click.echo(f"started expire job with id {job.id}")
+
 
 
 db_cli = AppGroup('localdb', short_help='hinkskalle specific db commands')
@@ -65,3 +73,4 @@ def remove_user(username):
 current_app.cli.add_command(db_cli)
 current_app.cli.add_command(ldap_cli)
 current_app.cli.add_command(quota_cli)
+current_app.cli.add_command(image_cli)

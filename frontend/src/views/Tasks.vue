@@ -1,0 +1,127 @@
+<template>
+  <div class="tasks">
+    <top-bar title="Maintenance Tasks"></top-bar>
+    <v-row v-if="jobDetails">
+      <v-col cols="12">
+        <v-expansion-panels>
+          <v-expansion-panel v-for="key in jobs" :key="key" :disabled="!jobDetails[key]">
+            <v-expansion-panel-header>
+              <div>
+                <v-btn icon @click.stop="loadJobDetails(key)"><v-icon>mdi-refresh</v-icon></v-btn>
+                <span v-if="!jobDetails[key]">
+                  <v-icon color="blue-grey-darken-3">mdi-cancel</v-icon>
+                </span>
+                <span v-else>
+                  <v-icon v-if="!jobDetails[key].success" color="deep-orange darken-3">mdi-alert-circle</v-icon>
+                  <v-icon v-else color="success">mdi-check-circle</v-icon>
+                </span>
+              </div>
+              {{key}}
+              <div v-if="jobDetails[key]">
+                &nbsp;| {{jobDetails[key].started | moment('YYYY-MM-DD HH:mm:ss')}}
+              </div>
+              <div v-else>
+              </div>
+            </v-expansion-panel-header>
+            <v-expansion-panel-content>
+              <template v-if="jobDetails[key]">
+                <v-row dense>
+                  <v-col cols="12">
+                    <v-list-item two-line>
+                      <v-list-item-content>
+                        <v-list-item-title>{{jobDetails[key].job}}</v-list-item-title>
+                        <v-list-item-subtitle>Job ID</v-list-item-subtitle>
+                      </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item two-line>
+                      <v-list-item-content>
+                        <v-list-item-title>{{jobDetails[key].started | moment('YYYY-MM-DD HH:mm:ss')}}</v-list-item-title>
+                        <v-list-item-subtitle>Started</v-list-item-subtitle>
+                      </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item two-line>
+                      <v-list-item-content>
+                        <v-list-item-title>{{jobDetails[key].finished | moment('YYYY-MM-DD HH:mm:ss')}}</v-list-item-title>
+                        <v-list-item-subtitle>Finished</v-list-item-subtitle>
+                      </v-list-item-content>
+                    </v-list-item>
+                    <template v-if="key==='ldap_sync_results'">
+                      See <router-link to="/ldap">LDAP Status</router-link> for details
+                    </template>
+                    <template v-if="key==='check_quotas'">
+                      <v-list-item two-line>
+                        <v-list-item-content>
+                          <v-list-item-title>{{jobDetails[key].updated}}</v-list-item-title>
+                          <v-list-item-subtitle>Updated</v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+                      <v-list-item two-line>
+                        <v-list-item-content>
+                          <v-list-item-title>{{jobDetails[key].total_space | prettyBytes()}}</v-list-item-title>
+                          <v-list-item-subtitle>Total Space Used</v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+                    </template>
+                    <template v-if="key==='expire_images'">
+                      <v-list-item two-line>
+                        <v-list-item-content>
+                          <v-list-item-title>{{jobDetails[key].updated}}</v-list-item-title>
+                          <v-list-item-subtitle>Deleted</v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+                      <v-list-item two-line>
+                        <v-list-item-content>
+                          <v-list-item-title>{{jobDetails[key].space_reclaimed | prettyBytes()}}</v-list-item-title>
+                          <v-list-item-subtitle>Total Space Freed</v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+                    </template>
+                  </v-col>
+                </v-row>
+                <v-row dense v-if="!jobDetails[key].success">
+                  <v-col cols="12" class="yellow lighten-4">
+                    <h3 class="red--text darken-1--text">Exception</h3>
+                    <pre><code>{{jobDetails[key].exception}}</code></pre>
+                  </v-col>
+                </v-row>
+              </template>
+            </v-expansion-panel-content>
+          </v-expansion-panel>
+        </v-expansion-panels>
+      </v-col>
+    </v-row>
+  </div>
+</template>
+<script lang="ts">
+import Vue from 'vue';
+import { each as _each } from 'lodash';
+
+interface State {
+  jobs: string[];
+}
+
+export default Vue.extend({
+  name: 'Tasks',
+  mounted() {
+    _each(this.jobs, key => this.loadJobDetails(key));
+  },
+  computed: {
+    jobs() {
+      return this.$store.getters['adm/slots'];
+    },
+    jobDetails() {
+      return this.$store.getters['adm/admKeys'];
+    },
+  },
+  methods: {
+    loadJobDetails(key: string) {
+      this.$store.dispatch('adm/admResults', key)
+        .catch(err => {
+          if (!err.response || err.response.status !== 404) {
+            this.$store.commit('snackbar/showError', err);
+          }
+        })
+    },
+  }
+});
+</script>

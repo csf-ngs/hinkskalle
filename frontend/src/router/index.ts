@@ -11,6 +11,7 @@ import ContainerDetails from '../views/ContainerDetails.vue';
 import Users from '../views/Users.vue';
 import Ldap from '../views/Ldap.vue';
 import About from '../views/About.vue';
+import Tasks from '../views/Tasks.vue';
 import store from '../store';
 
 Vue.use(VueRouter);
@@ -110,6 +111,12 @@ const routes: Array<RouteConfig> = [
     path: '/ldap',
     name: 'Ldap',
     component: Ldap,
+    meta: { requiresAdmin: true, requiresAuth: true, },
+  },
+  {
+    path: '/tasks',
+    name: 'Tasks',
+    component: Tasks,
     meta: { requiresAdmin: true, requiresAuth: true, },
   },
 ];

@@ -46,6 +46,12 @@
               <v-list-item-title>LDAP Administration</v-list-item-title>
             </v-list-item-content>
           </v-list-item>
+          <v-list-item link :to="'/tasks'" id="tasks">
+            <v-list-item-icon><v-icon>mdi-hammer-wrench</v-icon></v-list-item-icon>
+            <v-list-item-content>
+              <v-list-item-title>Maintenance</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
         </v-list>
       </template>
       <v-divider></v-divider>

@@ -282,7 +282,7 @@ export default Vue.extend({
     startSync() {
       this.showSyncProgress = true;
       this.$store.dispatch('adm/syncLdap')
-        .then(res => {
+        .then(() => {
           const pollLdapJob = () => {
             this.$store.dispatch('adm/syncLdapStatus')
               .then(res => {

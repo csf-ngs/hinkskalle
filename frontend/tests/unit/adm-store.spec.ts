@@ -245,8 +245,8 @@ describe('adm actions', () => {
     expect(store.state.adm!.status).toBe('loading');
     promise.then(res => {
       expect(store.state.adm!.status).toBe('success');
-      expect(mockAxios.post).toHaveBeenCalledWith(`/v1/ldap/sync`);
-      expect(store.state.adm!.ldapSyncJob).toStrictEqual(testJobObj);
+      expect(mockAxios.post).toHaveBeenCalledWith(`/v1/adm/${AdmKeys.LdapSyncResults}/run`);
+      expect(store.state.adm!.activeJobs[AdmKeys.LdapSyncResults]).toStrictEqual(testJobObj);
       expect(store.getters['adm/ldapSyncJob']).toStrictEqual(testJobObj);
       expect(res).toStrictEqual(testJobObj);
       done();
@@ -262,8 +262,37 @@ describe('adm actions', () => {
       });
   });
 
+  it('can trigger task', done => {
+    const testJobResponse = {
+      id: 'oink',
+      status: 'running',
+    };
+    const testJobObj = plainToJob(testJobResponse);
+
+    mockAxios.post.mockResolvedValue({ data: { data: testJobResponse }});
+    const promise = store.dispatch('adm/runTask', AdmKeys.ExpireImages);
+    expect(store.state.adm!.status).toBe('loading');
+    promise.then(res => {
+      expect(store.state.adm!.status).toBe('success');
+      expect(mockAxios.post).toHaveBeenCalledWith(`/v1/adm/${AdmKeys.ExpireImages}/run`);
+      expect(store.state.adm!.activeJobs[AdmKeys.ExpireImages]).toStrictEqual(testJobObj);
+      expect(store.getters['adm/activeJobs'][AdmKeys.ExpireImages]).toStrictEqual(testJobObj);
+      expect(res).toStrictEqual(testJobObj);
+      done();
+    });
+  });
+  it('has run task fail handling', done => {
+    mockAxios.post.mockRejectedValue({ fail: 'fail' });
+    store.dispatch('adm/runTask', AdmKeys.ExpireImages)
+      .catch(err => {
+        expect(store.state.adm!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
+  });
+
   it('has get ldap sync job info', done => {
-    store.state.adm!.ldapSyncJob = plainToJob({ id: 'oink' });
+    store.state.adm!.activeJobs[AdmKeys.LdapSyncResults] = plainToJob({ id: 'oink' });
     const testJobResponse = {
       id: 'oink',
       status: 'running',
@@ -276,26 +305,68 @@ describe('adm actions', () => {
     promise.then(res => {
       expect(store.state.adm!.status).toBe('success');
       expect(mockAxios.get).toHaveBeenCalledWith(`/v1/jobs/oink`)
-      expect(store.state.adm!.ldapSyncJob).toStrictEqual(testJobObj);
+      expect(store.state.adm!.activeJobs[AdmKeys.LdapSyncResults]).toStrictEqual(testJobObj);
       expect(res).toStrictEqual(testJobObj);
       done();
     });
   });
   it('has get ldap sync job info with missing job', done => {
-    store.state.adm!.ldapSyncJob = null;
+    store.state.adm!.activeJobs[AdmKeys.LdapSyncResults] = null;
     mockAxios.get.mockReset();
     const promise = store.dispatch(`adm/syncLdapStatus`);
     promise.then(res => {
       expect(store.state.adm!.status).toBe('success');
       expect(mockAxios.get).not.toHaveBeenCalled();
-      expect(store.state.adm!.ldapSyncJob).toBeNull();
+      expect(store.state.adm!.activeJobs[AdmKeys.LdapSyncResults]).toBeNull();
       done();
     });
   });
   it('has get ldap sync job fail handling', done => {
-    store.state.adm!.ldapSyncJob = plainToJob({ id: 'oink' });
+    store.state.adm!.activeJobs[AdmKeys.LdapSyncResults] = plainToJob({ id: 'oink' });
     mockAxios.get.mockRejectedValue({ fail: 'fail' });
     store.dispatch(`adm/syncLdapStatus`)
+      .catch(err => {
+        expect(store.state.adm!.status).toBe('failed');
+        expect(err).toStrictEqual({ fail: 'fail' });
+        done();
+      });
+  });
+
+  
+  it('has get task status', done => {
+    store.state.adm!.activeJobs[AdmKeys.ExpireImages] = plainToJob({ id: 'oink' });
+    const testJobResponse = {
+      id: 'oink',
+      status: 'running',
+    };
+    const testJobObj = plainToJob(testJobResponse);
+
+    mockAxios.get.mockResolvedValue({ data: { data: testJobResponse }});
+    const promise = store.dispatch(`adm/taskStatus`, AdmKeys.ExpireImages);
+    expect(store.state.adm!.status).toBe('loading');
+    promise.then(res => {
+      expect(store.state.adm!.status).toBe('success');
+      expect(mockAxios.get).toHaveBeenCalledWith(`/v1/jobs/oink`)
+      expect(store.state.adm!.activeJobs[AdmKeys.ExpireImages]).toStrictEqual(testJobObj);
+      expect(res).toStrictEqual(testJobObj);
+      done();
+    });
+  });
+  it('has get task info with missing job', done => {
+    store.state.adm!.activeJobs[AdmKeys.ExpireImages] = null;
+    mockAxios.get.mockReset();
+    const promise = store.dispatch(`adm/taskStatus`, AdmKeys.ExpireImages);
+    promise.then(res => {
+      expect(store.state.adm!.status).toBe('success');
+      expect(mockAxios.get).not.toHaveBeenCalled();
+      expect(store.state.adm!.activeJobs[AdmKeys.ExpireImages]).toBeNull();
+      done();
+    });
+  });
+  it('has get ldap sync job fail handling', done => {
+    store.state.adm!.activeJobs[AdmKeys.ExpireImages] = plainToJob({ id: 'oink' });
+    mockAxios.get.mockRejectedValue({ fail: 'fail' });
+    store.dispatch(`adm/taskStatus`, AdmKeys.ExpireImages)
       .catch(err => {
         expect(store.state.adm!.status).toBe('failed');
         expect(err).toStrictEqual({ fail: 'fail' });

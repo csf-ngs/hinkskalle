@@ -7,14 +7,27 @@
           <v-expansion-panel v-for="key in jobs" :key="key" :disabled="!jobDetails[key]">
             <v-expansion-panel-header>
               <div>
-                <v-btn icon @click.stop="loadJobDetails(key)"><v-icon>mdi-refresh</v-icon></v-btn>
-                <span v-if="!jobDetails[key]">
-                  <v-icon color="blue-grey-darken-3">mdi-cancel</v-icon>
-                </span>
-                <span v-else>
-                  <v-icon v-if="!jobDetails[key].success" color="deep-orange darken-3">mdi-alert-circle</v-icon>
-                  <v-icon v-else color="success">mdi-check-circle</v-icon>
-                </span>
+                <v-btn small elevation="2" @click.stop="loadJobDetails(key)">
+                  <v-icon>mdi-refresh</v-icon>
+                  <span v-if="!jobDetails[key]">
+                    <v-icon color="blue-grey-darken-3">mdi-cancel</v-icon>
+                  </span>
+                  <span v-else>
+                    <v-icon v-if="!jobDetails[key].success" color="deep-orange darken-3">mdi-alert-circle</v-icon>
+                    <v-icon v-else color="success">mdi-check-circle</v-icon>
+                  </span>
+                </v-btn>
+                <v-btn small elevation="2" 
+                    @click.stop="startJob(key)"
+                    :disabled="activeJobs[key] && activeJobs[key].status === 'started'"
+                    :loader="activeJobs[key] && activeJobs[key].status === 'started'"
+                    :class="taskButtonClass(key)"
+                    >
+                  <v-icon>mdi-play</v-icon> Run
+                  <span v-if="activeJobs[key]">
+                    ({{ activeJobs[key].meta.progress }})
+                  </span>
+                </v-btn>
               </div>
               {{key}}
               <div v-if="jobDetails[key]">
@@ -95,6 +108,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import { each as _each } from 'lodash';
+import { AdmKey, Job } from '@/store/models';
 
 interface State {
   jobs: string[];
@@ -112,6 +126,33 @@ export default Vue.extend({
     jobDetails() {
       return this.$store.getters['adm/admKeys'];
     },
+    activeJobs() {
+      return this.$store.getters['adm/activeJobs'];
+    },
+  },
+  watch: {
+    activeJobs: function(newJobs, oldJobs) {
+      _each(newJobs, (job: Job, key: string) => {
+        if (oldJobs[key] !== null && oldJobs[key].id === newJobs[key].id) {
+          return;
+        }
+        if (job !== null && job.status !== 'finished' && job.status !== 'failed') {
+          const pollJob = () => {
+            this.$store.dispatch('adm/taskStatus', key)
+              .then(res => {
+                if (res.status !== 'finished' && res.status !== 'failed') {
+                  setTimeout(pollJob, 1000);
+                }
+                else {
+                  this.loadJobDetails(key);
+                }
+              })
+              .catch(err => this.$store.commit('snackbar/showError', err));
+          };
+          setTimeout(pollJob, 50);
+        }
+      })
+    }
   },
   methods: {
     loadJobDetails(key: string) {
@@ -120,7 +161,19 @@ export default Vue.extend({
           if (!err.response || err.response.status !== 404) {
             this.$store.commit('snackbar/showError', err);
           }
-        })
+        });
+    },
+    startJob(key: string) {
+      this.$store.dispatch('adm/runTask', key)
+        .catch(err => {
+          this.$store.commit('snackbar/showError', err);
+        });
+    },
+    taskButtonClass(key: string) {
+      return { 
+        'green lighten-1': this.activeJobs[key]?.status === 'finished', 
+        'red lighten-1': this.activeJobs[key]?.status === 'failed' 
+      }
     },
   }
 });

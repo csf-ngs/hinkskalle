@@ -3,7 +3,7 @@ import { Module } from 'vuex';
 import { AxiosError, AxiosResponse } from 'axios';
 import {Job, plainToJob, AdmLdapSyncResults, LdapPing, LdapStatus, plainToAdmLdapSyncResults, plainToLdapPing, plainToLdapStatus} from '../models';
 import { plainToAdmExpireImagesResults, plainToAdmUpdateQuotasResults, AdmUpdateQuotasResults, AdmExpireImagesResults } from '../models';
-import { values as _values } from 'lodash';
+import { values as _values, setWith as _setWith, clone as _clone } from 'lodash';
 
 export const AdmKeys = {
   ExpireImages: "expire_images",
@@ -22,12 +22,16 @@ export interface State {
   status: '' | 'loading' | 'failed' | 'success';
   ldapStatus: LdapStatus | null;
   ldapPingResponse: LdapPing | null;
-  ldapSyncJob: Job | null;
   slots: AdmKey[];
   admKeys: {
     [AdmKeys.ExpireImages]: AdmExpireImagesResults | null;
     [AdmKeys.CheckQuotas]: AdmUpdateQuotasResults | null;
     [AdmKeys.LdapSyncResults]: AdmLdapSyncResults | null;
+  };
+  activeJobs: {
+    [AdmKeys.ExpireImages]: Job | null;
+    [AdmKeys.CheckQuotas]: Job | null;
+    [AdmKeys.LdapSyncResults]: Job | null;
   };
 }
 
@@ -37,13 +41,17 @@ const admModule: Module<State, any> = {
     status: '',
     ldapStatus: null,
     ldapPingResponse: null,
-    ldapSyncJob: null,
     slots: _values(AdmKeys),
     admKeys: {
       [AdmKeys.ExpireImages]: null,
       [AdmKeys.CheckQuotas]: null,
       [AdmKeys.LdapSyncResults]: null,
     },
+    activeJobs: {
+      [AdmKeys.ExpireImages]: null,
+      [AdmKeys.CheckQuotas]: null,
+      [AdmKeys.LdapSyncResults]: null,
+    }
   },
   getters: {
     status: (state): string => state.status,
@@ -51,8 +59,9 @@ const admModule: Module<State, any> = {
     ldapStatus: (state): LdapStatus | null => state.ldapStatus,
     ldapPing: (state): LdapPing | null => state.ldapPingResponse,
     ldapSyncResults: (state): AdmLdapSyncResults | null => state.admKeys[AdmKeys.LdapSyncResults],
-    ldapSyncJob: (state): Job | null => state.ldapSyncJob,
+    ldapSyncJob: (state): Job | null => state.activeJobs[AdmKeys.LdapSyncResults],
     admKeys: (state) => state.admKeys,
+    activeJobs: (state) => state.activeJobs,
   },
   mutations: {
     loading(state: State) {
@@ -71,11 +80,14 @@ const admModule: Module<State, any> = {
       state.ldapPingResponse = newResult;
     },
     setLdapSyncJob(state: State, job: Job | null) {
-      state.ldapSyncJob = job;
+      state.activeJobs[AdmKeys.LdapSyncResults] = job;
     },
     setAdmKey(state: State, newVal: { key: AdmKey; val: AdmLdapSyncResults & AdmUpdateQuotasResults & AdmExpireImagesResults | null }) {
-      state.admKeys[newVal.key] = newVal.val;
-    }
+      state.admKeys = _setWith(_clone(state.admKeys), newVal.key, newVal.val, _clone);
+    },
+    setActiveJob(state: State, newVal: { key: AdmKey; val: Job | null}) {
+      state.activeJobs = _setWith(_clone(state.activeJobs), newVal.key, newVal.val, _clone);
+    },
   },
   actions: {
     ldapStatus: ({ state, commit, rootState }, param: { reload?: boolean } = {}): Promise<LdapStatus> => {
@@ -134,35 +146,41 @@ const admModule: Module<State, any> = {
     ldapSyncResults: ({ dispatch }): Promise<AdmLdapSyncResults> => {
       return dispatch('admResults', AdmKeys.LdapSyncResults);
     },
-    syncLdap: ({ commit, rootState }): Promise<Job | null> => {
+    syncLdap: ({ dispatch }): Promise<Job | null> => {
+      return dispatch('runTask', AdmKeys.LdapSyncResults);
+    },
+    runTask: ({ rootState, commit }, task: AdmKey): Promise<Job | null> => {
       return new Promise((resolve, reject) => {
         commit('loading');
-        rootState.backend.post(`/v1/ldap/sync`)
-        .then((response: AxiosResponse) => {
-          const jobInfo = plainToJob(response.data.data);
-          commit('setLdapSyncJob', jobInfo);
-          commit('succeeded');
-          resolve(jobInfo);
-        })
-        .catch((err: AxiosError) => {
-          commit('failed', err);
-          reject(err);
-        });
+        rootState.backend.post(`/v1/adm/${task}/run`)
+          .then((response: AxiosResponse) => {
+            const jobInfo = plainToJob(response.data.data);
+            commit('setActiveJob', { key: task, val: jobInfo });
+            commit('succeeded');
+            resolve(jobInfo);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
       });
     },
-    syncLdapStatus: ({ state, commit, dispatch }): Promise<Job | null> => {
+    syncLdapStatus: ({ dispatch }): Promise<Job | null> => {
+      return dispatch('taskStatus', AdmKeys.LdapSyncResults);
+    },
+    taskStatus: ({ state, commit, dispatch }, task: AdmKey): Promise<Job | null> => {
       return new Promise((resolve, reject) => {
-        if (state.ldapSyncJob === null) {
+        if (state.activeJobs[task] === null) {
           return resolve(null);
         }
-        dispatch('jobInfo', state.ldapSyncJob.id)
+        dispatch('jobInfo', state.activeJobs[task]?.id)
           .then(res => {
-            commit('setLdapSyncJob', res);
+            commit('setActiveJob', { key: task, val: res });
             resolve(res);
           })
           .catch(err => {
             reject(err);
-          })
+          });
       });
     },
     jobInfo: ({ commit, rootState }, jobId: string): Promise<Job> => {

@@ -6,6 +6,7 @@ from flask import current_app
 from rq.job import Job
 from datetime import datetime, timezone
 import traceback
+import time
 
 from Hinkskalle.models.Adm import Adm, AdmKeys
 from Hinkskalle.models.Entity import Entity
@@ -173,3 +174,8 @@ def sync_ldap():
   return f"synced {len(result['synced'])}"
 
 
+adm_map = {
+  AdmKeys.ldap_sync_results.name: sync_ldap,
+  AdmKeys.expire_images.name: expire_images,
+  AdmKeys.check_quotas.name: update_quotas,
+}

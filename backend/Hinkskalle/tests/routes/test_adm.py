@@ -1,3 +1,4 @@
+import typing
 from ..route_base import RouteBase
 
 from Hinkskalle.models import Adm, AdmKeys
@@ -85,6 +86,33 @@ class TestAdm(RouteBase):
     with self.fake_auth():
       ret = self.client.post(f"/v1/ldap/sync")
     self.assertEqual(ret.status_code, 403)
+  
+  def test_start_task(self):
+    from Hinkskalle.util.jobs import adm_map
+
+    for slot in AdmKeys:
+      with self.fake_admin_auth():
+        ret = self.client.post(f"/v1/adm/{slot.name}/run")
+      self.assertEqual(ret.status_code, 200, msg=f"start job {slot}")
+      data = ret.get_json().get('data')
+      self.assertDictContainsSubset({
+        'status': 'queued',
+        'funcName': f"Hinkskalle.util.jobs.{adm_map[slot.name].__name__}"
+      }, data)
+
+  def test_start_task_invalid(self):
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v1/adm/oink/run")
+    self.assertEqual(ret.status_code, 406)
+  
+  def test_start_task_user(self):
+    with self.fake_auth():
+      ret = self.client.post(f"/v1/adm/{AdmKeys.ldap_sync_results}/run")
+    self.assertEqual(ret.status_code, 403)
+  def test_start_task_noauth(self):
+    ret = self.client.post(f"/v1/adm/{AdmKeys.ldap_sync_results}/run")
+    self.assertEqual(ret.status_code, 401)
+
   
   def test_ldap_ping(self):
     mock_ldap = MockLDAP()

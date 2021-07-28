@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from marshmallow import fields, Schema
 
-from Hinkskalle.models import AdmSchema, Adm
+from Hinkskalle.models.Adm import AdmSchema, Adm, AdmKeys
 
 class AdmResponseSchema(ResponseSchema):
   data = fields.Nested(AdmSchema)
@@ -135,8 +135,20 @@ def ping_ldap():
   authenticators=authenticator.with_scope(Scopes.admin),
 )
 def sync_ldap():
-  from Hinkskalle.util.jobs import sync_ldap
-  job = sync_ldap.queue()
+  """deprecated, use /v1/adm/ldap_sync_results/run"""
+  return start_task(AdmKeys.ldap_sync_results.name)
+
+@registry.handles(
+  rule='/v1/adm/<string:key>/run',
+  method='POST',
+  response_body_schema=JobResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.admin)
+)
+def start_task(key):
+  from Hinkskalle.util.jobs import adm_map
+  if not key in adm_map:
+    raise errors.NotAcceptable(f"Invalid adm key {key}")
+  job = adm_map[key].queue()
   return { 'data': job }
 
 @registry.handles(

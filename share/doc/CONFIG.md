@@ -37,7 +37,7 @@ See [https://python-rq.org/docs/workers/](https://python-rq.org/docs/workers/) f
 
 ### Periodic Maintenance Tasks
 
-Configure a key `CRON` in `config.json`:
+Configure a key `CRON` in `config.json` (times are in UTC!):
 
 ```json
 {

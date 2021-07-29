@@ -7,7 +7,7 @@ volumes:
   hockeypuck_data:
 services:
   api:
-    image: "ghcr.io/csf-ngs/hinkskalle-dev:v1.2.2"
+    image: "ghcr.io/csf-ngs/hinkskalle-dev:$DEV_VERSION"
     volumes:
       - '.:/srv/hinkskalle/src'
       - './data/sqlite:/data/db'
@@ -18,7 +18,7 @@ services:
       - "conf/secrets.env"
       - "conf/hinkskalle.env"
     ports:
-      - '7660:5000'
+      - "$BACKEND_PORT:5000"
     working_dir: '/srv/hinkskalle/src/backend'
     depends_on:
       - hinkdb
@@ -32,8 +32,20 @@ services:
       - "conf/db_secrets.env"
     volumes:
       - hink_db:/var/lib/postgresql/data
+  rq_scheduler:
+    image: "ghcr.io/csf-ngs/hinkskalle-dev:$DEV_VERSION"
+    command: '../script/start-dev-scheduler.sh'
+    volumes:
+      - '.:/srv/hinkskalle/src'
+    env_file:
+      - "conf/secrets.env"
+      - "conf/hinkskalle.env"
+    working_dir: '/srv/hinkskalle/src/backend'
+    depends_on:
+      - redis
+      - hinkdb
   rq_worker:
-    image: "ghcr.io/csf-ngs/hinkskalle-dev:v1.2.2"
+    image: "ghcr.io/csf-ngs/hinkskalle-dev:$DEV_VERSION"
     command: '../script/start-dev-worker.sh'
     volumes:
       - '.:/srv/hinkskalle/src'
@@ -58,12 +70,12 @@ services:
       - ldap_db:/var/lib/ldap/
       - ldap_conf:/etc/ldap/
   build_frontend:
-    image: "ghcr.io/csf-ngs/hinkskalle-dev:v1.2.2"
+    image: "ghcr.io/csf-ngs/hinkskalle-dev:$DEV_VERSION"
     volumes:
       - '.:/srv/hinkskalle/src'
     command: '../script/start-dev-frontend.sh'
     environment:
-      VUE_APP_BACKEND_URL: 'http://localhost:7660/'
+      VUE_APP_BACKEND_URL: "http://localhost:$BACKEND_PORT/"
       VUE_APP_ENABLE_REGISTER: 'true'
     working_dir: '/srv/hinkskalle/src/frontend'
     depends_on: 

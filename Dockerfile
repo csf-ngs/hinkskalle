@@ -9,7 +9,7 @@ RUN yarn build
 
 FROM docker.ngs.vbcf.ac.at/singularity-base as singularity
 
-FROM docker.ngs.vbcf.ac.at/flask-base:v3.0.0
+FROM docker.ngs.vbcf.ac.at/flask-base:v3.1.1
 
 RUN apt-get install -y jq gosu
 

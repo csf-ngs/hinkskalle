@@ -35,6 +35,26 @@ See [https://python-rq.org/docs/workers/](https://python-rq.org/docs/workers/) f
 
 - `REDIS_URL` - where can we find our redis server?
 
+### Periodic Maintenance Tasks
+
+Configure a key `CRON` in `config.json`:
+
+```json
+{
+  "CRON": {
+    "expire_images": "46 21 * * *",
+    "check_quotas": "48 21 * * *",
+    "ldap_sync_results": "1,11,21,31,41,51 * * * *"
+  }
+}
+```
+
+Available tasks:
+
+- `expire_images`: delete image files that have reached their `expiresAt` data (e.g. temporary uploads)
+- `check_quotas`: recalculate space usage for all entities.
+- `ldap_sync_results`: sync user database with LDAP server
+
 ### Secrets
 
 try to keep these out of `config.json`!

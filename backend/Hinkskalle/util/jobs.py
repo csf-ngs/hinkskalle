@@ -1,9 +1,10 @@
 import typing
+from flask.app import Flask
 from flask_rq2 import RQ
 from Hinkskalle import db
 from rq import get_current_job
 from flask import current_app
-from rq.job import Job
+from flask_rq2.job import Job
 from datetime import datetime, timezone
 import traceback
 import time
@@ -17,6 +18,13 @@ import os
 import os.path
 
 rq = RQ()
+
+def setup_cron(app: Flask):
+  for key in app.config.get('CRON', {}):
+    if not key in adm_map:
+      raise Exception(f"Invalid adm key {key} in CRON")
+    app.logger.debug(f"scheduling {key}...")
+    job: Job = adm_map[key].cron(app.config['CRON'][key], key)
 
 def get_job_info(id):
   return Job.fetch(id, connection=rq.connection)

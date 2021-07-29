@@ -98,7 +98,7 @@ def create_app():
 
   db.init_app(app)
 
-  from Hinkskalle.util.jobs import rq
+  from Hinkskalle.util.jobs import rq, setup_cron
   
   if 'HINKSKALLE_REDIS_URL' in os.environ:
     app.config['RQ_REDIS_URL'] = os.environ.get('HINKSKALLE_REDIS_URL')
@@ -157,6 +157,7 @@ def create_app():
   })
 
   password_checkers.init_app(app)
+  setup_cron(app)
 
   return app
 

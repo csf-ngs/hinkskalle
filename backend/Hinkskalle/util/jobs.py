@@ -1,6 +1,7 @@
 import typing
 from flask.app import Flask
 from flask_rq2 import RQ
+from rq_scheduler.scheduler import Scheduler
 from Hinkskalle import db
 from rq import get_current_job
 from flask import current_app
@@ -25,6 +26,18 @@ def setup_cron(app: Flask):
       raise Exception(f"Invalid adm key {key} in CRON")
     app.logger.debug(f"scheduling {key}...")
     job: Job = adm_map[key].cron(app.config['CRON'][key], key)
+
+def get_cron():
+  scheduler = Scheduler(connection=rq.connection)
+  jobs = scheduler.get_jobs(with_times=True)
+  def to_local(dt: datetime) -> typing.Optional[datetime]:
+    return dt.replace(tzinfo=timezone.utc).astimezone() if dt else None
+  ret = []
+  for j in jobs:
+    j[0].enqueued_at=to_local(j[0].enqueued_at)
+    ret.append((j[0], to_local(j[1])))
+  return ret
+
 
 def get_job_info(id):
   return Job.fetch(id, connection=rq.connection)

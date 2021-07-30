@@ -4,37 +4,42 @@
     <v-row v-if="jobDetails">
       <v-col cols="12">
         <v-expansion-panels>
-          <v-expansion-panel v-for="key in jobs" :key="key" :disabled="!jobDetails[key]">
+          <v-expansion-panel v-for="key in jobs" :key="key">
             <v-expansion-panel-header>
-              <div>
-                <v-btn small elevation="2" @click.stop="loadJobDetails(key)">
-                  <v-icon>mdi-refresh</v-icon>
-                  <span v-if="!jobDetails[key]">
-                    <v-icon color="blue-grey-darken-3">mdi-cancel</v-icon>
-                  </span>
-                  <span v-else>
-                    <v-icon v-if="!jobDetails[key].success" color="deep-orange darken-3">mdi-alert-circle</v-icon>
-                    <v-icon v-else color="success">mdi-check-circle</v-icon>
-                  </span>
-                </v-btn>
-                <v-btn small elevation="2" 
-                    @click.stop="startJob(key)"
-                    :disabled="activeJobs[key] && activeJobs[key].status === 'started'"
-                    :loader="activeJobs[key] && activeJobs[key].status === 'started'"
-                    :class="taskButtonClass(key)"
-                    >
-                  <v-icon>mdi-play</v-icon> Run
-                  <span v-if="activeJobs[key]">
-                    ({{ activeJobs[key].meta.progress }})
-                  </span>
-                </v-btn>
-              </div>
-              {{key}}
-              <div v-if="jobDetails[key]">
-                &nbsp;| {{jobDetails[key].started | moment('YYYY-MM-DD HH:mm:ss')}}
-              </div>
-              <div v-else>
-              </div>
+              <v-row no-gutters>
+                <v-col cols="2">
+                  {{key}}
+                </v-col>
+                <v-col>
+                  <div v-if="jobDetails[key]">
+                    <v-icon small v-if="!jobDetails[key].success" color="deep-orange darken-3">mdi-alert-circle</v-icon>
+                    <v-icon small v-else color="success">mdi-check-circle</v-icon>
+                    Last: {{jobDetails[key].started | moment('YYYY-MM-DD HH:mm:ss')}}
+                    <span v-if="jobDetails[key].scheduled">
+                      | Next: {{jobDetails[key].scheduled | moment('YYYY-MM-DD HH:mm:ss')}}
+                    </span>
+                  </div>
+                  <div v-else>
+                      <v-icon color="blue-grey-darken-3">mdi-cancel</v-icon>
+                  </div>
+                </v-col>
+                <v-col cols="2">
+                  <v-btn small elevation="2" @click.stop="loadJobDetails(key)">
+                    <v-icon>mdi-refresh</v-icon>
+                  </v-btn>
+                  <v-btn small elevation="2" 
+                      @click.stop="startJob(key)"
+                      :disabled="activeJobs[key] && activeJobs[key].status === 'started'"
+                      :loader="activeJobs[key] && activeJobs[key].status === 'started'"
+                      :class="taskButtonClass(key)"
+                      >
+                    <v-icon>mdi-play</v-icon> Run
+                    <span v-if="activeJobs[key]">
+                      ({{ activeJobs[key].meta.progress }})
+                    </span>
+                  </v-btn>
+                </v-col>
+              </v-row>
             </v-expansion-panel-header>
             <v-expansion-panel-content>
               <template v-if="jobDetails[key]">
@@ -56,6 +61,12 @@
                       <v-list-item-content>
                         <v-list-item-title>{{jobDetails[key].finished | moment('YYYY-MM-DD HH:mm:ss')}}</v-list-item-title>
                         <v-list-item-subtitle>Finished</v-list-item-subtitle>
+                      </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item two-line>
+                      <v-list-item-content>
+                        <v-list-item-title>{{jobDetails[key].scheduled | moment('YYYY-MM-DD HH:mm:ss')}}</v-list-item-title>
+                        <v-list-item-subtitle>Next Scheduled Run</v-list-item-subtitle>
                       </v-list-item-content>
                     </v-list-item>
                     <template v-if="key==='ldap_sync_results'">
@@ -97,6 +108,9 @@
                     <pre><code>{{jobDetails[key].exception}}</code></pre>
                   </v-col>
                 </v-row>
+              </template>
+              <template v-else>
+                <em>This job didn't run yet</em>
               </template>
             </v-expansion-panel-content>
           </v-expansion-panel>

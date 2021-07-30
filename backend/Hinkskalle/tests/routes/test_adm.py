@@ -35,7 +35,7 @@ class TestAdm(RouteBase):
       with self.fake_admin_auth():
         ret = self.client.get(f"/v1/adm/{slot.name}")
       self.assertEqual(ret.status_code, 200, msg=f"get {slot.name}")
-      self.assertDictEqual(ret.get_json().get('data'), { 'key': slot.name, 'val': { 'oi': 'nk' }})
+      self.assertDictEqual(ret.get_json().get('data'), { 'key': slot.name, 'val': { 'oi': 'nk', 'scheduled': mock.ANY }})
   
   def test_get_invalid(self):
     with self.fake_admin_auth():

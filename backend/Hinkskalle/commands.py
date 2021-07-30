@@ -77,13 +77,6 @@ current_app.cli.add_command(image_cli)
 
 @current_app.cli.command("cron")
 def cron():
-  from Hinkskalle.util.jobs import rq
-  from rq_scheduler import Scheduler
-  from datetime import timezone, datetime
-
-  scheduler = Scheduler(connection=rq.connection)
-  jobs = scheduler.get_jobs(with_times=True)
-  def to_local(dt: datetime) -> datetime:
-    return dt.replace(tzinfo=timezone.utc).astimezone()
-  for j in jobs:
-    click.echo(f"{j[0].id} last: {to_local(j[0].enqueued_at)} next: {to_local(j[1])}")
+  from Hinkskalle.util.jobs import get_cron
+  for j in get_cron():
+    click.echo(f"{j[0].id} last: {j[0].enqueued_at} next: {j[1]}")

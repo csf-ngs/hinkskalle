@@ -57,9 +57,14 @@ class LdapStatusResponseSchema(ResponseSchema):
   authenticators=authenticator.with_scope(Scopes.admin)
 )
 def get_key(key):
-  db_key = Adm.query.get(key)
+  db_key: Adm = Adm.query.get(key)
   if not db_key:
     raise errors.NotFound(f"key {key} does not exist")
+  
+  from Hinkskalle.util.jobs import get_cron
+  for j in get_cron():
+    if j[0].id == f"cron-{key}":
+      db_key.val['scheduled'] = j[1]
 
   return { 'data': db_key }
 

@@ -24,6 +24,7 @@ interface AdmBase {
   finished: Date | null;
   success: boolean;
   exception: string;
+  scheduled: Date | null;
 }
 
 export interface AdmLdapSyncResults extends AdmBase {
@@ -49,6 +50,7 @@ function plainToAdmBase(json: any): AdmBase {
     finished: json['finished'] ? new Date(json['finished']) : null,
     success: json['success'],
     exception: json['exception'],
+    scheduled: json['scheduled'] ? new Date(json['scheduled']) : null,
   }
 }
 

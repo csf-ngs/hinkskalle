@@ -1,3 +1,8 @@
+# v4.2.8 (2021-07-31)
+
+- view/run tasks in frontend
+- cron scheduler for tasks
+
 # v4.2.7 (2021-07-23)
 
 - expiration date for images

@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='Hinkskalle',
-    version='4.2.7',
+    version='4.2.8',
     packages=['Hinkskalle'],
     include_package_data=True,
     install_requires=[

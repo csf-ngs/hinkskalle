@@ -4,5 +4,10 @@
   "SESSION_COOKIE_NAME": "hinkskalle",
   "IMAGE_PATH": "/mnt/images",
   "UPLOAD_CHUNK_SIZE": 16384,
-  "SQLALCHEMY_TRACK_MODIFICATIONS": false
+  "SQLALCHEMY_TRACK_MODIFICATIONS": false,
+  "CRON": {
+    "expire_images": "46 22 * * *",
+    "check_quotas": "29 0 * * *",
+    "ldap_sync_results": "1,11,21,31,41,51 * * * *"
+  }
 }

@@ -60,21 +60,34 @@ Using docker-compose.
 
 - docker-compose run api bash
 
-```
+```bash
 cd backend
+# installs database schema
 flask localdb init
-flask localdb add-user # admin
+# create admin user
+flask localdb add-user 
 ```
 
 - fire up whole stack
 
-- if using ldap 
+- if using ldap: 
 
-```
+```bash
 docker-compose exec api bash
 cd backend
 flask ldap sync
 ```
+
+The example docker-compose starts a backend server on port 7600. You will want
+to run it behind a reverse proxy serving via HTTPS (e.g. nginx, caddy, Apache,
+...).
+
+It also starts:
+
+- PostgreSQL Server for metadata (only available within the docker-compose network)
+- Redis Server for background/periodic job execution 
+- an [rq](https://python-rq.org/) worker to execute jobs
+- an [rq-scheduler](https://github.com/rq/rq-scheduler) to manage periodic maintenance jobs
 
 # Deployment
 

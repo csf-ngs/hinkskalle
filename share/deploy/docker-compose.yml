@@ -1,6 +1,7 @@
 version: "3"
 volumes:
-  - hinkdb
+  hink_db:
+    driver: local
 services:
   api:
     restart: always
@@ -18,6 +19,7 @@ services:
     depends_on:
       - hinkdb
   hinkdb:
+    restart: always
     image: postgres:12
     environment:
       POSTGRES_DB: hinkskalle
@@ -35,5 +37,16 @@ services:
     working_dir: '/srv/hinkskalle/src/backend'
     depends_on:
       - redis
+      - hinkdb
+  rq_scheduler:
+    image: ghcr.io/csf-ngs/hinkskalle
+    command: '../script/start-scheduler.sh'
+    env_file:
+      - "conf/secrets.env"
+      - "conf/hinkskalle.env"
+    working_dir: '/srv/hinkskalle/src/backend'
+    depends_on:
+      - redis
+      - hinkdb
   redis:
     image: redis:6-alpine

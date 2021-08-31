@@ -23,6 +23,7 @@ services:
     depends_on:
       - hinkdb
       - ldap
+      - redis
   hinkdb:
     image: postgres:12
     environment:

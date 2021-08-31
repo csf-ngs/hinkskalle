@@ -20,7 +20,7 @@ class EntitySchema(Schema):
   defaultPrivate = fields.Boolean()
   customData = fields.String(allow_none=True)
 
-  collections = fields.List(fields.String(dump_only=True))
+  collections = fields.List(fields.String(), allow_none=True, dump_only=True)
 
   @validates_schema
   def validate_name(self, data, **kwargs):

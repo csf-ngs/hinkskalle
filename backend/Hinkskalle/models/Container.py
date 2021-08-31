@@ -40,7 +40,7 @@ class ContainerSchema(Schema):
   deleted = fields.Boolean(dump_only=True, default=False)
 
   # image ids, not used? keep to validate schema
-  images = fields.List(fields.String(dump_only=True), attribute='image_names')
+  images = fields.List(fields.String(), dump_only=True, allow_none=True, attribute='image_names')
 
   collection = fields.String(required=True)
   collectionName = fields.String(dump_only=True)

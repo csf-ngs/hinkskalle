@@ -23,7 +23,7 @@ class CollectionSchema(Schema):
   entity = fields.String(required=True)
   entityName = fields.String(dump_only=True)
 
-  containers = fields.List(fields.String(dump_only=True))
+  containers = fields.List(fields.String(), allow_none=True, dump_only=True)
 
   @validates_schema
   def validate_name(self, data, **kwargs):

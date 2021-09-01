@@ -6,7 +6,7 @@ classDiagram
   Collection "1" --> "0..n" Container
   Container "1" --> "0..n" Image
   Container "1" --> "0..n" Tag
-  Image "1" --> "0..n" Tag
+  Image "0..1" --> "0..n" Tag
   Image "1" --> "0..n" ImageUploadUrl
   File "0..1" --> "n" Image
   Manifest "0..1" --> "0..n" Tag

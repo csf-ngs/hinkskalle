@@ -247,7 +247,7 @@ def oras_manifest(name: str, reference: str):
 
   if reference.startswith('sha256:'):
     try:
-      manifest = Manifest.query.filter(Manifest.hash==reference.replace('sha256:', '')).one()
+      manifest = Manifest.query.filter(Manifest.hash==reference.replace('sha256:', ''), Manifest.container_ref==container).one()
     except NoResultFound:
       raise OrasManifestUnknown(f"Manifest {reference} not found")
   else:
@@ -312,7 +312,7 @@ def oras_blob(name, digest):
     db.session.commit()
   
   ret = send_file(image.location)
-  ret.headers['Docker-Content-Digest']=f"sha256:{image.hash}"
+  ret.headers['Docker-Content-Digest']=f"sha256:{image.hash.replace('sha256.', '')}"
   return ret
 
 @registry.handles(

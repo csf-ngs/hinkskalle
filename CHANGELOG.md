@@ -1,3 +1,12 @@
+# v4.2.9 (2021-09-02)
+
+- fix entity/collection/container schemas
+- OCI: fix x-docker-digest header, fetch manifest per container
+- docs: fix model
+- docs: update example docker-compose deployment
+- dev: fix oci conformance test script
+- dev: deployment starts redis server
+
 # v4.2.8 (2021-07-31)
 
 - view/run tasks in frontend

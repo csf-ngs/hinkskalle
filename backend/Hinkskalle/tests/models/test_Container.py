@@ -5,7 +5,7 @@ from unittest.case import skip
 
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Container import ContainerTypes
-from Hinkskalle.models import Collection, Container, ContainerSchema, Image, Tag
+from Hinkskalle.models import Collection, Container, ContainerSchema, Image, Tag, UploadStates
 from .test_Image import _create_image
 from ..model_base import ModelBase
 from .._util import _create_user, _create_container, _create_image
@@ -49,13 +49,13 @@ class TestContainer(ModelBase):
     nosave = Container(name='nosave', collection_id=collection.id)
     self.assertEqual(nosave.size(), 0)
 
-    image1 = Image(container_id=container.id, uploaded=True)
+    image1 = Image(container_id=container.id, uploadState=UploadStates.completed)
     db.session.add(image1)
     db.session.commit()
     self.assertEqual(container.size(), 1)
 
     other_container = _create_container('other')[0]
-    other_image = Image(container_id=other_container.id, uploaded=True)
+    other_image = Image(container_id=other_container.id, uploadState=UploadStates.completed)
     db.session.add(other_image)
     db.session.commit()
     self.assertEqual(container.size(), 1)
@@ -64,7 +64,7 @@ class TestContainer(ModelBase):
     db.session.add(image2)
     self.assertEqual(container.size(), 1)
 
-    image3 = Image(container_id=container.id, uploaded=False)
+    image3 = Image(container_id=container.id, uploadState=UploadStates.broken)
     db.session.add(image3)
     self.assertEqual(container.size(), 1)
   

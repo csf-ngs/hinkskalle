@@ -6,7 +6,7 @@ from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
 import enum
 
-from Hinkskalle.models.Image import Image
+from Hinkskalle.models.Image import Image, UploadStates
 from Hinkskalle.models.Tag import Tag
 
 from marshmallow import fields, Schema, validates_schema, ValidationError
@@ -110,7 +110,7 @@ class Container(db.Model):
   def size(self):
     if not self.id:
       return 0
-    return self.images_ref.filter(Image.hide==False, Image.uploaded==True).count()
+    return self.images_ref.filter(Image.hide==False, Image.uploadState==UploadStates.completed).count()
   
   def collection(self):
     return self.collection_ref.id

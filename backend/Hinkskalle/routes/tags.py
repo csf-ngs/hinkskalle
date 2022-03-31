@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from flask import request, current_app, g
 import os.path
 
-from Hinkskalle.models import Tag, Container, Image
+from Hinkskalle.models import Tag, Container, Image, UploadStates
 
 class TagResponseSchema(ResponseSchema):
   data = fields.Dict()
@@ -134,7 +134,7 @@ def update_tag(container_id):
 
 def _link_tag(new_tag):
   image=new_tag.image_ref
-  if image.uploaded and os.path.exists(image.location):
+  if image.uploadState == UploadStates.completed and os.path.exists(image.location):
     subdir = image.collectionName() if image.entityName() == 'default' else os.path.join(image.entityName(), image.collectionName())
     if image.arch:
       subdir = os.path.join(image.arch, subdir)

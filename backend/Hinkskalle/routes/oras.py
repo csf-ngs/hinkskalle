@@ -301,7 +301,7 @@ def oras_blob(name, digest):
     current_app.logger.debug(f"hash {digest} for container {container.id} not found")
     raise OrasBlobUnknwon(f"Blob {digest} not found")
   
-  if not image.uploaded or not image.location:
+  if image.uploadState != UploadStates.completed or not image.location:
     raise OrasBlobUnknwon(f"Blob {digest} not uploaded or already deleted.")
 
   if request.method != 'HEAD':
@@ -523,7 +523,7 @@ def _do_mount(container: Container, _from: str, mount: str):
     owner=g.authenticated_user, 
     hash=from_image.hash,
     size=from_image.size,
-    uploaded=from_image.uploaded,
+    uploadState=from_image.uploadState,
     arch=from_image.arch,
     signed=from_image.signed,
     signatureVerified=from_image.signatureVerified,

@@ -14,7 +14,7 @@ from datetime import datetime
 from calendar import timegm
 
 from Hinkskalle.models.Manifest import Manifest, ManifestSchema, ManifestTypes
-from Hinkskalle.models.Image import Image
+from Hinkskalle.models.Image import Image, UploadStates
 from Hinkskalle.models.User import User
 
 from .util import _get_container, DownloadQuerySchema
@@ -91,7 +91,7 @@ def download_manifest(manifest_id):
     current_app.logger.debug(f"image in manifest {manifest.content} not found")
     raise errors.NotFound("Image not found")
   
-  if not image.uploaded:
+  if image.uploadState != UploadStates.completed:
     raise errors.NotAcceptable(f"Image not uploaded")
   
   image.downloadCount += 1

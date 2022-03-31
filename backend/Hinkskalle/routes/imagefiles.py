@@ -98,7 +98,7 @@ def pull_image(entity_id, collection_id, tagged_container_id):
   if not image.check_access(g.authenticated_user):
     raise errors.Forbidden('Private image, access denied.')
 
-  if not image.uploaded or not image.location:
+  if image.uploadState != UploadStates.completed or not image.location:
     raise errors.NotFound('Image is not uploaded yet or already deleted.')
   
   if image.media_type != Image.singularity_media_type:
@@ -399,7 +399,7 @@ def push_image_v2_multi_abort(image_id):
   for part in upload.parts_ref:
     part.state = UploadStates.failed
   upload.state = UploadStates.failed
-  image.uploaded = False
+  image.uploadState = UploadStates.failed
   image.location = None
   db.session.commit()
 
@@ -443,7 +443,7 @@ def _move_image(tmpf: str, image: Image) -> Image:
   shutil.move(tmpf, outfn)
   image.location=os.path.abspath(outfn)
   image.size=os.path.getsize(image.location)
-  image.uploaded=True
+  image.uploadState=UploadStates.completed
   entity.calculate_used()
   db.session.commit()
 

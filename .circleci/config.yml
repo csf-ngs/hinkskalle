@@ -8,6 +8,7 @@ jobs:
       - run:
           name: Testmaus Hinterbau
           command: |
+            export HINKSKALLE_SETTINGS=../../conf/config.json
             cd backend
             pip3 install -e '.[dev]'
             nose2

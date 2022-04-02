@@ -19,7 +19,7 @@ setup(
         'humanize',
     ],
     extras_require={
-      'dev': ['Jinja2','nose2','fakeredis','psycopg2'],
+      'dev': ['Jinja2','nose2','fakeredis','psycopg2', 'nose2_html_report'],
       'test': ['nose2', 'fakeredis'],
       'postgres': ['psycopg2'],
     },

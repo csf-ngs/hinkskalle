@@ -37,17 +37,17 @@ class TestImage(ModelBase):
     db.session.add(image)
     db.session.commit()
 
-    read_image = Image.query.get(image.id)
+    read_image: Image = Image.query.get(image.id)
     self.assertTrue(abs(read_image.createdAt - datetime.now()) < timedelta(seconds=1))
 
-    self.assertEqual(read_image.container(), container.id)
-    self.assertEqual(read_image.containerName(), container.name)
+    self.assertEqual(read_image.container, container.id)
+    self.assertEqual(read_image.containerName, container.name)
 
-    self.assertEqual(read_image.collection(), coll.id)
-    self.assertEqual(read_image.collectionName(), coll.name)
+    self.assertEqual(read_image.collection, coll.id)
+    self.assertEqual(read_image.collectionName, coll.name)
 
-    self.assertEqual(read_image.entity(), entity.id)
-    self.assertEqual(read_image.entityName(), entity.name)
+    self.assertEqual(read_image.entity, entity.id)
+    self.assertEqual(read_image.entityName, entity.name)
   
   def test_manifest(self):
     image = _create_image(media_type='application/vnd.sylabs.sif.layer.v1.sif')[0]
@@ -79,7 +79,7 @@ class TestImage(ModelBase):
     db.session.add(tag2)
     db.session.commit()
 
-    self.assertListEqual(image.tags(), ['v1', 'v2'])
+    self.assertListEqual(image.tags, ['v1', 'v2'])
     Tag.__table__.delete()
   
   def test_tags_case(self):
@@ -87,7 +87,7 @@ class TestImage(ModelBase):
     tag1 = Tag(name='TestHase', image_ref=image)
     db.session.add(tag1)
     db.session.commit()
-    self.assertListEqual(image.tags(), ['testhase'])
+    self.assertListEqual(image.tags, ['testhase'])
   
   def test_access(self):
     admin = _create_user(name='admin.oink', is_admin=True)
@@ -130,7 +130,7 @@ class TestImage(ModelBase):
     image = _create_image()[0]
 
     serialized = schema.dump(image)
-    self.assertEqual(serialized.data['hash'], image.hash)
+    self.assertEqual(serialized['hash'], image.hash)
 
     entity = Entity(name='Test Hase')
     db.session.add(entity)
@@ -148,15 +148,14 @@ class TestImage(ModelBase):
     db.session.commit()
 
     serialized = schema.dump(image)
-    self.assertDictEqual(serialized.errors, {})
-    self.assertEqual(serialized.data['container'], str(container.id))
-    self.assertEqual(serialized.data['containerName'], container.name)
-    self.assertEqual(serialized.data['collection'], str(coll.id))
-    self.assertEqual(serialized.data['collectionName'], coll.name)
-    self.assertEqual(serialized.data['entity'], str(entity.id))
-    self.assertEqual(serialized.data['entityName'], entity.name)
-    self.assertIsNone(serialized.data['deletedAt'])
-    self.assertFalse(serialized.data['deleted'])
+    self.assertEqual(serialized['container'], str(container.id))
+    self.assertEqual(serialized['containerName'], container.name)
+    self.assertEqual(serialized['collection'], str(coll.id))
+    self.assertEqual(serialized['collectionName'], coll.name)
+    self.assertEqual(serialized['entity'], str(entity.id))
+    self.assertEqual(serialized['entityName'], entity.name)
+    self.assertIsNone(serialized['deletedAt'])
+    self.assertFalse(serialized['deleted'])
 
   def test_schema_tags(self):
     schema = ImageSchema()
@@ -170,8 +169,7 @@ class TestImage(ModelBase):
     db.session.commit()
 
     serialized = schema.dump(image)
-    self.assertDictEqual(serialized.errors, {})
-    self.assertListEqual(serialized.data['tags'], ['v1', 'v2'])
+    self.assertListEqual(serialized['tags'], ['v1', 'v2'])
     Tag.__table__.delete()
   
   def _get_test_path(self, name):
@@ -311,8 +309,8 @@ class TestImage(ModelBase):
   def test_make_prettyname(self):
     image = _create_image()[0]
     fn = image.make_prettyname('v1')
-    self.assertEquals(fn, f"{image.entityName()}/{image.collectionName()}/{image.containerName()}_v1.sif")
+    self.assertEquals(fn, f"{image.entityName}/{image.collectionName}/{image.containerName}_v1.sif")
 
     image.media_type='grunz'
     fn = image.make_prettyname('v1')
-    self.assertEquals(fn, f"{image.entityName()}/{image.collectionName()}/{image.containerName()}_v1")
+    self.assertEquals(fn, f"{image.entityName}/{image.collectionName}/{image.containerName}_v1")

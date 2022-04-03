@@ -98,12 +98,13 @@ def create_container():
   owner = g.authenticated_user
   if g.authenticated_user.is_admin and collection.entity_ref.owner:
     owner = collection.entity_ref.owner
-  new_container = Container(**body)
-  new_container.collection_ref=collection
-  new_container.owner=owner
-  db.session.expire(collection)
-  if collection.private:
-    new_container.private = True
+  with db.session.no_autoflush:
+    new_container = Container(**body)
+    new_container.collection_ref=collection
+    new_container.owner=owner
+    db.session.expire(collection)
+    if collection.private:
+      new_container.private = True
 
   try:
     db.session.add(new_container)

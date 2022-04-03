@@ -219,30 +219,39 @@ class Image(db.Model):
       ret.append(key['Signer']['Fingerprint'])
     return set(ret)
 
+  @property
   def tags(self) -> List[str]:
     return [ tag.name for tag in self.tags_ref ]
 
+  @property
   def container(self) -> int:
     return self.container_ref.id
+  @property
   def containerName(self) -> str:
     return self.container_ref.name
+  @property
   def containerStars(self) -> int:
     return self.container_ref.stars
+  @property
   def containerDownloads(self) -> int:
     return self.container_ref.downloadCount
 
+  @property
   def collection(self) -> int:
     return self.container_ref.collection_ref.id
+  @property
   def collectionName(self) -> str:
     return self.container_ref.collection_ref.name
 
+  @property
   def entity(self) -> int:
     return self.container_ref.collection_ref.entity_ref.id
+  @property
   def entityName(self) -> str:
     return self.container_ref.collection_ref.entity_ref.name
   
   def make_prettyname(self, tag) -> str:
-    fn = os.path.join(self.entityName(), self.collectionName(), f"{self.containerName()}_{tag}")
+    fn = os.path.join(self.entityName, self.collectionName, f"{self.containerName}_{tag}")
     if self.media_type == self.singularity_media_type:
       fn+='.sif'
     return fn

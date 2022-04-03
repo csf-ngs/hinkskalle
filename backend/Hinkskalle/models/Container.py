@@ -107,18 +107,23 @@ class Container(db.Model):
         return ContainerTypes.generic.name
     return ContainerTypes.mixed.name
 
+  @property
   def size(self):
     if not self.id:
       return 0
     return self.images_ref.filter(Image.hide==False, Image.uploaded==True).count()
   
+  @property
   def collection(self):
     return self.collection_ref.id
+  @property
   def collectionName(self):
     return self.collection_ref.name
   
+  @property
   def entity(self):
     return self.collection_ref.entity_ref.id
+  @property
   def entityName(self):
     return self.collection_ref.entity_ref.name
 
@@ -156,6 +161,7 @@ class Container(db.Model):
       db.session.commit()
     return cur_tag
 
+  @property
   def imageTags(self):
     tags = {}
     for tag in self.tags_ref:

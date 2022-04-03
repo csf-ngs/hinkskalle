@@ -90,7 +90,6 @@ def create_entity():
     db.session.commit()
   except IntegrityError as err:
     raise errors.PreconditionFailed(f"Entity {new_entity.id} already exists")
-
   return { 'data': new_entity }
 
 @registry.handles(
@@ -129,7 +128,7 @@ def delete_entity(entity_id):
   if not entity.check_update_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to entity.")
   
-  if entity.size() > 0:
+  if entity.size > 0:
     raise errors.PreconditionFailed(f"Entity {entity.name} still has collections.")
   
   db.session.delete(entity)

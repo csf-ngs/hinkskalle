@@ -1,3 +1,4 @@
+from asyncio.proactor_events import _ProactorBaseWritePipeTransport
 from Hinkskalle import db
 from marshmallow import fields, Schema, validates_schema, ValidationError
 from datetime import datetime
@@ -51,6 +52,7 @@ class Entity(db.Model):
     return value.lower()
 
 
+  @property
   def size(self):
     return self.collections_ref.count()
 

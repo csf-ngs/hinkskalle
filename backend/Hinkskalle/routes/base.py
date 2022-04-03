@@ -1,6 +1,7 @@
 from Hinkskalle import registry, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
-from flask import current_app, jsonify, make_response, request, redirect, g, send_from_directory, safe_join
+from flask import current_app, jsonify, make_response, request, redirect, g, send_from_directory
+from werkzeug.utils import safe_join
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from werkzeug.datastructures import EnvironHeaders

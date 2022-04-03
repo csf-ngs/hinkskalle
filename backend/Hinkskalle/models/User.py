@@ -23,8 +23,8 @@ class UserSchema(Schema):
   email = fields.String(required=True)
   firstname = fields.String(required=True)
   lastname = fields.String(required=True)
-  is_admin = fields.Boolean(load_from='isAdmin', dump_to='isAdmin')
-  is_active = fields.Boolean(load_from='isActive', dump_to='isActive')
+  is_admin = fields.Boolean(data_key='isAdmin')
+  is_active = fields.Boolean(data_key='isActive')
   source = fields.String()
 
   groups = fields.List(fields.Nested('GroupSchema', allow_none=True, exclude=('users', )))

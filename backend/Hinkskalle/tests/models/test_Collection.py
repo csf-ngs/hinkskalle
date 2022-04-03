@@ -15,8 +15,8 @@ class TestCollection(ModelBase):
     self.assertEqual(read_coll.id, coll.id)
     self.assertTrue(abs(read_coll.createdAt - datetime.now()) < timedelta(seconds=1))
 
-    self.assertEqual(read_coll.entity(), entity.id)
-    self.assertEqual(read_coll.entityName(), entity.name)
+    self.assertEqual(read_coll.entity, entity.id)
+    self.assertEqual(read_coll.entityName, entity.name)
   
   def test_collection_case(self):
     coll, _ = _create_collection('TestCollection')
@@ -25,21 +25,21 @@ class TestCollection(ModelBase):
   
   def test_count(self):
     coll, entity = _create_collection()
-    self.assertEqual(coll.size(), 0)
+    self.assertEqual(coll.size, 0)
     no_create = Collection(name='no-create', entity_ref=entity)
-    self.assertEqual(no_create.size(), 0)
+    self.assertEqual(no_create.size, 0)
 
     cont1 = Container(name='cont_i', collection_ref=coll)
     db.session.add(cont1)
     db.session.commit()
-    self.assertEqual(coll.size(), 1)
+    self.assertEqual(coll.size, 1)
 
     other_coll, _ = _create_collection('other')
     other_cont = Container(name='cont_other', collection_ref=other_coll)
     db.session.add(other_cont)
     db.session.commit()
 
-    self.assertEqual(coll.size(), 1)
+    self.assertEqual(coll.size, 1)
 
   
   def test_access(self):
@@ -91,13 +91,12 @@ class TestCollection(ModelBase):
     coll, entity = _create_collection()
 
     serialized = schema.dump(coll)
-    self.assertDictEqual(serialized.errors, {})
-    self.assertEqual(serialized.data['id'], str(coll.id))
-    self.assertEqual(serialized.data['name'], coll.name)
+    self.assertEqual(serialized['id'], str(coll.id))
+    self.assertEqual(serialized['name'], coll.name)
 
-    self.assertEqual(serialized.data['entity'], str(entity.id))
-    self.assertEqual(serialized.data['entityName'], entity.name)
+    self.assertEqual(serialized['entity'], str(entity.id))
+    self.assertEqual(serialized['entityName'], entity.name)
 
-    self.assertIsNone(serialized.data['deletedAt'])
-    self.assertFalse(serialized.data['deleted'])
+    self.assertIsNone(serialized['deletedAt'])
+    self.assertFalse(serialized['deleted'])
 

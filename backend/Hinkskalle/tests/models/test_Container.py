@@ -22,11 +22,11 @@ class TestContainer(ModelBase):
     self.assertEqual(read_container.id, container.id)
     self.assertTrue(abs(read_container.createdAt - datetime.now()) < timedelta(seconds=1))
 
-    self.assertEqual(read_container.collection(), coll.id)
-    self.assertEqual(read_container.collectionName(), coll.name)
+    self.assertEqual(read_container.collection, coll.id)
+    self.assertEqual(read_container.collectionName, coll.name)
 
-    self.assertEqual(read_container.entity(), entity.id)
-    self.assertEqual(read_container.entityName(), entity.name)
+    self.assertEqual(read_container.entity, entity.id)
+    self.assertEqual(read_container.entityName, entity.name)
   
   def test_container_case(self):
     container, _, _ = _create_container('TestContainer')
@@ -44,29 +44,29 @@ class TestContainer(ModelBase):
   
   def test_count(self):
     container, collection, entity = _create_container()
-    self.assertEqual(container.size(), 0)
+    self.assertEqual(container.size, 0)
 
     nosave = Container(name='nosave', collection_id=collection.id)
-    self.assertEqual(nosave.size(), 0)
+    self.assertEqual(nosave.size, 0)
 
     image1 = Image(container_id=container.id, uploaded=True)
     db.session.add(image1)
     db.session.commit()
-    self.assertEqual(container.size(), 1)
+    self.assertEqual(container.size, 1)
 
     other_container = _create_container('other')[0]
     other_image = Image(container_id=other_container.id, uploaded=True)
     db.session.add(other_image)
     db.session.commit()
-    self.assertEqual(container.size(), 1)
+    self.assertEqual(container.size, 1)
 
     image2 = Image(container_id=container.id, hide=True)
     db.session.add(image2)
-    self.assertEqual(container.size(), 1)
+    self.assertEqual(container.size, 1)
 
     image3 = Image(container_id=container.id, uploaded=False)
     db.session.add(image3)
-    self.assertEqual(container.size(), 1)
+    self.assertEqual(container.size, 1)
   
   def test_get_tag(self):
     container = _create_container()[0]
@@ -261,7 +261,7 @@ class TestContainer(ModelBase):
     image1tag1 = Tag(name='v1', image_ref=image1)
     db.session.add(image1tag1)
     db.session.commit()
-    self.assertDictEqual(container.imageTags(), { 'v1': str(image1.id) })
+    self.assertDictEqual(container.imageTags, { 'v1': str(image1.id) })
 
     image2 = Image(hash='test-image-2', container_id=container.id)
     db.session.add(image2)
@@ -269,7 +269,7 @@ class TestContainer(ModelBase):
     image2tag1 = Tag(name='v2', image_ref=image2)
     db.session.add(image2tag1)
     db.session.commit()
-    self.assertDictEqual(container.imageTags(), { 'v1': str(image1.id), 'v2': str(image2.id) })
+    self.assertDictEqual(container.imageTags, { 'v1': str(image1.id), 'v2': str(image2.id) })
 
     #invalidTag = Tag(name='v2', image_id=image1.id)
     #db.session.add(invalidTag)
@@ -377,19 +377,19 @@ class TestContainer(ModelBase):
 
     schema = ContainerSchema()
     serialized = schema.dump(container)
-    self.assertEqual(serialized.data['id'], str(container.id))
-    self.assertEqual(serialized.data['name'], container.name)
-    self.assertEqual(serialized.data['private'], False)
-    self.assertEqual(serialized.data['readOnly'], False)
-    self.assertIsNone(serialized.data['deletedAt'])
-    self.assertFalse(serialized.data['deleted'])
-    self.assertEqual(serialized.data['stars'], 0)
+    self.assertEqual(serialized['id'], str(container.id))
+    self.assertEqual(serialized['name'], container.name)
+    self.assertEqual(serialized['private'], False)
+    self.assertEqual(serialized['readOnly'], False)
+    self.assertIsNone(serialized['deletedAt'])
+    self.assertFalse(serialized['deleted'])
+    self.assertEqual(serialized['stars'], 0)
 
     serialized = schema.dump(container)
-    self.assertEqual(serialized.data['collection'], str(coll.id))
-    self.assertEqual(serialized.data['collectionName'], coll.name)
-    self.assertEqual(serialized.data['entity'], str(entity.id))
-    self.assertEqual(serialized.data['entityName'], entity.name)
+    self.assertEqual(serialized['collection'], str(coll.id))
+    self.assertEqual(serialized['collectionName'], coll.name)
+    self.assertEqual(serialized['entity'], str(entity.id))
+    self.assertEqual(serialized['entityName'], entity.name)
   
   def test_schema_tags(self):
     container = _create_container()[0]
@@ -409,7 +409,7 @@ class TestContainer(ModelBase):
 
     schema = ContainerSchema()
     serialized = schema.dump(container)
-    self.assertDictEqual(serialized.data['imageTags'], { 'v1': str(image1.id), 'v2': str(image2.id) })
+    self.assertDictEqual(serialized['imageTags'], { 'v1': str(image1.id), 'v2': str(image2.id) })
   
   def test_type(self):
     image = _create_image()[0]

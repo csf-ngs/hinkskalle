@@ -56,11 +56,14 @@ class Collection(db.Model):
 
   __table_args__ = (db.UniqueConstraint('name', 'entity_id', name='name_entity_id_idx'),)
 
+  @property
   def size(self):
     return self.containers_ref.count()
 
+  @property
   def entity(self):
     return self.entity_ref.id
+  @property
   def entityName(self):
     return self.entity_ref.name
   

@@ -19,19 +19,19 @@ class JobSchema(Schema):
   id = fields.String()
   meta = fields.Dict()
   origin = fields.String()
-  get_status = fields.String(dump_to='status')
+  get_status = fields.String(data_key='status')
   description = fields.String()
   dependson = fields.String()
-  failure_ttl = fields.Int(allow_none=True, dump_to='failureTTL')
+  failure_ttl = fields.Int(allow_none=True, data_key='failureTTL')
   ttl = fields.Int(allow_none=True)
-  result_ttl = fields.Int(dump_to='resultTTL')
+  result_ttl = fields.Int(data_key='resultTTL')
   timeout = fields.String()
   result = fields.String(allow_none=True)
-  enqueued_at = fields.DateTime(dump_to='enqueuedAt')
-  started_at = fields.DateTime(allow_none=True, dump_to='startedAt')
-  ended_at = fields.DateTime(allow_none=True, dump_to='endedAt')
-  exc_info = fields.String(allow_none=True, dump_to='excInfo')
-  func_name = fields.String(dump_to='funcName')
+  enqueued_at = fields.DateTime(data_key='enqueuedAt')
+  started_at = fields.DateTime(allow_none=True, data_key='startedAt')
+  ended_at = fields.DateTime(allow_none=True, data_key='endedAt')
+  exc_info = fields.String(allow_none=True, data_key='excInfo')
+  func_name = fields.String(data_key='funcName')
 
 class JobResponseSchema(ResponseSchema):
   data = fields.Nested(JobSchema)
@@ -77,6 +77,9 @@ def get_key(key):
 )
 def update_key(key):
   body = rebar.validated_body
+
+  if not key in [ k.name for k in AdmKeys ]:
+    raise errors.BadRequest(f"Invalid key")
 
   db_key = Adm.query.get(key)
   if not db_key:

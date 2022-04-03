@@ -3,7 +3,8 @@ from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import errors, RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
 from sqlalchemy.orm.exc import NoResultFound
-from flask import request, current_app, safe_join, send_file, g, make_response
+from flask import request, current_app, send_file, g, make_response
+from werkzeug.utils import safe_join
 from typing import IO, Tuple
 from .images import _get_image
 from .util import _get_service_url

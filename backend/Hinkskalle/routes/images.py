@@ -3,7 +3,7 @@ from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema, pre_load
-from flask import request, current_app, safe_join, send_file, g
+from flask import request, current_app, g
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
 

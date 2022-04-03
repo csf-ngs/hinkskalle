@@ -1,5 +1,8 @@
+import json
 from flask import Flask
 from flask_rebar import Rebar, SwaggerV2Generator
+from flask_rebar.swagger_generation.authenticator_to_swagger import AuthenticatorConverterRegistry
+
 from logging.config import dictConfig
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
@@ -10,10 +13,13 @@ import os.path
 
 from werkzeug.routing import BaseConverter
 
-generator = SwaggerV2Generator()
-
+auth_registry = AuthenticatorConverterRegistry()
 from Hinkskalle.util.swagger import register_authenticators
-register_authenticators(generator)
+register_authenticators(auth_registry)
+
+generator = SwaggerV2Generator(authenticator_converter_registry=auth_registry)
+
+
 
 rebar = Rebar()
 registry = rebar.create_handler_registry(swagger_generator=generator, prefix='/')
@@ -46,7 +52,7 @@ class OrasNameConverter(BaseConverter):
 
 def create_app():
   app = Flask(__name__)
-  app.config.from_json(os.environ.get('HINKSKALLE_SETTINGS', '../../conf/config.json'))
+  app.config.from_file(os.environ.get('HINKSKALLE_SETTINGS', '../../conf/config.json'), load=json.load)
   secrets_conf = os.environ.get('HINKSKALLE_SECRETS', '../../conf/secrets.json')
   if os.path.exists(secrets_conf):
     app.config.from_json(secrets_conf)

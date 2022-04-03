@@ -141,20 +141,20 @@ class TestUser(ModelBase):
     user = _create_user()
 
     serialized = schema.dump(user)
-    self.assertDictEqual(serialized.errors, {})
-    self.assertEqual(serialized.data['id'], str(user.id))
-    self.assertEqual(serialized.data['username'], user.username)
-    self.assertFalse(serialized.data['isAdmin'])
+    self.assertEqual(serialized['id'], str(user.id))
+    self.assertEqual(serialized['username'], user.username)
+    self.assertFalse(serialized['isAdmin'])
+    self.assertTrue(serialized['isActive'])
 
-    self.assertFalse(serialized.data['deleted'])
-    self.assertIsNone(serialized.data['deletedAt'])
+    self.assertFalse(serialized['deleted'])
+    self.assertIsNone(serialized['deletedAt'])
 
-    self.assertNotIn('tokens', serialized.data)
-    self.assertNotIn('password', serialized.data)
+    self.assertNotIn('tokens', serialized)
+    self.assertNotIn('password', serialized)
 
     user.is_admin=True
     serialized = schema.dump(user)
-    self.assertTrue(serialized.data['isAdmin'])
+    self.assertTrue(serialized['isAdmin'])
 
   def test_deserialize(self):
     schema = UserSchema()
@@ -166,17 +166,14 @@ class TestUser(ModelBase):
       'lastname': 'Hase'
     })
 
-    self.assertDictEqual(deserialized.errors, {})
-
   def test_schema_token(self):
     schema = TokenSchema()
     user = _create_user()
     token = Token(user=user, token='geheimhase')
 
     serialized = schema.dump(token)
-    self.assertDictEqual(serialized.errors, {})
-    self.assertEqual(serialized.data['token'], 'geheimhase')
-    self.assertEqual(serialized.data['user']['id'], str(user.id))
+    self.assertEqual(serialized['token'], 'geheimhase')
+    self.assertEqual(serialized['user']['id'], str(user.id))
   
   def test_access(self):
     subject = _create_user()
@@ -215,8 +212,7 @@ class TestUser(ModelBase):
     db.session.commit()
 
     serialized = schema.dump(user)
-    self.assertDictEqual(serialized.errors, {})
-    self.assertEqual(serialized.data['groups'][0]['id'], str(group.id))
+    self.assertEqual(serialized['groups'][0]['id'], str(group.id))
 
 
 

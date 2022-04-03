@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   testmaus-hinten:
     docker:
-      - image: ghcr.io/csf-ngs/hinkskalle-dev:v1.2.3
+      - image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.0
     steps:
       - checkout
       - run:
@@ -16,7 +16,7 @@ jobs:
           path: "backend/test_report.html"
   testmaus-vorn:
     docker:
-      - image: ghcr.io/csf-ngs/hinkskalle-dev:v1.2.3
+      - image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.0
     steps:
       - checkout
       - run:

@@ -342,7 +342,7 @@ def push_image_v2_complete(image_id):
         'quotaTotal': image.container_ref.collection_ref.entity_ref.quota,
         'quotaUsage': image.container_ref.collection_ref.entity_ref.used_quota,
       },
-      'containerUrl': f"entities/{image.container_ref.entityName()}/collections/{image.container_ref.collectionName()}/containers/{image.container_ref.name}"
+      'containerUrl': f"entities/{image.container_ref.entityName}/collections/{image.container_ref.collectionName}/containers/{image.container_ref.name}"
     }
   }
 
@@ -380,7 +380,7 @@ def push_image_v2_multi_complete(image_id):
         'quotaTotal': image.container_ref.collection_ref.entity_ref.quota,
         'quotaUsage': image.container_ref.collection_ref.entity_ref.used_quota,
       },
-      'containerUrl': f"entities/{image.container_ref.entityName()}/collections/{image.container_ref.collectionName()}/containers/{image.container_ref.name}"
+      'containerUrl': f"entities/{image.container_ref.entityName}/collections/{image.container_ref.collectionName}/containers/{image.container_ref.name}"
     }
   }
 

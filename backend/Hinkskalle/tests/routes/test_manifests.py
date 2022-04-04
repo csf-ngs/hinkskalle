@@ -27,7 +27,7 @@ class TestManifests(RouteBase):
     db.session.commit()
 
     with self.fake_admin_auth():
-      ret = self.client.get(f'/v1/containers/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}/manifests')
+      ret = self.client.get(f'/v1/containers/{image1.entityName}/{image1.collectionName}/{image1.containerName}/manifests')
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
 
@@ -43,7 +43,7 @@ class TestManifests(RouteBase):
     db.session.commit()
 
     with self.fake_auth():
-      ret = self.client.get(f'/v1/containers/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}/manifests')
+      ret = self.client.get(f'/v1/containers/{image1.entityName}/{image1.collectionName}/{image1.containerName}/manifests')
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data')
     self.assertListEqual([ c['id'] for c in json ], [ str(mani1.id) ])
@@ -59,7 +59,7 @@ class TestManifests(RouteBase):
     db.session.commit()
 
     with self.fake_auth():
-      ret = self.client.get(f'/v1/containers/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}/manifests')
+      ret = self.client.get(f'/v1/containers/{image1.entityName}/{image1.collectionName}/{image1.containerName}/manifests')
     self.assertEqual(ret.status_code, 403)
   
 
@@ -75,8 +75,8 @@ class TestManifests(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/manifests/{manifest.id}/download")
     self.assertEqual(ret.status_code, 200)
-    image = Image.query.get(image_id)
-    self.assertEqual(ret.headers['Content-Disposition'], f'attachment; filename={image.containerName()}')
+    image: Image = Image.query.get(image_id)
+    self.assertEqual(ret.headers['Content-Disposition'], f'attachment; filename={image.containerName}')
     self.assertEqual(ret.headers['Content-Type'], 'application/octet-stream')
     self.assertEqual(ret.data, b'oink')
     self.assertEqual(image.downloadCount, 1)

@@ -14,12 +14,12 @@ class TestShub(RouteBase):
     db.session.commit()
 
 
-    ret = self.client.get(f"/api/container/{image.collectionName()}/{image.containerName()}:latest")
+    ret = self.client.get(f"/api/container/{image.collectionName}/{image.containerName}:latest")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json()
     self.assertDictEqual(data, {
-      'image': f"http://localhost/v1/imagefile/default/{image.collectionName()}/{image.containerName()}:latest",
-      'name': image.containerName(),
+      'image': f"http://localhost/v1/imagefile/default/{image.collectionName}/{image.containerName}:latest",
+      'name': image.containerName,
       'tag': latest_tag.name,
       #'version': None,
       #'commit': None,
@@ -34,7 +34,7 @@ class TestShub(RouteBase):
 
     db.session.commit()
 
-    ret = self.client.get(f"/api/container/{image.collectionName()}/{image.containerName()}:latest")
+    ret = self.client.get(f"/api/container/{image.collectionName}/{image.containerName}:latest")
     self.assertEqual(ret.status_code, 403)
 
   def test_manifest_private_collection(self):
@@ -46,5 +46,5 @@ class TestShub(RouteBase):
 
     db.session.commit()
 
-    ret = self.client.get(f"/api/container/{image.collectionName()}/{image.containerName()}:latest")
+    ret = self.client.get(f"/api/container/{image.collectionName}/{image.containerName}:latest")
     self.assertEqual(ret.status_code, 403)

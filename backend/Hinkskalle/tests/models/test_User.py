@@ -163,8 +163,10 @@ class TestUser(ModelBase):
       'username':'test.hase', 
       'email': 'test@ha.se',
       'firstname': 'Test',
-      'lastname': 'Hase'
+      'lastname': 'Hase',
+      'isAdmin': True
     })
+    self.assertTrue(deserialized['is_admin'])
 
   def test_schema_token(self):
     schema = TokenSchema()

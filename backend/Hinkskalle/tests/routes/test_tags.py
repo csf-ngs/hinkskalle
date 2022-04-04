@@ -23,7 +23,7 @@ class TestTags(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/tags/{container.id}")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data, {})
 
     container = Container.query.get(container_id)
@@ -31,7 +31,7 @@ class TestTags(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/tags/{container_id}")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data, {'v1.0': str(image_id)})
 
     container = Container.query.get(container_id)
@@ -39,7 +39,7 @@ class TestTags(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/tags/{container_id}")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data, {'v1.0': str(image_id), 'oink': str(image_id)})
   
   def test_get_user(self):
@@ -85,19 +85,19 @@ class TestTags(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data, { 'v1.0': str(image_id) })
     db_container=Container.query.get(container_id)
-    self.assertDictEqual(db_container.imageTags(), { 'v1.0': str(image_id) })
+    self.assertDictEqual(db_container.imageTags, { 'v1.0': str(image_id) })
 
     with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container_id}", json={'oink': str(image_id)})
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
 
     self.assertDictEqual(data, { 'v1.0': str(image_id), 'oink': str(image_id) })
     db_container=Container.query.get(container_id)
-    self.assertDictEqual(db_container.imageTags(), { 'v1.0': str(image_id), 'oink': str(image_id) })
+    self.assertDictEqual(db_container.imageTags, { 'v1.0': str(image_id), 'oink': str(image_id) })
   
   def test_update_case(self):
     image, container, _, _ = _create_image()
@@ -106,9 +106,9 @@ class TestTags(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={"TestHase": str(image.id)})
     self.assertEqual(ret.status_code, 200)
-    self.assertDictEqual(ret.get_json().get('data'), { "testhase": str(image_id) })
+    self.assertDictEqual(ret.get_json().get('data'), { "testhase": str(image_id) }) # type: ignore
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.imageTags(), { 'testhase': str(image_id) })
+    self.assertDictEqual(db_container.imageTags, { 'testhase': str(image_id) })
   
   def test_valid(self):
     image, container, _, _ = _create_image()
@@ -127,10 +127,10 @@ class TestTags(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={'oink': None })
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data, {});
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.imageTags(), {})
+    self.assertDictEqual(db_container.imageTags, {})
   
   def test_remove_tag_case(self):
     image, container, _, _ = _create_image()
@@ -142,7 +142,7 @@ class TestTags(RouteBase):
       ret = self.client.post(f"/v1/tags/{container.id}", json={'OInK': None })
     self.assertEqual(ret.status_code, 200)
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.imageTags(), {})
+    self.assertDictEqual(db_container.imageTags, {})
 
   
   def test_multiple(self):
@@ -156,11 +156,11 @@ class TestTags(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={"v3": str(image.id), "latest": str(image.id), "v2": None })
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data, { "v3": str(image_id), "latest": str(image_id) })
 
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.imageTags(), { "v3": str(image_id), "latest": str(image_id) })
+    self.assertDictEqual(db_container.imageTags, { "v3": str(image_id), "latest": str(image_id) })
 
   def test_update_user(self):
     image, container, coll, entity = _create_image()
@@ -194,7 +194,7 @@ class TestTags(RouteBase):
     self.assertEqual(ret.status_code, 200)
     
     db_image = Image.query.get(image_id)
-    link_location = os.path.join(self.app.config['IMAGE_PATH'], db_image.entityName(), db_image.collectionName(), f"{db_image.containerName()}_v1.0.sif")
+    link_location = os.path.join(self.app.config['IMAGE_PATH'], db_image.entityName, db_image.collectionName, f"{db_image.containerName}_v1.0.sif")
     self.assertTrue(os.path.exists(link_location))
     self.assertTrue(os.path.samefile(link_location, db_image.location))
   
@@ -204,7 +204,7 @@ class TestTags(RouteBase):
     container_id = container.id
     self._fake_uploaded_image(image)
 
-    link_location = os.path.join(self.app.config['IMAGE_PATH'], image.entityName(), image.collectionName(), f"{image.containerName()}_v1.0.sif")
+    link_location = os.path.join(self.app.config['IMAGE_PATH'], image.entityName, image.collectionName, f"{image.containerName}_v1.0.sif")
     os.makedirs(os.path.dirname(link_location), exist_ok=True)
     with open(link_location, 'w') as outfh:
       outfh.write('muh')
@@ -230,7 +230,7 @@ class TestTags(RouteBase):
     entity.name='default'
     db.session.commit()
 
-    link_location = os.path.join(self.app.config['IMAGE_PATH'], image.collectionName(), f"{image.containerName()}_v1.0.sif")
+    link_location = os.path.join(self.app.config['IMAGE_PATH'], image.collectionName, f"{image.containerName}_v1.0.sif")
     
     with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})
@@ -245,7 +245,7 @@ class TestTags(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={ 'Tag': 'v1', 'ImageID': str(image.id) })
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
 
     self.assertDictEqual(data, { 'v1': str(image_id) })
 

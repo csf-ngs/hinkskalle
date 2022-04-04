@@ -24,14 +24,14 @@ class TestSearch(RouteBase):
       'collection': [],
       'entity': [],
       'image': [],
-      'container': [ ContainerSchema().dump(container).data ]
+      'container': [ ContainerSchema().dump(container) ]
     }
 
     for search in [container.name, container.name[3:6], container.name[3:6].lower()]:
       with self.fake_admin_auth():
         ret = self.client.get(f"/v1/search?value={search}")
       self.assertEqual(ret.status_code, 200)
-      json = ret.get_json().get('data')
+      json = ret.get_json().get('data') # type: ignore
       self.assertDictEqual(json, expected)
 
 
@@ -42,7 +42,7 @@ class TestSearch(RouteBase):
 
     expected = {
       'collection': [],
-      'entity': [ EntitySchema().dump(entity).data ],
+      'entity': [ EntitySchema().dump(entity) ],
       'image': [],
       'container': []
     }
@@ -51,7 +51,7 @@ class TestSearch(RouteBase):
       with self.fake_admin_auth():
         ret = self.client.get(f"/v1/search?value={search}")
       self.assertEqual(ret.status_code, 200)
-      json = ret.get_json().get('data')
+      json = ret.get_json().get('data') # type: ignore
       self.assertDictEqual(json, expected)
 
   def test_search_collection(self):
@@ -60,7 +60,7 @@ class TestSearch(RouteBase):
     db.session.commit()
 
     expected = {
-      'collection': [ CollectionSchema().dump(collection).data ],
+      'collection': [ CollectionSchema().dump(collection) ],
       'entity': [],
       'image': [],
       'container': []
@@ -70,7 +70,7 @@ class TestSearch(RouteBase):
       with self.fake_admin_auth():
         ret = self.client.get(f"/v1/search?value={search}")
       self.assertEqual(ret.status_code, 200)
-      json = ret.get_json().get('data')
+      json = ret.get_json().get('data') # type: ignore
       self.assertDictEqual(json, expected)
   
   def test_search_image(self):
@@ -79,8 +79,8 @@ class TestSearch(RouteBase):
     db.session.commit()
 
     expected = {
-      'container': [ContainerSchema().dump(container).data],
-      'image': [ImageSchema().dump(image1).data],
+      'container': [ContainerSchema().dump(container)],
+      'image': [ImageSchema().dump(image1)],
       'entity': [],
       'collection': [],
     }
@@ -88,7 +88,7 @@ class TestSearch(RouteBase):
       with self.fake_admin_auth():
         ret = self.client.get(f"/v1/search?value={search}")
       self.assertEqual(ret.status_code, 200)
-      json = ret.get_json().get('data')
+      json = ret.get_json().get('data') # type: ignore
       self.assertDictEqual(json, expected)
   
   def test_search_image_hide(self):
@@ -99,15 +99,15 @@ class TestSearch(RouteBase):
     db.session.commit()
 
     expected = {
-      'container': [ContainerSchema().dump(image1.container_ref).data],
-      'image': [ImageSchema().dump(image1).data],
+      'container': [ContainerSchema().dump(image1.container_ref)],
+      'image': [ImageSchema().dump(image1)],
       'entity': [],
       'collection': [],
     }
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/search?value=ankylo")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(json, expected)
 
   def test_search_image_not_sif(self):
@@ -122,8 +122,8 @@ class TestSearch(RouteBase):
     db.session.commit()
 
     expected = {
-      'container': [ContainerSchema().dump(container).data],
-      'image': [ImageSchema().dump(image1).data],
+      'container': [ContainerSchema().dump(container)],
+      'image': [ImageSchema().dump(image1)],
       'entity': [],
       'collection': [],
     }
@@ -131,7 +131,7 @@ class TestSearch(RouteBase):
       with self.fake_admin_auth():
         ret = self.client.get(f"/v1/search?value={search}", headers={'User-Agent': 'Singularity/3.7.3 (Darwin amd64) Go/1.13.3'})
       self.assertEqual(ret.status_code, 200)
-      json = ret.get_json().get('data')
+      json = ret.get_json().get('data') # type: ignore
       self.assertDictEqual(json, expected)
     
     with self.fake_admin_auth():
@@ -140,10 +140,10 @@ class TestSearch(RouteBase):
     image1 = Image.query.get(image1_id)
     image2 = Image.query.get(image2_id)
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(json, {
-      'container': [ContainerSchema().dump(container).data],
-      'image': [ImageSchema().dump(image2).data, ImageSchema().dump(image1).data],
+      'container': [ContainerSchema().dump(container)],
+      'image': [ImageSchema().dump(image2), ImageSchema().dump(image1)],
       'entity': [],
       'collection': [],
     })
@@ -157,7 +157,7 @@ class TestSearch(RouteBase):
 
     expected = {
       'container': [],
-      'image': [ImageSchema().dump(image1).data],
+      'image': [ImageSchema().dump(image1)],
       'entity': [],
       'collection': [],
     }
@@ -165,13 +165,13 @@ class TestSearch(RouteBase):
       with self.fake_admin_auth():
         ret = self.client.get(f"/v1/search?value={search}")
       self.assertEqual(ret.status_code, 200)
-      json = ret.get_json().get('data')
+      json = ret.get_json().get('data') # type: ignore
       self.assertDictEqual(json, expected)
     
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/search?value=krokodil")
     self.assertEqual(ret.status_code, 200)
-    self.assertDictEqual(ret.get_json().get('data'), {
+    self.assertDictEqual(ret.get_json().get('data'), { # type: ignore
       'container': [],
       'image': [],
       'entity': [],
@@ -189,14 +189,14 @@ class TestSearch(RouteBase):
 
     expected = {
       'container': [],
-      'image': [ImageSchema().dump(image1).data],
+      'image': [ImageSchema().dump(image1)],
       'entity': [],
       'collection': [],
     }
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/search?value=fintitax&signed=true")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data, expected)
 
   def test_arch(self):
@@ -210,14 +210,14 @@ class TestSearch(RouteBase):
 
     expected = {
       'container': [],
-      'image': [ImageSchema().dump(image1).data],
+      'image': [ImageSchema().dump(image1)],
       'entity': [],
       'collection': [],
     }
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/search?value=fintitax&arch=pocket+calculator")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data, expected)
 
   
@@ -229,16 +229,16 @@ class TestSearch(RouteBase):
     db.session.commit()
 
     expected = {
-      'collection': [ CollectionSchema().dump(collection).data ],
-      'entity': [ EntitySchema().dump(entity).data ],
-      'container': [ ContainerSchema().dump(container).data ],
-      'image': [ ImageSchema().dump(image).data ]
+      'collection': [ CollectionSchema().dump(collection) ],
+      'entity': [ EntitySchema().dump(entity) ],
+      'container': [ ContainerSchema().dump(container) ],
+      'image': [ ImageSchema().dump(image) ]
     }
 
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/search?value=oink")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(json, expected)
 
   def test_user(self):
@@ -255,7 +255,7 @@ class TestSearch(RouteBase):
       with self.fake_auth():
         ret = self.client.get(f"/v1/search?value={search}")
       self.assertEqual(ret.status_code, 200)
-      self.assertDictEqual(ret.get_json().get('data'), expected)
+      self.assertDictEqual(ret.get_json().get('data'), expected) # type: ignore
   
   def test_user_access(self):
     container, _, entity = _create_container()
@@ -266,14 +266,14 @@ class TestSearch(RouteBase):
     expected = {
       'collection': [],
       'entity': [],
-      'container': [ ContainerSchema().dump(container).data ],
+      'container': [ ContainerSchema().dump(container) ],
       'image': []
     }
 
     with self.fake_auth():
       ret = self.client.get(f"/v1/search?value={container.name}")
     self.assertEqual(ret.status_code, 200)
-    self.assertDictEqual(ret.get_json().get('data'), expected)
+    self.assertDictEqual(ret.get_json().get('data'), expected) # type: ignore
 
   def test_user_access_owned(self):
     container, _, entity = _create_container()
@@ -284,14 +284,14 @@ class TestSearch(RouteBase):
     expected = {
       'collection': [],
       'entity': [],
-      'container': [ ContainerSchema().dump(container).data ],
+      'container': [ ContainerSchema().dump(container) ],
       'image': []
     }
 
     with self.fake_auth():
       ret = self.client.get(f"/v1/search?value={container.name}")
     self.assertEqual(ret.status_code, 200)
-    self.assertDictEqual(ret.get_json().get('data'), expected)
+    self.assertDictEqual(ret.get_json().get('data'), expected) # type: ignore
   
   def test_description(self):
     container, _, _ = _create_container()
@@ -301,14 +301,14 @@ class TestSearch(RouteBase):
     expected = {
       'collection': [],
       'entity': [],
-      'container': [ ContainerSchema().dump(container).data ],
+      'container': [ ContainerSchema().dump(container) ],
       'image': []
     }
 
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/search?description={container.description}")
     self.assertEqual(ret.status_code, 200)
-    self.assertDictEqual(ret.get_json().get('data'), expected)
+    self.assertDictEqual(ret.get_json().get('data'), expected) # type: ignore
 
   def test_description_value(self):
     container, _, _ = _create_container()
@@ -320,11 +320,11 @@ class TestSearch(RouteBase):
     expected = {
       'collection': [],
       'entity': [],
-      'container': [ ContainerSchema().dump(container).data ],
+      'container': [ ContainerSchema().dump(container) ],
       'image': []
     }
 
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/search?description={container.description}&value={container.name}")
     self.assertEqual(ret.status_code, 200)
-    self.assertDictEqual(ret.get_json().get('data'), expected)
+    self.assertDictEqual(ret.get_json().get('data'), expected) # type: ignore

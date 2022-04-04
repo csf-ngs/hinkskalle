@@ -32,7 +32,7 @@ class TestImagefilesV2(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post(f"/v2/imagefile/{image.id}", json=img_data)
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertIn('uploadURL', json)
     urlparts = urlparse(json['uploadURL'])
     upload_id = urlparts.path.split('/').pop()
@@ -251,7 +251,7 @@ class TestImagefilesV2(RouteBase):
     entity = Entity.query.get(entity_id)
     self.assertEqual(entity.used_quota, len(img_data))
 
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data.get('quota'), {
       'quotaTotal': 0,
       'quotaUsage': len(img_data),
@@ -283,7 +283,7 @@ class TestImagefilesV2(RouteBase):
       ret = self.client.put(f"/v2/imagefile/{image.id}/_complete", json={})
     self.assertEqual(ret.status_code, 200)
 
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data.get('quota'), {
       'quotaTotal': len(img_data)*2,
       'quotaUsage': len(img_data),
@@ -464,7 +464,7 @@ class TestImagefilesV2(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post(f"/v2/imagefile/{image.id}/_multipart", json=img_data)
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertIn('uploadID', json)
     self.assertEqual(json['partSize'], self.app.config.get('MULTIPART_UPLOAD_CHUNK'))
     self.assertEqual(json['totalParts'], 3)
@@ -501,7 +501,7 @@ class TestImagefilesV2(RouteBase):
     with self.fake_auth():
       ret = self.client.post(f"/v2/imagefile/{image.id}/_multipart", json={ 'filesize': 1 })
     self.assertEqual(ret.status_code, 200)
-    db_upload = ImageUploadUrl.query.filter(ImageUploadUrl.id==ret.get_json().get('data').get('uploadID')).first()
+    db_upload = ImageUploadUrl.query.filter(ImageUploadUrl.id==ret.get_json().get('data').get('uploadID')).first() # type: ignore
     self.assertEqual(db_upload.createdBy, self.username)
 
   def test_push_v2_multi_init_user_other(self):
@@ -543,7 +543,7 @@ class TestImagefilesV2(RouteBase):
       ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart", json=part_data)
 
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertIn('presignedURL', json)
 
     urlparts = urlparse(json['presignedURL'])
@@ -586,13 +586,13 @@ class TestImagefilesV2(RouteBase):
       ret = self.client.put(f"/v2/imagefile/{image_id}/_multipart", json=part_data)
 
     self.assertEqual(ret.status_code, 200)
-    first_url = ret.get_json().get('data').get('presignedURL')
+    first_url = ret.get_json().get('data').get('presignedURL') # type: ignore
 
     with self.fake_admin_auth():
       ret = self.client.put(f"/v2/imagefile/{image_id}/_multipart", json=part_data)
 
     self.assertEqual(ret.status_code, 200)
-    self.assertEqual(ret.get_json().get('data').get('presignedURL'), first_url)
+    self.assertEqual(ret.get_json().get('data').get('presignedURL'), first_url) # type: ignore
 
 
   def test_push_v2_multi_part_invalid_type(self):
@@ -702,7 +702,7 @@ class TestImagefilesV2(RouteBase):
       ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart", json=part_data)
 
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
 
     urlparts = urlparse(json['presignedURL'])
     part_id = urlparts.path.split('/').pop()
@@ -795,7 +795,7 @@ class TestImagefilesV2(RouteBase):
       ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_json)
     self.assertEqual(ret.status_code, 200)
 
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertIn('containerUrl', data)
     self.assertIn('quota', data)
 
@@ -829,7 +829,7 @@ class TestImagefilesV2(RouteBase):
     entity = Entity.query.get(entity_id)
     self.assertEqual(entity.used_quota, len(complete_data))
 
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data.get('quota'), {
       'quotaTotal': 0,
       'quotaUsage': len(complete_data)
@@ -853,7 +853,7 @@ class TestImagefilesV2(RouteBase):
       ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_json)
     self.assertEqual(ret.status_code, 200)
 
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data.get('quota'), {
       'quotaTotal': len(complete_data)*2,
       'quotaUsage': len(complete_data)

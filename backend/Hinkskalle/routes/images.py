@@ -1,4 +1,5 @@
 from typing import Tuple
+import typing
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
@@ -27,7 +28,7 @@ class ImageQuerySchema(RequestSchema):
     include = {"arch=amd64": fields.String(required=False)}
 
   @pre_load
-  def preprocess(self, in_data):
+  def preprocess(self, in_data, **kwargs):
     newdict={}
     for k in in_data.keys():
       if k.startswith('arch='):

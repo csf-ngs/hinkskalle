@@ -21,7 +21,7 @@ class TestTagsV2(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get(f"/v2/tags/{container.id}")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data, {})
 
     container = Container.query.get(container_id)
@@ -29,7 +29,7 @@ class TestTagsV2(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get(f"/v2/tags/{container_id}")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data, {'c64': {'v1.0': str(image_id)} })
 
     container = Container.query.get(container_id)
@@ -37,7 +37,7 @@ class TestTagsV2(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get(f"/v2/tags/{container_id}")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data, {'c64': {'v1.0': str(image_id), 'oink': str(image_id)}})
 
   def test_get_user_v2(self):
@@ -92,10 +92,10 @@ class TestTagsV2(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post(f"/v2/tags/{container.id}", json=arch_tags)
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data, arch_tags)
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.archImageTags(), {'apple': { 'red': str(image_id) }})
+    self.assertDictEqual(db_container.archImageTags, {'apple': { 'red': str(image_id) }})
     db_image = Image.query.get(image_id)
     self.assertEqual(db_image.arch, 'apple')
 
@@ -116,7 +116,7 @@ class TestTagsV2(RouteBase):
       }
     })
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.archImageTags(), {'apple': { 'red': str(image_id), 'blue': str(image_id) } })
+    self.assertDictEqual(db_container.archImageTags, {'apple': { 'red': str(image_id), 'blue': str(image_id) } })
     db_image = Image.query.get(image_id)
     self.assertEqual(db_image.arch, 'apple')
 
@@ -132,7 +132,7 @@ class TestTagsV2(RouteBase):
       ret = self.client.post(f"/v2/tags/{container.id}", json=arch_tags)
     self.assertEqual(ret.status_code, 200)
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.archImageTags(), {'c64': { 'v1': str(image_id) }})
+    self.assertDictEqual(db_container.archImageTags, {'c64': { 'v1': str(image_id) }})
     db_image = Image.query.get(image_id)
     self.assertEqual(db_image.arch, 'c64')
   def test_valid_v2(self):
@@ -154,7 +154,7 @@ class TestTagsV2(RouteBase):
       ret = self.client.post(f"/v2/tags/{container.id}", json={'c64': { 'oink': None }})
     self.assertEqual(ret.status_code, 200)
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.archImageTags(), {})
+    self.assertDictEqual(db_container.archImageTags, {})
 
   def test_remove_v2_case(self):
     image, container, _, _ = _create_image()
@@ -168,7 +168,7 @@ class TestTagsV2(RouteBase):
       ret = self.client.post(f"/v2/tags/{container.id}", json={'c64': { 'OiNK': None }})
     self.assertEqual(ret.status_code, 200)
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.archImageTags(), {})
+    self.assertDictEqual(db_container.archImageTags, {})
 
   def test_remove_v2_multiple(self):
     image, container, _, _ = _create_image()
@@ -186,7 +186,7 @@ class TestTagsV2(RouteBase):
       ret = self.client.post(f"/v2/tags/{container.id}", json={'c64': { 'oink': None }})
     self.assertEqual(ret.status_code, 200)
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.archImageTags(), {'amiga': { 'oink': str(image2_id) }})
+    self.assertDictEqual(db_container.archImageTags, {'amiga': { 'oink': str(image2_id) }})
   
   def test_update_v2_multiple(self):
     image1, container, _, _ = _create_image()
@@ -205,7 +205,7 @@ class TestTagsV2(RouteBase):
       })
     self.assertEqual(ret.status_code, 200)
     db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.archImageTags(), {
+    self.assertDictEqual(db_container.archImageTags, {
       'c64': { 'v1': str(image1_id), 'latest': str(image1_id) },
       'amiga': { 'v1': str(image2_id), 'oldest': str(image2_id) },
     })

@@ -210,7 +210,7 @@ class TestContainer(ModelBase):
     db.session.commit()
 
     container.tag_image('v1', image1.id, arch='c64')
-    self.assertDictEqual(container.archImageTags(), {
+    self.assertDictEqual(container.archImageTags, {
       'c64': { 'v1': str(image1.id) }
     })
 
@@ -220,7 +220,7 @@ class TestContainer(ModelBase):
 
     tag2 = container.tag_image('v1', image2.id, arch='amiga')
     self.assertEqual(image2.arch, 'amiga')
-    self.assertDictEqual(container.archImageTags(), {
+    self.assertDictEqual(container.archImageTags, {
       'c64': { 'v1': str(image1.id) },
       'amiga': { 'v1': str(image2.id) },
     })
@@ -228,7 +228,7 @@ class TestContainer(ModelBase):
     db.session.delete(tag2)
     container.tag_image('v1', image2.id, arch='c64')
     self.assertEqual(image2.arch, 'c64')
-    self.assertDictEqual(container.archImageTags(), {
+    self.assertDictEqual(container.archImageTags, {
       'c64': { 'v1': str(image2.id) },
     })
 
@@ -242,11 +242,11 @@ class TestContainer(ModelBase):
     db.session.add(tag2)
     db.session.commit()
 
-    self.assertDictEqual(container.archImageTags(), {
+    self.assertDictEqual(container.archImageTags, {
       'c64': { 'yesarch': str(image1.id) },
       self.app.config['DEFAULT_ARCH']: { 'noarch': str(image1.id) },
     })
-    print(container.archImageTags())
+    print(container.archImageTags)
 
     
 
@@ -288,7 +288,7 @@ class TestContainer(ModelBase):
     container.tag_image('v1', image2.id, arch='apple')
 
     with self.assertRaisesRegex(Exception, 'Tag v1 has multiple architectures'):
-      container.imageTags()
+      container.imageTags
 
   def test_get_arch_tags(self):
     container = _create_container()[0]
@@ -299,7 +299,7 @@ class TestContainer(ModelBase):
     db.session.add(image1tag1)
     db.session.commit()
 
-    self.assertDictEqual(container.archImageTags(), {
+    self.assertDictEqual(container.archImageTags, {
       'powerpc': { 'v1': str(image1.id) }
     })
 
@@ -308,7 +308,7 @@ class TestContainer(ModelBase):
     db.session.add(image2tag1)
     db.session.commit()
 
-    self.assertDictEqual(container.archImageTags(), {
+    self.assertDictEqual(container.archImageTags, {
       'powerpc': {'v1': str(image1.id)},
       'alpha': {'v1': str(image2.id)},
     })
@@ -318,7 +318,7 @@ class TestContainer(ModelBase):
     db.session.add(no_arch_tag)
     db.session.commit()
 
-    self.assertDictEqual(container.archImageTags(), {
+    self.assertDictEqual(container.archImageTags, {
       'powerpc': {'v1': str(image1.id)},
       'alpha': {'v1': str(image2.id)},
       'amd64': {'v1': str(no_arch.id)},

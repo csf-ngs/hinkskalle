@@ -1,13 +1,11 @@
 from .base import PasswordCheckerBase
 from .exceptions import UserNotFound, InvalidPassword, UserDisabled, UserConflict
 
-from sqlalchemy.orm.exc import NoResultFound 
+from sqlalchemy.orm.exc import NoResultFound  # type: ignore
 
 from ldap3 import Server, Connection, ObjectDef, Reader, SUBTREE, SYNC, SCHEMA
 from ldap3.utils.conv import escape_filter_chars
 from ldap3.core.exceptions import LDAPBindError, LDAPInvalidCredentialsResult, LDAPPasswordIsMandatoryError, LDAPNoSuchObjectResult
-
-from Hinkskalle.models.User import User
 
 from flask import g, current_app
 
@@ -72,7 +70,8 @@ class LDAPUsers(PasswordCheckerBase):
     else:
       self.ldap = svc
   
-  def sync_user(self, entry) -> User:
+  def sync_user(self, entry):
+    from Hinkskalle.models.User import User
     from Hinkskalle import db
 
     attrs = entry.get('attributes')
@@ -100,7 +99,7 @@ class LDAPUsers(PasswordCheckerBase):
     db.session.commit()
     return user
 
-  def check_password(self, username: str, password: str) -> User:
+  def check_password(self, username: str, password: str):
     self.ldap.connect()
     ldap_user = self.ldap.search_user(username)
     try:

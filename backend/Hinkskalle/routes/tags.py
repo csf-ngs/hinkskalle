@@ -37,7 +37,7 @@ def _get_container(container_id, update=False):
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def get_tags(container_id):
-  return { 'data': _get_container(container_id).imageTags() }
+  return { 'data': _get_container(container_id).imageTags }
 
 @registry.handles(
   rule='/v2/tags/<string:container_id>',
@@ -46,7 +46,7 @@ def get_tags(container_id):
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def get_tags_v2(container_id):
-  return { 'data': _get_container(container_id).archImageTags() }
+  return { 'data': _get_container(container_id).archImageTags }
 
 @registry.handles(
   rule='/v2/tags/<string:container_id>',
@@ -90,7 +90,7 @@ def update_tag_v2(container_id):
         _link_tag(new_tag)
 
   db.session.commit()
-  return { 'data': container.archImageTags() }
+  return { 'data': container.archImageTags }
 
 
 @registry.handles(
@@ -135,15 +135,15 @@ def update_tag(container_id):
 
 
   db.session.commit()
-  return { 'data': container.imageTags() }
+  return { 'data': container.imageTags }
 
 def _link_tag(new_tag):
   image=new_tag.image_ref
   if image.uploaded and os.path.exists(image.location):
-    subdir = image.collectionName() if image.entityName() == 'default' else os.path.join(image.entityName(), image.collectionName())
+    subdir = image.collectionName if image.entityName == 'default' else os.path.join(image.entityName, image.collectionName)
     if image.arch:
       subdir = os.path.join(image.arch, subdir)
-    target = os.path.join(current_app.config["IMAGE_PATH"], subdir, f"{image.containerName()}_{new_tag.name}.sif")
+    target = os.path.join(current_app.config["IMAGE_PATH"], subdir, f"{image.containerName}_{new_tag.name}.sif")
     current_app.logger.debug(f"Creating link {image.location}->{target}")
     os.makedirs(os.path.dirname(target), exist_ok=True)
     if os.path.lexists(target):

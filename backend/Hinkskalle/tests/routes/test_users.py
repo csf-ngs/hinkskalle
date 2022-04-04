@@ -1,4 +1,4 @@
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from ..route_base import RouteBase
 from .._util import _create_user, _create_container
 
@@ -36,7 +36,7 @@ class TestUsers(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get('/v1/users')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertIsInstance(json, list)
     self.assertEqual(len(json), 5)
     self.assertListEqual([ u['username'] for u in json ], [ self.admin_username, self.username, self.other_username, user1.username, user2.username ])
@@ -48,7 +48,7 @@ class TestUsers(RouteBase):
     with self.fake_auth():
       ret = self.client.get('/v1/users')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertIsInstance(json, list)
     self.assertEqual(len(json), 5)
     self.assertListEqual([ u['username'] for u in json ], [ self.admin_username, self.username, self.other_username, user1.username, user2.username ])
@@ -60,13 +60,13 @@ class TestUsers(RouteBase):
     with self.fake_auth():
       ret = self.client.get('/v1/users?username=schaf')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertListEqual([ u['username'] for u in json ], [ 'test.schaf' ])
 
     with self.fake_auth():
       ret = self.client.get('/v1/users?username=test')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertListEqual([ u['username'] for u in json ], [ 'test.schaf', 'test.kuh' ])
   
 
@@ -76,7 +76,7 @@ class TestUsers(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/users/{user1.username}")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     json.pop('createdAt')
     self.assertDictEqual(json, {
       "id": str(user1.id),
@@ -100,7 +100,7 @@ class TestUsers(RouteBase):
     with self.fake_auth():
       ret = self.client.get(f"/v1/users/{db_user.username}")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(db_user.id))
 
   
@@ -110,7 +110,7 @@ class TestUsers(RouteBase):
     with self.fake_auth():
       ret = self.client.get(f"/v1/users/{db_user.username}")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(db_user.id))
   
 
@@ -123,7 +123,7 @@ class TestUsers(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/users/{user1.username}/stars")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertListEqual([ c['name'] for c in json ], [ container.name ])
   
   def test_get_stars_user_self(self):
@@ -136,7 +136,7 @@ class TestUsers(RouteBase):
     with self.fake_auth():
       ret = self.client.get(f"/v1/users/{db_user.username}/stars")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertListEqual([ c['name'] for c in json ], [ container.name ])
 
   def test_get_stars_user_self_other(self):
@@ -147,7 +147,7 @@ class TestUsers(RouteBase):
     with self.fake_auth():
       ret = self.client.get(f"/v1/users/{db_user.username}/stars")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertListEqual([ c['name'] for c in json ], [])
   
   def test_get_stars_user_other(self):
@@ -164,7 +164,7 @@ class TestUsers(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post(f"/v1/users/{user1.username}/stars/{container.id}")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertListEqual([ c['name'] for c in json ], [ container.name ])
     db_user = User.query.filter(User.username==user1.username).one()
     self.assertListEqual([ c.id for c in db_user.starred ], [ container.id ])
@@ -172,7 +172,7 @@ class TestUsers(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post(f"/v1/users/{user1.username}/stars/{container.id}")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertListEqual([ c['name'] for c in json ], [ container.name ])
   
   def test_unstar_container(self):
@@ -184,7 +184,7 @@ class TestUsers(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.delete(f"/v1/users/{user1.username}/stars/{container.id}")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertEqual(len(json), 0)
 
   def test_unstar_container_not_starred(self):
@@ -204,7 +204,7 @@ class TestUsers(RouteBase):
     with self.fake_auth():
       ret = self.client.post(f"/v1/users/{db_user.username}/stars/{container.id}")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertListEqual([ c['name'] for c in json ], [ container.name ])
 
   def test_unstar_container_user_self(self):
@@ -217,7 +217,7 @@ class TestUsers(RouteBase):
     with self.fake_auth():
       ret = self.client.delete(f"/v1/users/{db_user.username}/stars/{container.id}")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertEqual(len(json), 0)
 
   def test_unstar_container_user_self_other(self):
@@ -229,7 +229,7 @@ class TestUsers(RouteBase):
     with self.fake_auth():
       ret = self.client.delete(f"/v1/users/{db_user.username}/stars/{container.id}")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertEqual(len(json), 0)
 
   def test_star_user_other(self):
@@ -264,7 +264,7 @@ class TestUsers(RouteBase):
     ret = self.client.post('/v1/register', json=user_data)
     self.assertEqual(ret.status_code, 200)
 
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['username'], user_data['username'])
     db_user = User.query.get(data['id'])
     for f in ['email', 'firstname', 'lastname']:
@@ -295,7 +295,7 @@ class TestUsers(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post('/v1/users', json=user_data)
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['username'], user_data['username'])
     db_user = User.query.get(data['id'])
     for f in ['email', 'firstname', 'lastname', 'source', 'isAdmin', 'isActive']:
@@ -345,7 +345,7 @@ class TestUsers(RouteBase):
       ret = self.client.post('/v1/users', json=user_data)
     self.assertEqual(ret.status_code, 412)
     json = ret.get_json()
-    self.assertRegexpMatches(json.get('message'), r'entity.*already exists')
+    self.assertRegexpMatches(json.get('message'), r'entity.*already exists') # type: ignore
     
   
   def test_create_not_unique(self):
@@ -365,7 +365,7 @@ class TestUsers(RouteBase):
         ret = self.client.post("/v1/users", json=new_user)
       self.assertEqual(ret.status_code, 412)
       json = ret.get_json()
-      self.assertRegexpMatches(json.get('message'), r'User.*already exists')
+      self.assertRegexpMatches(json.get('message'), r'User.*already exists') # type: ignore
 
 
   def test_create_user(self):
@@ -409,7 +409,7 @@ class TestUsers(RouteBase):
   def test_update_nonlocal(self):
     user = _create_user('update.hase')
     user.is_active = False
-    user.is_amdin = False
+    user.is_admin = False
     user.source = 'thin air'
     db.session.commit()
 
@@ -418,8 +418,8 @@ class TestUsers(RouteBase):
         'email': 'wos.aun@das',
         'firstname': 'aundasupdate',
         'lastname': 'aundashase',
-        'is_active': True,
-        'is_admin': True,
+        'isActive': True,
+        'isAdmin': True,
       })
     
     self.assertEqual(ret.status_code, 200)
@@ -469,7 +469,7 @@ class TestUsers(RouteBase):
       ret = self.client.put(f"/v1/users/{user.username}", json={ "username": "hase.update" })
     
     self.assertEqual(ret.status_code, 412)
-    self.assertRegexpMatches(ret.get_json().get('message'), 'Cannot rename entity')
+    self.assertRegexpMatches(ret.get_json().get('message'), 'Cannot rename entity') # type: ignore
   
   def test_update_user(self):
     user_data = {

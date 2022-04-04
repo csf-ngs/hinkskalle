@@ -4,7 +4,6 @@ from flask import g, request
 from flask_rebar import errors
 from enum import Enum
 import datetime
-from Hinkskalle.models.User import Token
 
 _NO_TOKEN='No token found'
 
@@ -53,7 +52,8 @@ class TokenAuthenticator(Authenticator):
 
     g.authenticated_user = token.user
 
-  def _get_identity(self, token: str) -> Token:
+  def _get_identity(self, token: str):
+    from Hinkskalle.models.User import Token
     db_token = Token.query.filter(Token.token == token, Token.deleted == False).first()
     if not db_token:
       current_app.logger.debug('Token not in db')

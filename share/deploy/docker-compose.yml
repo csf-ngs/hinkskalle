@@ -18,6 +18,7 @@ services:
       - '7600:5000'
     depends_on:
       - hinkdb
+      - redis
   hinkdb:
     restart: always
     image: postgres:12

@@ -1,6 +1,6 @@
 # Hinkskalle
 
-[![Build Status](https://drone.ngs-cloud.vbcf.ac.at/api/badges/ngs-software/Hinkskalle/status.svg)](https://drone.ngs-cloud.vbcf.ac.at/ngs-software/Hinkskalle)
+[![Build Status](https://drone.ngs-cloud.vbcf.ac.at/api/badges/ngs-software/Hinkskalle/status.svg)](https://drone.ngs-cloud.vbcf.ac.at/ngs-software/Hinkskalle) - [![CircleCI](https://circleci.com/gh/csf-ngs/hinkskalle/tree/master.svg?style=svg)](https://circleci.com/gh/csf-ngs/hinkskalle/tree/master)
 
 (buckethead) - store and retrieve [singularity](https://sylabs.io/singularity/) containers in a central library.
 

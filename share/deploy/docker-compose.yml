@@ -30,7 +30,7 @@ services:
       - hink_db:/var/lib/postgresql/data
   rq_worker:
     image: ghcr.io/csf-ngs/hinkskalle
-    command: '../script/start-worker.sh'
+    command: 'script/start-worker.sh'
     env_file:
       - "conf/secrets.env"
       - "conf/hinkskalle.env"
@@ -40,7 +40,7 @@ services:
       - hinkdb
   rq_scheduler:
     image: ghcr.io/csf-ngs/hinkskalle
-    command: '../script/start-scheduler.sh'
+    command: 'script/start-scheduler.sh'
     env_file:
       - "conf/secrets.env"
       - "conf/hinkskalle.env"

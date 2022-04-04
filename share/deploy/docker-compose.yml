@@ -35,7 +35,6 @@ services:
     env_file:
       - "conf/secrets.env"
       - "conf/hinkskalle.env"
-    working_dir: '/srv/hinkskalle/src/backend'
     depends_on:
       - redis
       - hinkdb
@@ -45,7 +44,6 @@ services:
     env_file:
       - "conf/secrets.env"
       - "conf/hinkskalle.env"
-    working_dir: '/srv/hinkskalle/src/backend'
     depends_on:
       - redis
       - hinkdb

@@ -7,6 +7,7 @@ from Hinkskalle.models.Collection import Collection
 from Hinkskalle.models.Tag import Tag
 import datetime
 import os.path
+import os
 import json
 
 from Hinkskalle.tests.route_base import RouteBase
@@ -284,7 +285,10 @@ class TestOrasPush(RouteBase):
     digest = digest.replace('sha256.', 'sha256:')
     # just make sure that we use the same filename generation method as library push
     with mock.patch('Hinkskalle.routes.imagefiles._make_filename') as mock_make_fn:
-      mock_make_fn.return_value=f"{self.app.config['IMAGE_PATH']}/_imgs/{digest}"
+      outpath = os.path.join(os.path.abspath(self.app.config['IMAGE_PATH']), '_imgs', 'digest')
+      os.makedirs(outpath)
+      mock_make_fn.return_value=outpath
+
       ret = self.client.put(f"/v2/__uploads/{upload.id}?digest={digest}", data=img_data, content_type='application/octet-stream')
     self.assertEqual(ret.status_code, 201)
     self.assertRegexpMatches(ret.headers.get('location', ''), rf'/{entity.name}/{collection.name}/{container.name}/blobs/{digest}')

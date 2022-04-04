@@ -16,7 +16,7 @@ class TestOrasPushChunked(RouteBase):
   def test_push_chunks_get_session(self):
     container = _create_container()[0]
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{container.entityName()}/{container.collectionName()}/{container.name}/blobs/uploads/", headers={'Content-Length': 0})
+      ret = self.client.post(f"/v2/{container.entityName}/{container.collectionName}/{container.name}/blobs/uploads/", headers={'Content-Length': 0})
     self.assertEqual(ret.status_code, 202)
     upload_id = ret.headers.get('location').split('/')[-1]
 

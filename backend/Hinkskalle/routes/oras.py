@@ -47,7 +47,7 @@ class OrasBlobMountQuerySchema(RequestSchema):
   staged = fields.Bool(required=False)
   digest = fields.String(required=False)
   mount = fields.String(required=False)
-  _from = fields.String(load_from='from', dump_to='from', attribute='from', required=False)
+  _from = fields.String(data_key='from', attribute='from', required=False)
 
 # see https://github.com/opencontainers/distribution-spec/blob/main/spec.md#error-codes
 class OrasError(Exception):
@@ -507,7 +507,7 @@ def _do_single_post_upload(upload: ImageUploadUrl, digest: str, staged: bool = F
     raise OrasDigestInvalid(f"need digest for single push upload")
   digest = digest.replace('sha256:', 'sha256.')
   image = _receive_upload(upload, digest, staged=staged)
-  blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName()}/{image.container_ref.collectionName()}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
+  blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName}/{image.container_ref.collectionName}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
   response = make_response('', 201)
   response.headers['Location']=blob_url
   response.headers['Docker-Content-Digest']=f"{image.hash.replace('sha256.', 'sha256:')}"
@@ -537,7 +537,7 @@ def _do_mount(container: Container, _from: str, mount: str):
   )
   db.session.add(image)
   db.session.commit()
-  blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName()}/{image.container_ref.collectionName()}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
+  blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName}/{image.container_ref.collectionName}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
   response = make_response('', 201)
   response.headers['Location']=blob_url
   response.headers['Docker-Content-Digest']=f"{image.hash.replace('sha256.', 'sha256:')}"
@@ -645,7 +645,7 @@ def oras_push_chunk_finish(upload_id, chunk_id):
     raise err
 
   
-  blob_url = _get_service_url()+f"/v2/{upload.image_ref.entityName()}/{upload.image_ref.collectionName()}/{upload.image_ref.containerName()}/blobs/{upload.image_ref.hash.replace('sha256.', 'sha256:')}"
+  blob_url = _get_service_url()+f"/v2/{upload.image_ref.entityName}/{upload.image_ref.collectionName}/{upload.image_ref.containerName}/blobs/{upload.image_ref.hash.replace('sha256.', 'sha256:')}"
   response = make_response('', 201)
   response.headers['Location']=blob_url
   response.headers['Docker-Content-Digest']=f"{upload.image_ref.hash.replace('sha256.', 'sha256:')}"
@@ -788,7 +788,7 @@ def oras_push_registered(upload_id):
     db.session.commit()
     raise exc
   
-  blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName()}/{image.container_ref.collectionName()}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
+  blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName}/{image.container_ref.collectionName}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
   response = make_response('', 201)
   response.headers['Location']=blob_url
   response.headers['Docker-Content-Digest']=f"{image.hash.replace('sha256.', 'sha256:')}"

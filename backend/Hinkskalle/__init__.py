@@ -55,7 +55,7 @@ def create_app():
   app.config.from_file(os.environ.get('HINKSKALLE_SETTINGS', '../../conf/config.json'), load=json.load)
   secrets_conf = os.environ.get('HINKSKALLE_SECRETS', '../../conf/secrets.json')
   if os.path.exists(secrets_conf):
-    app.config.from_json(secrets_conf)
+    app.config.from_file(secrets_conf, load=json.load)
 
   if not app.config.get('DEFAULT_ARCH'):
     app.config['DEFAULT_ARCH']='amd64'
@@ -67,7 +67,7 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 
   if app.config.get('DB_PASSWORD'):
-    app.config['SQLALCHEMY_DATABASE_URI']=app.config.get('SQLALCHEMY_DATABASE_URI').replace('%PASSWORD%', app.config.get('DB_PASSWORD'))
+    app.config['SQLALCHEMY_DATABASE_URI']=app.config.get('SQLALCHEMY_DATABASE_URI', '').replace('%PASSWORD%', app.config.get('DB_PASSWORD'))
   app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=app.config.get('SQLALCHEMY_TRACK_MODIFICATIONS', False)
 
   if not 'AUTH' in app.config:
@@ -110,7 +110,7 @@ def create_app():
     app.config['RQ_REDIS_URL'] = os.environ.get('HINKSKALLE_REDIS_URL')
   rq.init_app(app)
 
-  app.url_map.converters['distname']=OrasNameConverter
+  app.url_map.converters['distname']=OrasNameConverter 
   generator.register_flask_converter_to_swagger_type('distname', 'path')
 
 

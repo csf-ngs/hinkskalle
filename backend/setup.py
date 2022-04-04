@@ -11,7 +11,9 @@ setup(
         'Flask-SQLAlchemy',
         'Flask-Migrate',
         'Flask-Session',
-        'flask-rebar>=2.0.0',
+        #'flask-rebar>=2.0.0',
+        # tmp fix https://github.com/plangrid/flask-rebar/issues/270
+        'flask-rebar @ git+https://github.com/h3kker/flask-rebar#egg=flask-rebar',
         'flask_wtf>=1.0.0',
         'SimpleJSON',
         'python-dotenv',

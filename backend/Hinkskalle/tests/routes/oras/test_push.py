@@ -286,7 +286,7 @@ class TestOrasPush(RouteBase):
     # just make sure that we use the same filename generation method as library push
     with mock.patch('Hinkskalle.routes.imagefiles._make_filename') as mock_make_fn:
       outpath = os.path.join(os.path.abspath(self.app.config['IMAGE_PATH']), '_imgs', digest)
-      os.makedirs(outpath)
+      os.makedirs(os.path.dirname(outpath), exist_ok=True)
       mock_make_fn.return_value=outpath
 
       ret = self.client.put(f"/v2/__uploads/{upload.id}?digest={digest}", data=img_data, content_type='application/octet-stream')

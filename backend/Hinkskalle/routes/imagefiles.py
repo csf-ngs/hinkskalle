@@ -429,7 +429,7 @@ def _make_filename(image: Image) -> str:
   imghash = image.hash.replace('sha256.', '').replace('md5.', '')
   for i in range(0, min(len(imghash), current_app.config.get('IMAGE_PATH_HASH_LEVEL',0))):
     hash_subs = os.path.join(hash_subs, imghash[i])
-  outfn = safe_join(current_app.config.get('IMAGE_PATH'), '_imgs', hash_subs, image.make_filename())
+  outfn = safe_join(os.path.abspath(current_app.config.get('IMAGE_PATH')), '_imgs', hash_subs, image.make_filename())
   if outfn is None:
     raise Exception(f"could not generate safe path for {image.make_filename()}")
   os.makedirs(os.path.dirname(outfn), exist_ok=True)
@@ -445,7 +445,7 @@ def _move_image(tmpf: str, image: Image) -> Image:
 
   current_app.logger.debug(f"moving image from {tmpf} to {outfn}")
   shutil.move(tmpf, outfn)
-  image.location=os.path.abspath(outfn)
+  image.location=outfn
   image.size=os.path.getsize(image.location)
   image.uploaded=True
   entity.calculate_used()

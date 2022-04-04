@@ -7,6 +7,8 @@ from ldap3 import Server, Connection, ObjectDef, Reader, SUBTREE, SYNC, SCHEMA
 from ldap3.utils.conv import escape_filter_chars
 from ldap3.core.exceptions import LDAPBindError, LDAPInvalidCredentialsResult, LDAPPasswordIsMandatoryError, LDAPNoSuchObjectResult
 
+from Hinkskalle.models.User import User
+
 from flask import g, current_app
 
 # mock ldap returns scalar, real ldap (slapd) a list
@@ -36,12 +38,14 @@ class LDAPService:
   def close(self):
     self.connection.unbind()
   
-  def search_user(self, username):
+  def search_user(self, username: str):
     try:
       self.connection.search(search_base=self.base_dn, search_filter=self.filter.format(escape_filter_chars(username)), search_scope=SUBTREE, attributes='*')
     except LDAPNoSuchObjectResult:
       raise UserNotFound()
-    if len(self.connection.response) == 0:
+    if self.connection.response is None:
+      raise Exception("No response received.")
+    elif len(self.connection.response) == 0:
       raise UserNotFound()
     return self.connection.response[0]
   
@@ -66,9 +70,8 @@ class LDAPUsers(PasswordCheckerBase):
     else:
       self.ldap = svc
   
-  def sync_user(self, entry):
+  def sync_user(self, entry) -> User:
     from Hinkskalle import db
-    from Hinkskalle.models import User
 
     attrs = entry.get('attributes')
     try:
@@ -95,7 +98,7 @@ class LDAPUsers(PasswordCheckerBase):
     db.session.commit()
     return user
 
-  def check_password(self, username, password):
+  def check_password(self, username: str, password: str) -> User:
     self.ldap.connect()
     ldap_user = self.ldap.search_user(username)
     try:

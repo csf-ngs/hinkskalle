@@ -52,6 +52,8 @@ class LDAPService:
   def list_users(self):
     self.connection.search(search_base=self.base_dn, search_filter=self.all_users_filter, search_scope=SUBTREE, attributes='*')
     #current_app.logger.debug(len(self.connection.response))
+    if self.connection.response is None:
+      raise Exception(f"no response received")
     return self.connection.response
 
 
@@ -65,7 +67,7 @@ class LDAPUsers(PasswordCheckerBase):
     self.config = self.app.config.get('AUTH', {}).get('LDAP', {})
     self.enabled = len(self.config) > 0
     self.app.logger.debug(f"initializing ldap service with host {self.config.get('HOST', '')}")
-    if not svc:
+    if svc is None:
       self.ldap = LDAPService(host=self.config.get('HOST', ''), port=self.config.get('PORT', 389), bind_dn=self.config.get('BIND_DN'), bind_password=self.config.get('BIND_PASSWORD'), base_dn=self.config.get('BASE_DN'))
     else:
       self.ldap = svc

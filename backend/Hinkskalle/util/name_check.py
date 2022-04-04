@@ -1,6 +1,6 @@
 import re
 
-def validate_name(data):
+def validate_name(data: dict) -> dict:
     errors = {}
     if 'name' in data and data['name'] != '':
       if not re.match(r"^[a-zA-Z0-9\.\-_]+$", data['name']):

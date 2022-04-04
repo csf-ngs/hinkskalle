@@ -74,10 +74,10 @@ class User(db.Model):
     db.session.commit()
     return token
   
-  def set_password(self, pw):
+  def set_password(self, pw: str) -> None:
     self.password = sha512_crypt.hash(pw)
   
-  def check_password(self, pw):
+  def check_password(self, pw: str) -> bool:
     if not self.password:
       current_app.logger.debug(f"User {self.username} password is NULL")
       return False
@@ -88,10 +88,10 @@ class User(db.Model):
       return False
     return result
 
-  def check_access(self, user):
+  def check_access(self, user) -> bool:
     return True
   
-  def check_token_access(self, user):
+  def check_token_access(self, user) -> bool:
     if user.is_admin:
       return True
     if self.id == user.id:
@@ -99,7 +99,7 @@ class User(db.Model):
     else:
       return False
   
-  def check_sub_access(self, user):
+  def check_sub_access(self, user) -> bool:
     if user.is_admin:
       return True
     elif self.id == user.id:
@@ -107,7 +107,7 @@ class User(db.Model):
     else:
       return False
 
-  def check_update_access(self, user):
+  def check_update_access(self, user) -> bool:
     if user.is_admin:
       return True
     elif self.id == user.id:
@@ -175,5 +175,5 @@ class Token(db.Model):
 
   defaultExpiration = timedelta(days=1)
 
-  def refresh(self):
+  def refresh(self) -> None:
     self.expiresAt = datetime.now() + Token.defaultExpiration

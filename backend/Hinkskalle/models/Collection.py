@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy.orm import validates
 from Hinkskalle.util.name_check import validate_name
 
-from Hinkskalle.models import Entity
+from Hinkskalle.models.User import User
 
 class CollectionSchema(Schema):
   id = fields.String(required=True, dump_only=True)
@@ -51,23 +51,23 @@ class Collection(db.Model):
   owner = db.relationship('User', back_populates='collections')
 
   @validates('name')
-  def convert_lower(self, key, value):
+  def convert_lower(self, key, value) -> str:
     return value.lower()
 
   __table_args__ = (db.UniqueConstraint('name', 'entity_id', name='name_entity_id_idx'),)
 
   @property
-  def size(self):
+  def size(self) -> int:
     return self.containers_ref.count()
 
   @property
-  def entity(self):
+  def entity(self) -> int:
     return self.entity_ref.id
   @property
-  def entityName(self):
+  def entityName(self) -> str:
     return self.entity_ref.name
   
-  def check_access(self, user):
+  def check_access(self, user: User) -> bool:
     if user.is_admin:
       return True
     elif self.owner == user:
@@ -75,7 +75,7 @@ class Collection(db.Model):
     else:
       return self.entity_ref.check_access(user)
   
-  def check_update_access(self, user):
+  def check_update_access(self, user: User) -> bool:
     if user.is_admin:
       return True
     elif self.owner == user:

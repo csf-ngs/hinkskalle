@@ -5,6 +5,7 @@ from datetime import datetime
 from sqlalchemy.orm import validates
 from flask import current_app
 from Hinkskalle.util.name_check import validate_name
+from Hinkskalle.models.User import User
 
 class EntitySchema(Schema):
   id = fields.String(required=True, dump_only=True)
@@ -48,12 +49,12 @@ class Entity(db.Model):
   collections_ref = db.relationship('Collection', back_populates='entity_ref', lazy='dynamic')
 
   @validates('name')
-  def convert_lower(self, key, value):
+  def convert_lower(self, key, value: str) -> str:
     return value.lower()
 
 
   @property
-  def size(self):
+  def size(self) -> int:
     return self.collections_ref.count()
 
   def calculate_used(self) -> int:
@@ -84,7 +85,7 @@ class Entity(db.Model):
     self.used_quota=entity_size
     return entity_size
 
-  def check_access(self, user):
+  def check_access(self, user: User) -> bool:
     if user.is_admin:
       return True
     elif self.owner == user:
@@ -94,7 +95,7 @@ class Entity(db.Model):
     else:
       return False
   
-  def check_update_access(self, user):
+  def check_update_access(self, user: User) -> bool:
     if user.is_admin:
       return True
     elif self.owner == user:

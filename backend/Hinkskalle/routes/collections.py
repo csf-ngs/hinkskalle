@@ -4,7 +4,7 @@ from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from flask import request, current_app, g
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound # type: ignore
 import datetime
 
 from Hinkskalle.models import CollectionSchema, Collection, Entity
@@ -33,7 +33,7 @@ class CollectionDeleteResponseSchema(ResponseSchema):
   method='POST',
   request_body_schema=CollectionCreateSchema(),
   response_body_schema=CollectionResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def create_collection():
   body = rebar.validated_body
@@ -76,7 +76,7 @@ def create_collection():
   rule='/v1/collections/<string:entity_id>',
   method='GET',
   response_body_schema=CollectionListResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def list_collections(entity_id):
   try:
@@ -96,7 +96,7 @@ def list_collections(entity_id):
   rule='/v1/collections/<string:entity_id>/<string:collection_id>',
   method='GET',
   response_body_schema=CollectionResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def get_collection(entity_id, collection_id):
   collection = _get_collection(entity_id, collection_id)
@@ -108,7 +108,7 @@ def get_collection(entity_id, collection_id):
   rule='/v1/collections/<string:entity_id>/',
   method='GET',
   response_body_schema=CollectionResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def get_default_collection(entity_id):
   return get_collection(entity_id=entity_id, collection_id='default')
@@ -117,7 +117,7 @@ def get_default_collection(entity_id):
   rule='/v1/collections/',
   method='GET',
   response_body_schema=CollectionResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def get_default_collection_default_entity():
   return get_collection(entity_id='default', collection_id='default')
@@ -128,7 +128,7 @@ def get_default_collection_default_entity():
   method='PUT',
   request_body_schema=CollectionUpdateSchema(),
   response_body_schema=CollectionResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def update_collection(entity_id, collection_id):
   body = rebar.validated_body
@@ -151,14 +151,14 @@ def update_collection(entity_id, collection_id):
   rule='/v1/collections/<string:entity_id>/<string:collection_id>',
   method='DELETE',
   response_body_schema=CollectionDeleteResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def delete_collection(entity_id, collection_id):
   collection = _get_collection(entity_id, collection_id)
   if not collection.check_update_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to collection")
 
-  if collection.size() > 0:
+  if collection.size > 0:
     raise errors.PreconditionFailed(f"Collection {collection.name} still has containers.")
 
   db.session.delete(collection)

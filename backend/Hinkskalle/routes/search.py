@@ -29,7 +29,7 @@ class SearchQuerySchema(RequestSchema):
   method='GET',
   response_body_schema=SearchResponseSchema(),
   query_string_schema=SearchQuerySchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def search():
   args = rebar.validated_args

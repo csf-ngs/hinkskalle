@@ -8,7 +8,7 @@ from .util import _get_service_url
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from flask import current_app, g
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound # type: ignore
 import jwt
 from calendar import timegm
 
@@ -34,7 +34,7 @@ class GetDownloadTokenSchema(RequestSchema):
 @registry.handles(
   rule='/v1/token-status',
   method='GET',
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
   response_body_schema=TokenStatusResponseSchema(),
 )
 def token_status():
@@ -75,7 +75,7 @@ def get_token():
   rule='/v1/get-download-token',
   method='POST',
   request_body_schema=GetDownloadTokenSchema(),
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def get_download_token():
   data = rebar.validated_body

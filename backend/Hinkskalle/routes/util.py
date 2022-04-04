@@ -1,7 +1,7 @@
 from flask import current_app, request
 from flask_rebar import errors
 from sqlalchemy import func
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from flask_rebar import RequestSchema
 from marshmallow import fields
 
@@ -39,6 +39,6 @@ def _get_container(entity_id: str, collection_id: str, container_id: str) -> Con
   try:
     container = collection.containers_ref.filter(func.lower(Container.name)==container_id.lower()).one()
   except NoResultFound:
-    current_app.logger.debug(f"container {collection.entityName()}/{collection.name}/{container_id} not found")
-    raise errors.NotFound(f"container {collection.entityName()}/{collection.name}/{container_id} not found")
+    current_app.logger.debug(f"container {collection.entityName}/{collection.name}/{container_id} not found")
+    raise errors.NotFound(f"container {collection.entityName}/{collection.name}/{container_id} not found")
   return container

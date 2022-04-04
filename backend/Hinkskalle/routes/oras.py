@@ -1,3 +1,4 @@
+import typing
 from Hinkskalle.routes import manifests
 from Hinkskalle.models.User import Token
 from flask import current_app, make_response, send_file, jsonify, g, request
@@ -8,7 +9,7 @@ from hashlib import sha256
 from flask_rebar.validation import RequestSchema
 from marshmallow import fields, Schema
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from sqlalchemy import func
 import tempfile
 import os
@@ -51,7 +52,7 @@ class OrasBlobMountQuerySchema(RequestSchema):
 # see https://github.com/opencontainers/distribution-spec/blob/main/spec.md#error-codes
 class OrasError(Exception):
   status_code = 500
-  def __init__(self, detail: str=None, code: str=None, message: str=None):
+  def __init__(self, detail: typing.Optional[str]=None, code: typing.Optional[str]=None, message: typing.Optional[str]=None):
     if code:
       self.code = code
     if message:
@@ -63,7 +64,7 @@ class OrasNameUnknown(OrasError):
   status_code = 404
   code = 'NAME_UNKNOWN'
   message = 'repository name not known to registry'
-  def __init__(self, detail: str=None):
+  def __init__(self, detail: typing.Optional[str]=None):
     super().__init__(detail=detail)
 
 class OrasNameInvalid(OrasError):
@@ -137,7 +138,7 @@ def handle_oras_error(error: OrasError):
 @registry.handles(
   rule='/v2/',
   method='GET',
-  authenticators=authenticator.with_scope(Scopes.optional)
+  authenticators=authenticator.with_scope(Scopes.optional) # type: ignore
 )
 def authenticate_check():
   if g.authenticated_user:
@@ -203,7 +204,7 @@ def _auth_token(token: Token):
   rule='/v2/<distname:name>/tags/list',
   method='GET',
   query_string_schema=OrasListTagQuerySchema(),
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def oras_list_tags(name: str):
   args = rebar.validated_args
@@ -225,7 +226,7 @@ def oras_list_tags(name: str):
     cur_tags = []
   
   return {
-    "name": f"{container.entityName()}/{container.collectionName()}/{container.name}",
+    "name": f"{container.entityName}/{container.collectionName}/{container.name}",
     "tags": cur_tags
   }
 
@@ -235,7 +236,7 @@ def oras_list_tags(name: str):
 @registry.handles(
   rule='/v2/<distname:name>/manifests/<string:reference>',
   method='GET',
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user),  # type: ignore
 )
 def oras_manifest(name: str, reference: str):
   # should check accept header for 
@@ -283,7 +284,7 @@ def oras_manifest(name: str, reference: str):
 @registry.handles(
   rule='/v2/<distname:name>/blobs/<string:digest>',
   method='GET',
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def oras_blob(name, digest):
   # check accept header for
@@ -318,7 +319,7 @@ def oras_blob(name, digest):
 @registry.handles(
   rule='/v2/<distname:name>/manifests/<string:reference>',
   method='PUT',
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def oras_push_manifest(name, reference):
   container = _get_container(name)
@@ -333,6 +334,8 @@ def oras_push_manifest(name, reference):
     manifest_data = request.json
   except BadRequest:
     current_app.logger.debug('Invalid JSON')
+    raise OrasManifestInvalid()
+  if manifest_data is None:
     raise OrasManifestInvalid()
   current_app.logger.debug(manifest_data)
 
@@ -359,7 +362,7 @@ def oras_push_manifest(name, reference):
 
   with db.session.no_autoflush:
     manifest = tag.manifest_ref or Manifest()
-    manifest.content = request.data.decode('utf8')
+    manifest.content = request.data.decode('utf8') # type: ignore
     existing = Manifest.query.filter(Manifest.hash == manifest.hash, Manifest.container_ref==container).first()
     if existing:
       if manifest in db.session:
@@ -374,7 +377,7 @@ def oras_push_manifest(name, reference):
 
   db.session.commit()
   
-  manifest_url = _get_service_url()+f"/v2/{container.entityName()}/{container.collectionName()}/{container.name}/manifests/sha256:{manifest.hash}"
+  manifest_url = _get_service_url()+f"/v2/{container.entityName}/{container.collectionName}/{container.name}/manifests/sha256:{manifest.hash}"
   response = make_response('', 201)
   response.headers['Location']=manifest_url
   response.headers['Docker-Content-Digest']=f'sha256:{manifest.hash}'
@@ -386,7 +389,7 @@ def oras_push_manifest(name, reference):
   rule='/v2/<distname:name>/blobs/uploads/',
   method='POST',
   query_string_schema=OrasBlobMountQuerySchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def oras_start_upload_session(name):
   args = rebar.validated_args
@@ -483,7 +486,7 @@ def oras_start_upload_session(name):
   db.session.add(upload)
   db.session.commit()
 
-  if args.get('staged', False) or (headers.get('content_type')=='application/octet-stream' and int(headers.get('content_length', 0)) > 0): 
+  if args.get('staged', False) or (headers.get('content_type')=='application/octet-stream' and int(headers.get('content_length', '0')) > 0): 
     return _do_single_post_upload(upload, digest=args.get('digest'), staged=args.get('staged', False))
 
   upload_url = _get_service_url()+f"/v2/__uploads/{upload.id}"
@@ -601,7 +604,7 @@ def oras_push_chunk(upload_id, chunk_id):
 def oras_push_chunk_finish(upload_id, chunk_id):
   args = rebar.validated_args
   upload, chunk = _get_chunk(upload_id, chunk_id)
-  if int(request.headers.get('content_length', 0)) > 0:
+  if int(request.headers.get('content_length', '0')) > 0:
     _handle_chunk(chunk)
   else:
     chunk.state = UploadStates.uploaded
@@ -708,7 +711,7 @@ def _handle_chunk(chunk: ImageUploadUrl):
   chunk.state = UploadStates.uploading
 
   _, read = __receive_upload(open(chunk.path, "wb"))
-  if request.headers.get('content_length') and read != int(request.headers.get('content_length', -1)):
+  if request.headers.get('content_length') and read != int(request.headers.get('content_length', '-1')):
     current_app.logger.debug(f"Content length header mismatch {read}/{request.headers['content_length']}")
     raise OrasBlobUploadInvalid(f"Content length header mismatch")
 
@@ -796,7 +799,7 @@ def oras_push_registered(upload_id):
 @registry.handles(
   rule='/v2/<distname:name>/manifests/<string:reference>',
   method='DELETE',
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user)  # type: ignore
 )
 def delete_reference(name, reference):
   container = _get_container(name)
@@ -828,7 +831,7 @@ def delete_reference(name, reference):
 @registry.handles(
   rule='/v2/<distname:name>/blobs/<string:digest>',
   method='DELETE',
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def delete_blob(name, digest):
   container = _get_container(name)

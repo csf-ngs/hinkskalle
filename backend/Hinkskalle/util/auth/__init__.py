@@ -1,6 +1,7 @@
 from .local import LocalUsers
 from .ldap import LDAPUsers
 from .exceptions import UserNotFound
+from Hinkskalle.models.User import User
 
 class PasswordAuthenticators():
   def __init__(self, app=None):
@@ -17,7 +18,7 @@ class PasswordAuthenticators():
       self.checkers.append(LDAPUsers(app=app))
     self.checkers.append(LocalUsers())
   
-  def check_password(self, username: str, password: str):
+  def check_password(self, username: str, password: str) -> User:
     for checker in self.checkers:
       try:
         user = checker.check_password(username, password)

@@ -2,10 +2,11 @@ from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema, ValidationError
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from sqlalchemy.exc import IntegrityError
 from flask import request, current_app, g
 import os.path
+import os
 
 from Hinkskalle.models import Tag, Container, Image
 
@@ -33,7 +34,7 @@ def _get_container(container_id, update=False):
   rule='/v1/tags/<string:container_id>',
   method='GET',
   response_body_schema=TagResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def get_tags(container_id):
   return { 'data': _get_container(container_id).imageTags() }
@@ -42,7 +43,7 @@ def get_tags(container_id):
   rule='/v2/tags/<string:container_id>',
   method='GET',
   response_body_schema=TagResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def get_tags_v2(container_id):
   return { 'data': _get_container(container_id).archImageTags() }
@@ -51,12 +52,14 @@ def get_tags_v2(container_id):
   rule='/v2/tags/<string:container_id>',
   method='POST',
   response_body_schema=TagResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def update_tag_v2(container_id):
   container = _get_container(container_id, update=True)
 
   tags = request.get_json(force=True)
+  if tags is None:
+    raise Exception("Invalid json")
   if 'Tag' in tags and 'ImageID' in tags and 'Arch' in tags:
     tags = {
       tags['Arch']: {
@@ -81,7 +84,7 @@ def update_tag_v2(container_id):
         except IntegrityError:
           raise errors.NotFound(f"Invalid image id {tag_image} not found for container {container_id}")
         except ValidationError as err:
-          raise errors.BadRequest(err.messages.get('name', 'Unknown validation error'))
+          raise errors.BadRequest(err.messages.get('name', 'Unknown validation error')) # type: ignore
 
         current_app.logger.debug(f"created tag {new_tag.name}/{arch} on {new_tag.image_ref.id}")
         _link_tag(new_tag)
@@ -94,12 +97,14 @@ def update_tag_v2(container_id):
   rule='/v1/tags/<string:container_id>',
   method='POST',
   response_body_schema=TagResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def update_tag(container_id):
   container = _get_container(container_id, update=True)
 
   tag = request.get_json(force=True)
+  if tag is None:
+    raise Exception("Invalid json")
   # why do you have a versioned API when you change
   # the data structure and send it to the same
   # endpoint???
@@ -123,7 +128,7 @@ def update_tag(container_id):
       except IntegrityError:
         raise errors.NotFound(f"Invalid image id {tag_image} not found for container {container_id}")
       except ValidationError as err:
-        raise errors.BadRequest(err.messages.get('name', 'Unknown validation error'))
+        raise errors.BadRequest(err.messages.get('name', 'Unknown validation error')) # type: ignore
 
       current_app.logger.debug(f"created tag {new_tag.name} on {new_tag.image_ref.id}")
       _link_tag(new_tag)

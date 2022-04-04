@@ -2,7 +2,7 @@ from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound # type: ignore
 import datetime
 
 from flask import current_app, g
@@ -39,7 +39,7 @@ def _get_user(username):
   rule='/v1/users/<string:username>/tokens',
   method='GET',
   response_body_schema=TokenListResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def list_tokens(username):
   user = _get_user(username)
@@ -50,7 +50,7 @@ def list_tokens(username):
   method='POST',
   response_body_schema=TokenResponseSchema(),
   request_body_schema=TokenCreateSchema(),
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def create_tokens(username):
   body = rebar.validated_body
@@ -65,7 +65,7 @@ def create_tokens(username):
   method='PUT',
   response_body_schema=TokenResponseSchema(),
   request_body_schema=TokenUpdateSchema(),
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def update_token(username, token_id):
   body = rebar.validated_body
@@ -86,7 +86,7 @@ def update_token(username, token_id):
   rule='/v1/users/<string:username>/tokens/<int:token_id>',
   method='DELETE',
   response_body_schema=TokenDeleteResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def delete_token(username, token_id):
   user = _get_user(username)

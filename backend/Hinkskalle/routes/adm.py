@@ -148,8 +148,12 @@ def ping_ldap():
   ret={}
   try:
     svc = LDAPUsers(app=current_app)
-    svc.ldap.connect()
-    ret['status']='ok'
+    if not svc.enabled:
+      ret['status']='failed'
+      ret['error']='LDAP not configured.'
+    else:
+      svc.ldap.connect()
+      ret['status']='ok'
   except Exception as err:
     ret['status']='failed'
     ret['error']=str(err)

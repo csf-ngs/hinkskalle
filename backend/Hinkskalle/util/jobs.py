@@ -153,8 +153,6 @@ def sync_ldap() -> typing.Optional[str]:
   if not job:
     return
   svc = LDAPUsers(app=current_app)
-  svc.ldap.connect()
-
   result = {
     'job': job.id,
     'started': datetime.now(tz=timezone.utc).isoformat(),
@@ -162,6 +160,11 @@ def sync_ldap() -> typing.Optional[str]:
     'conflict': [],
     'failed': [],
   }
+
+  if not svc.enabled:
+    current_app.logger.debug(f"LDAP not configured.")
+    _fail_job(job, result, AdmKeys.ldap_sync_results, Exception('LDAP not configured'))
+  svc.ldap.connect()
 
   job.meta['progress']='fetch'
   job.save_meta()

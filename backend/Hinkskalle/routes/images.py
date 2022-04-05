@@ -15,7 +15,7 @@ import datetime
 import jwt
 
 from Hinkskalle.models.User import User
-from Hinkskalle.models.Image import Image
+from Hinkskalle.models.Image import Image, UploadStates
 from Hinkskalle.models import ImageSchema, Container
 from .util import _get_container, DownloadQuerySchema
 
@@ -146,10 +146,9 @@ def get_image(entity_id, collection_id, tagged_container_id):
     current_app.logger.debug(f"Attempting to get {image.media_type} image with {request.headers.get('User-Agent')}")
     raise errors.NotAcceptable(f"Not a singularity image")
 
-  if image.uploaded and (not image.location or not os.path.exists(image.location)):
+  if image.uploadState == UploadStates.completed and (not image.location or not os.path.exists(image.location)):
     current_app.logger.debug(f"{image.location} does not exist, resetting uploaded flag.")
-    image.uploaded = False
-    image.location = None
+    image.uploadState = UploadStates.broken
     db.session.commit()
   return { 'data': image }
 
@@ -194,6 +193,8 @@ def create_image():
   new_image = Image(**body)
   new_image.container_ref=container
   new_image.owner = g.authenticated_user
+  if new_image.uploadState is None:
+    new_image.uploadState = UploadStates.initialized
 
   # the db session autoflushes when running the query below
   # so we have to add here and catch any IntegrityError exceptions. 
@@ -204,15 +205,15 @@ def create_image():
     raise errors.PreconditionFailed(f"Image {new_image.id}/{new_image.hash} already exists")
 
   # this will flush the session; if the image is not unique it would crash unless we try to insert before
-  existing_images = [ img for img in Image.query.filter(Image.hash==new_image.hash).all() if img.container_id != container.id and img.uploaded ]
+  existing_images = [ img for img in Image.query.filter(Image.hash==new_image.hash).all() if img.container_id != container.id and img.uploadState == UploadStates.completed ]
   if len(existing_images) > 0:
     current_app.logger.debug(f"hash already found, re-using image location {existing_images[0].location}")
-    new_image.uploaded=True
+    new_image.uploadState = existing_images[0].uploadState
     new_image.size=existing_images[0].size
     new_image.location=existing_images[0].location
     db.session.commit()
 
-  if new_image.uploaded:
+  if new_image.uploadState == UploadStates.completed:
     container.tag_image('latest', new_image.id, arch=current_app.config.get('DEFAULT_ARCH', 'amd64'))
 
   return { 'data': new_image }
@@ -290,7 +291,7 @@ def _delete_image(image: Image):
   db.session.commit()
   image.container_ref.collection_ref.entity_ref.calculate_used()
   db.session.commit()
-  if image.uploaded and image.location and os.path.exists(image.location):
+  if image.uploadState == UploadStates.completed and image.location and os.path.exists(image.location):
     other_refs = Image.query.filter(Image.location==image.location).count()
     if other_refs == 0:
       os.remove(image.location)

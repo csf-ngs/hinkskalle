@@ -39,7 +39,7 @@ class TestOrasPush(RouteBase):
     self.assertEqual(db_upload.type, UploadTypes.undetermined)
     self.assertTrue(abs(db_upload.expiresAt - (datetime.datetime.now()+datetime.timedelta(minutes=5))) < datetime.timedelta(minutes=1))
     self.assertTrue(os.path.exists(db_upload.path))
-    self.assertFalse(db_upload.image_ref.uploaded)
+    self.assertEqual(db_upload.image_ref.uploadState, UploadStates.initialized)
     self.assertEqual(db_upload.createdBy, self.admin_username)
     self.assertEqual(db_upload.image_ref.media_type, 'unknown')
 
@@ -303,7 +303,7 @@ class TestOrasPush(RouteBase):
     self.assertEqual(read_upload.state, UploadStates.completed)
 
     db_image: Image = Image.query.get(image_id)
-    self.assertTrue(db_image.uploaded)
+    self.assertEqual(db_image.uploadState, UploadStates.completed)
     self.assertTrue(db_image.hide)
     self.assertEqual(db_image.size, len(img_data))
     with open(db_image.location, "rb") as infh:
@@ -355,7 +355,7 @@ class TestOrasPush(RouteBase):
     upload = ImageUploadUrl.query.get(upload_id)
     self.assertEqual(upload.state, UploadStates.failed)
     image = Image.query.get(image_id)
-    self.assertFalse(image.uploaded)
+    self.assertEqual(image.uploadState, UploadStates.failed)
 
 
   def test_push_monolith_checksum_mismatch(self):
@@ -413,7 +413,7 @@ class TestOrasPush(RouteBase):
     self.assertEqual(ret.headers.get('Docker-Content-Digest'), digest)
 
     db_image: Image = Image.query.filter(Image.hash==digest.replace('sha256:', 'sha256.')).one()
-    self.assertTrue(db_image.uploaded)
+    self.assertEqual(db_image.uploadState, UploadStates.completed)
     self.assertTrue(db_image.hide)
     self.assertEqual(db_image.size, len(img_data))
     with open(db_image.location, "rb") as infh:
@@ -437,7 +437,7 @@ class TestOrasPush(RouteBase):
     self.assertEqual(ret.status_code, 201)
     self.assertEqual(ret.headers.get('Docker-Content-Digest'), digest.replace('sha256.', 'sha256:'))
     db_image: Image = Image.query.filter(Image.hash==digest.replace('sha256:', 'sha256.')).one()
-    self.assertTrue(db_image.uploaded)
+    self.assertEqual(db_image.uploadState, UploadStates.completed)
 
     with open(db_image.location, "rb") as infh:
       content = infh.read()
@@ -486,7 +486,7 @@ class TestOrasPush(RouteBase):
 
   def test_push_single_post_quota_check(self):
     image, _, _, entity = _create_image()
-    image_id = image.id
+    image_container_id = image.id
     img_data, digest = _prepare_img_data()
     entity.quota = len(img_data)-1
     digest = digest.replace('sha256.', 'sha256:')
@@ -494,8 +494,6 @@ class TestOrasPush(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.post(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
     self.assertEqual(ret.status_code, 413)
-    image = Image.query.get(image_id)
-    self.assertFalse(image.uploaded)
 
   def test_push_single_post_user(self):
     image, container, collection, entity = _create_image()

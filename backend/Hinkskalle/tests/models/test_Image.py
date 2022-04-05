@@ -9,7 +9,7 @@ import subprocess
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Collection import Collection
 from Hinkskalle.models.Container import Container
-from Hinkskalle.models.Image import Image, ImageSchema
+from Hinkskalle.models.Image import Image, ImageSchema, UploadStates
 from Hinkskalle.models.Tag import Tag
 
 from Hinkskalle.tests.models.test_Collection import _create_collection
@@ -179,7 +179,7 @@ class TestImage(ModelBase):
   def test_inspect(self):
     image = _create_image()[0]
     image.location = self._get_test_path("busybox.sif")
-    image.uploaded = True
+    image.uploadState = UploadStates.completed
     db.session.commit()
 
     deffile = image.inspect()
@@ -188,7 +188,7 @@ class TestImage(ModelBase):
   def test_check_file_file_not_found(self):
     image = _create_image()[0]
     image.location = self._get_test_path("migibtsnet.sif")
-    image.uploaded = True
+    image.uploadState = UploadStates.completed
     db.session.commit()
 
     with self.assertRaisesRegex(Exception, r"Image file.*does not exist"):
@@ -196,7 +196,7 @@ class TestImage(ModelBase):
 
   def test_check_file_not_uploaded(self):
     image = _create_image()[0]
-    image.uploaded = False
+    image.uploadState = UploadStates.initialized
     db.session.commit()
 
     with self.assertRaisesRegex(Exception, r"Image is not uploaded yet"):
@@ -207,7 +207,7 @@ class TestImage(ModelBase):
     self.app.config['KEYSERVER_URL']='http://nonexistent/'
     image = _create_image()[0]
     image.location = self._get_test_path("busybox_signed.sif")
-    image.uploaded = True
+    image.uploadState = UploadStates.completed
     db.session.commit()
 
     sigdata = image.check_signature()
@@ -221,7 +221,7 @@ class TestImage(ModelBase):
     image = _create_image()[0]
     # just something that is not a SIF
     image.location = __file__
-    image.uploaded = True
+    image.uploadState = UploadStates.completed
     db.session.commit()
 
     with self.assertRaisesRegex(Exception, r'invalid SIF file'):
@@ -232,7 +232,7 @@ class TestImage(ModelBase):
     self.app.config['KEYSERVER_URL']='http://nonexistent/'
     image = _create_image()[0]
     image.location = self._get_test_path("busybox.sif")
-    image.uploaded = True
+    image.uploadState = UploadStates.completed
     db.session.commit()
 
     sigdata = image.check_signature()
@@ -248,7 +248,7 @@ class TestImage(ModelBase):
       raise Exception(f"Test key import error: {imp.stderr}")
     image = _create_image()[0]
     image.location = self._get_test_path("busybox_signed.sif")
-    image.uploaded = True
+    image.uploadState = UploadStates.completed
     db.session.commit()
 
     sigdata = image.check_signature()
@@ -259,7 +259,7 @@ class TestImage(ModelBase):
   def test_signed_mock(self):
     image = _create_image(media_type=Image.singularity_media_type)[0]
     image.location = self._get_test_path("busybox_signed.sif")
-    image.uploaded = True
+    image.uploadState = UploadStates.completed
     db.session.commit()
 
     with mock.patch('subprocess.run') as mock_sig:
@@ -272,7 +272,7 @@ class TestImage(ModelBase):
   def test_skip_signature_non_singularity(self):
     image = _create_image(media_type='oink')[0]
     image.location = self._get_test_path("busybox_signed.sif")
-    image.uploaded = True
+    image.uploadState = UploadStates.completed
     db.session.commit()
 
     with mock.patch('subprocess.run') as mock_sig:

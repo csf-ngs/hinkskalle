@@ -5,7 +5,7 @@ from tempfile import mkdtemp
 from Hinkskalle import db
 from Hinkskalle.models.Container import Container
 from Hinkskalle.models.Tag import Tag
-from Hinkskalle.models.Image import Image
+from Hinkskalle.models.Image import Image, UploadStates
 
 from ..route_base import RouteBase
 from .._util import _create_image
@@ -271,7 +271,7 @@ class TestTags(RouteBase):
     self.app.config['IMAGE_PATH']=mkdtemp()
     img_base = os.path.join(self.app.config['IMAGE_PATH'], '_imgs')
     os.makedirs(img_base, exist_ok=True)
-    image.uploaded = True
+    image.uploadState = UploadStates.completed
     image.location = os.path.join(img_base, 'testhase.sif')
     db.session.commit()
     with open(image.location, 'w') as outfh:

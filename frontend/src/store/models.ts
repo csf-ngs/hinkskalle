@@ -287,7 +287,7 @@ class Image {
   public tags!: string[]
   public type!: string
   public updatedAt!: Date | null
-  public uploaded!: boolean
+  public uploadState!: string
   
 
   public get path(): string {
@@ -340,7 +340,7 @@ export function plainToImage(json: any): Image {
     obj.tags = json['tags'];
     obj.type = json['type'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
-      obj.uploaded = json['uploaded'];
+      obj.uploadState = json['uploadState'];
     
   return obj;
 }
@@ -355,7 +355,7 @@ export function serializeImage(obj: Image, unroll=false): any {
       json['encrypted'] = obj.encrypted
       json['expiresAt'] = _isNil(obj.expiresAt) ? null : obj.expiresAt.toJSON();
         json['hash'] = obj.hash
-      json['uploaded'] = obj.uploaded
+      json['uploadState'] = obj.uploadState
       
   return json;
 }

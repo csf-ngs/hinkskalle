@@ -213,7 +213,7 @@ class TestImagefilesV2(RouteBase):
     self.assertEqual(ret.status_code, 200)
 
     read_image = Image.query.get(image_id)
-    self.assertTrue(read_image.uploaded)
+    self.assertEqual(read_image.uploadState, UploadStates.completed)
     self.assertTrue(os.path.exists(read_image.location))
     self.assertEqual(read_image.size, os.path.getsize(read_image.location))
 
@@ -316,7 +316,7 @@ class TestImagefilesV2(RouteBase):
       ret = self.client.put(f"/v2/imagefile/{image.id}/_complete", json={})
     self.assertEqual(ret.status_code, 413)
     image = Image.query.get(image_id)
-    self.assertFalse(image.uploaded)
+    self.assertEqual(image.uploadState, UploadStates.failed)
     upload = ImageUploadUrl.query.get(upload_id)
     self.assertEqual(upload.state, UploadStates.failed)
 
@@ -799,8 +799,8 @@ class TestImagefilesV2(RouteBase):
     self.assertIn('containerUrl', data)
     self.assertIn('quota', data)
 
-    read_image = Image.query.get(image_id)
-    self.assertTrue(read_image.uploaded)
+    read_image: Image = Image.query.get(image_id)
+    self.assertEqual(read_image.uploadState, UploadStates.completed)
     self.assertTrue(os.path.exists(read_image.location))
     self.assertEqual(read_image.size, len(complete_data))
     self.assertEqual(read_image.size, os.path.getsize(read_image.location))
@@ -877,8 +877,8 @@ class TestImagefilesV2(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_complete", json=complete_json)
     self.assertEqual(ret.status_code, 413)
-    image = Image.query.get(image_id)
-    self.assertFalse(image.uploaded)
+    image: Image = Image.query.get(image_id)
+    self.assertEqual(image.uploadState, UploadStates.failed)
     upload = ImageUploadUrl.query.get(upload_id)
     self.assertEqual(upload.state, UploadStates.failed)
   def test_push_v2_multi_complete_type_invalid(self):
@@ -1012,8 +1012,8 @@ class TestImagefilesV2(RouteBase):
       ret = self.client.put(f"/v2/imagefile/{image.id}/_multipart_abort", json={ 'uploadID': upload.id })
     self.assertEqual(ret.status_code, 200)
 
-    db_image = Image.query.get(image_id)
-    self.assertFalse(db_image.uploaded)
+    db_image: Image = Image.query.get(image_id)
+    self.assertEqual(db_image.uploadState, UploadStates.failed)
     self.assertIsNone(db_image.location)
 
     db_upload = ImageUploadUrl.query.get(upload_id)

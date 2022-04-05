@@ -4,6 +4,7 @@ from marshmallow import fields, Schema, validates_schema, ValidationError
 from datetime import datetime
 from sqlalchemy.orm import validates
 from flask import current_app
+from Hinkskalle.models.Image import UploadStates
 from Hinkskalle.util.name_check import validate_name
 from Hinkskalle.models.User import User
 
@@ -69,7 +70,7 @@ class Entity(db.Model):
         container_size = 0
         container_counted = {}
         for img in container.images_ref:
-          if not img.uploaded or img.size is None:
+          if img.uploadState != UploadStates.completed or img.size is None:
             continue
           if not counted.get(img.location):
             counted[img.location]=True

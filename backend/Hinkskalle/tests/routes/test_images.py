@@ -4,7 +4,7 @@ import os
 from tempfile import mkdtemp
 from sqlalchemy import update
 
-from Hinkskalle.models import Collection, Image, Tag, Container
+from Hinkskalle.models import Collection, Image, Tag, Container, UploadStates
 from Hinkskalle import db
 
 from ..route_base import RouteBase
@@ -270,7 +270,7 @@ class TestImages(RouteBase):
   def test_reset_uploaded(self):
     image = _create_image()[0]
     image.location = '/some/where'
-    image.uploaded = True
+    image.uploadState = UploadStates.completed
     latest_tag = Tag(name='latest', image_ref=image)
     db.session.add(latest_tag)
     db.session.commit()
@@ -278,17 +278,17 @@ class TestImages(RouteBase):
     ret = self.client.get(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
-    self.assertFalse(data['uploaded'])
+    self.assertEqual(data['uploadState'], UploadStates.broken.value)
     read_image = Image.query.get(image.id)
-    self.assertIsNone(read_image.location)
+    self.assertEqual(read_image.location, '/some/where')
 
     image.location = None
-    image.uploaded = True
+    image.uploadState = UploadStates.completed
     db.session.commit()
     ret = self.client.get(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}")
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
-    self.assertFalse(data['uploaded'])
+    self.assertEqual(data['uploadState'], UploadStates.broken.value)
   
   def test_get_arch(self):
     image1 = _create_image()[0]
@@ -347,11 +347,11 @@ class TestImages(RouteBase):
       ret = self.client.post('/v1/images', json={
         'hash': 'sha256.oink',
         'container': str(container.id),
-        'uploaded': True,
+        'uploadState': UploadStates.completed.value,
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
-    self.assertTrue(data['uploaded'])
+    self.assertEqual(data['uploadState'], UploadStates.completed.value)
     db_container = Container.query.get(container.id)
     self.assertDictEqual(db_container.imageTags, {
       'latest': data['id']
@@ -382,7 +382,7 @@ class TestImages(RouteBase):
   
   def test_reuse_image(self):
     image, _, _, _ = _create_image()
-    image.uploaded=True
+    image.uploadState=UploadStates.completed
     image.location=__file__
     image.size=999
     db.session.commit()
@@ -395,7 +395,7 @@ class TestImages(RouteBase):
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
-    self.assertTrue(data['uploaded'])
+    self.assertEqual(data['uploadState'], UploadStates.completed.value)
 
     db_image = Image.query.get(image_id)
     self.assertEqual(data['size'], db_image.size)
@@ -409,7 +409,7 @@ class TestImages(RouteBase):
 
   def test_reuse_image_not_uploaded(self):
     image, _, _, _ = _create_image()
-    image.uploaded=False
+    image.uploadState = UploadStates.initialized
     image.location=__file__
     db.session.commit()
     other_container, _, _ = _create_container()
@@ -421,7 +421,7 @@ class TestImages(RouteBase):
       })
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
-    self.assertFalse(data['uploaded'])
+    self.assertEqual(data['uploadState'], UploadStates.initialized.value)
     self.assertIsNone(data['size'])
     self.assertDictEqual(Container.query.get(other_container_id).imageTags, {})
 
@@ -680,7 +680,7 @@ class TestImages(RouteBase):
     other_image = _create_image(postfix='penguin')[0]
     self._fake_uploaded_image(image)
     other_image.location=image.location
-    other_image.uploaded=True
+    other_image.uploadState=UploadStates.completed
     other_image_id = other_image.id
     db.session.commit()
     with self.fake_admin_auth():
@@ -746,7 +746,7 @@ class TestImages(RouteBase):
     self.app.config['IMAGE_PATH']=mkdtemp()
     img_base = os.path.join(self.app.config['IMAGE_PATH'], '_imgs')
     os.makedirs(img_base, exist_ok=True)
-    image.uploaded = True
+    image.uploadState = UploadStates.completed
     image.location = os.path.join(img_base, 'testhase.sif')
     db.session.commit()
     with open(image.location, 'w') as outfh:

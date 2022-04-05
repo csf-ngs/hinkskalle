@@ -7,7 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
 import enum
 
-from Hinkskalle.models.Image import Image
+from Hinkskalle.models.Image import Image, UploadStates
 from Hinkskalle.models.Tag import Tag
 from Hinkskalle.models.User import User
 
@@ -113,7 +113,7 @@ class Container(db.Model):
   def size(self) -> int:
     if not self.id:
       return 0
-    return self.images_ref.filter(Image.hide==False, Image.uploaded==True).count()
+    return self.images_ref.filter(Image.hide==False, Image.uploadState==UploadStates.completed).count()
   
   @property
   def collection(self) -> int:

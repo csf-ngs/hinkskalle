@@ -12,7 +12,7 @@ import time
 
 from Hinkskalle.models.Adm import Adm, AdmKeys
 from Hinkskalle.models.Entity import Entity
-from Hinkskalle.models.Image import Image
+from Hinkskalle.models.Image import Image, UploadStates
 from .auth.ldap import LDAPUsers, _get_attr
 from .auth.exceptions import UserConflict
 import os
@@ -57,7 +57,7 @@ def expire_images() -> typing.Optional[str]:
   job.meta['progress']='starting'
   job.save_meta()
   try:
-    to_delete = Image.query.filter(Image.expiresAt < datetime.now(), Image.uploaded == True)
+    to_delete = Image.query.filter(Image.expiresAt < datetime.now(), Image.uploadState == UploadStates.completed)
     total_count = to_delete.count()
 
     for image in to_delete:
@@ -72,7 +72,7 @@ def expire_images() -> typing.Optional[str]:
       else:
         current_app.logger.debug(f"Image {image.id} had null location")
 
-      image.uploaded = False
+      image.uploadState = UploadStates.broken
       db.session.commit()
 
       result['updated'] += 1

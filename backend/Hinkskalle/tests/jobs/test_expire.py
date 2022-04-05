@@ -1,5 +1,7 @@
 from unittest import mock
 
+from Hinkskalle.models.Image import UploadStates
+
 from ..job_base import JobBase
 from .._util import _create_image, _fake_img_file
 
@@ -33,8 +35,8 @@ class TestQuotaJob(JobBase):
     self.assertEqual(job.meta['result']['updated'], 1)
     self.assertEqual(job.meta['result']['space_reclaimed'], img1.size)
 
-    self.assertFalse(img1.uploaded)
-    self.assertTrue(img2.uploaded)
+    self.assertNotEqual(img1.uploadState, UploadStates.completed)
+    self.assertEqual(img2.uploadState, UploadStates.completed)
 
   def test_expire_not_uploaded(self):
     img1 = _create_image(hash='1', expiresAt=datetime.now() - timedelta(days=1))[0]
@@ -47,7 +49,7 @@ class TestQuotaJob(JobBase):
     self.assertEqual(job.meta['result']['updated'], 0)
 
   def test_expire_file_not_found(self):
-    img1 = _create_image(hash='1', size=99, uploaded=True, location='/da/ham', expiresAt=datetime.now() - timedelta(days=1))[0]
+    img1 = _create_image(hash='1', size=99, uploadState=UploadStates.completed, location='/da/ham', expiresAt=datetime.now() - timedelta(days=1))[0]
 
     job = self.queue.enqueue(expire_images)
     self.assertEqual(job.meta['progress'], 'done')
@@ -68,7 +70,7 @@ class TestQuotaJob(JobBase):
     self.assertEqual(job.meta['result']['space_reclaimed'], 9)
 
   def test_expire_location_none(self):
-    img1 = _create_image(hash='1', uploaded=True, location=None, expiresAt=datetime.now() - timedelta(days=1))[0]
+    img1 = _create_image(hash='1', uploadState=UploadStates.completed, location=None, expiresAt=datetime.now() - timedelta(days=1))[0]
 
     with mock.patch('os.unlink') as mock_unlink:
       job = self.queue.enqueue(expire_images)
@@ -77,4 +79,4 @@ class TestQuotaJob(JobBase):
     self.assertEqual(job.meta['result']['updated'], 1)
     self.assertEqual(job.meta['result']['space_reclaimed'], 0)
 
-    self.assertFalse(img1.uploaded)
+    self.assertNotEqual(img1.uploadState, UploadStates.completed)

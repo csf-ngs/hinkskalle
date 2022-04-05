@@ -22,7 +22,7 @@ class ImageSchema(Schema):
   hash = fields.String(allow_none=True)
   blob = fields.String(allow_none=True)
   size = fields.Int(allow_none=True, dump_only=True)
-  uploaded = fields.Boolean()
+  uploadState = fields.String(allow_none=True)
   customData = fields.String(allow_none=True)
   arch = fields.String(allow_none=True)
   signed = fields.Boolean(allow_none=True, dump_only=True)
@@ -61,7 +61,10 @@ class UploadStates(enum.Enum):
   uploading = 'uploading'
   uploaded = 'uploaded'
   failed = 'failed'
+  broken = 'broken'
   completed = 'completed'
+  def __str__(self):
+    return self.value
 
 class UploadTypes(enum.Enum):
   single = 'single'
@@ -123,7 +126,7 @@ class Image(db.Model):
   hash = db.Column(db.String())
   blob = db.Column(db.String())
   size = db.Column(db.BigInteger())
-  uploaded = db.Column(db.Boolean, default=False)
+  uploadState = db.Column(db.Enum(UploadStates, name="upload_state_types"))
   customData = db.Column(db.String())
   downloadCount = db.Column(db.Integer, default=0)
   latestDownload = db.Column(db.DateTime)
@@ -264,7 +267,7 @@ class Image(db.Model):
     return fn
   
   def _check_file(self) -> None:
-    if not self.uploaded or not self.location:
+    if not self.uploadState==UploadStates.completed or not self.location:
       raise Exception("Image is not uploaded yet")
     if not os.path.exists(self.location):
       raise Exception(f"Image file at {self.location} does not exist")

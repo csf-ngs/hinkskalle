@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from Hinkskalle.models.Entity import Entity, EntitySchema
 from Hinkskalle.models.Collection import Collection
 from Hinkskalle import db
+from Hinkskalle.models.Image import UploadStates
 from ..model_base import ModelBase
 from .._util import _create_user, _create_image
 
@@ -54,7 +55,7 @@ class TestEntity(ModelBase):
     image1 = _create_image(postfix='1')[0]
     image1.container_ref.collection_ref.entity_ref=ent
     image1.size = None
-    image1.uploaded = True
+    image1.uploadState = UploadStates.completed
     self.assertEqual(ent.calculate_used(), 0)
   
   def test_used_quota(self):
@@ -66,7 +67,7 @@ class TestEntity(ModelBase):
     image1.container_ref.collection_ref.entity_ref=ent
     image1.size=200
     image1.location='/da/ham1'
-    image1.uploaded=True
+    image1.uploadState=UploadStates.completed
     
     self.assertEqual(ent.calculate_used(), 200)
     self.assertEqual(ent.used_quota, 200)
@@ -77,7 +78,7 @@ class TestEntity(ModelBase):
     image2.container_ref.collection_ref.entity_ref=ent
     image2.size=300
     image2.location='/da/ham2'
-    image2.uploaded=True
+    image2.uploadState=UploadStates.completed
 
     self.assertEqual(ent.calculate_used(), 500)
     self.assertEqual(image2.container_ref.used_quota, 300)
@@ -87,7 +88,7 @@ class TestEntity(ModelBase):
     image2_same.container_ref.collection_ref.entity_ref=ent
     image2_same.size=400
     image2_same.location='/da/ham2'
-    image2_same.uploaded=True
+    image2_same.uploadState=UploadStates.completed
 
     self.assertEqual(ent.calculate_used(), 500)
     self.assertEqual(image2_same.container_ref.used_quota, 400)
@@ -97,7 +98,7 @@ class TestEntity(ModelBase):
     image3.container_ref.collection_ref=image2_same.container_ref.collection_ref
     image3.size=600
     image3.location='/da/ham2'
-    image3.uploaded=True
+    image3.uploadState=UploadStates.completed
 
     self.assertEqual(ent.calculate_used(), 500)
     self.assertEqual(image3.container_ref.used_quota, 600)
@@ -108,7 +109,7 @@ class TestEntity(ModelBase):
     image4_upl.container_ref.collection_ref.entity_ref=ent
     image4_upl.size=300
     image4_upl.location='/da/ham3'
-    image4_upl.uploaded=False
+    image4_upl.uploadState=UploadStates.broken
 
     self.assertEqual(ent.calculate_used(), 500)
     self.assertEqual(image4_upl.container_ref.used_quota, 0)

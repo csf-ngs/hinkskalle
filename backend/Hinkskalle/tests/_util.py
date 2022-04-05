@@ -6,7 +6,7 @@ from Hinkskalle.models.User import User, Group
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Collection import Collection
 from Hinkskalle.models.Container import Container
-from Hinkskalle.models.Image import Image
+from Hinkskalle.models.Image import Image, UploadStates
 from Hinkskalle import db
 
 def _create_user(name='test.hase', is_admin=False) -> User:
@@ -44,7 +44,7 @@ def _create_container(postfix: str ='container') -> typing.Tuple[Container, Coll
   db.session.commit()
   return container, coll, entity
 
-def _create_image(hash: str='sha256.oink', postfix: str='container', **kwargs) -> typing.Tuple[Image, Container, Collection, Entity]:
+def _create_image(hash: str='sha256.oink', postfix: str='container', uploadState: UploadStates=UploadStates.initialized, **kwargs) -> typing.Tuple[Image, Container, Collection, Entity]:
   try:
     coll = Collection.query.filter_by(name=f"test-coll-{postfix}").one()
     entity = coll.entity_ref
@@ -58,7 +58,7 @@ def _create_image(hash: str='sha256.oink', postfix: str='container', **kwargs) -
     db.session.add(container)
     db.session.commit()
 
-  image = Image(container_ref=container, hash=hash, **kwargs)
+  image = Image(container_ref=container, hash=hash, uploadState=uploadState, **kwargs)
   db.session.add(image)
   db.session.commit()
   return image, container, coll, entity
@@ -75,7 +75,7 @@ def _fake_img_file(image: Image, data=b"Hello Dorian!"):
     tmpf.flush()
     image.location=tmpf.name
     image.size=len(data)
-    image.uploaded=True
+    image.uploadState=UploadStates.completed
     db.session.commit()
     return tmpf
 

@@ -82,7 +82,7 @@
       </v-row>
       <v-row>
         <v-col>
-          <hsk-text-input type="yesno" label="Uploaded" :static-value="localState.image.uploaded"></hsk-text-input>
+          <hsk-text-input label="Uploaded" :static-value="localState.image.uploadState"></hsk-text-input>
         </v-col>
         <v-col>
           <hsk-text-input label="Downloads" :static-value="localState.image.downloadCount"></hsk-text-input>

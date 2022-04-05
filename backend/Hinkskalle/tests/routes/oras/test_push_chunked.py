@@ -25,7 +25,7 @@ class TestOrasPushChunked(RouteBase):
     self.assertEqual(db_upload.state, UploadStates.initialized)
     self.assertEqual(db_upload.type, UploadTypes.undetermined)
     self.assertTrue(os.path.exists(db_upload.path))
-    self.assertFalse(db_upload.image_ref.uploaded)
+    self.assertNotEqual(db_upload.image_ref.uploadState, UploadStates.completed)
 
   def test_push_chunks_init(self):
     image = _create_image()[0]
@@ -149,7 +149,7 @@ class TestOrasPushChunked(RouteBase):
     self.assertEqual(ret.status_code, 201)
 
     db_image: Image = Image.query.get(image_id)
-    self.assertTrue(db_image.uploaded)
+    self.assertEqual(db_image.uploadState, UploadStates.completed)
     self.assertTrue(db_image.hash, complete_digest)
 
     with open(db_image.location, 'rb') as read_fh:
@@ -191,7 +191,7 @@ class TestOrasPushChunked(RouteBase):
       ret = self.client.put(f"/v2/__uploads/{upload.id}/{last_chunk.id}?digest={complete_digest.replace('sha256.', 'sha256:')}")
     self.assertEqual(ret.status_code, 413)
     image = Image.query.get(image_id)
-    self.assertFalse(image.uploaded)
+    self.assertNotEqual(image.uploadState, UploadStates.completed)
     upload = ImageUploadUrl.query.get(upload_id)
     self.assertEqual(upload.state, UploadStates.failed)
   def test_push_chunk_finish_checksum(self):

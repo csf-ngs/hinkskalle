@@ -3,6 +3,7 @@ from typing import List
 
 from sqlalchemy.ext.hybrid import hybrid_property
 from Hinkskalle import db
+from Hinkskalle.models.User import User
 from flask import current_app
 from marshmallow import Schema, fields
 from datetime import datetime, timedelta
@@ -50,9 +51,9 @@ class ImageSchema(Schema):
   tags = fields.List(fields.String(), dump_only=True)
   fingerprints = fields.List(fields.String(), dump_only=True)
 
-def generate_uuid():
+def generate_uuid() -> str:
   return str(uuid.uuid4())
-def upload_expiration():
+def upload_expiration() -> datetime:
   return datetime.now() + timedelta(minutes=5)
 
 class UploadStates(enum.Enum):
@@ -94,7 +95,7 @@ class ImageUploadUrl(db.Model):
 
   parts_ref = db.relationship('ImageUploadUrl', back_populates='parent_ref', lazy='dynamic', cascade="all, delete-orphan")
 
-  def check_access(self, user) -> bool:
+  def check_access(self, user: User) -> bool:
     if user.is_admin:
       return True
     elif self.owner == user:
@@ -220,30 +221,39 @@ class Image(db.Model):
       ret.append(key['Signer']['Fingerprint'])
     return set(ret)
 
+  @property
   def tags(self) -> List[str]:
     return [ tag.name for tag in self.tags_ref ]
 
+  @property
   def container(self) -> int:
     return self.container_ref.id
+  @property
   def containerName(self) -> str:
     return self.container_ref.name
+  @property
   def containerStars(self) -> int:
     return self.container_ref.stars
+  @property
   def containerDownloads(self) -> int:
     return self.container_ref.downloadCount
 
+  @property
   def collection(self) -> int:
     return self.container_ref.collection_ref.id
+  @property
   def collectionName(self) -> str:
     return self.container_ref.collection_ref.name
 
+  @property
   def entity(self) -> int:
     return self.container_ref.collection_ref.entity_ref.id
+  @property
   def entityName(self) -> str:
     return self.container_ref.collection_ref.entity_ref.name
   
-  def make_prettyname(self, tag) -> str:
-    fn = os.path.join(self.entityName(), self.collectionName(), f"{self.containerName()}_{tag}")
+  def make_prettyname(self, tag: str) -> str:
+    fn = os.path.join(self.entityName, self.collectionName, f"{self.containerName}_{tag}")
     if self.media_type == self.singularity_media_type:
       fn+='.sif'
     return fn

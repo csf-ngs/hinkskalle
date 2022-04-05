@@ -3,7 +3,7 @@ from Hinkskalle.util.auth.token import Scopes
 
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
 from flask import request, current_app, g
@@ -51,7 +51,7 @@ class UserDeleteResponseSchema(ResponseSchema):
   rule='/v1/users',
   method='GET',
   response_body_schema=UserListResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
   query_string_schema=UserSearchQuerySchema(),
 )
 def list_users():
@@ -66,7 +66,7 @@ def list_users():
   rule='/v1/users/<string:username>',
   method='GET',
   response_body_schema=UserResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def get_user(username):
   try:
@@ -81,7 +81,7 @@ def get_user(username):
   rule='/v1/users/<string:username>/stars',
   method='GET',
   response_body_schema=UserStarsResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def get_stars(username):
   try:
@@ -97,7 +97,7 @@ def get_stars(username):
   rule='/v1/users/<string:username>/stars/<string:container_id>',
   method='POST',
   response_body_schema=UserStarsResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def add_star(username, container_id):
   try:
@@ -123,7 +123,7 @@ def add_star(username, container_id):
   rule='/v1/users/<string:username>/stars/<string:container_id>',
   method='DELETE',
   response_body_schema=UserStarsResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def remove_star(username, container_id):
   try:
@@ -178,7 +178,7 @@ def register_account():
   method='POST',
   request_body_schema=UserCreateSchema(),
   response_body_schema=UserResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.admin)
+  authenticators=authenticator.with_scope(Scopes.admin) # type: ignore
 )
 def create_user():
   body = rebar.validated_body
@@ -192,7 +192,7 @@ def create_user():
   method='PUT',
   request_body_schema=UserUpdateSchema(),
   response_body_schema=UserResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def update_user(username):
   body = rebar.validated_body
@@ -248,7 +248,7 @@ def update_user(username):
   rule='/v1/users/<string:username>',
   method='DELETE',
   response_body_schema=UserDeleteResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.admin),
+  authenticators=authenticator.with_scope(Scopes.admin), # type: ignore
 )
 def delete_user(username):
   try:

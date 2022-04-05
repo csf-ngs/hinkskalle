@@ -1,10 +1,11 @@
 from typing import Tuple
+import typing
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema, pre_load
-from flask import request, current_app, safe_join, send_file, g
-from sqlalchemy.orm.exc import NoResultFound
+from flask import request, current_app, g
+from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from sqlalchemy.exc import IntegrityError
 
 import os
@@ -27,7 +28,7 @@ class ImageQuerySchema(RequestSchema):
     include = {"arch=amd64": fields.String(required=False)}
 
   @pre_load
-  def preprocess(self, in_data):
+  def preprocess(self, in_data, **kwargs):
     newdict={}
     for k in in_data.keys():
       if k.startswith('arch='):
@@ -78,7 +79,7 @@ def _parse_tag(tagged_container_id: str) -> Tuple[str, str]:
     tokens.append('latest')
   return tokens[0], tokens[1]
 
-def _get_image(entity_id: str, collection_id: str, tagged_container_id: str, arch: str=None) -> Image:
+def _get_image(entity_id: str, collection_id: str, tagged_container_id: str, arch: typing.Optional[str]=None) -> Image:
   container_id, tag = _parse_tag(tagged_container_id)
   container = _get_container(entity_id, collection_id, container_id)
 
@@ -90,14 +91,14 @@ def _get_image(entity_id: str, collection_id: str, tagged_container_id: str, arc
       current_app.logger.debug(f"image with hash {shahash} not found in container {container.name}")
       raise errors.NotFound(f"image with hash {shahash} not found in container {container.name}")
   elif arch:
-    arch_tags = container.archImageTags()
+    arch_tags = container.archImageTags
     if not arch in arch_tags or not tag in arch_tags[arch]:
-      current_app.logger.debug(f"Tag {tag} for architecture {arch} on container {container.entityName()}/{container.collectionName()}/{container.name} not found")
-      raise errors.NotFound(f"Tag {tag} for architecture {arch} on container {container.entityName()}/{container.collectionName()}/{container.name} not found")
+      current_app.logger.debug(f"Tag {tag} for architecture {arch} on container {container.entityName}/{container.collectionName}/{container.name} not found")
+      raise errors.NotFound(f"Tag {tag} for architecture {arch} on container {container.entityName}/{container.collectionName}/{container.name} not found")
     image = Image.query.get(arch_tags[arch][tag])
   else:
     try:
-      image_tags = container.imageTags()
+      image_tags = container.imageTags
     except Exception as err:
       if str(err).find('multiple architectures') != -1:
         current_app.logger.debug(f"container {container.id} tag {tagged_container_id} has multiple architectures with same tag")
@@ -106,8 +107,8 @@ def _get_image(entity_id: str, collection_id: str, tagged_container_id: str, arc
         raise err
       
     if not tag in image_tags:
-      current_app.logger.debug(f"tag {tag} on container {container.entityName()}/{container.collectionName()}/{container.name} not found")
-      raise errors.NotFound(f"tag {tag} on container {container.entityName()}/{container.collectionName()}/{container.name} not found")
+      current_app.logger.debug(f"tag {tag} on container {container.entityName}/{container.collectionName}/{container.name} not found")
+      raise errors.NotFound(f"tag {tag} on container {container.entityName}/{container.collectionName}/{container.name} not found")
 
     image = Image.query.get(image_tags[tag])
   return image
@@ -117,7 +118,7 @@ def _get_image(entity_id: str, collection_id: str, tagged_container_id: str, arc
   rule='/v1/containers/<string:entity_id>/<string:collection_id>/<string:container_id>/images',
   method='GET',
   response_body_schema=ImageListResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def list_images(entity_id, collection_id, container_id):
   container = _get_container(entity_id, collection_id, container_id)
@@ -133,7 +134,7 @@ def list_images(entity_id, collection_id, container_id):
   method='GET',
   query_string_schema=ImageQuerySchema(),
   response_body_schema=ImageResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.optional),
+  authenticators=authenticator.with_scope(Scopes.optional), # type: ignore
 )
 def get_image(entity_id, collection_id, tagged_container_id):
   args = rebar.validated_args
@@ -156,7 +157,7 @@ def get_image(entity_id, collection_id, tagged_container_id):
   method='GET',
   query_string_schema=ImageQuerySchema(),
   response_body_schema=ImageResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.optional),
+  authenticators=authenticator.with_scope(Scopes.optional), # type: ignore
 )
 def get_image_default_entity_single(collection_id, tagged_container_id):
   return get_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
@@ -166,7 +167,7 @@ def get_image_default_entity_single(collection_id, tagged_container_id):
   method='GET',
   query_string_schema=ImageQuerySchema(),
   response_body_schema=ImageResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.optional),
+  authenticators=authenticator.with_scope(Scopes.optional), # type: ignore
 )
 def get_image_default_entity_default_collection_single(tagged_container_id):
   return get_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
@@ -176,7 +177,7 @@ def get_image_default_entity_default_collection_single(tagged_container_id):
   method='POST',
   request_body_schema=ImageCreateSchema(),
   response_body_schema=ImageResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def create_image():
   body = rebar.validated_body
@@ -220,7 +221,7 @@ def create_image():
   method='PUT',
   request_body_schema=ImageTagUpdateSchema(),
   response_body_schema=ImageTagResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def update_image_tags(entity_id, collection_id, tagged_container_id):
   body = rebar.validated_body
@@ -229,7 +230,7 @@ def update_image_tags(entity_id, collection_id, tagged_container_id):
   if not image.check_update_access(g.authenticated_user):
     raise errors.Forbidden('access denied')
   
-  existing = image.tags()
+  existing = image.tags
   for tag in body.get('tags', []):
     current_app.logger.debug(f"image {image.id} add tag {tag}")
     image.container_ref.tag_image(tag, image.id)
@@ -242,14 +243,14 @@ def update_image_tags(entity_id, collection_id, tagged_container_id):
         db.session.delete(tag)
   
   db.session.commit()
-  return { 'data': { 'tags': image.tags() }}
+  return { 'data': { 'tags': image.tags }}
 
 @registry.handles(
   rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
   method='PUT',
   request_body_schema=ImageUpdateSchema(),
   response_body_schema=ImageResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def update_image(entity_id, collection_id, tagged_container_id):
   body = rebar.validated_body
@@ -273,7 +274,7 @@ def update_image(entity_id, collection_id, tagged_container_id):
   method='DELETE',
   query_string_schema=ImageQuerySchema(),
   response_body_schema=ImageDeleteResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def delete_image(entity_id, collection_id, tagged_container_id):
   args = rebar.validated_args

@@ -67,22 +67,20 @@ class TestManifest(ModelBase):
     manifest = image.generate_manifest()
 
     content_load = ManifestContentSchema().load(manifest.content_json)
-    self.assertDictEqual(content_load.errors, {})
 
   def test_manifest_schema(self):
     image = _create_image()[0]
     manifest = image.generate_manifest()
 
     dumped = ManifestSchema().dump(manifest)
-    self.assertDictEqual(dumped.errors, {})
-    self.assertListEqual(dumped.data['tags'], [])
-    self.assertListEqual(dumped.data['images'], ['sha256:oink'])
-    self.assertEquals(dumped.data['containerName'], image.container_ref.name)
-    self.assertEquals(type(dumped.data['content']), dict)
+    self.assertListEqual(dumped['tags'], [])
+    self.assertListEqual(dumped['images'], ['sha256:oink'])
+    self.assertEquals(dumped['containerName'], image.container_ref.name)
+    self.assertEquals(type(dumped['content']), dict)
 
     tag = Tag(name='v1', image_ref=image, manifest_ref=manifest)
     dumped = ManifestSchema().dump(manifest)
-    self.assertListEqual(dumped.data['tags'], ['v1'])
+    self.assertListEqual(dumped['tags'], ['v1'])
 
   def test_manifest_type(self):
     image = _create_image()[0]

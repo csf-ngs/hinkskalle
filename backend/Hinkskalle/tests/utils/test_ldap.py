@@ -23,6 +23,7 @@ class MockLDAP():
     self.svc.connection.strategy.add_entry(self.dummy_root_cn, { 'cn': self.dummy_root, 'userPassword': self.dummy_password })
 
     self.auth = LDAPUsers(svc=self.svc)
+    self.auth.enabled = True
   
   def create_user(self, name='test.hase', password='supersecret', is_admin=False):
     create_user = { 'cn': name, 'userPassword': password, 'mail': f"{name}@testha.se", 'sn': 'Oink', 'givenName': 'Grunz', 'objectClass': ['top', 'person'] }

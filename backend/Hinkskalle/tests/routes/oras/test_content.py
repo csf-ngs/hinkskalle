@@ -17,7 +17,7 @@ class TestOrasContent(RouteBase):
 
     db.session.add(tag1)
 
-    ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list")
+    ret = self.client.get(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/tags/list")
     self.assertEqual(ret.status_code, 401)
 
   def test_tag_list(self):
@@ -31,11 +31,11 @@ class TestOrasContent(RouteBase):
     db.session.add(tag3)
 
     with self.fake_admin_auth():
-      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list")
+      ret = self.client.get(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/tags/list")
     self.assertEqual(ret.status_code, 200)
     ret_data = ret.get_json()
     self.assertDictEqual({
-      "name": f"{image.entityName()}/{image.collectionName()}/{image.containerName()}",
+      "name": f"{image.entityName}/{image.collectionName}/{image.containerName}",
       "tags": [
         '007',
         'grunz',
@@ -53,7 +53,7 @@ class TestOrasContent(RouteBase):
     db.session.add(tag1)
 
     with self.fake_auth():
-      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list")
+      ret = self.client.get(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/tags/list")
     self.assertEqual(ret.status_code, 200)
 
   def test_tag_list_user_denied(self):
@@ -66,7 +66,7 @@ class TestOrasContent(RouteBase):
     db.session.add(tag1)
 
     with self.fake_auth():
-      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list")
+      ret = self.client.get(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/tags/list")
     self.assertEqual(ret.status_code, 403)
 
   def test_tag_list_limit(self):
@@ -80,11 +80,11 @@ class TestOrasContent(RouteBase):
     db.session.add(tag3)
 
     with self.fake_admin_auth():
-      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list?n=1")
+      ret = self.client.get(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/tags/list?n=1")
     self.assertEqual(ret.status_code, 200)
     ret_data = ret.get_json()
     self.assertDictEqual({
-      "name": f"{image.entityName()}/{image.collectionName()}/{image.containerName()}",
+      "name": f"{image.entityName}/{image.collectionName}/{image.containerName}",
       "tags": [
         '007',
       ]
@@ -97,11 +97,11 @@ class TestOrasContent(RouteBase):
     db.session.add(tag1)
 
     with self.fake_admin_auth():
-      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list?n=0")
+      ret = self.client.get(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/tags/list?n=0")
     self.assertEqual(ret.status_code, 200)
     ret_data = ret.get_json()
     self.assertDictEqual({
-      "name": f"{image.entityName()}/{image.collectionName()}/{image.containerName()}",
+      "name": f"{image.entityName}/{image.collectionName}/{image.containerName}",
       "tags": [ ]
     }, ret_data)
 
@@ -112,11 +112,11 @@ class TestOrasContent(RouteBase):
     db.session.add(tag1)
 
     with self.fake_admin_auth():
-      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list?n=3")
+      ret = self.client.get(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/tags/list?n=3")
     self.assertEqual(ret.status_code, 200)
     ret_data = ret.get_json()
     self.assertDictEqual({
-      "name": f"{image.entityName()}/{image.collectionName()}/{image.containerName()}",
+      "name": f"{image.entityName}/{image.collectionName}/{image.containerName}",
       "tags": [ 'oink' ]
     }, ret_data)
 
@@ -131,11 +131,11 @@ class TestOrasContent(RouteBase):
     db.session.add(tag3)
 
     with self.fake_admin_auth():
-      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list?last=007")
+      ret = self.client.get(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/tags/list?last=007")
     self.assertEqual(ret.status_code, 200)
     ret_data = ret.get_json()
     self.assertDictEqual({
-      "name": f"{image.entityName()}/{image.collectionName()}/{image.containerName()}",
+      "name": f"{image.entityName}/{image.collectionName}/{image.containerName}",
       "tags": [
         'grunz',
         'oink',
@@ -153,11 +153,11 @@ class TestOrasContent(RouteBase):
     db.session.add(tag3)
 
     with self.fake_admin_auth():
-      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list?last=007&n=1")
+      ret = self.client.get(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/tags/list?last=007&n=1")
     self.assertEqual(ret.status_code, 200)
     ret_data = ret.get_json()
     self.assertDictEqual({
-      "name": f"{image.entityName()}/{image.collectionName()}/{image.containerName()}",
+      "name": f"{image.entityName}/{image.collectionName}/{image.containerName}",
       "tags": [
         'grunz',
       ]
@@ -174,7 +174,7 @@ class TestOrasContent(RouteBase):
     db.session.add(tag3)
 
     with self.fake_admin_auth():
-      ret = self.client.get(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/tags/list?last=muuh")
+      ret = self.client.get(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/tags/list?last=muuh")
     self.assertEqual(ret.status_code, 404)
 
  
@@ -185,7 +185,7 @@ class TestOrasContent(RouteBase):
     db.session.add(tag1)
     db.session.commit()
 
-    ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/v2")
+    ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/manifests/v2")
     self.assertEqual(ret.status_code, 401)
   
   def test_delete_tag(self):
@@ -196,7 +196,7 @@ class TestOrasContent(RouteBase):
     db.session.commit()
 
     with self.fake_admin_auth():
-      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/v2")
+      ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/manifests/v2")
     self.assertEqual(ret.status_code, 202)
     self.assertIsNone(Tag.query.filter(Tag.name=='v2', Tag.image_id==image_id).first())
 
@@ -210,7 +210,7 @@ class TestOrasContent(RouteBase):
     db.session.commit()
 
     with self.fake_auth():
-      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/v2")
+      ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/manifests/v2")
     self.assertEqual(ret.status_code, 202)
 
   def test_delete_tag_user_denied(self):
@@ -223,7 +223,7 @@ class TestOrasContent(RouteBase):
     db.session.commit()
 
     with self.fake_auth():
-      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/v2")
+      ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/manifests/v2")
     self.assertEqual(ret.status_code, 403)
 
   def test_delete_tag_user_denied_tag(self):
@@ -236,7 +236,7 @@ class TestOrasContent(RouteBase):
     db.session.commit()
 
     with self.fake_auth():
-      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/v2")
+      ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/manifests/v2")
     self.assertEqual(ret.status_code, 403)
 
   def test_delete_tag_not_found(self):
@@ -247,7 +247,7 @@ class TestOrasContent(RouteBase):
     db.session.commit()
 
     with self.fake_admin_auth():
-      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/v2oink")
+      ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/manifests/v2oink")
     self.assertEqual(ret.status_code, 404)
 
   def test_delete_manifest_noauth(self):
@@ -259,7 +259,7 @@ class TestOrasContent(RouteBase):
     db.session.add(manifest)
     db.session.commit()
 
-    ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/sha256:{manifest.hash}")
+    ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/manifests/sha256:{manifest.hash}")
     self.assertEqual(ret.status_code, 401)
 
   def test_delete_manifest(self):
@@ -274,7 +274,7 @@ class TestOrasContent(RouteBase):
     db.session.commit()
 
     with self.fake_admin_auth():
-      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/sha256:{manifest.hash}")
+      ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/manifests/sha256:{manifest.hash}")
     self.assertEqual(ret.status_code, 202)
     self.assertIsNone(Manifest.query.get(manifest_id))
     self.assertIsNone(Tag.query.filter(Tag.name=='v2', Tag.image_id==image_id).first())
@@ -292,7 +292,7 @@ class TestOrasContent(RouteBase):
     db.session.commit()
 
     with self.fake_auth():
-      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/sha256:{manifest.hash}")
+      ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/manifests/sha256:{manifest.hash}")
     self.assertEqual(ret.status_code, 202)
 
   def test_delete_manifest_user_denied(self):
@@ -308,7 +308,7 @@ class TestOrasContent(RouteBase):
     db.session.commit()
 
     with self.fake_auth():
-      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/sha256:{manifest.hash}")
+      ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/manifests/sha256:{manifest.hash}")
     self.assertEqual(ret.status_code, 403)
 
   def test_delete_manifest_not_found(self):
@@ -321,7 +321,7 @@ class TestOrasContent(RouteBase):
     db.session.commit()
 
     with self.fake_admin_auth():
-      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/sha256:{manifest.hash}oink")
+      ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/manifests/sha256:{manifest.hash}oink")
     self.assertEqual(ret.status_code, 404)
 
   def test_delete_blob_noauth(self):
@@ -329,7 +329,7 @@ class TestOrasContent(RouteBase):
     image_id = image.id
     file = _fake_img_file(image)
 
-    ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
+    ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/sha256:{image.hash.replace('sha256.', '')}")
     self.assertEqual(ret.status_code, 401)
 
   def test_delete_blob(self):
@@ -338,7 +338,7 @@ class TestOrasContent(RouteBase):
     file = _fake_img_file(image)
 
     with self.fake_admin_auth():
-      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
+      ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/sha256:{image.hash.replace('sha256.', '')}")
     self.assertEqual(ret.status_code, 202)
     self.assertIsNone(Image.query.get(image_id))
     self.assertFalse(os.path.exists(image.location))
@@ -353,7 +353,7 @@ class TestOrasContent(RouteBase):
     self.assertEqual(entity.used_quota, 100)
 
     with self.fake_admin_auth():
-      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
+      ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/sha256:{image.hash.replace('sha256.', '')}")
     self.assertEqual(ret.status_code, 202)
     entity = Entity.query.get(entity_id)
     self.assertEqual(entity.used_quota, 0)
@@ -366,7 +366,7 @@ class TestOrasContent(RouteBase):
     file = _fake_img_file(image)
 
     with self.fake_auth():
-      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
+      ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/sha256:{image.hash.replace('sha256.', '')}")
     self.assertEqual(ret.status_code, 202)
 
   def test_delete_blob_user_denied(self):
@@ -377,7 +377,7 @@ class TestOrasContent(RouteBase):
     file = _fake_img_file(image)
 
     with self.fake_auth():
-      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
+      ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/sha256:{image.hash.replace('sha256.', '')}")
     self.assertEqual(ret.status_code, 403)
 
   def test_delete_blob_other_reference(self):
@@ -389,7 +389,7 @@ class TestOrasContent(RouteBase):
     db.session.commit()
 
     with self.fake_admin_auth():
-      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}")
+      ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/sha256:{image.hash.replace('sha256.', '')}")
     self.assertEqual(ret.status_code, 202)
     self.assertIsNone(Image.query.get(image_id))
     self.assertTrue(os.path.exists(image.location))
@@ -399,5 +399,5 @@ class TestOrasContent(RouteBase):
     file = _fake_img_file(image)
 
     with self.fake_admin_auth():
-      ret = self.client.delete(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/sha256:{image.hash.replace('sha256.', '')}oink")
+      ret = self.client.delete(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/sha256:{image.hash.replace('sha256.', '')}oink")
     self.assertEqual(ret.status_code, 404)

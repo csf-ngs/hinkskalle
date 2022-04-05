@@ -16,7 +16,10 @@ data/
 *.egg-info
 backend/.env
 .coverage
-test_report.html
+backend/test_report.html
 coverage_report/
 backend/.nose*
 backend/nose*
+frontend/test-report.html
+backend/build
+backend/venv

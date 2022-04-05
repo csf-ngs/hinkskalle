@@ -14,18 +14,19 @@ class Scopes(Enum):
 
 # the pattern with scopes is sort-of stolen from the auth0 authenticator
 class ScopedTokenAuthenticator(Authenticator):
-  def __init__(self, auth, scope):
+  def __init__(self, auth, scope: Scopes):
     if not isinstance(scope, Scopes):
       raise ValueError('Invalid scope')
     self.authenticator=auth
     self.scope=scope
   
-  def authenticate(self):
+  def authenticate(self) -> None:
     try:
       self.authenticator.authenticate()
     except errors.Unauthorized as err:
       if err.error_message == _NO_TOKEN and self.scope == Scopes.optional:
         g.authenticated_user = None
+        return
       else:
         raise err
     
@@ -38,10 +39,10 @@ class TokenAuthenticator(Authenticator):
   type = 'Bearer'
   name = 'Authorization Header'
 
-  def with_scope(self, scope) -> ScopedTokenAuthenticator:
+  def with_scope(self, scope: Scopes) -> ScopedTokenAuthenticator:
     return ScopedTokenAuthenticator(self, scope)
   
-  def authenticate(self):
+  def authenticate(self) -> None:
     g.authenticated_user = None
     token = self._get_identity(self._get_token())
     if token.source == 'auto':
@@ -51,8 +52,8 @@ class TokenAuthenticator(Authenticator):
 
     g.authenticated_user = token.user
 
-  def _get_identity(self, token):
-    from Hinkskalle.models import Token
+  def _get_identity(self, token: str):
+    from Hinkskalle.models.User import Token
     db_token = Token.query.filter(Token.token == token, Token.deleted == False).first()
     if not db_token:
       current_app.logger.debug('Token not in db')
@@ -65,7 +66,7 @@ class TokenAuthenticator(Authenticator):
       raise errors.Unauthorized('Token expired')
     return db_token
 
-  def _get_token(self):
+  def _get_token(self) -> str:
     auth_header = request.headers.get(self.header)
     if not auth_header:
       current_app.logger.debug(f"No {self.header} header")

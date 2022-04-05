@@ -1,6 +1,7 @@
 from Hinkskalle import registry, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
-from flask import current_app, jsonify, make_response, request, redirect, g, send_from_directory, safe_join
+from flask import current_app, jsonify, make_response, request, redirect, g, send_from_directory
+from werkzeug.security import safe_join 
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from werkzeug.datastructures import EnvironHeaders
@@ -17,7 +18,7 @@ def frontend(path):
   orig_path=path
   if path.startswith('v1/') or path.startswith('v2/'):
     raise errors.NotFound
-  if path=="" or not os.path.exists(safe_join(current_app.config.get('FRONTEND_PATH'), path)):
+  if path=="" or not os.path.exists(safe_join(current_app.config.get('FRONTEND_PATH'), path)):  # type: ignore
     path="index.html"
   current_app.logger.debug(f"frontend route to {path} from {orig_path}")
   return send_from_directory(current_app.config.get('FRONTEND_PATH'), path)
@@ -78,7 +79,7 @@ class LatestContainerListResponseSchema(ResponseSchema):
   rule='/v1/latest',
   method='GET',
   response_body_schema=LatestContainerListResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def latest_container():
   tags = Tag.query.order_by(desc(Tag.createdAt))
@@ -108,7 +109,7 @@ def latest_container():
 def before_request_func():
   # fake content type (singularity does not set it)
   if (request.path.startswith('/v1') or (request.path.startswith('/v2') and not request.path == '/v2/' and not request.path.startswith('/v2/__uploads') and not request.path.endswith('/blobs/uploads/'))) and (request.method=='POST' or request.method=='PUT'):
-    request.headers.environ.update(CONTENT_TYPE='application/json')
+    request.headers.environ.update(CONTENT_TYPE='application/json') # type: ignore
   
   # redirect double slashes to /default/ (singularity client sends meaningful //)
   # only pull (/imagefile//) should not be redirected. For some reason

@@ -20,7 +20,7 @@ import os.path
 
 rq = RQ()
 
-def setup_cron(app: Flask):
+def setup_cron(app: Flask) -> None:
   for key in app.config.get('CRON', {}):
     if not key in adm_map:
       raise Exception(f"Invalid adm key {key} in CRON")
@@ -39,11 +39,11 @@ def get_cron():
   return ret
 
 
-def get_job_info(id):
+def get_job_info(id) -> Job:
   return Job.fetch(id, connection=rq.connection)
 
 @rq.job
-def expire_images():
+def expire_images() -> typing.Optional[str]:
   current_app.logger.debug(f"starting image expiration...")
   job: typing.Optional[Job] = get_current_job()
   if not job:
@@ -89,7 +89,7 @@ def expire_images():
   return f"updated {result['updated']}"
 
 @rq.job
-def update_quotas():
+def update_quotas() -> typing.Optional[str]:
   current_app.logger.debug(f"starting quota check...")
   job: typing.Optional[Job] = get_current_job()
   if not job:
@@ -122,7 +122,7 @@ def update_quotas():
   return f"updated {result['updated']}"
   
 
-def _finish_job(job, result, key):
+def _finish_job(job, result, key: AdmKeys):
   result['finished']=datetime.now(tz=timezone.utc).isoformat()
   result['success']=True
   job.meta['progress']='done'
@@ -130,7 +130,7 @@ def _finish_job(job, result, key):
   job.save_meta()
   __update_adm(key, result)
 
-def __update_adm(key, result):
+def __update_adm(key: AdmKeys, result):
   update = Adm.query.get(key)
   if not update:
     update = Adm(key=key)
@@ -138,7 +138,7 @@ def __update_adm(key, result):
   update.val = result
   db.session.commit()
   
-def _fail_job(job, result, key, exc: Exception):
+def _fail_job(job: Job, result, key: AdmKeys, exc: Exception):
   result['success']=False
   job.meta['progress']='failed'
   current_app.logger.error(exc)
@@ -147,14 +147,12 @@ def _fail_job(job, result, key, exc: Exception):
   __update_adm(key, result)
 
 @rq.job
-def sync_ldap():
+def sync_ldap() -> typing.Optional[str]:
   current_app.logger.debug(f"starting ldap sync...")
   job: typing.Optional[Job] = get_current_job()
   if not job:
     return
   svc = LDAPUsers(app=current_app)
-  svc.ldap.connect()
-
   result = {
     'job': job.id,
     'started': datetime.now(tz=timezone.utc).isoformat(),
@@ -162,6 +160,11 @@ def sync_ldap():
     'conflict': [],
     'failed': [],
   }
+
+  if not svc.enabled:
+    current_app.logger.debug(f"LDAP not configured.")
+    _fail_job(job, result, AdmKeys.ldap_sync_results, Exception('LDAP not configured'))
+  svc.ldap.connect()
 
   job.meta['progress']='fetch'
   job.save_meta()

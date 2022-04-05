@@ -1,9 +1,11 @@
+import typing
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import errors, RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
-from sqlalchemy.orm.exc import NoResultFound
-from flask import request, current_app, safe_join, send_file, g, make_response
+from sqlalchemy.orm.exc import NoResultFound # type: ignore
+from flask import request, current_app, send_file, g, make_response
+from werkzeug.security import safe_join
 from typing import IO, Tuple
 from .images import _get_image
 from .util import _get_service_url
@@ -90,7 +92,7 @@ class ImageFileCompleteResponseSchema(ResponseSchema):
   rule='/v1/imagefile/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
   query_string_schema=PullQuerySchema(),
-  authenticators=authenticator.with_scope(Scopes.optional),
+  authenticators=authenticator.with_scope(Scopes.optional), # type: ignore 
 )
 def pull_image(entity_id, collection_id, tagged_container_id):
   args = rebar.validated_args
@@ -122,7 +124,7 @@ def pull_image(entity_id, collection_id, tagged_container_id):
   rule='/v1/imagefile/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
   query_string_schema=PullQuerySchema(),
-  authenticators=authenticator.with_scope(Scopes.optional),
+  authenticators=authenticator.with_scope(Scopes.optional), # type: ignore 
 )
 def pull_image_default_entity(collection_id, tagged_container_id):
   return pull_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
@@ -132,7 +134,7 @@ def pull_image_default_entity(collection_id, tagged_container_id):
   rule='/v1/imagefile/<string:tagged_container_id>',
   method='GET',
   query_string_schema=PullQuerySchema(),
-  authenticators=authenticator.with_scope(Scopes.optional),
+  authenticators=authenticator.with_scope(Scopes.optional), # type: ignore 
 )
 def pull_image_default_collection_default_entity_single(tagged_container_id):
   return pull_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
@@ -154,7 +156,7 @@ def _get_image_id(image_id):
 @registry.handles(
   rule='/v2/imagefile/<string:image_id>',
   method='POST',
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore 
   request_body_schema=ImageFilePostSchema(),
   response_body_schema=ImageFilePostResponseSchema(),
 )
@@ -190,7 +192,7 @@ def push_image_v2_init(image_id):
 @registry.handles(
   rule='/v2/imagefile/<string:image_id>/_multipart',
   method='POST',
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore 
   request_body_schema=MultiImageFilePostSchema(),
   response_body_schema=MultiImageFilePostResponseSchema(),
 )
@@ -229,7 +231,7 @@ def push_image_v2_multi_init(image_id):
 @registry.handles(
   rule='/v2/imagefile/<string:image_id>/_multipart',
   method='PUT',
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore 
   request_body_schema=MultiImageFilePartSchema(),
   response_body_schema=ImageFilePostPartResponseSchema(),
 )
@@ -314,7 +316,7 @@ def push_image_v2_upload(upload_id):
   method='PUT',
   request_body_schema=UploadImageCompleteRequest(),
   response_body_schema=ImageFileCompleteResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore 
 )
 def push_image_v2_complete(image_id):
   image = _get_image_id(image_id)
@@ -340,7 +342,7 @@ def push_image_v2_complete(image_id):
         'quotaTotal': image.container_ref.collection_ref.entity_ref.quota,
         'quotaUsage': image.container_ref.collection_ref.entity_ref.used_quota,
       },
-      'containerUrl': f"entities/{image.container_ref.entityName()}/collections/{image.container_ref.collectionName()}/containers/{image.container_ref.name}"
+      'containerUrl': f"entities/{image.container_ref.entityName}/collections/{image.container_ref.collectionName}/containers/{image.container_ref.name}"
     }
   }
 
@@ -349,7 +351,7 @@ def push_image_v2_complete(image_id):
   method='PUT',
   request_body_schema=MultiUploadImageCompleteRequest(),
   response_body_schema=ImageFileCompleteResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore 
 )
 def push_image_v2_multi_complete(image_id):
   image = _get_image_id(image_id)
@@ -378,7 +380,7 @@ def push_image_v2_multi_complete(image_id):
         'quotaTotal': image.container_ref.collection_ref.entity_ref.quota,
         'quotaUsage': image.container_ref.collection_ref.entity_ref.used_quota,
       },
-      'containerUrl': f"entities/{image.container_ref.entityName()}/collections/{image.container_ref.collectionName()}/containers/{image.container_ref.name}"
+      'containerUrl': f"entities/{image.container_ref.entityName}/collections/{image.container_ref.collectionName}/containers/{image.container_ref.name}"
     }
   }
 
@@ -386,7 +388,7 @@ def push_image_v2_multi_complete(image_id):
   rule='/v2/imagefile/<string:image_id>/_multipart_abort',
   method='PUT',
   request_body_schema=MultiUploadImageAbortRequest(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore 
 )
 def push_image_v2_multi_abort(image_id):
   image = _get_image_id(image_id)
@@ -409,7 +411,7 @@ def push_image_v2_multi_abort(image_id):
 @registry.handles(
   rule='/v1/imagefile/<string:image_id>',
   method='POST',
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def push_image(image_id):
   image = _get_image_id(image_id)
@@ -427,7 +429,9 @@ def _make_filename(image: Image) -> str:
   imghash = image.hash.replace('sha256.', '').replace('md5.', '')
   for i in range(0, min(len(imghash), current_app.config.get('IMAGE_PATH_HASH_LEVEL',0))):
     hash_subs = os.path.join(hash_subs, imghash[i])
-  outfn = safe_join(current_app.config.get('IMAGE_PATH'), '_imgs', hash_subs, image.make_filename())
+  outfn = safe_join(os.path.abspath(current_app.config.get('IMAGE_PATH')), '_imgs', hash_subs, image.make_filename())
+  if outfn is None:
+    raise Exception(f"could not generate safe path for {image.make_filename()}")
   os.makedirs(os.path.dirname(outfn), exist_ok=True)
   return outfn
 
@@ -441,7 +445,7 @@ def _move_image(tmpf: str, image: Image) -> Image:
 
   current_app.logger.debug(f"moving image from {tmpf} to {outfn}")
   shutil.move(tmpf, outfn)
-  image.location=os.path.abspath(outfn)
+  image.location=outfn
   image.size=os.path.getsize(image.location)
   image.uploadState=UploadStates.completed
   entity.calculate_used()
@@ -462,7 +466,7 @@ def _move_image(tmpf: str, image: Image) -> Image:
   return image
 
 
-def _receive_upload(tmpf: IO, checksum: str=None) -> Tuple[IO, int]:
+def _receive_upload(tmpf: IO, checksum: typing.Optional[str]=None) -> Tuple[IO, int]:
   m = hashlib.sha256()
   #current_app.logger.debug(f"starting upload to {tmpf.name}")
 

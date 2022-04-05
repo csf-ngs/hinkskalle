@@ -7,6 +7,7 @@ from Hinkskalle.models.Collection import Collection
 from Hinkskalle.models.Tag import Tag
 import datetime
 import os.path
+import os
 import json
 
 from Hinkskalle.tests.route_base import RouteBase
@@ -147,7 +148,7 @@ class TestOrasPush(RouteBase):
     image.container_ref.collection_ref.private=True
     db.session.commit()
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/fintitax1/blobs/uploads/")
+      ret = self.client.post(f"/v2/{image.entityName}/{image.collectionName}/fintitax1/blobs/uploads/")
     self.assertEqual(ret.status_code, 202)
     db_container = Container.query.filter(Container.name=='fintitax1').one()
     self.assertTrue(db_container.private)
@@ -156,7 +157,7 @@ class TestOrasPush(RouteBase):
     image.container_ref.collection_ref.private=False
     db.session.commit()
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/fintitax2/blobs/uploads/")
+      ret = self.client.post(f"/v2/{image.entityName}/{image.collectionName}/fintitax2/blobs/uploads/")
     self.assertEqual(ret.status_code, 202)
     db_container = Container.query.filter(Container.name=='fintitax2').one()
     self.assertFalse(db_container.private)
@@ -166,7 +167,7 @@ class TestOrasPush(RouteBase):
     entity.defaultPrivate = True
     db.session.commit()
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{image.entityName()}/fintitax-coll1/fintitax-cont1/blobs/uploads/")
+      ret = self.client.post(f"/v2/{image.entityName}/fintitax-coll1/fintitax-cont1/blobs/uploads/")
     self.assertEqual(ret.status_code, 202)
     db_collection = Collection.query.filter(Collection.name=='fintitax-coll1').one()
     self.assertTrue(db_collection.private)
@@ -177,7 +178,7 @@ class TestOrasPush(RouteBase):
     entity.defaultPrivate = False
     db.session.commit()
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{image.entityName()}/fintitax-coll2/fintitax-cont2/blobs/uploads/")
+      ret = self.client.post(f"/v2/{image.entityName}/fintitax-coll2/fintitax-cont2/blobs/uploads/")
     self.assertEqual(ret.status_code, 202)
     db_collection = Collection.query.filter(Collection.name=='fintitax-coll2').one()
     self.assertFalse(db_collection.private)
@@ -191,12 +192,12 @@ class TestOrasPush(RouteBase):
     image2 = _create_image(postfix='2', hash='sha256.muh')[0]
 
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}/blobs/uploads/?mount={image2.hash.replace('sha256.', 'sha256:')}&from={image2.entityName()}/{image2.collectionName()}/{image2.containerName()}")
+      ret = self.client.post(f"/v2/{image1.entityName}/{image1.collectionName}/{image1.containerName}/blobs/uploads/?mount={image2.hash.replace('sha256.', 'sha256:')}&from={image2.entityName}/{image2.collectionName}/{image2.containerName}")
     self.assertEqual(ret.status_code, 201)
     digest = ret.headers.get('Docker-Content-Digest')
     self.assertEqual(digest.replace('sha256:', 'sha256.'), 'sha256.muh')
     image1 = Image.query.get(image1_id)
-    self.assertRegexpMatches(ret.headers.get('location', ''), rf'/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}/blobs/{digest}')
+    self.assertRegexpMatches(ret.headers.get('location', ''), rf'/{image1.entityName}/{image1.collectionName}/{image1.containerName}/blobs/{digest}')
     new_image = Image.query.filter(Image.hash=='sha256.muh', Image.container_ref==image1.container_ref).one()
 
   def test_push_monolith_mount_not_found(self):
@@ -205,11 +206,11 @@ class TestOrasPush(RouteBase):
     image2 = _create_image(postfix='2', hash='sha256.muh')[0]
 
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}/blobs/uploads/?mount={image2.hash.replace('sha256.', 'sha256:')}&from={image2.entityName()}/{image2.collectionName()}oink/{image2.containerName()}")
+      ret = self.client.post(f"/v2/{image1.entityName}/{image1.collectionName}/{image1.containerName}/blobs/uploads/?mount={image2.hash.replace('sha256.', 'sha256:')}&from={image2.entityName}/{image2.collectionName}oink/{image2.containerName}")
     self.assertEqual(ret.status_code, 404)
 
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}/blobs/uploads/?mount={image2.hash.replace('sha256.', 'sha256:')}oink&from={image2.entityName()}/{image2.collectionName()}/{image2.containerName()}")
+      ret = self.client.post(f"/v2/{image1.entityName}/{image1.collectionName}/{image1.containerName}/blobs/uploads/?mount={image2.hash.replace('sha256.', 'sha256:')}oink&from={image2.entityName}/{image2.collectionName}/{image2.containerName}")
     self.assertEqual(ret.status_code, 404)
 
   def test_push_monolith_get_session_existing(self):
@@ -262,7 +263,7 @@ class TestOrasPush(RouteBase):
     image = _create_image()[0]
     image.container_ref.readOnly = True
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/")
+      ret = self.client.post(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/uploads/")
     self.assertEqual(ret.status_code, 403)
 
   def test_push_monolith_do(self):
@@ -284,7 +285,10 @@ class TestOrasPush(RouteBase):
     digest = digest.replace('sha256.', 'sha256:')
     # just make sure that we use the same filename generation method as library push
     with mock.patch('Hinkskalle.routes.imagefiles._make_filename') as mock_make_fn:
-      mock_make_fn.return_value=f"{self.app.config['IMAGE_PATH']}/_imgs/{digest}"
+      outpath = os.path.join(os.path.abspath(self.app.config['IMAGE_PATH']), '_imgs', digest)
+      os.makedirs(os.path.dirname(outpath), exist_ok=True)
+      mock_make_fn.return_value=outpath
+
       ret = self.client.put(f"/v2/__uploads/{upload.id}?digest={digest}", data=img_data, content_type='application/octet-stream')
     self.assertEqual(ret.status_code, 201)
     self.assertRegexpMatches(ret.headers.get('location', ''), rf'/{entity.name}/{collection.name}/{container.name}/blobs/{digest}')
@@ -404,7 +408,7 @@ class TestOrasPush(RouteBase):
     digest = digest.replace('sha256.', 'sha256:')
 
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
+      ret = self.client.post(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
     self.assertEqual(ret.status_code, 201)
     self.assertEqual(ret.headers.get('Docker-Content-Digest'), digest)
 
@@ -428,7 +432,7 @@ class TestOrasPush(RouteBase):
       outfh.write(img_data.decode('utf8'))
 
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}&staged=1", content_type='application/octet-stream')
+      ret = self.client.post(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/uploads/?digest={digest}&staged=1", content_type='application/octet-stream')
     print(ret.get_json())
     self.assertEqual(ret.status_code, 201)
     self.assertEqual(ret.headers.get('Docker-Content-Digest'), digest.replace('sha256.', 'sha256:'))
@@ -451,7 +455,7 @@ class TestOrasPush(RouteBase):
       outfh.write(img_data.decode('utf8'))
 
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}&staged=1", content_type='application/octet-stream')
+      ret = self.client.post(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/uploads/?digest={digest}&staged=1", content_type='application/octet-stream')
     self.assertEqual(ret.status_code, 400)
 
   def test_push_single_post_stage_user(self):
@@ -465,7 +469,7 @@ class TestOrasPush(RouteBase):
       outfh.write(img_data.decode('utf8'))
 
     with self.fake_auth():
-      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}&staged=1", content_type='application/octet-stream')
+      ret = self.client.post(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/uploads/?digest={digest}&staged=1", content_type='application/octet-stream')
     self.assertEqual(ret.status_code, 403)
 
   def test_push_single_post_quota(self):
@@ -475,7 +479,7 @@ class TestOrasPush(RouteBase):
     digest = digest.replace('sha256.', 'sha256:')
 
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
+      ret = self.client.post(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
     self.assertEqual(ret.status_code, 201)
     entity = Entity.query.get(entity_id)
     self.assertEqual(entity.used_quota, len(img_data))
@@ -488,7 +492,7 @@ class TestOrasPush(RouteBase):
     digest = digest.replace('sha256.', 'sha256:')
 
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
+      ret = self.client.post(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
     self.assertEqual(ret.status_code, 413)
     image = Image.query.get(image_id)
     self.assertFalse(image.uploaded)
@@ -502,7 +506,7 @@ class TestOrasPush(RouteBase):
     digest = digest.replace('sha256.', 'sha256:')
 
     with self.fake_auth():
-      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
+      ret = self.client.post(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
     self.assertEqual(ret.status_code, 201)
 
     db_image: Image = Image.query.filter(Image.hash==digest.replace('sha256:', 'sha256.')).one()
@@ -517,7 +521,7 @@ class TestOrasPush(RouteBase):
     digest = digest.replace('sha256.', 'sha256:')
 
     with self.fake_auth():
-      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
+      ret = self.client.post(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
     self.assertEqual(ret.status_code, 403)
 
   def test_push_single_post_no_digest(self):
@@ -526,7 +530,7 @@ class TestOrasPush(RouteBase):
     digest = digest.replace('sha256.', 'sha256:')
 
     with self.fake_admin_auth():
-      ret = self.client.post(f"/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/blobs/uploads/", data=img_data, content_type='application/octet-stream')
+      ret = self.client.post(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/uploads/", data=img_data, content_type='application/octet-stream')
     self.assertEqual(ret.status_code, 400)
 
   def test_push_manifest_noauth(self):
@@ -581,7 +585,7 @@ class TestOrasPush(RouteBase):
       "layers": [],
     }
     with self.fake_admin_auth():
-      ret = self.client.put(f'/v2/{image.entityName()}/{image.collectionName()}/{image.containerName()}/manifests/v2', json=test_manifest)
+      ret = self.client.put(f'/v2/{image.entityName}/{image.collectionName}/{image.containerName}/manifests/v2', json=test_manifest)
     self.assertEqual(ret.status_code, 403)
 
 
@@ -787,17 +791,17 @@ class TestOrasPush(RouteBase):
     db_image = Image.query.get(image_id)
     self.assertEqual(db_image.media_type, "application/vnd.sylabs.sif.layer.v1.sif")
     self.assertFalse(db_image.hide)
-    self.assertListEqual(db_image.tags(), ['v2'])
+    self.assertListEqual(db_image.tags, ['v2'])
 
     db_other_image = Image.query.get(other_image_id)
     self.assertEqual(db_other_image.media_type, "something")
     self.assertTrue(db_other_image.hide)
-    self.assertListEqual(db_other_image.tags(), [])
+    self.assertListEqual(db_other_image.tags, [])
 
     db_config_image = Image.query.get(config_image_id)
     self.assertEqual(db_config_image.media_type, "application/vnd.oci.image.config.v1+json")
     self.assertTrue(db_config_image.hide)
-    self.assertListEqual(db_config_image.tags(), [])
+    self.assertListEqual(db_config_image.tags, [])
 
 
 

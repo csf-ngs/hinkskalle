@@ -8,7 +8,7 @@ from Hinkskalle.util.auth.token import Scopes
 from flask import g, send_file, current_app, redirect
 from flask_rebar import ResponseSchema, errors
 from marshmallow import fields
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound  # type: ignore
 import jwt
 from datetime import datetime
 from calendar import timegm
@@ -26,7 +26,7 @@ class ManifestListResponseSchema(ResponseSchema):
   rule='/v1/containers/<string:entity_id>/<string:collection_id>/<string:container_id>/manifests',
   method='GET',
   response_body_schema=ManifestListResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 )
 def list_manifests(entity_id, collection_id, container_id):
   container = _get_container(entity_id, collection_id, container_id)
@@ -39,7 +39,7 @@ def list_manifests(entity_id, collection_id, container_id):
   rule='/v1/manifests/<string:manifest_id>/download',
   method='GET',
   query_string_schema=DownloadQuerySchema(),
-  authenticators=authenticator.with_scope(Scopes.optional)
+  authenticators=authenticator.with_scope(Scopes.optional) # type: ignore
 )
 def download_manifest(manifest_id):
   args = rebar.validated_args

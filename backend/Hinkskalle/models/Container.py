@@ -1,3 +1,4 @@
+import typing
 from flask import current_app
 from Hinkskalle import db
 from datetime import datetime
@@ -8,6 +9,7 @@ import enum
 
 from Hinkskalle.models.Image import Image, UploadStates
 from Hinkskalle.models.Tag import Tag
+from Hinkskalle.models.User import User
 
 from marshmallow import fields, Schema, validates_schema, ValidationError
 from Hinkskalle.util.name_check import validate_name
@@ -86,11 +88,11 @@ class Container(db.Model):
   starred_sth = db.relationship('User', viewonly=True, secondary='user_stars', lazy='dynamic')
 
   @validates('name')
-  def convert_lower(self, key, value):
+  def convert_lower(self, key, value: str) -> str:
     return value.lower()
 
   @property
-  def stars(self):
+  def stars(self) -> int:
     return self.starred_sth.count()
 
   __table_args__ = (db.UniqueConstraint('name', 'collection_id', name='name_collection_id_idx'),)
@@ -107,22 +109,27 @@ class Container(db.Model):
         return ContainerTypes.generic.name
     return ContainerTypes.mixed.name
 
-  def size(self):
+  @property
+  def size(self) -> int:
     if not self.id:
       return 0
     return self.images_ref.filter(Image.hide==False, Image.uploadState==UploadStates.completed).count()
   
-  def collection(self):
+  @property
+  def collection(self) -> int:
     return self.collection_ref.id
-  def collectionName(self):
+  @property
+  def collectionName(self) -> str:
     return self.collection_ref.name
   
-  def entity(self):
+  @property
+  def entity(self) -> int:
     return self.collection_ref.entity_ref.id
-  def entityName(self):
+  @property
+  def entityName(self) -> str:
     return self.collection_ref.entity_ref.name
 
-  def get_tag(self, tag, arch=None):
+  def get_tag(self, tag: str, arch=None) -> Tag:
     cur_tags = Tag.query.filter(Tag.name == tag, Tag.container_id == self.id)
     if arch:
       cur_tags = cur_tags.filter(Tag.arch == arch)
@@ -133,7 +140,7 @@ class Container(db.Model):
     return cur_tags.first()
 
 
-  def tag_image(self, tag: str, image_id: int, arch: str=None):
+  def tag_image(self, tag: str, image_id: int, arch: typing.Optional[str]=None) -> Tag:
     errors = validate_name({ 'name': tag })
     if errors:
       raise ValidationError(errors)
@@ -156,7 +163,8 @@ class Container(db.Model):
       db.session.commit()
     return cur_tag
 
-  def imageTags(self):
+  @property
+  def imageTags(self) -> dict:
     tags = {}
     for tag in self.tags_ref:
       if tag.name in tags and tag.arch != tags[tag.name].arch:
@@ -164,7 +172,8 @@ class Container(db.Model):
       tags[tag.name] = tag
     return { n: str(t.image_id) for n, t in tags.items() }
 
-  def archImageTags(self):
+  @property
+  def archImageTags(self) -> dict:
     tags = {}
     for tag in self.tags_ref:
       arch = tag.arch or current_app.config.get('DEFAULT_ARCH')
@@ -174,7 +183,7 @@ class Container(db.Model):
       tags[arch][tag.name]=str(tag.image_id)
     return tags
   
-  def check_access(self, user):
+  def check_access(self, user: User) -> bool:
     if user.is_admin:
       return True
     elif self.owner == user:
@@ -182,7 +191,7 @@ class Container(db.Model):
     else:
       return self.collection_ref.check_access(user)
   
-  def check_update_access(self, user):
+  def check_update_access(self, user: User) -> bool:
     if user.is_admin:
       return True
     elif self.owner == user:

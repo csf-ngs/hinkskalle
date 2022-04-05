@@ -1,6 +1,6 @@
 class HinkException(Exception):
   def __init__(self):
-    self.message("Major unknown unexpected surprising Hinkskalle fail")
+    self.message = "Major unknown unexpected surprising Hinkskalle fail"
 
   def __str__(self):
     return self.message

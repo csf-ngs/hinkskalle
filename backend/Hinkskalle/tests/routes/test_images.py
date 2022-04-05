@@ -24,7 +24,7 @@ class TestImages(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/containers/{entity.name}/{collection.name}/{container.name}/images")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertListEqual([ c['id'] for c in json ], [ str(image1.id), str(image2.id) ] )
   
   def test_list_hide(self):
@@ -37,7 +37,7 @@ class TestImages(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get(f"/v1/containers/{entity.name}/{collection.name}/{container.name}/images")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertListEqual([ c['id'] for c in json ], [ str(image1.id) ] )
 
   
@@ -53,7 +53,7 @@ class TestImages(RouteBase):
     with self.fake_auth():
       ret = self.client.get(f"/v1/containers/{entity.name}/{collection.name}/{container.name}/images")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertListEqual([ c['id'] for c in json ], [ str(image1.id), str(image2.id) ] )
   
   def test_list_user_other_own_collection(self):
@@ -84,9 +84,9 @@ class TestImages(RouteBase):
     db.session.add(latest_tag)
     db.session.commit()
 
-    ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}")
+    ret = self.client.get(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(image.id))
     self.assertListEqual(data['tags'], ['latest'])
   
@@ -94,10 +94,10 @@ class TestImages(RouteBase):
     image = _create_image(media_type='pr0n')[0]
     latest_tag = Tag(name='latest', image_ref=image)
     db.session.add(latest_tag)
-    ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}", headers={'User-Agent': 'Singularity/3.7.3 (Darwin amd64) Go/1.13.3'})
+    ret = self.client.get(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}", headers={'User-Agent': 'Singularity/3.7.3 (Darwin amd64) Go/1.13.3'})
     self.assertEqual(ret.status_code, 406)
 
-    ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}", headers={'User-Agent': 'lynx'})
+    ret = self.client.get(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}", headers={'User-Agent': 'lynx'})
     self.assertEqual(ret.status_code, 200)
 
   
@@ -113,7 +113,7 @@ class TestImages(RouteBase):
 
     ret = self.client.get(f"/v1/images/oInK/OiNk/oiNK")
     self.assertEqual(ret.status_code, 200)
-    self.assertEqual(ret.get_json().get('data')['id'], str(image.id))
+    self.assertEqual(ret.get_json().get('data')['id'], str(image.id)) # type: ignore
 
   
   def test_get_private(self):
@@ -125,15 +125,15 @@ class TestImages(RouteBase):
     container.private = True
     db.session.commit()
 
-    ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}")
+    ret = self.client.get(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}")
     self.assertEqual(ret.status_code, 403)
 
     with self.fake_auth():
-      ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}")
+      ret = self.client.get(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}")
       self.assertEqual(ret.status_code, 403)
     
     with self.fake_admin_auth():
-      ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}")
+      ret = self.client.get(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}")
       self.assertEqual(ret.status_code, 200)
 
   def test_get_private_own(self):
@@ -147,7 +147,7 @@ class TestImages(RouteBase):
     db.session.commit()
 
     with self.fake_auth():
-      ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}")
+      ret = self.client.get(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}")
       self.assertEqual(ret.status_code, 200)
 
   def test_get_default_entity(self):
@@ -158,13 +158,13 @@ class TestImages(RouteBase):
     latest_tag = Tag(name='latest', image_ref=image)
     db.session.commit()
 
-    ret = self.client.get(f"/v1/images//{image.collectionName()}/{image.containerName()}")
+    ret = self.client.get(f"/v1/images//{image.collectionName}/{image.containerName}")
     self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location', None), rf"/v1/images/default/{image.collectionName()}/{image.containerName()}$")
+    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/images/default/{image.collectionName}/{image.containerName}$")
     
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(image.id))
 
   def test_get_default_entity_single(self):
@@ -175,9 +175,9 @@ class TestImages(RouteBase):
     latest_tag = Tag(name='latest', image_ref=image)
     db.session.commit()
 
-    ret = self.client.get(f"/v1/images/{image.collectionName()}/{image.containerName()}")
+    ret = self.client.get(f"/v1/images/{image.collectionName}/{image.containerName}")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(image.id))
   
   def test_get_default_collection(self):
@@ -189,13 +189,13 @@ class TestImages(RouteBase):
     db.session.add(latest_tag)
     db.session.commit()
 
-    ret = self.client.get(f"/v1/images/{image.entityName()}//{image.containerName()}")
+    ret = self.client.get(f"/v1/images/{image.entityName}//{image.containerName}")
     self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location', None), rf"/v1/images/{image.entityName()}/default/{image.containerName()}$")
+    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/images/{image.entityName}/default/{image.containerName}$")
 
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(image.id))
   
   def test_get_default_collection_default_entity(self):
@@ -208,30 +208,30 @@ class TestImages(RouteBase):
     db.session.add(latest_tag)
     db.session.commit()
 
-    ret = self.client.get(f"/v1/images///{image.containerName()}")
+    ret = self.client.get(f"/v1/images///{image.containerName}")
     self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location', None), rf"/v1/images/default//{image.containerName()}$")
+    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/images/default//{image.containerName}$")
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location', None), rf"/v1/images/default/default/{image.containerName()}$")
+    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/images/default/default/{image.containerName}$")
 
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(image.id))
 
-    ret = self.client.get(f"/v1/images//{image.containerName()}")
+    ret = self.client.get(f"/v1/images//{image.containerName}")
     self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location', None), rf"/v1/images/default/{image.containerName()}$")
+    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/images/default/{image.containerName}$")
 
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(image.id))
 
-    ret = self.client.get(f"/v1/images/{image.containerName()}")
+    ret = self.client.get(f"/v1/images/{image.containerName}")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(image.id))
 
   def test_get_with_tag(self):
@@ -245,9 +245,9 @@ class TestImages(RouteBase):
     db.session.add(latest_tag)
     db.session.commit()
 
-    ret = self.client.get(f"/v1/images/{v1_image.entityName()}/{v1_image.collectionName()}/{v1_image.containerName()}:{v1_tag.name}")
+    ret = self.client.get(f"/v1/images/{v1_image.entityName}/{v1_image.collectionName}/{v1_image.containerName}:{v1_tag.name}")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(v1_image.id))
     self.assertListEqual(data['tags'], ['v1'])
   
@@ -255,16 +255,16 @@ class TestImages(RouteBase):
     first_image = _create_image(hash='sha256.oink')[0]
     _create_image(hash='sha256.moo')
 
-    ret = self.client.get(f"/v1/images/{first_image.entityName()}/{first_image.collectionName()}/{first_image.containerName()}:{first_image.hash}")
+    ret = self.client.get(f"/v1/images/{first_image.entityName}/{first_image.collectionName}/{first_image.containerName}:{first_image.hash}")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(first_image.id))
 
   def test_get_hash_not_found(self):
     first_image = _create_image(hash='sha256.oink')[0]
     db.session.commit()
 
-    ret = self.client.get(f"/v1/images/{first_image.entityName()}/{first_image.collectionName()}/{first_image.containerName()}:sha256.muh")
+    ret = self.client.get(f"/v1/images/{first_image.entityName}/{first_image.collectionName}/{first_image.containerName}:sha256.muh")
     self.assertEqual(ret.status_code, 404)
 
   def test_reset_uploaded(self):
@@ -275,9 +275,9 @@ class TestImages(RouteBase):
     db.session.add(latest_tag)
     db.session.commit()
 
-    ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+    ret = self.client.get(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertFalse(data['uploaded'])
     read_image = Image.query.get(image.id)
     self.assertIsNone(read_image.location)
@@ -285,9 +285,9 @@ class TestImages(RouteBase):
     image.location = None
     image.uploaded = True
     db.session.commit()
-    ret = self.client.get(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+    ret = self.client.get(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertFalse(data['uploaded'])
   
   def test_get_arch(self):
@@ -301,12 +301,12 @@ class TestImages(RouteBase):
     db.session.add(image2_tag)
     db.session.commit()
 
-    ret = self.client.get(f"/v1/images/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}:{image1_tag.name}")
+    ret = self.client.get(f"/v1/images/{image1.entityName}/{image1.collectionName}/{image1.containerName}:{image1_tag.name}")
     self.assertEqual(ret.status_code, 406)
 
-    ret = self.client.get(f"/v1/images/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}:{image1_tag.name}?arch=c64")
+    ret = self.client.get(f"/v1/images/{image1.entityName}/{image1.collectionName}/{image1.containerName}:{image1_tag.name}?arch=c64")
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(image1.id))
     self.assertListEqual(data['tags'], ['v1'])
 
@@ -324,7 +324,7 @@ class TestImages(RouteBase):
         'container': str(container.id),
       })
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['hash'], 'sha256.oink')
     self.assertEqual(data['container'], str(container.id))
     self.assertEqual(data['createdBy'], self.admin_username)
@@ -350,13 +350,13 @@ class TestImages(RouteBase):
         'uploaded': True,
       })
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertTrue(data['uploaded'])
     db_container = Container.query.get(container.id)
-    self.assertDictEqual(db_container.imageTags(), {
+    self.assertDictEqual(db_container.imageTags, {
       'latest': data['id']
     })
-    self.assertDictEqual(db_container.archImageTags(), {
+    self.assertDictEqual(db_container.archImageTags, {
       'amd64': { 'latest': data['id'] }
     })
     db_image = Image.query.get(data['id'])
@@ -394,7 +394,7 @@ class TestImages(RouteBase):
         'container': str(other_container.id),
       })
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertTrue(data['uploaded'])
 
     db_image = Image.query.get(image_id)
@@ -403,7 +403,7 @@ class TestImages(RouteBase):
     other_image = Image.query.get(data['id'])
     self.assertEqual(other_image.location, db_image.location)
     other_db_container = Container.query.get(other_container.id)
-    self.assertDictEqual(other_db_container.imageTags(), {
+    self.assertDictEqual(other_db_container.imageTags, {
       'latest': str(other_image.id)
     })
 
@@ -420,10 +420,10 @@ class TestImages(RouteBase):
         'container': str(other_container_id),
       })
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertFalse(data['uploaded'])
     self.assertIsNone(data['size'])
-    self.assertDictEqual(Container.query.get(other_container_id).imageTags(), {})
+    self.assertDictEqual(Container.query.get(other_container_id).imageTags, {})
 
   def test_create_user(self):
     container, coll, entity = _create_container()
@@ -454,7 +454,7 @@ class TestImages(RouteBase):
         'expiresAt': exp.isoformat(),
       })
     self.assertEqual(ret.status_code, 200)
-    db_image = Image.query.get(ret.get_json().get('data')['id'])
+    db_image = Image.query.get(ret.get_json().get('data')['id']) # type: ignore
     self.assertEqual(db_image.expiresAt, exp)
 
   def test_create_user_other(self):
@@ -478,15 +478,15 @@ class TestImages(RouteBase):
     db.session.commit()
 
     with self.fake_admin_auth():
-      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}/tags", json={
+      ret = self.client.put(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}/tags", json={
         'tags': [ 'oink', 'grunz' ]
       })
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data, { 'tags': [ 'oink', 'grunz' ]})
 
     dbImage = Image.query.get(image.id)
-    self.assertListEqual(dbImage.tags(), ['oink', 'grunz'])
+    self.assertListEqual(dbImage.tags, ['oink', 'grunz'])
   
   def test_udpate_tags_remove(self):
     image = _create_image()[0]
@@ -495,15 +495,15 @@ class TestImages(RouteBase):
     db.session.commit()
 
     with self.fake_admin_auth():
-      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}/tags", json={
+      ret = self.client.put(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}/tags", json={
         'tags': [ 'grunz' ]
       })
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data, { 'tags': [ 'grunz' ]})
 
     dbImage = Image.query.get(image.id)
-    self.assertListEqual(dbImage.tags(), ['grunz'])
+    self.assertListEqual(dbImage.tags, ['grunz'])
   
   def test_update_tags_existing(self):
     image, container, _, _ = _create_image()
@@ -516,18 +516,18 @@ class TestImages(RouteBase):
     other_image_id = other_image.id
 
     with self.fake_admin_auth():
-      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}/tags", json={
+      ret = self.client.put(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}/tags", json={
         'tags': [ 'oink' ]
       })
     self.assertEqual(ret.status_code, 200)
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data, { 'tags': [ 'oink' ]})
 
     dbImage = Image.query.get(image.id)
-    self.assertListEqual(dbImage.tags(), ['oink'])
+    self.assertListEqual(dbImage.tags, ['oink'])
 
     otherDbImage = Image.query.get(other_image_id)
-    self.assertListEqual(otherDbImage.tags(), [])
+    self.assertListEqual(otherDbImage.tags, [])
   
   def test_update_tags_user(self):
     image = _create_image()[0]
@@ -535,7 +535,7 @@ class TestImages(RouteBase):
     db.session.commit()
 
     with self.fake_auth():
-      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}/tags", json={
+      ret = self.client.put(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}/tags", json={
         "tags": [ 'oink' ]
       })
     self.assertEqual(ret.status_code, 200)
@@ -544,7 +544,7 @@ class TestImages(RouteBase):
     image = _create_image()[0]
 
     with self.fake_auth():
-      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}/tags", json={
+      ret = self.client.put(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}/tags", json={
         "tags": [ 'oink' ]
       })
     self.assertEqual(ret.status_code, 403)
@@ -557,7 +557,7 @@ class TestImages(RouteBase):
     db.session.commit()
 
     with self.fake_admin_auth():
-      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:oink", json={
+      ret = self.client.put(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:oink", json={
         'description': 'Mei Huat',
         'customData': 'hot drei Eckn',
       })
@@ -577,7 +577,7 @@ class TestImages(RouteBase):
     db.session.commit()
 
     with self.fake_auth():
-      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:oink", json={
+      ret = self.client.put(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:oink", json={
         'description': 'Mei Huat',
         'customData': 'hot drei Eckn',
       })
@@ -594,7 +594,7 @@ class TestImages(RouteBase):
 
     exp = datetime.datetime.now()
     with self.fake_auth():
-      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:oink", json={
+      ret = self.client.put(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:oink", json={
         'description': 'Mei Huat',
         'customData': 'hot drei Eckn',
         'expiresAt': exp.isoformat(),
@@ -613,7 +613,7 @@ class TestImages(RouteBase):
 
     exp = datetime.datetime.now()
     with self.fake_auth():
-      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:oink", json={
+      ret = self.client.put(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:oink", json={
         'description': 'Mei Huat',
         'customData': 'hot drei Eckn',
         'expiresAt': exp.isoformat(),
@@ -630,7 +630,7 @@ class TestImages(RouteBase):
     db.session.commit()
 
     with self.fake_auth():
-      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:oink", json={
+      ret = self.client.put(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:oink", json={
         'description': 'Mei Huat',
         'customData': 'hot drei Eckn',
         'expiresAt': exp.isoformat(),
@@ -644,7 +644,7 @@ class TestImages(RouteBase):
     db.session.commit()
 
     with self.fake_auth():
-      ret = self.client.put(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:oink", json={
+      ret = self.client.put(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:oink", json={
         'description': 'Mei Huat',
         'customData': 'hot drei Eckn',
       })
@@ -655,7 +655,7 @@ class TestImages(RouteBase):
     self._fake_uploaded_image(image)
 
     with self.fake_admin_auth():
-      ret = self.client.delete(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+      ret = self.client.delete(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}")
     self.assertEqual(ret.status_code, 200)
     self.assertIsNone(Image.query.get(image.id))
     self.assertFalse(os.path.exists(image.location))
@@ -670,7 +670,7 @@ class TestImages(RouteBase):
 
     self.assertEqual(entity.used_quota, 100)
     with self.fake_admin_auth():
-      ret = self.client.delete(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+      ret = self.client.delete(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}")
     self.assertEqual(ret.status_code, 200)
     entity = Entity.query.get(entity_id)
     self.assertEqual(entity.used_quota, 0)
@@ -684,7 +684,7 @@ class TestImages(RouteBase):
     other_image_id = other_image.id
     db.session.commit()
     with self.fake_admin_auth():
-      ret = self.client.delete(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+      ret = self.client.delete(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}")
     self.assertEqual(ret.status_code, 200)
     db_img = Image.query.get(other_image_id)
     self.assertTrue(os.path.exists(db_img.location))
@@ -697,7 +697,7 @@ class TestImages(RouteBase):
     db.session.commit()
 
     with self.fake_admin_auth():
-      ret = self.client.delete(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+      ret = self.client.delete(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}")
     self.assertEqual(ret.status_code, 200)
     self.assertIsNone(Image.query.get(image.id))
   
@@ -712,11 +712,11 @@ class TestImages(RouteBase):
     container.tag_image('v1', image2.id, arch='amiga')
 
     with self.fake_admin_auth():
-      ret = self.client.delete(f"/v1/images/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}:v1")
+      ret = self.client.delete(f"/v1/images/{image1.entityName}/{image1.collectionName}/{image1.containerName}:v1")
     self.assertEqual(ret.status_code, 406)
 
     with self.fake_admin_auth():
-      ret = self.client.delete(f"/v1/images/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}:v1?arch=c64")
+      ret = self.client.delete(f"/v1/images/{image1.entityName}/{image1.collectionName}/{image1.containerName}:v1?arch=c64")
 
     self.assertEqual(ret.status_code, 200)
     self.assertIsNone(Image.query.get(image1_id))
@@ -729,7 +729,7 @@ class TestImages(RouteBase):
     db.session.commit()
 
     with self.fake_auth():
-      ret = self.client.delete(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+      ret = self.client.delete(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}")
     self.assertEqual(ret.status_code, 200)
     self.assertIsNone(Image.query.get(image.id))
 
@@ -739,7 +739,7 @@ class TestImages(RouteBase):
     db.session.commit()
 
     with self.fake_auth():
-      ret = self.client.delete(f"/v1/images/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image.hash}")
+      ret = self.client.delete(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}")
     self.assertEqual(ret.status_code, 403)
 
   def _fake_uploaded_image(self, image):

@@ -21,7 +21,7 @@ class TestPasswordAuth(RouteBase):
       self.assertIn('authenticated_user', g)
       self.assertEqual(g.authenticated_user, user)
 
-    data = ret.get_json().get('data')
+    data = ret.get_json().get('data') # type: ignore
     self.assertIn('id', data)
     self.assertIn('expiresAt', data)
 
@@ -92,7 +92,7 @@ class TestDownloadToken(RouteBase):
     self.assertEqual(ret.status_code, 202)
     data = ret.get_json()
     location = ret.headers.get('Location', '')
-    self.assertTrue(location.endswith(data['location']))
+    self.assertTrue(location.endswith(data['location'])) # type: ignore
     temp_token = re.search(r'(.*)\?temp_token=(.*)', location)
     self.assertIsNotNone(temp_token)
     self.assertIsNotNone(temp_token[1])
@@ -111,7 +111,7 @@ class TestDownloadToken(RouteBase):
       ret = self.client.post(f"/v1/get-download-token", json={ 'type': 'manifest', 'id': '1', 'username': self.username, 'exp': override_exp })
     self.assertEqual(ret.status_code, 202)
     location = ret.headers.get('Location', '')
-    self.assertTrue(location.endswith(ret.get_json()['location']))
+    self.assertTrue(location.endswith(ret.get_json()['location']))  # type: ignore
     temp_token = re.search(r'(.*)\?temp_token=(.*)', location)
     decoded = jwt.decode(temp_token[2], self.app.config['SECRET_KEY'], algorithms=["HS256"])
 
@@ -159,8 +159,8 @@ class TestTokenAuth(RouteBase):
       ret = c.get('/v1/token-status', headers={ 'Authorization': f"bearer {token_text}"})
       self.assertEqual(ret.status_code, 200)
       self.assertEqual(g.authenticated_user, user)
-      self.assertEqual(ret.get_json().get('status'), 'welcome')
-      json_user = ret.get_json().get('data')
+      self.assertEqual(ret.get_json().get('status'), 'welcome') # type: ignore
+      json_user = ret.get_json().get('data') # type: ignore
       self.assertEqual(json_user.get('username'), 'test.hase')
 
     with self.app.test_client() as c:

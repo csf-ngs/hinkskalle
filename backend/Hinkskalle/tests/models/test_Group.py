@@ -22,11 +22,10 @@ class TestGroup(ModelBase):
     group = _create_group()
 
     serialized = schema.dump(group)
-    self.assertDictEqual(serialized.errors, {})
-    self.assertEqual(serialized.data['id'], str(group.id))
+    self.assertEqual(serialized['id'], str(group.id))
 
-    self.assertFalse(serialized.data['deleted'])
-    self.assertIsNone(serialized.data['deletedAt'])
+    self.assertFalse(serialized['deleted'])
+    self.assertIsNone(serialized['deletedAt'])
   
   def test_schema_users(self):
     schema = GroupSchema()
@@ -36,8 +35,7 @@ class TestGroup(ModelBase):
     db.session.commit()
 
     serialized = schema.dump(group)
-    self.assertDictEqual(serialized.errors, {})
-    self.assertEqual(serialized.data['users'][0]['id'], str(user.id))
+    self.assertEqual(serialized['users'][0]['id'], str(user.id))
 
 
 

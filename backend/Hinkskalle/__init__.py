@@ -1,5 +1,8 @@
+import json
 from flask import Flask
 from flask_rebar import Rebar, SwaggerV2Generator
+from flask_rebar.swagger_generation.authenticator_to_swagger import AuthenticatorConverterRegistry
+
 from logging.config import dictConfig
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
@@ -10,10 +13,13 @@ import os.path
 
 from werkzeug.routing import BaseConverter
 
-generator = SwaggerV2Generator()
-
+auth_registry = AuthenticatorConverterRegistry()
 from Hinkskalle.util.swagger import register_authenticators
-register_authenticators(generator)
+register_authenticators(auth_registry)
+
+generator = SwaggerV2Generator(authenticator_converter_registry=auth_registry)
+
+
 
 rebar = Rebar()
 registry = rebar.create_handler_registry(swagger_generator=generator, prefix='/')
@@ -46,22 +52,24 @@ class OrasNameConverter(BaseConverter):
 
 def create_app():
   app = Flask(__name__)
-  app.config.from_json(os.environ.get('HINKSKALLE_SETTINGS', '../../conf/config.json'))
+  app.config.from_file(os.environ.get('HINKSKALLE_SETTINGS', '../../conf/config.json'), load=json.load)
   secrets_conf = os.environ.get('HINKSKALLE_SECRETS', '../../conf/secrets.json')
   if os.path.exists(secrets_conf):
-    app.config.from_json(secrets_conf)
+    app.config.from_file(secrets_conf, load=json.load)
 
   if not app.config.get('DEFAULT_ARCH'):
     app.config['DEFAULT_ARCH']='amd64'
   if 'HINKSKALLE_SECRET_KEY' in os.environ:
     app.config['SECRET_KEY'] = os.getenv('HINKSKALLE_SECRET_KEY')
+  if app.config.get('SECRET_KEY') is None:
+    raise Exception('please configure SECRET_KEY in config.json or HINKSKALLE_SECRET_KEY as environment variable')
   if 'DB_PASSWORD' in os.environ:
     app.config['DB_PASSWORD'] = os.getenv('DB_PASSWORD')
   if 'SQLALCHEMY_DATABASE_URI' in os.environ:
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 
   if app.config.get('DB_PASSWORD'):
-    app.config['SQLALCHEMY_DATABASE_URI']=app.config.get('SQLALCHEMY_DATABASE_URI').replace('%PASSWORD%', app.config.get('DB_PASSWORD'))
+    app.config['SQLALCHEMY_DATABASE_URI']=app.config.get('SQLALCHEMY_DATABASE_URI', '').replace('%PASSWORD%', app.config.get('DB_PASSWORD'))
   app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=app.config.get('SQLALCHEMY_TRACK_MODIFICATIONS', False)
 
   if not 'AUTH' in app.config:
@@ -104,7 +112,7 @@ def create_app():
     app.config['RQ_REDIS_URL'] = os.environ.get('HINKSKALLE_REDIS_URL')
   rq.init_app(app)
 
-  app.url_map.converters['distname']=OrasNameConverter
+  app.url_map.converters['distname']=OrasNameConverter 
   generator.register_flask_converter_to_swagger_type('distname', 'path')
 
 

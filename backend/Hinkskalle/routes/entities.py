@@ -2,7 +2,6 @@ from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_, func
 from flask import request, current_app, g
@@ -30,7 +29,7 @@ class EntityDeleteResponseSchema(ResponseSchema):
   rule='/v1/entities',
   method='GET',
   response_body_schema=EntityListResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def list_entities():
   if g.authenticated_user.is_admin:
@@ -43,7 +42,7 @@ def list_entities():
   rule='/v1/entities/<string:entity_id>',
   method='GET',
   response_body_schema=EntityResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def get_entity(entity_id):
   entity = _get_entity(entity_id)
@@ -55,7 +54,7 @@ def get_entity(entity_id):
   rule='/v1/entities/',
   method='GET',
   response_body_schema=EntityResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def get_default_entity():
   return get_entity(entity_id='default')
@@ -65,7 +64,7 @@ def get_default_entity():
   method='POST',
   request_body_schema=EntityCreateSchema(),
   response_body_schema=EntityResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def create_entity():
   body = rebar.validated_body
@@ -90,7 +89,6 @@ def create_entity():
     db.session.commit()
   except IntegrityError as err:
     raise errors.PreconditionFailed(f"Entity {new_entity.id} already exists")
-
   return { 'data': new_entity }
 
 @registry.handles(
@@ -98,7 +96,7 @@ def create_entity():
   method='PUT',
   request_body_schema=EntityUpdateSchema(),
   response_body_schema=EntityResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def update_entity(entity_id):
   body = rebar.validated_body
@@ -121,7 +119,7 @@ def update_entity(entity_id):
   rule='/v1/entities/<string:entity_id>',
   method='DELETE',
   response_body_schema=EntityDeleteResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user)
+  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
 ) 
 def delete_entity(entity_id):
   entity = _get_entity(entity_id)
@@ -129,7 +127,7 @@ def delete_entity(entity_id):
   if not entity.check_update_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to entity.")
   
-  if entity.size() > 0:
+  if entity.size > 0:
     raise errors.PreconditionFailed(f"Entity {entity.name} still has collections.")
   
   db.session.delete(entity)

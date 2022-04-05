@@ -28,15 +28,15 @@ class TestEntity(ModelBase):
   
   def test_count(self):
     ent = Entity(name='test-hase')
-    self.assertEqual(ent.size(), 0)
+    self.assertEqual(ent.size, 0)
     db.session.add(ent)
     db.session.commit()
-    self.assertEqual(ent.size(), 0)
+    self.assertEqual(ent.size, 0)
 
     coll1 = Collection(name='coll_i', entity_ref=ent)
     db.session.add(coll1)
     db.session.commit()
-    self.assertEqual(ent.size(), 1)
+    self.assertEqual(ent.size, 1)
 
     other_ent = Entity(name='other-hase')
     db.session.add(other_ent)
@@ -45,7 +45,7 @@ class TestEntity(ModelBase):
     db.session.add(other_coll)
     db.session.commit()
 
-    self.assertEqual(ent.size(), 1)
+    self.assertEqual(ent.size, 1)
 
   def test_used_quota_null(self):
     ent = Entity(name='test-quota')
@@ -147,15 +147,15 @@ class TestEntity(ModelBase):
     entity = Entity(name='Test Hase')
     schema = EntitySchema()
     serialized = schema.dump(entity)
-    self.assertEqual(serialized.data['id'], entity.id)
-    self.assertEqual(serialized.data['name'], entity.name)
+    self.assertEqual(serialized['id'], entity.id)
+    self.assertEqual(serialized['name'], entity.name)
 
-    self.assertIsNone(serialized.data['deletedAt'])
-    self.assertFalse(serialized.data['deleted'])
+    self.assertIsNone(serialized['deletedAt'])
+    self.assertFalse(serialized['deleted'])
 
     entity.used_quota = 999
     serialized = schema.dump(entity)
-    self.assertEqual(serialized.data['usedQuota'], 999)
+    self.assertEqual(serialized['usedQuota'], 999)
 
 
   def test_quota_default(self):

@@ -2,7 +2,7 @@ from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 from flask import request, current_app, g
@@ -34,7 +34,7 @@ class ContainerDeleteResponseSchema(ResponseSchema):
   rule='/v1/containers/<string:entity_id>/<string:collection_id>',
   method='GET',
   response_body_schema=ContainerListResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def list_containers(entity_id, collection_id):
   try:
@@ -58,7 +58,7 @@ def list_containers(entity_id, collection_id):
   rule='/v1/containers/<string:entity_id>/<string:collection_id>/<string:container_id>',
   method='GET',
   response_body_schema=ContainerResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def get_container(entity_id, collection_id, container_id):
   container = _get_container(entity_id, collection_id, container_id)
@@ -71,7 +71,7 @@ def get_container(entity_id, collection_id, container_id):
   rule='/v1/containers/<string:container_id>',
   method='GET',
   response_body_schema=ContainerResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def get_default_container(container_id):
   return get_container('default', 'default', container_id)
@@ -83,7 +83,7 @@ def get_default_container(container_id):
   method='POST',
   request_body_schema=ContainerCreateSchema(),
   response_body_schema=ContainerResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def create_container():
   body = rebar.validated_body
@@ -98,12 +98,13 @@ def create_container():
   owner = g.authenticated_user
   if g.authenticated_user.is_admin and collection.entity_ref.owner:
     owner = collection.entity_ref.owner
-  new_container = Container(**body)
-  new_container.collection_ref=collection
-  new_container.owner=owner
-  db.session.expire(collection)
-  if collection.private:
-    new_container.private = True
+  with db.session.no_autoflush:
+    new_container = Container(**body)
+    new_container.collection_ref=collection
+    new_container.owner=owner
+    db.session.expire(collection)
+    if collection.private:
+      new_container.private = True
 
   try:
     db.session.add(new_container)
@@ -118,7 +119,7 @@ def create_container():
   method='PUT',
   request_body_schema=ContainerUpdateSchema(),
   response_body_schema=ContainerResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def update_container(entity_id, collection_id, container_id):
   body = rebar.validated_body
@@ -142,7 +143,7 @@ def update_container(entity_id, collection_id, container_id):
   method='DELETE',
   query_string_schema=ContainerDeleteQuerySchema(),
   response_body_schema=ContainerDeleteResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
 )
 def delete_container(entity_id, collection_id, container_id):
   args = rebar.validated_args

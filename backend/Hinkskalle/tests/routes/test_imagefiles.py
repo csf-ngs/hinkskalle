@@ -36,32 +36,32 @@ class TestImagefiles(RouteBase):
 
     tmpf = _fake_img_file(image)
 
-    ret = self.client.get(f"/v1/imagefile/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    ret = self.client.get(f"/v1/imagefile/{image.entityName}/{image.collectionName}/{image.containerName}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello Dorian!")
     db_container = Container.query.get(container.id)
     self.assertEqual(db_container.downloadCount, 1)
     self.assertAlmostEqual(db_container.latestDownload, datetime.now(), delta=timedelta(seconds=2))
-    db_image = Image.query.get(image.id)
+    db_image: Image = Image.query.get(image.id)
     self.assertEqual(db_image.downloadCount, 1)
-    self.assertEqual(db_image.containerDownloads(), 1)
+    self.assertEqual(db_image.containerDownloads, 1)
     self.assertAlmostEqual(db_image.latestDownload, datetime.now(), delta=timedelta(seconds=2))
     ret.close() # avoid unclosed filehandle warning
 
     # singularity requests with double slash
-    ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    ret = self.client.get(f"/v1/imagefile//{image.entityName}/{image.collectionName}/{image.containerName}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 308)
 
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.data, b"Hello Dorian!")
     db_container = Container.query.get(container.id)
     self.assertEqual(db_container.downloadCount, 2)
-    db_image = Image.query.get(image.id)
+    db_image: Image = Image.query.get(image.id)
     self.assertEqual(db_image.downloadCount, 2)
-    self.assertEqual(db_image.containerDownloads(), 2)
+    self.assertEqual(db_image.containerDownloads, 2)
     ret.close() # avoid unclosed filehandle warning
 
-    ret = self.client.head(f"/v1/imagefile/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    ret = self.client.head(f"/v1/imagefile/{image.entityName}/{image.collectionName}/{image.containerName}:{latest_tag.name}")
     db_container = Container.query.get(container.id)
     self.assertEqual(db_container.downloadCount, 2)
     db_image = Image.query.get(image.id)
@@ -84,7 +84,7 @@ class TestImagefiles(RouteBase):
     tmpf1 = _fake_img_file(image1, data=b"oink c64/v1")
     tmpf2 = _fake_img_file(image2, data=b"oink amiga/v1")
 
-    ret = self.client.get(f"/v1/imagefile/{image1.entityName()}/{image1.collectionName()}/{image1.containerName()}:{image1_tag.name}?arch=c64")
+    ret = self.client.get(f"/v1/imagefile/{image1.entityName}/{image1.collectionName}/{image1.containerName}:{image1_tag.name}?arch=c64")
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"oink c64/v1")
     ret.close()
@@ -96,7 +96,7 @@ class TestImagefiles(RouteBase):
     db.session.add(image_tag)
     tmpf1 = _fake_img_file(image, data=b"oink c64/v1")
 
-    ret = self.client.get(f"/v1/imagefile/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{image_tag.name}")
+    ret = self.client.get(f"/v1/imagefile/{image.entityName}/{image.collectionName}/{image.containerName}:{image_tag.name}")
     self.assertEqual(ret.status_code, 406)
 
 
@@ -108,7 +108,7 @@ class TestImagefiles(RouteBase):
     db.session.commit()
 
     tmpf = _fake_img_file(image)
-    ret = self.client.get(f"/v1/imagefile/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    ret = self.client.get(f"/v1/imagefile/{image.entityName}/{image.collectionName}/{image.containerName}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 403)
 
   def test_pull_not_uploaded(self):
@@ -118,7 +118,7 @@ class TestImagefiles(RouteBase):
     db.session.commit()
 
     with self.fake_admin_auth():
-      ret = self.client.get(f"/v1/imagefile/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+      ret = self.client.get(f"/v1/imagefile/{image.entityName}/{image.collectionName}/{image.containerName}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 404)
   
   def test_pull_private(self):
@@ -130,19 +130,19 @@ class TestImagefiles(RouteBase):
 
     tmpf = _fake_img_file(image)
 
-    ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    ret = self.client.get(f"/v1/imagefile//{image.entityName}/{image.collectionName}/{image.containerName}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 308)
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 403)
 
     with self.fake_auth():
-      ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+      ret = self.client.get(f"/v1/imagefile//{image.entityName}/{image.collectionName}/{image.containerName}:{latest_tag.name}")
       self.assertEqual(ret.status_code, 308)
       ret = self.client.get(ret.headers.get('Location'))
       self.assertEqual(ret.status_code, 403)
 
     with self.fake_admin_auth():
-      ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+      ret = self.client.get(f"/v1/imagefile//{image.entityName}/{image.collectionName}/{image.containerName}:{latest_tag.name}")
       self.assertEqual(ret.status_code, 308)
       ret = self.client.get(ret.headers.get('Location'))
       self.assertEqual(ret.status_code, 200)
@@ -161,7 +161,7 @@ class TestImagefiles(RouteBase):
     tmpf = _fake_img_file(image)
     
     with self.fake_auth():
-      ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+      ret = self.client.get(f"/v1/imagefile//{image.entityName}/{image.collectionName}/{image.containerName}:{latest_tag.name}")
       self.assertEqual(ret.status_code, 308)
       ret = self.client.get(ret.headers.get('Location'))
       self.assertEqual(ret.status_code, 200)
@@ -179,7 +179,7 @@ class TestImagefiles(RouteBase):
     tmpf = _fake_img_file(image)
     
     with self.fake_auth():
-      ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+      ret = self.client.get(f"/v1/imagefile//{image.entityName}/{image.collectionName}/{image.containerName}:{latest_tag.name}")
       self.assertEqual(ret.status_code, 308)
       ret = self.client.get(ret.headers.get('Location'))
       self.assertEqual(ret.status_code, 200)
@@ -197,7 +197,7 @@ class TestImagefiles(RouteBase):
     tmpf = _fake_img_file(image)
     
     with self.fake_auth():
-      ret = self.client.get(f"/v1/imagefile//{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+      ret = self.client.get(f"/v1/imagefile//{image.entityName}/{image.collectionName}/{image.containerName}:{latest_tag.name}")
       self.assertEqual(ret.status_code, 308)
       ret = self.client.get(ret.headers.get('Location'))
       self.assertEqual(ret.status_code, 200)
@@ -216,7 +216,7 @@ class TestImagefiles(RouteBase):
     tmpf = _fake_img_file(image)
     
     with self.fake_auth():
-      ret = self.client.get(f"/v1/imagefile/{image.entityName()}/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+      ret = self.client.get(f"/v1/imagefile/{image.entityName}/{image.collectionName}/{image.containerName}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 403)
     
 
@@ -230,12 +230,12 @@ class TestImagefiles(RouteBase):
 
     tmpf = _fake_img_file(image, b"Hello default Entity!")
 
-    ret = self.client.get(f"/v1/imagefile/{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    ret = self.client.get(f"/v1/imagefile/{image.collectionName}/{image.containerName}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello default Entity!")
     ret.close()
 
-    ret = self.client.get(f"/v1/imagefile//{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    ret = self.client.get(f"/v1/imagefile//{image.collectionName}/{image.containerName}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 308)
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
@@ -243,7 +243,7 @@ class TestImagefiles(RouteBase):
     ret.close()
 
     # singularity requests with double slash
-    ret = self.client.get(f"/v1/imagefile///{image.collectionName()}/{image.containerName()}:{latest_tag.name}")
+    ret = self.client.get(f"/v1/imagefile///{image.collectionName}/{image.containerName}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 308)
     ret = self.client.get(ret.headers.get("Location"))
     self.assertEqual(ret.status_code, 308)
@@ -263,9 +263,9 @@ class TestImagefiles(RouteBase):
 
     tmpf = _fake_img_file(image, b"Hello default Collection!")
 
-    ret = self.client.get(f"/v1/imagefile/{image.entityName()}//{image.containerName()}:{latest_tag.name}")
+    ret = self.client.get(f"/v1/imagefile/{image.entityName}//{image.containerName}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location', None), rf"/v1/imagefile/{image.entityName()}/default/{image.containerName()}:{latest_tag.name}$")
+    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/imagefile/{image.entityName}/default/{image.containerName}:{latest_tag.name}$")
 
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
@@ -273,9 +273,9 @@ class TestImagefiles(RouteBase):
     ret.close()
 
     # singularity requests with double slash
-    ret = self.client.get(f"/v1/imagefile//{image.entityName()}//{image.containerName()}:{latest_tag.name}")
+    ret = self.client.get(f"/v1/imagefile//{image.entityName}//{image.containerName}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/imagefile//{image.entityName()}/default/{image.containerName()}:{latest_tag.name}$")
+    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/imagefile//{image.entityName}/default/{image.containerName}:{latest_tag.name}$")
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 308)
     ret = self.client.get(ret.headers.get('Location'))
@@ -296,9 +296,9 @@ class TestImagefiles(RouteBase):
 
     tmpf = _fake_img_file(image, b"Hello default Collection!")
 
-    ret = self.client.get(f"/v1/imagefile///{image.containerName()}:{latest_tag.name}")
+    ret = self.client.get(f"/v1/imagefile///{image.containerName}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location',''), rf"/v1/imagefile//default/{image.containerName()}:{latest_tag.name}$")
+    self.assertRegex(ret.headers.get('Location',''), rf"/v1/imagefile//default/{image.containerName}:{latest_tag.name}$")
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 308)
     ret = self.client.get(ret.headers.get('Location'))
@@ -308,29 +308,29 @@ class TestImagefiles(RouteBase):
     ret.close()
 
     # singularity requests with double slash
-    ret = self.client.get(f"/v1/imagefile////{image.containerName()}:{latest_tag.name}")
+    ret = self.client.get(f"/v1/imagefile////{image.containerName}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/imagefile//default//{image.containerName()}:{latest_tag.name}$")
+    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/imagefile//default//{image.containerName}:{latest_tag.name}$")
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/imagefile//default/default/{image.containerName()}:{latest_tag.name}$")
+    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/imagefile//default/default/{image.containerName}:{latest_tag.name}$")
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 308)
-    ret = self.client.get(ret.headers.get('Location'))
-    self.assertEqual(ret.status_code, 200)
-    self.assertEqual(ret.data, b"Hello default Collection!")
-    ret.close() # avoid unclosed filehandle warning
-
-    ret = self.client.get(f"/v1/imagefile//{image.containerName()}:{latest_tag.name}")
-    self.assertEqual(ret.status_code, 308)
-    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/imagefile/{image.containerName()}:{latest_tag.name}$")
-
     ret = self.client.get(ret.headers.get('Location'))
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello default Collection!")
     ret.close() # avoid unclosed filehandle warning
 
-    ret = self.client.get(f"/v1/imagefile/{image.containerName()}:{latest_tag.name}")
+    ret = self.client.get(f"/v1/imagefile//{image.containerName}:{latest_tag.name}")
+    self.assertEqual(ret.status_code, 308)
+    self.assertRegex(ret.headers.get('Location', ''), rf"/v1/imagefile/{image.containerName}:{latest_tag.name}$")
+
+    ret = self.client.get(ret.headers.get('Location'))
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.data, b"Hello default Collection!")
+    ret.close() # avoid unclosed filehandle warning
+
+    ret = self.client.get(f"/v1/imagefile/{image.containerName}:{latest_tag.name}")
     self.assertEqual(ret.status_code, 200)
     self.assertEqual(ret.data, b"Hello default Collection!")
     ret.close() # avoid unclosed filehandle warning
@@ -358,10 +358,10 @@ class TestImagefiles(RouteBase):
     self.assertTrue(os.path.exists(read_image.location))
     self.assertEqual(read_image.size, os.path.getsize(read_image.location))
 
-    db_container = Container.query.get(container_id)
-    self.assertDictEqual(db_container.imageTags(),
+    db_container: Container = Container.query.get(container_id)
+    self.assertDictEqual(db_container.imageTags,
       { 'latest': str(read_image.id) }, 'latest tag updated')
-    self.assertDictEqual(db_container.archImageTags(),
+    self.assertDictEqual(db_container.archImageTags,
       { 'amd64': { 'latest': str(read_image.id) }}, 'arch image tag updated'
     )
     db_image = Image.query.get(image_id)

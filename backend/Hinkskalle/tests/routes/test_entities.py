@@ -62,7 +62,7 @@ class TestEntities(RouteBase):
       'description': entity.description,
       'customData': entity.customData,
       'quota': entity.quota,
-      'size': entity.size(),
+      'size': entity.size,
       'defaultPrivate': entity.defaultPrivate,
       #'createdAt': entity.createdAt.isoformat('T', timespec='milliseconds'),
       'createdBy': entity.createdBy,
@@ -291,7 +291,7 @@ class TestEntities(RouteBase):
       ret = self.client.put('/v1/entities/grunz', json={
         'name': 'babsi-streusand',
       })
-    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.status_code, 400)
 
     dbEntity = Entity.query.filter(Entity.name=='grunz').one()
     self.assertEqual(dbEntity.name, 'grunz')

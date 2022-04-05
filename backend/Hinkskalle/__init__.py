@@ -61,6 +61,8 @@ def create_app():
     app.config['DEFAULT_ARCH']='amd64'
   if 'HINKSKALLE_SECRET_KEY' in os.environ:
     app.config['SECRET_KEY'] = os.getenv('HINKSKALLE_SECRET_KEY')
+  if app.config.get('SECRET_KEY') is None:
+    raise Exception('please configure SECRET_KEY in config.json or HINKSKALLE_SECRET_KEY as environment variable')
   if 'DB_PASSWORD' in os.environ:
     app.config['DB_PASSWORD'] = os.getenv('DB_PASSWORD')
   if 'SQLALCHEMY_DATABASE_URI' in os.environ:

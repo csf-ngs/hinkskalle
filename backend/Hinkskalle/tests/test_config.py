@@ -5,11 +5,14 @@ import json
 import os
 
 from Hinkskalle import create_app
+from Hinkskalle.util.auth.ldap import LDAPUsers
+from Hinkskalle.util.auth.local import LocalUsers
 
 def _test_conf():
   return {
     'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
-    'APPLICATION_ROOT': '/oink'
+    'APPLICATION_ROOT': '/oink',
+    'SECRET_KEY': 'supergeheim',
   }
 
 class TestConfig(unittest.TestCase):
@@ -32,6 +35,17 @@ class TestConfig(unittest.TestCase):
     self.assertEqual(test_app.config.get('APPLICATION_ROOT'), '/oink')
     self.assertEqual(test_app.config.get('SQLALCHEMY_DATABASE_URI'), 'sqlite:///:memory:')
   
+  def test_password_checkers_config(self):
+    cf = tempfile.NamedTemporaryFile(mode='w')
+
+    os.environ['HINKSKALLE_SETTINGS']=cf.name
+    json.dump(_test_conf(), cf)
+    cf.flush()
+    test_app = create_app()
+
+    from Hinkskalle import password_checkers
+    self.assertEqual(len(password_checkers.checkers), 1)
+    self.assertIsInstance(password_checkers.checkers[0], LocalUsers) 
   
   def test_secrets(self):
     '''an optional secrets config should override values from the main config'''
@@ -53,6 +67,21 @@ class TestConfig(unittest.TestCase):
 
     test_app = create_app()
     self.assertEqual(test_app.config.get('CANARY'), 'yellow')
+  
+  def test_secret_key_required(self):
+    cf = tempfile.NamedTemporaryFile(mode='w')
+    test_conf = _test_conf()
+    test_conf.pop('SECRET_KEY')
+    json.dump(test_conf, cf)
+    os.environ['HINKSKALLE_SETTINGS']=cf.name
+    cf.flush()
+
+    with self.assertRaisesRegex(Exception, r'SECRET_KEY'):
+      test_app = create_app()
+    os.environ['HINKSKALLE_SECRET_KEY']='saugeheim'
+    test_app = create_app()
+    self.assertEqual(test_app.config.get('SECRET_KEY'), 'saugeheim')
+
   
   def test_db_config(self):
     cf = tempfile.NamedTemporaryFile(mode='w')
@@ -157,3 +186,10 @@ class TestConfig(unittest.TestCase):
       'BIND_DN': 'drei',
       'BASE_DN': 'base dn',
     })
+
+    from Hinkskalle import password_checkers
+    self.assertEqual(len(password_checkers.checkers), 2)
+    self.assertCountEqual(
+      [ type(c) for c in password_checkers.checkers ],
+      [ LocalUsers, LDAPUsers ]
+    )

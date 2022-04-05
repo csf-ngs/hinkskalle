@@ -68,8 +68,8 @@ class LDAPUsers(PasswordCheckerBase):
       self.app.logger.debug(f'LDAP is not configured.')
       return
 
-    self.app.logger.debug(f"initializing ldap service with host {self.config.get('HOST', '')}")
     if svc is None:
+      self.app.logger.debug(f"initializing ldap service with host {self.config.get('HOST', '')}")
       self.ldap = LDAPService(host=self.config.get('HOST', ''), port=self.config.get('PORT', 389), bind_dn=self.config.get('BIND_DN'), bind_password=self.config.get('BIND_PASSWORD'), base_dn=self.config.get('BASE_DN'))
     else:
       self.ldap = svc

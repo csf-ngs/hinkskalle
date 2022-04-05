@@ -21,6 +21,7 @@ class MockLDAP():
   def __init__(self):
     self.svc = LDAPService(host='dummy', port=None, bind_dn=self.dummy_root_cn, bind_password=self.dummy_password, base_dn='ou=test', get_info=OFFLINE_AD_2012_R2, client_strategy=MOCK_SYNC)
     self.svc.connection.strategy.add_entry(self.dummy_root_cn, { 'cn': self.dummy_root, 'userPassword': self.dummy_password })
+    self.enabled = True
 
     self.auth = LDAPUsers(svc=self.svc)
   

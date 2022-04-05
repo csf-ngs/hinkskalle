@@ -9,6 +9,7 @@ export function plainTo{{classname}}(json: any): {{classname}} {
   {{utils.deserialize(fields)}}
   return obj;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serialize{{classname}}(obj: {{classname}}, unroll=false): any {
   const json: any = {};
   {{utils.serialize(fields)}}

@@ -22,7 +22,7 @@ class ImageSchema(Schema):
   hash = fields.String(allow_none=True)
   blob = fields.String(allow_none=True)
   size = fields.Int(allow_none=True, dump_only=True)
-  uploadState = fields.String()
+  uploadState = fields.String(allow_none=True)
   customData = fields.String(allow_none=True)
   arch = fields.String(allow_none=True)
   signed = fields.Boolean(allow_none=True, dump_only=True)
@@ -63,6 +63,8 @@ class UploadStates(enum.Enum):
   failed = 'failed'
   broken = 'broken'
   completed = 'completed'
+  def __str__(self):
+    return self.value
 
 class UploadTypes(enum.Enum):
   single = 'single'

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from ..route_base import RouteBase
 from .._util import _create_image, _fake_img_file, _prepare_img_data
 
-from Hinkskalle.models import Image, Tag, Container
+from Hinkskalle.models import Image, Tag, Container, UploadStates
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle import db
 
@@ -354,7 +354,7 @@ class TestImagefiles(RouteBase):
     self.assertEqual(ret.status_code, 200)
     # no more auto-tagging
     read_image = Image.query.get(image_id)
-    self.assertTrue(read_image.uploaded)
+    self.assertEqual(read_image.uploadState, UploadStates.completed)
     self.assertTrue(os.path.exists(read_image.location))
     self.assertEqual(read_image.size, os.path.getsize(read_image.location))
 
@@ -395,7 +395,7 @@ class TestImagefiles(RouteBase):
       ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
     self.assertEqual(ret.status_code, 413)
     image = Image.query.get(image_id)
-    self.assertFalse(image.uploaded)
+    self.assertEqual(image.uploadState, UploadStates.failed)
 
 
   def test_push_readonly(self):
@@ -435,7 +435,7 @@ class TestImagefiles(RouteBase):
   def test_push_overwrite(self):
     image = _create_image()[0]
     self.app.config['IMAGE_PATH']=os.path.join(tempfile.mkdtemp(), 'oink', 'oink')
-    image.uploaded=True
+    image.uploadState=UploadStates.completed
     image.location='/gru/nz'
 
     img_data, digest = _prepare_img_data()

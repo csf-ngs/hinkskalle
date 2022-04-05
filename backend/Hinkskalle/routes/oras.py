@@ -146,7 +146,7 @@ def authenticate_check():
     return jsonify({ 'msg': 'Hejsan!' })
   elif request.headers.get('Authorization'):
     current_app.logger.debug("checking basic auth...")
-    auth_header = request.headers.get('Authorization')
+    auth_header = request.headers.get('Authorization', '')
     parts = auth_header.split()
     if len(parts) != 2 or parts[0].lower()!='basic':
       raise OrasUnauthorized()
@@ -470,7 +470,7 @@ def oras_start_upload_session(name):
   upload_tmp = os.path.join(current_app.config['IMAGE_PATH'], '_tmp')
   os.makedirs(upload_tmp, exist_ok=True)
 
-  image = Image(container_ref=container, owner=g.authenticated_user, media_type='unknown')
+  image = Image(container_ref=container, owner=g.authenticated_user, media_type='unknown', uploadState=UploadStates.initialized)
   if args.get('expiresAt'):
     image.expiresAt = args.get('expiresAt')
   db.session.add(image)
@@ -506,7 +506,14 @@ def _do_single_post_upload(upload: ImageUploadUrl, digest: str, staged: bool = F
   if not digest:
     raise OrasDigestInvalid(f"need digest for single push upload")
   digest = digest.replace('sha256:', 'sha256.')
-  image = _receive_upload(upload, digest, staged=staged)
+  try:
+    image = _receive_upload(upload, digest, staged=staged)
+  except Exception as exc:
+    db.session.rollback()
+    upload.state = UploadStates.failed
+    upload.image_ref.uploadState = UploadStates.failed
+    db.session.commit()
+    raise exc
   blob_url = _get_service_url()+f"/v2/{image.container_ref.entityName}/{image.container_ref.collectionName}/{image.container_ref.name}/blobs/{image.hash.replace('sha256.', 'sha256:')}"
   response = make_response('', 201)
   response.headers['Location']=blob_url
@@ -762,7 +769,7 @@ def oras_push_registered(upload_id):
   digest = args['digest'].replace('sha256:', 'sha256.')
 
   try:
-    upload = ImageUploadUrl.query.filter(ImageUploadUrl.id == upload_id).one()
+    upload: ImageUploadUrl = ImageUploadUrl.query.filter(ImageUploadUrl.id == upload_id).one()
   except NoResultFound:
     raise OrasBlobUploadUnknown()
 
@@ -785,6 +792,7 @@ def oras_push_registered(upload_id):
   except Exception as exc:
     db.session.rollback()
     upload.state = UploadStates.failed
+    upload.image_ref.uploadState = UploadStates.failed
     db.session.commit()
     raise exc
   
@@ -910,18 +918,21 @@ def _receive_upload(upload: ImageUploadUrl, digest: str, staged: bool=False) -> 
       _, read = __receive_upload(open(upload.path, 'wb'), digest)
     except errors.UnprocessableEntity:
       upload.state = UploadStates.failed
+      upload.image_ref.uploadState = UploadStates.failed
       db.session.commit()
       raise OrasDigestInvalid()
   # OCI spec says content-length is MUST, but ORAS push PUTs without??
   if not staged and request.headers.get('content_length') is not None and read != int(request.headers['content_length']):
     current_app.logger.debug(f"content length {read} did not match header {request.headers['content_length']}")
     upload.state = UploadStates.failed
+    upload.image_ref.uploadState = UploadStates.failed
     db.session.commit()
     raise OrasBlobUploadInvalid(f"content length {read} did not match header {request.headers['content_length']}")
   
-  image = upload.image_ref
+  image: Image = upload.image_ref
   image.hash = digest 
   _move_image(upload.path, image)
+
   upload.state = UploadStates.completed
   # hide until we receive the manifest
   image.hide=True 

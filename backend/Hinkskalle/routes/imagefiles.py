@@ -139,7 +139,7 @@ def pull_image_default_entity(collection_id, tagged_container_id):
 def pull_image_default_collection_default_entity_single(tagged_container_id):
   return pull_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
 
-def _get_image_id(image_id):
+def _get_image_id(image_id) -> Image:
   try:
     image = Image.query.filter(Image.id==image_id).one()
   except NoResultFound:
@@ -331,6 +331,7 @@ def push_image_v2_complete(image_id):
   except Exception as exc:
     db.session.rollback()
     upload.state = UploadStates.failed
+    upload.image_ref.uploadState = UploadStates.failed
     db.session.commit()
     raise exc
 
@@ -371,6 +372,7 @@ def push_image_v2_multi_complete(image_id):
   except Exception as exc:
     db.session.rollback()
     upload.state = UploadStates.failed
+    image.uploadState = UploadStates.failed
     db.session.commit()
     raise exc
 
@@ -420,7 +422,12 @@ def push_image(image_id):
   os.makedirs(upload_tmp, exist_ok=True)
 
   tmpf, _ = _receive_upload(tempfile.NamedTemporaryFile('wb', delete=False, dir=upload_tmp), image.hash)
-  _move_image(tmpf.name, image)
+  try:
+    _move_image(tmpf.name, image)
+  except Exception as err:
+    image.uploadState = UploadStates.failed
+    db.session.commit()
+    raise err
 
   return 'Danke!'
 

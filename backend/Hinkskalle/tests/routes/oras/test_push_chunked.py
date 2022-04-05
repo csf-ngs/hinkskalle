@@ -25,7 +25,7 @@ class TestOrasPushChunked(RouteBase):
     self.assertEqual(db_upload.state, UploadStates.initialized)
     self.assertEqual(db_upload.type, UploadTypes.undetermined)
     self.assertTrue(os.path.exists(db_upload.path))
-    self.assertNotEqual(db_upload.uploadState, UploadStates.completed)
+    self.assertNotEqual(db_upload.image_ref.uploadState, UploadStates.completed)
 
   def test_push_chunks_init(self):
     image = _create_image()[0]

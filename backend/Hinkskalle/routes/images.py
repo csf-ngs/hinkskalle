@@ -193,6 +193,8 @@ def create_image():
   new_image = Image(**body)
   new_image.container_ref=container
   new_image.owner = g.authenticated_user
+  if new_image.uploadState is None:
+    new_image.uploadState = UploadStates.initialized
 
   # the db session autoflushes when running the query below
   # so we have to add here and catch any IntegrityError exceptions. 
@@ -206,7 +208,7 @@ def create_image():
   existing_images = [ img for img in Image.query.filter(Image.hash==new_image.hash).all() if img.container_id != container.id and img.uploadState == UploadStates.completed ]
   if len(existing_images) > 0:
     current_app.logger.debug(f"hash already found, re-using image location {existing_images[0].location}")
-    new_image.uploadState = UploadStates.completed
+    new_image.uploadState = existing_images[0].uploadState
     new_image.size=existing_images[0].size
     new_image.location=existing_images[0].location
     db.session.commit()

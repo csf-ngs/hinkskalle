@@ -159,7 +159,7 @@ const userModule: Module<State, any> = {
       return new Promise((resolve, reject) => {
         commit('loading');
         rootState.backend.delete(`/v1/users/${toDelete.username}`)
-          .then((response: AxiosResponse) => {
+          .then(() => {
             commit('succeeded');
             commit('remove', toDelete.id);
             resolve();

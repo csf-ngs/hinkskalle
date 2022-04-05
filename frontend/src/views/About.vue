@@ -233,7 +233,7 @@ import { getEnv } from '@/util/env';
 import Vue from 'vue';
 
 export default Vue.extend({
-  name: 'About',
+  name: 'HskAbout',
   computed: {
     isLoggedIn() {
       return this.$store.getters.isLoggedIn;

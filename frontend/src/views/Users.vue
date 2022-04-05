@@ -203,7 +203,7 @@ function defaultItem(): User {
 }
 
 export default Vue.extend({
-  name: 'Users',
+  name: 'HskUsers',
   mounted() {
     this.loadUsers().then(() => this.openEdit(this.$route.query.id));
   },

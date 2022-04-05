@@ -135,7 +135,7 @@ const collectionsModule: Module<State, any> = {
       return new Promise<void>((resolve, reject) => {
         commit('loading');
         rootState.backend.delete(`/v1/collections/${collection.entityName}/${collection.name}`)
-          .then((response: AxiosResponse) => {
+          .then(() => {
             commit('succeeded');
             commit('remove', collection.id);
             resolve();

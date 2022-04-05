@@ -28,7 +28,7 @@
                     <span style="margin-right: 0.2rem;">
                       {{manifest.filename}}: {{manifest.total_size | prettyBytes() }}
                     </span>
-                    <v-badge :content="manifest.downloadCount || '0'" :color="badgeColor">
+                    <v-badge :content="localState.downloadCount || '0'" :color="badgeColor">
                       <v-icon>mdi-download</v-icon>
                     </v-badge>
                   </v-btn>
@@ -56,7 +56,7 @@
             <span v-else>
               <span class="font-weight-medium">Filename:</span> {{manifest.filename}}&nbsp;|&nbsp;
               {{manifest.total_size | prettyBytes() }}
-              <v-badge :content="manifest.downloadCount || '0'" :color="badgeColor">
+              <v-badge :content="localState.downloadCount || '0'" :color="badgeColor">
                 <v-icon>mdi-download</v-icon>
               </v-badge>
             </span>
@@ -118,6 +118,7 @@ import Vue from 'vue';
 
 interface State {
   image?: Image;
+  downloadCount: number;
 }
 
 export default Vue.extend({
@@ -136,9 +137,11 @@ export default Vue.extend({
   data: (): { localState: State } => ({
     localState: {
       image: undefined,
+      downloadCount: 0,
     },
   }),
   mounted: function() {
+    this.localState.downloadCount = this.manifest.downloadCount;
     if (this.manifest.type !== 'singularity') {
       return;
     }
@@ -152,7 +155,7 @@ export default Vue.extend({
   },
   computed: {
     badgeColor() {
-      return this.manifest.downloadCount ?
+      return this.localState.downloadCount ?
         'blue darken-1' : 'blue-grey lighten-1'
     }
   },
@@ -166,7 +169,7 @@ export default Vue.extend({
         .then((location: string) => {
           window.location.href=location;
           // cheating
-          this.manifest.downloadCount++;
+          this.localState.downloadCount++;
         })
         .catch(err => {
           this.$store.commit('snackbar/showError', err);

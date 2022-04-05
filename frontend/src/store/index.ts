@@ -70,7 +70,7 @@ export default new Vuex.Store({
       state.authStatus = 'success';
       state.backend.defaults.headers.common['Authorization']=`Bearer ${state.authToken}`;
     },
-    authFailed(state: State, error) {
+    authFailed(state: State) {
       state.authStatus = 'failed';
       state.currentUser = null;
       state.authToken = '';

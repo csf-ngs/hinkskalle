@@ -115,7 +115,7 @@ export default Vue.extend({
   created: function () {
     const { $store, $router } = this;
     this.$store.commit('registerInterceptor', (err: AxiosError) => {
-      return new Promise((resolve, reject) => {
+      return new Promise(() => {
         if (err.response && err.response.status === 401 && err.config) {
           $store.dispatch('logout');
           if ($router.currentRoute.fullPath !== '/login') {

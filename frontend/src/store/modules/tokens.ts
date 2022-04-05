@@ -99,7 +99,7 @@ const tokenModule: Module<State, any> = {
       return new Promise((resolve, reject) => {
         commit('tokensLoading');
         rootState.backend.delete(`/v1/users/${getters.user.username}/tokens/${id}`)
-          .then((response: AxiosResponse) => {
+          .then(() => {
             commit('tokensLoadingSucceeded');
             commit('removeToken', id);
             resolve();
@@ -110,7 +110,7 @@ const tokenModule: Module<State, any> = {
           });
       });
     },
-    requestDownload: ({ commit, rootState }, req: { id: string; type: string }): Promise<string> => {
+    requestDownload: ({ rootState }, req: { id: string; type: string }): Promise<string> => {
       return new Promise((resolve, reject) => {
         (rootState.backend as AxiosInstance).post(`/v1/get-download-token`, req, { maxRedirects: 0})
           .then((response: AxiosResponse) => {

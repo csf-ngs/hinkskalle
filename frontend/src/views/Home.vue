@@ -162,7 +162,7 @@ interface State {
 }
 
 export default Vue.extend({
-  name: 'Home',
+  name: 'HskHome',
   data: (): { localState: State } => ({
     localState: {
       usageTab: 0,

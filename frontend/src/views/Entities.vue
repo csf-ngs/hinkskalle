@@ -237,7 +237,7 @@ function defaultItem(): Entity {
 }
 
 export default Vue.extend({
-  name: 'Entities',
+  name: 'HskEntities',
   components: { 'hsk-user-input': UserInput },
   mounted() {
     this.loadEntities();

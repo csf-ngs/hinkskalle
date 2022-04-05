@@ -155,7 +155,7 @@ const containersModule: Module<State, any> = {
       return new Promise<void>((resolve, reject) => {
         commit('loading');
         rootState.backend.delete(`/v1/containers/${container.entityName}/${container.collectionName}/${container.name}`, { params: { cascade } })
-          .then((response: AxiosResponse) => {
+          .then(() => {
             commit('succeeded');
             commit('remove', container.id);
             resolve();

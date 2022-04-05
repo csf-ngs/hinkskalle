@@ -133,7 +133,7 @@ interface State {
 }
 
 export default Vue.extend({
-  name: 'Tokens',
+  name: 'HskTokens',
   mounted() {
     this.loadTokens();
   },

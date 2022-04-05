@@ -214,7 +214,7 @@ import { LdapStatus, LdapPing, AdmLdapSyncResults, Job } from '@/store/models';
 import Vue from 'vue';
 
 export default Vue.extend({
-  name: 'Ldap',
+  name: 'HskLdap',
   mounted() {
     this.loadStatus();
     this.loadSyncResults();

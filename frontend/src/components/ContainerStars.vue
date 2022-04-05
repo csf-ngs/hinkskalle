@@ -1,5 +1,5 @@
 <template>
-  <v-badge :content="container.stars || '0'" inline class="mx-1" color="blue-grey lighten-1">
+  <v-badge :content="localState.stars || '0'" inline class="mx-1" color="blue-grey lighten-1">
     <template v-if="isStarred()">
       <v-icon color="yellow accent-4" @click="removeStar()">mdi-star</v-icon>
     </template>
@@ -13,10 +13,15 @@ import { Container } from '@/store/models';
 import Vue from 'vue';
 import { find as _find } from 'lodash';
 
+interface State {
+  stars: number;
+}
+
 export default Vue.extend({
   name: 'ContainerStars',
   mounted() {
     this.loadStars();
+    this.localState.stars = this.container.stars;
   },
   props: {
     container: {
@@ -24,6 +29,11 @@ export default Vue.extend({
       required: true,
     },
   },
+  data: (): { localState: State } => ({
+    localState: {
+      stars: 0,
+    }
+  }),
   methods: {
     isStarred(): boolean {
       return !!_find(this.$store.getters['users/starred'], c => c.id === this.container.id);
@@ -31,14 +41,14 @@ export default Vue.extend({
     addStar() {
       this.$store.dispatch('users/addStar', this.container)
         .then(() => {
-          this.container.stars++;
+          this.localState.stars++;
         })
         .catch(err => this.$store.commit('snackbar/showError', err));
     },
     removeStar() {
       this.$store.dispatch('users/removeStar', this.container)
         .then(() => {
-          this.container.stars--;
+          this.localState.stars--;
         })
         .catch(err => this.$store.commit('snackbar/showError', err));
     },

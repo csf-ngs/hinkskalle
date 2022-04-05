@@ -69,6 +69,7 @@ export function plainToCollection(json: any): Collection {
     
   return obj;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeCollection(obj: Collection, unroll=false): any {
   const json: any = {};
   json['createdBy'] = obj.createdBy
@@ -158,6 +159,7 @@ export function plainToContainer(json: any): Container {
     
   return obj;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeContainer(obj: Container, unroll=false): any {
   const json: any = {};
   json['collection'] = obj.collection
@@ -237,6 +239,7 @@ export function plainToEntity(json: any): Entity {
     
   return obj;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeEntity(obj: Entity, unroll=false): any {
   const json: any = {};
   json['createdBy'] = obj.createdBy
@@ -341,6 +344,7 @@ export function plainToImage(json: any): Image {
     
   return obj;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeImage(obj: Image, unroll=false): any {
   const json: any = {};
   json['arch'] = obj.arch
@@ -388,6 +392,7 @@ export function plainToGroup(json: any): Group {
       
   return obj;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeGroup(obj: Group, unroll=false): any {
   const json: any = {};
   json['email'] = obj.email
@@ -453,6 +458,7 @@ export function plainToUser(json: any): User {
     
   return obj;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeUser(obj: User, unroll=false): any {
   const json: any = {};
   json['email'] = obj.email
@@ -507,6 +513,7 @@ export function plainToToken(json: any): Token {
       
   return obj;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeToken(obj: Token, unroll=false): any {
   const json: any = {};
   json['comment'] = obj.comment
@@ -560,6 +567,7 @@ export function plainToJob(json: any): Job {
     
   return obj;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeJob(obj: Job, unroll=false): any {
   const json: any = {};
   json['dependson'] = obj.dependson
@@ -598,6 +606,7 @@ export function plainToLdapStatus(json: any): LdapStatus {
     
   return obj;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeLdapStatus(obj: LdapStatus, unroll=false): any {
   const json: any = {};
   json['config'] = obj.config
@@ -622,6 +631,7 @@ export function plainToLdapPing(json: any): LdapPing {
     
   return obj;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeLdapPing(obj: LdapPing, unroll=false): any {
   const json: any = {};
   json['error'] = obj.error
@@ -690,6 +700,7 @@ export function plainToManifest(json: any): Manifest {
       
   return obj;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeManifest(obj: Manifest, unroll=false): any {
   const json: any = {};
   json['collection'] = obj.collection

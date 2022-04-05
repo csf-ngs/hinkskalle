@@ -127,7 +127,7 @@ interface State {
 }
 
 export default Vue.extend({
-  name: 'Account',
+  name: 'HskAccount',
   data: (): { localState: State } => ({
     localState: {
       editUser: null,

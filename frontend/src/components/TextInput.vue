@@ -125,17 +125,17 @@ export default Vue.extend({
     }
   },
   watch: {
-    field(newVal, oldVal) {
+    field() {
       if (this.obj && this.field) {
         this.localState.value=this.obj[this.field];
       }
     },
-    obj(newVal, oldVal) {
+    obj() {
       if (this.obj && this.field) {
         this.localState.value=this.obj[this.field];
       }
     },
-    staticValue(newVal, oldVal) {
+    staticValue(newVal) {
       this.localState.value=newVal;
       this.localState.static = newVal !== undefined;
     },

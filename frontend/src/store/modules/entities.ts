@@ -113,7 +113,7 @@ const entitiesModule: Module<State, any> = {
       return new Promise<void>((resolve, reject) => {
         commit('loading');
         rootState.backend.delete(`/v1/entities/${entity.name}`)
-          .then((response: AxiosResponse) => {
+          .then(() => {
             commit('succeeded');
             commit('remove', entity.id);
             resolve();

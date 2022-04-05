@@ -275,7 +275,7 @@ function defaultItem(): Container {
 
 
 export default Vue.extend({
-  name: 'Containers',
+  name: 'HskContainers',
   components: { 'hsk-user-input': UserInput, ContainerType },
   mounted() {
     this.loadContainers();

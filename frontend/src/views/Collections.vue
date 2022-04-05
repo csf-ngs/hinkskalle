@@ -203,8 +203,6 @@
 <script lang="ts">
 import { Collection, Entity, User, checkName } from '../store/models';
 import Vue from 'vue';
-import { DataTableHeader } from 'vuetify';
-
 import { clone as _clone } from 'lodash';
 import moment from 'moment';
 import UserInput from '@/components/UserInput.vue';
@@ -226,7 +224,7 @@ function defaultItem(): Collection {
 }
 
 export default Vue.extend({
-  name: 'Collections',
+  name: 'HskCollections',
   components: { 'hsk-user-input': UserInput },
   mounted() {
     this.loadCollections();
@@ -324,7 +322,7 @@ export default Vue.extend({
         this.localState.editItem.entityName = this.$route.params.entity;
       }
       this.$store.dispatch(action, this.localState.editItem)
-        .then(upd => this.$store.commit('snackbar/showSuccess', 'Yay!'))
+        .then(() => this.$store.commit('snackbar/showSuccess', 'Yay!'))
         .catch(err => this.$store.commit('snackbar/showError', err));
       this.closeEdit();
     },

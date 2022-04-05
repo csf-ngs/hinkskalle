@@ -1,8 +1,8 @@
 <template>
-  <v-container v-if="image">
-      <v-row v-for="tag in image.tags" :key="tag">
+  <v-container v-if="localState.image">
+      <v-row v-for="tag in localState.image.tags" :key="tag">
         <v-col>
-          <hsk-text-input :label="'Pull '+tag" :static-value="'library://'+image.pullUrl(tag)">
+          <hsk-text-input :label="'Pull '+tag" :static-value="'library://'+localState.image.pullUrl(tag)">
             <template v-slot:append v-if="canEdit">
               <v-icon color="error" @click="deleteTag(tag)">mdi-delete-outline</v-icon>
             </template>
@@ -42,10 +42,10 @@
 
       <v-row>
         <v-col>
-          <hsk-text-input label="Created" :static-value="image.createdAt | moment('YYYY-MM-DD HH:mm:ss')"></hsk-text-input>
+          <hsk-text-input label="Created" :static-value="localState.image.createdAt | moment('YYYY-MM-DD HH:mm:ss')"></hsk-text-input>
         </v-col>
         <v-col>
-          <hsk-text-input label="Created By" :static-value="image.createdBy"></hsk-text-input>
+          <hsk-text-input label="Created By" :static-value="localState.image.createdBy"></hsk-text-input>
         </v-col>
       </v-row>
       <v-row>
@@ -53,39 +53,39 @@
           <hsk-text-input 
             label="Description" 
             field="description" 
-            :obj="image" 
+            :obj="localState.image" 
             action="images/update"
             :readonly="!canEdit"
-            @updated="image=$event"></hsk-text-input>
+            @updated="localState.image=$event"></hsk-text-input>
         </v-col>
       </v-row>
       <v-row>
         <v-col>
-          <hsk-text-input label="Hash" :static-value="image.hash"></hsk-text-input>
+          <hsk-text-input label="Hash" :static-value="localState.image.hash"></hsk-text-input>
         </v-col>
       </v-row>
       <v-row>
         <v-col>
-          <hsk-text-input label="Size" :static-value="image.size | prettyBytes()"></hsk-text-input>
+          <hsk-text-input label="Size" :static-value="localState.image.size | prettyBytes()"></hsk-text-input>
         </v-col>
       </v-row>
       <v-row>
         <v-col>
-          <hsk-text-input type="yesno" label="Signed" :static-value="image.signed"></hsk-text-input>
+          <hsk-text-input type="yesno" label="Signed" :static-value="localState.image.signed"></hsk-text-input>
         </v-col>
         <v-col>
-          <hsk-text-input type="yesno" label="Verified" :static-value="image.signatureVerified"></hsk-text-input>
+          <hsk-text-input type="yesno" label="Verified" :static-value="localState.image.signatureVerified"></hsk-text-input>
         </v-col>
         <v-col>
-          <hsk-text-input type="yesno" label="Encrypted" :static-value="image.encrypted"></hsk-text-input>
+          <hsk-text-input type="yesno" label="Encrypted" :static-value="localState.image.encrypted"></hsk-text-input>
         </v-col>
       </v-row>
       <v-row>
         <v-col>
-          <hsk-text-input type="yesno" label="Uploaded" :static-value="image.uploaded"></hsk-text-input>
+          <hsk-text-input type="yesno" label="Uploaded" :static-value="localState.image.uploaded"></hsk-text-input>
         </v-col>
         <v-col>
-          <hsk-text-input label="Downloads" :static-value="image.downloadCount"></hsk-text-input>
+          <hsk-text-input label="Downloads" :static-value="localState.image.downloadCount"></hsk-text-input>
         </v-col>
       </v-row>
       <v-row v-if="canEdit">
@@ -121,6 +121,7 @@ interface State {
   newTagValid: boolean;
   showAddTag: boolean;
   showDelete: boolean;
+  image?: Image;
 }
 
 export default Vue.extend({
@@ -141,14 +142,18 @@ export default Vue.extend({
       showAddTag: false,
       showDelete: false,
       newTagValid: true,
+      image: undefined,
     }
   }),
+  mounted: function() {
+    this.localState.image = this.image;
+  },
   computed: {
     currentUser(): User {
       return this.$store.getters.currentUser;
     },
     canEdit(): boolean {
-      return !this.readonly && this.image.canEdit(this.currentUser)
+      return !this.readonly && (this.localState.image?.canEdit(this.currentUser) ?? false)
     },
   },
   watch: {

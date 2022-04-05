@@ -122,14 +122,10 @@
 <script lang="ts">
 import Vue from 'vue';
 import { each as _each } from 'lodash';
-import { AdmKey, Job } from '@/store/models';
-
-interface State {
-  jobs: string[];
-}
+import { Job } from '@/store/models';
 
 export default Vue.extend({
-  name: 'Tasks',
+  name: 'HskTasks',
   mounted() {
     _each(this.jobs, key => this.loadJobDetails(key));
   },

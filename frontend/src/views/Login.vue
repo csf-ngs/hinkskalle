@@ -131,7 +131,7 @@ interface Data {
 }
 
 export default Vue.extend({
-  name: 'Login',
+  name: 'HskLogin',
   data: (): Data => ({
     localState: {
       tab: 0,
@@ -159,7 +159,7 @@ export default Vue.extend({
       this.localState.registerSuccess = false;
       this.localState.newUser.password=this.localState.password1;
       this.$store.dispatch('users/register', this.localState.newUser)
-        .then(user => {
+        .then(() => {
           this.localState.registerError = '';
           this.localState.registerSuccess = true;
         })

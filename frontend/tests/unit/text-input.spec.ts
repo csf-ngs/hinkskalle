@@ -51,7 +51,7 @@ describe('TextInput.vue', () => {
     });
   });
 
-  it('has static value', async done => {
+  it('has static value', async () => {
     const propsData = {
       label: 'Testhase',
       staticValue: 'Squeak',
@@ -65,10 +65,9 @@ describe('TextInput.vue', () => {
     await Vue.nextTick();
     expect(wrapper.vm.$data.localState.value).toBe('Oink');
     expect(wrapper.vm.$data.localState.static).toBe(true);
-    done();
   });
 
-  it('has object value', async done => {
+  it('has object value', async () => {
     const obj = { nudl: 'aug' };
     const propsData = {
       label: 'Testhase',
@@ -89,11 +88,10 @@ describe('TextInput.vue', () => {
     expect(wrapper.vm.$data.localState.value).toBe('nase');
     expect(newObj.nudl).toBe('ohr');
 
-    done();
   });
 
   allTypes.forEach(type => {
-    it(`${type} has required flag`, async done => {
+    it(`${type} has required flag`, async () => {
       const propsData = {
         label: 'Testhase',
         obj: { nudl: null },
@@ -113,10 +111,9 @@ describe('TextInput.vue', () => {
       await Vue.nextTick();
       expect(wrapper.findAll('.v-messages')).toHaveLength(0);
 
-      done();
     });
 
-    it(type+' has readonly', async done => {
+    it(type+' has readonly', async () => {
       const propsData = {
         label: 'Testhase',
         obj: { nudl: 'aug' },
@@ -142,11 +139,10 @@ describe('TextInput.vue', () => {
         expect(wrapper.find(el[type]).attributes()['readonly']).toBeFalsy();
       }
 
-      done();
     });
   });
 
-    it('saveValue triggers action and event', async done => {
+    it('saveValue triggers action and event', async () => {
       actions['testHase'].mockResolvedValue({ 'nudl': 'ohrbohr' });
       const obj = { nudl: 'aug' };
       const propsData = {
@@ -167,9 +163,8 @@ describe('TextInput.vue', () => {
       expect(wrapper.vm.$data.localState.status).toBe('success');
 
       expect(obj.nudl).toBe('aug'); // do not change original object
-      done();
     });
-    it('saveValue failed sets status', async done => {
+    it('saveValue failed sets status', async () => {
       actions['testHase'].mockRejectedValue({ fail: 'fail' });
 
       const obj = { nudl: 'aug' };
@@ -186,10 +181,9 @@ describe('TextInput.vue', () => {
       expect(mutations['snackbar/showError']).toHaveBeenCalledWith(expect.anything(), { fail: 'fail' });
       expect(wrapper.vm.$data.localState.status).toBe('failed');
       expect(wrapper.emitted().updated).toBeUndefined();
-      done();
     });
 
-    it('saveValue without action triggers only event', async done => {
+    it('saveValue without action triggers only event', async () => {
       const obj = { nudl: 'aug' };
       const propsData = {
         label: 'Testhase',
@@ -203,7 +197,6 @@ describe('TextInput.vue', () => {
 
       expect(wrapper.emitted().updated).toHaveLength(1);
       expect(wrapper.emitted().updated![0]).toStrictEqual([{ nudl: 'ohr' }]);
-      done();
     });
 
 });

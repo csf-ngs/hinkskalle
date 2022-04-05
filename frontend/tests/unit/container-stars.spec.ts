@@ -46,7 +46,7 @@ describe('ContainerStars.vue', () => {
     expect((wrapper.vm as any).isStarred()).toBeFalsy();
   });
 
-  it('calls addStar', async done => {
+  it('calls addStar', async () => {
     const propsData = {
       container: testContainersObj[1]
     };
@@ -55,10 +55,9 @@ describe('ContainerStars.vue', () => {
     await Vue.nextTick();
     expect(actions['users/addStar']).toHaveBeenLastCalledWith(expect.anything(), testContainersObj[1]);
     await Vue.nextTick();
-    expect(testContainersObj[1].stars).toBe(1);
-    done();
+    expect(wrapper.find('.v-badge__badge').text()).toBe("1");
   });
-  it('calls removeStar', async done => {
+  it('calls removeStar', async () => {
     testContainersObj[0].stars=1;
     const propsData = {
       container: testContainersObj[0]
@@ -68,7 +67,6 @@ describe('ContainerStars.vue', () => {
     await Vue.nextTick();
     expect(actions['users/removeStar']).toHaveBeenLastCalledWith(expect.anything(), testContainersObj[0]);
     await Vue.nextTick();
-    expect(testContainersObj[0].stars).toBe(0);
-    done();
+    expect(wrapper.find('.v-badge__badge').text()).toBe("0");
   });
 });

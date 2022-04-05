@@ -68,10 +68,10 @@ export function makeTestCollectionsObj(from: any=null): Collection[] {
 export function makeTestEntities() {
   return [
     {
-      id: '1', name: 'esel', description: 'eyore', createdAt: new Date(),
+      id: '1', name: 'esel', description: 'eyore', createdAt: new Date(), quota: 0,
     },
     {
-      id: '2', name: 'schaf', description: 'shawn', createdAt: new Date(),
+      id: '2', name: 'schaf', description: 'shawn', createdAt: new Date(), quota: 0,
     }
   ];
 }

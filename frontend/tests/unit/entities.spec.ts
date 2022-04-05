@@ -64,25 +64,23 @@ describe('Entities.vue', () => {
     expect(wrapper.findAll('div#entities .entity')).toHaveLength(2);
   });
 
-  it('searches entity names', async done => {
+  it('searches entity names', async () => {
     const wrapper = mount(Entities, { localVue, vuetify, store, router });
     wrapper.find('input#search').setValue('esel');
     await Vue.nextTick();
     expect(wrapper.findAll('div#entities .entity')).toHaveLength(1);
     expect(wrapper.find('div#entities .entity').text()).toContain('esel');
-    done();
   });
 
-  it('searches entity descriptions', async done => {
+  it('searches entity descriptions', async () => {
     const wrapper = mount(Entities, { localVue, vuetify, store, router });
     wrapper.find('input#search').setValue('shawn');
     await Vue.nextTick();
     expect(wrapper.findAll('div#entities .entity')).toHaveLength(1);
     expect(wrapper.find('div#entities .entity').text()).toContain('shawn');
-    done();
   });
 
-  it('shows create dialog', async done => {
+  it('shows create dialog', async () => {
     testUserObj.isAdmin = true;
     const wrapper = mount(Entities, { localVue, vuetify, store, router });
     await Vue.nextTick();
@@ -94,10 +92,9 @@ describe('Entities.vue', () => {
 
     expect(wrapper.find('div#name input').attributes()['readonly']).toBeFalsy();
 
-    done();
   });
 
-  it('shows edit dialog', async done => {
+  it('shows edit dialog', async () => {
     const wrapper = mount(Entities, { localVue, vuetify, store, router });
     wrapper.find('div#entities .entity button.mdi-pencil').trigger('click');
     await Vue.nextTick();
@@ -107,6 +104,5 @@ describe('Entities.vue', () => {
 
     expect(wrapper.find('div#name input').attributes()['readonly']).toBeTruthy();
 
-    done();
   });
 });

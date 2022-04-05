@@ -40,7 +40,7 @@ describe('Ldap.vue', () => {
     expect(actions['adm/ldapSyncResults']).toHaveBeenCalled();
   });
 
-  it('pings ldap', async done => {
+  it('pings ldap', async () => {
     getters['adm/ldapStatus'].mockReturnValue({
       status: 'configured',
       config: {},
@@ -49,6 +49,5 @@ describe('Ldap.vue', () => {
     wrapper.find('button#ping').trigger('click');
     await Vue.nextTick();
     expect(actions['adm/ldapPing']).toHaveBeenCalled();
-    done();
   });
 });

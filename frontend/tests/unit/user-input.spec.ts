@@ -35,16 +35,14 @@ describe("UserInput.vue", () => {
     expect(wrapper.find('label').text()).toBe('Username');
   });
 
-  it('sets initial search value', async done => {
+  it('sets initial search value', async () => {
     const propsData = { value: 'test.oink' };
     const wrapper = mount(UserInput, { localVue, vuetify, store, propsData });
     await Vue.nextTick();
     expect(actions['users/search']).toHaveBeenLastCalledWith(expect.anything(), { username: 'test.oink' });
-    expect(wrapper.find('input').attributes()['readonly']).toBeFalsy();
-    done();
   });
 
-  it('sets readonly', async done => {
+  it('sets readonly', done => {
     const propsData = { value: 'test.oink', readonly: true };
     const wrapper = mount(UserInput, { localVue, vuetify, store, propsData });
     expect(wrapper.find('input').attributes()['readonly']).toBeTruthy();

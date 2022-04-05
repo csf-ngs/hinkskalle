@@ -25,7 +25,7 @@ describe('Login.vue', () => {
     expect(wrapper.find('div.v-tab').text()).toBe('Login');
   });
 
-  it('checks required', async done => {
+  it('checks required', async () => {
     const wrapper = mount(Login, { localVue, store, vuetify, router });
     expect(wrapper.find('button#login').attributes('disabled')).toBeTruthy();
 
@@ -34,10 +34,9 @@ describe('Login.vue', () => {
 
     await Vue.nextTick();
     expect(wrapper.find('button#login').attributes('disabled')).toBeFalsy();
-    done();
   });
 
-  it('routes on successful login', async done => {
+  it('routes on successful login', async () => {
     const myLocal = createLocalVue();
     myLocal.use(Vuex);
 
@@ -58,10 +57,9 @@ describe('Login.vue', () => {
     await wrapper.find('form').trigger('submit');
     await Vue.nextTick();
     expect(mockRouter.push).toHaveBeenCalledWith('/');
-    done();
   });
 
-  it('shows error on failed login', async done => {
+  it('shows error on failed login', async () => {
     store = new Vuex.Store({
       actions: {
         requestAuth: jest.fn().mockRejectedValue({ message: 'dummy' }),
@@ -74,7 +72,6 @@ describe('Login.vue', () => {
     await Vue.nextTick();
     await Vue.nextTick();
     expect(wrapper.find('div.v-alert').text()).toContain('dummy');
-    done();
   });
 
 

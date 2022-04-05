@@ -4,6 +4,7 @@ import Vuex, { Store } from 'vuex';
 import Vue from 'vue';
 import VueRouter from 'vue-router';
 
+
 import Collections from '@/views/Collections.vue';
 
 import { localVue, localVueNoRouter } from '../setup';
@@ -76,25 +77,23 @@ describe('Collections.vue', () => {
     expect(wrapper.findAll('div#collections .collection')).toHaveLength(2);
   });
 
-  it('searches collection names', async done => {
+  it('searches collection names', async () => {
     const wrapper = mount(Collections, { localVue, vuetify, store, router });
     wrapper.find('input#search').setValue('esel');
     await Vue.nextTick();
     expect(wrapper.findAll('div#collections .collection')).toHaveLength(1);
     expect(wrapper.find('div#collections .collection').text()).toContain('esel');
-    done();
   });
 
-  it('searches collection descriptions', async done => {
+  it('searches collection descriptions', async () => {
     const wrapper = mount(Collections, { localVue, vuetify, store, router });
     wrapper.find('input#search').setValue('shawn');
     await Vue.nextTick();
     expect(wrapper.findAll('div#collections .collection')).toHaveLength(1);
     expect(wrapper.find('div#collections .collection').text()).toContain('schaf');
-    done();
   });
 
-  it('shows create dialog', async done => {
+  it('shows create dialog', async () => {
     const wrapper = mount(Collections, { localVue, vuetify, store, router });
     wrapper.find('button#create-collection').trigger('click');
     await Vue.nextTick();
@@ -103,10 +102,9 @@ describe('Collections.vue', () => {
     expect(wrapper.vm.$data.localState.editItem.name).toBeUndefined();
 
     expect(wrapper.find('div#name input').attributes()['readonly']).toBeFalsy();
-    done();
   });
 
-  it('shows edit dialog', async done => {
+  it('shows edit dialog', async () => {
     const wrapper = mount(Collections, { localVue, vuetify, store, router });
     wrapper.find('div#collections .collection button.mdi-pencil').trigger('click');
     await Vue.nextTick();
@@ -116,10 +114,9 @@ describe('Collections.vue', () => {
 
     expect(wrapper.find('div#name input').attributes()['readonly']).toBeTruthy();
 
-    done();
   });
 
-  it('uses route params for default entity name', async done => {
+  it.skip('uses route params for default entity name', async () => {
     const $route = {
       path: '/test', params: { entity: 'oinkhase' }
     };
@@ -140,10 +137,8 @@ describe('Collections.vue', () => {
       description: expectCollection.description,
     }}});
     await Vue.nextTick();
-    await Vue.nextTick();
-    wrapper.find('button#save').trigger('click');
+    await wrapper.find('button#save').trigger('click');
     expect(actions['collections/create']).toHaveBeenLastCalledWith(expect.anything(), expectCollection);
     
-    done();
   });
 });

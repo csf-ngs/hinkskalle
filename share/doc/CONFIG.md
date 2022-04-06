@@ -1,7 +1,7 @@
 # Configuration Values
 
 Refer to
-[https://flask.palletsprojects.com/en/1.1.x/config/](https://flask.palletsprojects.com/en/1.1.x/config/)
+[https://flask.palletsprojects.com/en/2.1.x/config/](https://flask.palletsprojects.com/en/2.1.x/config/)
 for general Flask configuration values.
 
 ### Flask Config Values
@@ -53,14 +53,15 @@ Available tasks:
 
 - `expire_images`: delete image files that have reached their `expiresAt` data (e.g. temporary uploads)
 - `check_quotas`: recalculate space usage for all entities.
-- `ldap_sync_results`: sync user database with LDAP server
+- `ldap_sync_results`: sync user database with LDAP server. You might not need this.
 
 ### Secrets
 
 try to keep these out of `config.json`!
 
-- `DB_PASSWORD`
-- `REDIS_PASSWORD`
+- `SECRET_KEY` for JWT token signing. *Important*: could be used to download any and all of your containers, do not leak!
+- `DB_PASSWORD`  for postgresql db
+- `REDIS_PASSWORD` for redis (job queue)
 
 ### Auth/LDAP config
 
@@ -100,6 +101,20 @@ hinkskalle finds them there, it will overwrite the values:
 - `HINKSKALLE_LDAP_BIND_DN`
 - `HINKSKALLE_LDAP_BIND_PASSWORD`
 - `HINKSKALLE_LDAP_BASE_DN`
+- `HINKSKALLE_SECRET_KEY`
 
 This is superuseful for injecting configs and secrets when running Hinkskalle
 in a container (e.g. docker)
+
+If using docker deployments you should also set the environment variables
+
+- `POSTGRES_PASSWORD`
+
+for the database initialization. It should match `DB_PASSWORD`. in addition make sure that
+
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+
+are set and match your sqlalchemy database uri.
+
+Refer to the [official docker image docs](https://hub.docker.com/_/postgres)

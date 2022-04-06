@@ -49,10 +49,9 @@ class ImageCreateSchema(ImageSchema, RequestSchema):
   pass
 
 class ImageUpdateSchema(ImageSchema, RequestSchema):
-  hash = fields.String(dump_only=True)
-  blob = fields.String(dump_only=True)
-  uploaded = fields.String(dump_only=True)
-  container = fields.String(dump_only=True)
+  container = fields.String(required=False)
+  uploadState = fields.String(required=False)
+
 
 class TagDataSchema(Schema):
   tags = fields.List(fields.String())
@@ -256,6 +255,10 @@ def update_image_tags(entity_id, collection_id, tagged_container_id):
 )
 def update_image(entity_id, collection_id, tagged_container_id):
   body = rebar.validated_body
+  body.pop('hash', None)
+  body.pop('blob', None)
+  body.pop('container', None)
+  body.pop('uploadState', None)
   image = _get_image(entity_id, collection_id, tagged_container_id)
 
   if not image.check_update_access(g.authenticated_user):

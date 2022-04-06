@@ -20,7 +20,7 @@ class EntityCreateSchema(EntitySchema, RequestSchema):
   pass
 
 class EntityUpdateSchema(EntitySchema, RequestSchema):
-  name = fields.String(dump_only=True)
+  name = fields.String(required=False)
 
 class EntityDeleteResponseSchema(ResponseSchema):
   status = fields.String()
@@ -100,6 +100,7 @@ def create_entity():
 )
 def update_entity(entity_id):
   body = rebar.validated_body
+  body.pop('name', None)
   entity = _get_entity(entity_id)
 
   if not entity.check_update_access(g.authenticated_user):

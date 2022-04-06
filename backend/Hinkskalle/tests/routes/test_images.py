@@ -568,6 +568,26 @@ class TestImages(RouteBase):
     self.assertEqual(dbImage.customData, 'hot drei Eckn')
 
     self.assertTrue(abs(dbImage.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+  
+  def test_update_dumponly(self):
+    image = _create_image()[0]
+    latest_tag = Tag(name='oink', image_ref=image)
+    db.session.add(latest_tag)
+    db.session.commit()
+    image_id = image.id
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:oink", json={
+        'hash': 'hasch',
+        'blob': 'blubb',
+        'container': '222',
+      })
+    self.assertEqual(ret.status_code, 200)
+
+    dbImage: Image = Image.query.get(image_id)
+    self.assertEqual(dbImage.hash, image.hash)
+    self.assertEqual(dbImage.blob, image.blob)
+    self.assertEqual(dbImage.container, image.container)
 
   def test_update_user(self):
     image = _create_image()[0]

@@ -72,12 +72,12 @@ export function plainToCollection(json: any): Collection {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeCollection(obj: Collection, unroll=false): any {
   const json: any = {};
-  json['createdBy'] = obj.createdBy
-      json['customData'] = obj.customData
-      json['description'] = obj.description
-      json['entity'] = obj.entity
-      json['name'] = obj.name
-      json['private'] = obj.private
+  json['createdBy'] = obj.createdBy;
+      json['customData'] = obj.customData;
+      json['description'] = obj.description;
+      json['entity'] = obj.entity;
+      json['name'] = obj.name;
+      json['private'] = obj.private;
       
   return json;
 }
@@ -162,15 +162,15 @@ export function plainToContainer(json: any): Container {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeContainer(obj: Container, unroll=false): any {
   const json: any = {};
-  json['collection'] = obj.collection
-      json['createdBy'] = obj.createdBy
-      json['customData'] = obj.customData
-      json['description'] = obj.description
-      json['fullDescription'] = obj.fullDescription
-      json['name'] = obj.name
-      json['private'] = obj.private
-      json['readOnly'] = obj.readOnly
-      json['vcsUrl'] = obj.vcsUrl
+  json['collection'] = obj.collection;
+      json['createdBy'] = obj.createdBy;
+      json['customData'] = obj.customData;
+      json['description'] = obj.description;
+      json['fullDescription'] = obj.fullDescription;
+      json['name'] = obj.name;
+      json['private'] = obj.private;
+      json['readOnly'] = obj.readOnly;
+      json['vcsUrl'] = obj.vcsUrl;
       
   return json;
 }
@@ -242,12 +242,12 @@ export function plainToEntity(json: any): Entity {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeEntity(obj: Entity, unroll=false): any {
   const json: any = {};
-  json['createdBy'] = obj.createdBy
-      json['customData'] = obj.customData
-      json['defaultPrivate'] = obj.defaultPrivate
-      json['description'] = obj.description
-      json['name'] = obj.name
-      json['quota'] = obj.quota
+  json['createdBy'] = obj.createdBy;
+      json['customData'] = obj.customData;
+      json['defaultPrivate'] = obj.defaultPrivate;
+      json['description'] = obj.description;
+      json['name'] = obj.name;
+      json['quota'] = obj.quota;
       
   return json;
 }
@@ -347,15 +347,15 @@ export function plainToImage(json: any): Image {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeImage(obj: Image, unroll=false): any {
   const json: any = {};
-  json['arch'] = obj.arch
-      json['blob'] = obj.blob
-      json['container'] = obj.container
-      json['customData'] = obj.customData
-      json['description'] = obj.description
-      json['encrypted'] = obj.encrypted
+  json['arch'] = obj.arch;
+      json['blob'] = obj.blob;
+      json['container'] = obj.container;
+      json['customData'] = obj.customData;
+      json['description'] = obj.description;
+      json['encrypted'] = obj.encrypted;
       json['expiresAt'] = _isNil(obj.expiresAt) ? null : obj.expiresAt.toJSON();
-        json['hash'] = obj.hash
-      json['uploadState'] = obj.uploadState
+        json['hash'] = obj.hash;
+      json['uploadState'] = obj.uploadState;
       
   return json;
 }
@@ -395,8 +395,8 @@ export function plainToGroup(json: any): Group {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeGroup(obj: Group, unroll=false): any {
   const json: any = {};
-  json['email'] = obj.email
-      json['name'] = obj.name
+  json['email'] = obj.email;
+      json['name'] = obj.name;
       
   return json;
 }
@@ -461,14 +461,14 @@ export function plainToUser(json: any): User {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeUser(obj: User, unroll=false): any {
   const json: any = {};
-  json['email'] = obj.email
-      json['firstname'] = obj.firstname
+  json['email'] = obj.email;
+      json['firstname'] = obj.firstname;
       if (unroll) json['groups'] = _isNil(obj.groups) ? [] : _map(obj.groups, f => serializeGroup(f));
-        json['isActive'] = obj.isActive
-      json['isAdmin'] = obj.isAdmin
-      json['lastname'] = obj.lastname
-      json['source'] = obj.source
-      json['username'] = obj.username
+        json['isActive'] = obj.isActive;
+      json['isAdmin'] = obj.isAdmin;
+      json['lastname'] = obj.lastname;
+      json['source'] = obj.source;
+      json['username'] = obj.username;
       
   if (obj.password) {
     json['password']=obj.password;
@@ -516,7 +516,7 @@ export function plainToToken(json: any): Token {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeToken(obj: Token, unroll=false): any {
   const json: any = {};
-  json['comment'] = obj.comment
+  json['comment'] = obj.comment;
       json['expiresAt'] = _isNil(obj.expiresAt) ? null : obj.expiresAt.toJSON();
         if (unroll) json['user'] = _isNil(obj.user) ? null : serializeUser(obj.user);
         
@@ -570,22 +570,22 @@ export function plainToJob(json: any): Job {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeJob(obj: Job, unroll=false): any {
   const json: any = {};
-  json['dependson'] = obj.dependson
-      json['description'] = obj.description
+  json['dependson'] = obj.dependson;
+      json['description'] = obj.description;
       json['endedAt'] = _isNil(obj.endedAt) ? null : obj.endedAt.toJSON();
         json['enqueuedAt'] = _isNil(obj.enqueuedAt) ? null : obj.enqueuedAt.toJSON();
-        json['excInfo'] = obj.excInfo
-      json['failureTTL'] = obj.failureTTL
-      json['funcName'] = obj.funcName
-      json['id'] = obj.id
-      json['meta'] = obj.meta
-      json['origin'] = obj.origin
-      json['result'] = obj.result
-      json['resultTTL'] = obj.resultTTL
+        json['excInfo'] = obj.excInfo;
+      json['failureTTL'] = obj.failureTTL;
+      json['funcName'] = obj.funcName;
+      json['id'] = obj.id;
+      json['meta'] = obj.meta;
+      json['origin'] = obj.origin;
+      json['result'] = obj.result;
+      json['resultTTL'] = obj.resultTTL;
       json['startedAt'] = _isNil(obj.startedAt) ? null : obj.startedAt.toJSON();
-        json['status'] = obj.status
-      json['timeout'] = obj.timeout
-      json['ttl'] = obj.ttl
+        json['status'] = obj.status;
+      json['timeout'] = obj.timeout;
+      json['ttl'] = obj.ttl;
       
   return json;
 }
@@ -609,8 +609,8 @@ export function plainToLdapStatus(json: any): LdapStatus {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeLdapStatus(obj: LdapStatus, unroll=false): any {
   const json: any = {};
-  json['config'] = obj.config
-      json['status'] = obj.status
+  json['config'] = obj.config;
+      json['status'] = obj.status;
       
   return json;
 }
@@ -634,8 +634,8 @@ export function plainToLdapPing(json: any): LdapPing {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeLdapPing(obj: LdapPing, unroll=false): any {
   const json: any = {};
-  json['error'] = obj.error
-      json['status'] = obj.status
+  json['error'] = obj.error;
+      json['status'] = obj.status;
       
   return json;
 }
@@ -703,11 +703,11 @@ export function plainToManifest(json: any): Manifest {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeManifest(obj: Manifest, unroll=false): any {
   const json: any = {};
-  json['collection'] = obj.collection
-      json['container'] = obj.container
-      json['content'] = obj.content
-      json['entity'] = obj.entity
-      json['hash'] = obj.hash
+  json['collection'] = obj.collection;
+      json['container'] = obj.container;
+      json['content'] = obj.content;
+      json['entity'] = obj.entity;
+      json['hash'] = obj.hash;
       
   return json;
 }

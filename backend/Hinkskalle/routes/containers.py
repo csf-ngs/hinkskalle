@@ -21,8 +21,8 @@ class ContainerCreateSchema(ContainerSchema, RequestSchema):
   pass
 
 class ContainerUpdateSchema(ContainerSchema, RequestSchema):
-  name = fields.String(dump_only=True)
-  collection = fields.String(dump_only=True)
+  name = fields.String(required=False)
+  collection = fields.String(required=False)
 
 class ContainerDeleteQuerySchema(RequestSchema):
   cascade = fields.Bool(required=False)
@@ -123,6 +123,8 @@ def create_container():
 )
 def update_container(entity_id, collection_id, container_id):
   body = rebar.validated_body
+  body.pop('name', None)
+  body.pop('collection', None)
   container = _get_container(entity_id, collection_id, container_id)
   if not container.check_update_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to container")

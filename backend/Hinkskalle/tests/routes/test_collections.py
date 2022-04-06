@@ -416,6 +416,22 @@ class TestCollections(RouteBase):
 
     self.assertTrue(abs(dbColl.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
   
+  def test_update_dumponly(self):
+    coll, entity = _create_collection('grunz')
+    coll_id = coll.id
+    entity_id = entity.id
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/collections/{entity.name}/{coll.name}", json={
+        'name': 'oink',
+        'entity': '2',
+      })
+    self.assertEqual(ret.status_code, 200)
+
+    dbColl: Collection = Collection.query.get(coll_id)
+    self.assertEqual(dbColl.name, 'grunz')
+    self.assertEqual(dbColl.entity, entity_id)
+
+  
   def test_update_case(self):
     coll, _ = _create_collection('testhase')
 

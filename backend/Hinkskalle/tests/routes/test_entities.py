@@ -257,6 +257,23 @@ class TestEntities(RouteBase):
     self.assertEqual(dbEntity.description, 'Troro')
     self.assertTrue(dbEntity.defaultPrivate)
   
+  def test_update_dumponly(self):
+    entity = Entity(name='grunz')
+    db.session.add(entity)
+    db.session.commit()
+    entity_id = entity.id
+    with self.fake_admin_auth():
+      ret = self.client.put('/v1/entities/grunz', json={
+        'name': 'oink',
+        'description': 'Oink oink',
+        'defaultPrivate': True,
+      })
+    self.assertEqual(ret.status_code, 200)
+
+    dbEntity = Entity.query.get(entity_id)
+    self.assertEqual(dbEntity.name, 'grunz')
+
+  
   def test_update_case(self):
     entity = Entity(name='testhase')
     db.session.add(entity)
@@ -281,20 +298,6 @@ class TestEntities(RouteBase):
 
     dbEntity = Entity.query.filter(Entity.name=='grunz').one()
     self.assertEqual(dbEntity.createdBy, self.other_username)
-
-
-  def test_update_name_change(self):
-    entity = Entity(name='grunz')
-    db.session.add(entity)
-    db.session.commit()
-    with self.fake_admin_auth():
-      ret = self.client.put('/v1/entities/grunz', json={
-        'name': 'babsi-streusand',
-      })
-    self.assertEqual(ret.status_code, 400)
-
-    dbEntity = Entity.query.filter(Entity.name=='grunz').one()
-    self.assertEqual(dbEntity.name, 'grunz')
 
   def test_update_user(self):
     entity = Entity(name='grunz', owner=self.user)

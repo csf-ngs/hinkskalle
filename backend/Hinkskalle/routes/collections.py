@@ -20,8 +20,9 @@ class CollectionCreateSchema(CollectionSchema, RequestSchema):
   pass
 
 class CollectionUpdateSchema(CollectionSchema, RequestSchema):
-  name = fields.String(dump_only=True)
-  entity = fields.String(dump_only=True)
+  name = fields.String(required=False)
+  entity = fields.String(required=False)
+
 
 class CollectionDeleteResponseSchema(ResponseSchema):
   status = fields.String()
@@ -132,6 +133,8 @@ def get_default_collection_default_entity():
 )
 def update_collection(entity_id, collection_id):
   body = rebar.validated_body
+  body.pop('name', None)
+  body.pop('entity', None)
   collection = _get_collection(entity_id, collection_id)
   if not collection.check_update_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to collection")

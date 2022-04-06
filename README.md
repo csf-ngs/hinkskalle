@@ -220,17 +220,20 @@ yarn test:unit
 
 ## OCI Conformance Tests
 
-Requires a docker image built from [https://github.com/opencontainers/distribution-spec/tree/main/conformance](https://github.com/opencontainers/distribution-spec/tree/main/conformance). The current docker URL points to our internal registry, which you might not have access to.
+Requires a docker image built from
+[https://github.com/opencontainers/distribution-spec/tree/main/conformance](https://github.com/opencontainers/distribution-spec/tree/main/conformance). 
 
 ```bash
 cd share/oci
 ./conformance-test.sh
 ```
 
+Your backend should be available at localhost:7660 (default dev docker compose).
+
 ## Generate Typescript Classes for models
 
 ```bash
-pip3 install -e git+https://github.com/csf-ngs/swagspotta
+pip3 install git+https://github.com/csf-ngs/swagspotta
 # make sure your local dev server is running at localhost:7660
 share/generate-models.sh
 ```

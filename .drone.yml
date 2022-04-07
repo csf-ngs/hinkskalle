@@ -10,7 +10,7 @@ steps:
   image: drone/git
   commands:
     - git fetch --tags
-    - git describe > .tags
+    - (git describe || git rev-parse --short HEAD) > .tags
 - name: testhase
   image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.0-tmpfix
   environment:
@@ -31,13 +31,14 @@ steps:
   - name: dockersock
     path: /var/run/docker.sock
   commands:
+  - TAG=$(cat .tags)
   - >
     docker build 
     --label org.label-schema.build-date="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
     --label org.label-schema.vcs-url="$DRONE_GIT_HTTP_URL"
     --label org.label-schema.vcs-ref="$DRONE_COMMIT_SHA"
     --label at.ac.vbcf.ngs.blame="$DRONE_COMMIT_AUTHOR"
-    -t docker.ngs.vbcf.ac.at/hinkskalle .
+    -t ghcr.io/csf-ngs/hinkskalle:$TAG .
 - name: reporthinaus
   image: alpine
   volumes:
@@ -54,7 +55,43 @@ steps:
   - mkdir -p /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}
   - cp backend/test_report.html /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/backend-report.html
   - cp frontend/test-report.html /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/frontend-report.html
+- name: pickerldrauf
+  image: docker:dind
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  commands:
+  - TAG=$(cat .tags)
+  - docker tag ghcr.io/csf-ngs/hinkskalle:$TAG ghcr.io/csf-ngs/hinkskalle:${DRONE_BRANCH=master}
+  when:
+    event:
+      - push
+- name: master_pickerldrauf
+  image: docker:dind
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  - name: dockerauth
+    path: /root/.docker/config.json
+  commands:
+  - TAG=$(cat .tags)
+  - docker tag ghcr.io/csf-ngs/hinkskalle:$TAG ghcr.io/csf-ngs/hinkskalle:latest
+  when:
+    branch:
+      - master
+- name: pushraus
+  image: docker:dind
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  commands:
+  - docker push ghcr.io/csf-ngs/hinkskalle:latest
+  - docker push ghcr.io/csf-ngs/hinkskalle:$(cat .tags)
+  - docker push ghcr.io/csf-ngs/hinkskalle:${DRONE_BRANCH=master}
 volumes:
 - name: dockersock
   host:
     path: /var/run/docker.sock
+- name: assets
+  host:
+    path: /home/docker/caddy/site/knecht

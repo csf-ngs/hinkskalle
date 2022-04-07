@@ -103,7 +103,7 @@ steps:
     DOCKER_USERNAME:
       from_secret: ghcr-username
   commands:
-  - echo "$DOCKER_PASS" | docker login --username $DOCKER_USERNAME --password-stdin
+  - echo "$DOCKER_PASS" | docker login --username $DOCKER_USERNAME --password-stdin ghcr.io
   - docker push ghcr.io/csf-ngs/hinkskalle:latest
   - docker push ghcr.io/csf-ngs/hinkskalle:$(cat .tags)
   - docker push ghcr.io/csf-ngs/hinkskalle:${DRONE_BRANCH=master}

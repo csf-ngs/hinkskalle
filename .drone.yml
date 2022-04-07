@@ -60,6 +60,7 @@ steps:
   commands:
   - mkdir -p /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}
   - cp backend/test_report.html /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/backend-report.html
+  - cp -r backend/htmlcov /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/
   - cp frontend/test-report.html /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/frontend-report.html
 - name: pickerldrauf
   depends_on:

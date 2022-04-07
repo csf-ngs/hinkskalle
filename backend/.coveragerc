@@ -1,8 +1,6 @@
 [run]
-branch = True
-
-[report]
-fail_under = 0.75
+omit =
+  */tests/*
 
 [html]
-directory = coverage_report
+directory = htmlcov

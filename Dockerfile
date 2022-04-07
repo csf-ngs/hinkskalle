@@ -27,7 +27,7 @@ RUN mkdir -p ${GOPATH}/src/github.com/sylabs \
 
 FROM node:lts as frontend-build-stage
 WORKDIR /app
-COPY frontend/package*.json ./
+COPY frontend/package*.json yarn.lock ./
 RUN yarn install
 COPY ./frontend/ .
 RUN JSON_STRING='window.configs = { "VUE_APP_BACKEND_URL":"%VUE_APP_BACKEND_URL%", "VUE_APP_ENABLE_REGISTER":%VUE_APP_ENABLE_REGISTER% }' \

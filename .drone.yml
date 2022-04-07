@@ -76,7 +76,7 @@ steps:
       - push
 - name: master_pickerldrauf
   depends_on:
-  - build
+  - bauhaus
   image: docker:dind
   volumes:
   - name: dockersock

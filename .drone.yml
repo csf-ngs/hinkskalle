@@ -57,7 +57,7 @@ steps:
     event:
       exclude:
         - pull_request
-  command:
+  commands:
   - mkdir -p /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}
   - cp backend/test_report.html /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/backend-report.html
   - cp frontend/test-report.html /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/frontend-report.html

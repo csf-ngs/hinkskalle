@@ -26,6 +26,9 @@ steps:
   - yarn install
   - yarn test:unit
 - name: bauhaus
+  depends_on:
+  - testhase
+  - testhase-front
   image: docker:dind
   volumes:
   - name: dockersock
@@ -40,6 +43,9 @@ steps:
     --label at.ac.vbcf.ngs.blame="$DRONE_COMMIT_AUTHOR"
     -t ghcr.io/csf-ngs/hinkskalle:$TAG .
 - name: reporthinaus
+  depends_on:
+  - testhase
+  - testhase-front
   image: alpine
   volumes:
   - name: assets
@@ -56,6 +62,8 @@ steps:
   - cp backend/test_report.html /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/backend-report.html
   - cp frontend/test-report.html /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/frontend-report.html
 - name: pickerldrauf
+  depends_on:
+  - bauhaus
   image: docker:dind
   volumes:
   - name: dockersock
@@ -67,6 +75,8 @@ steps:
     event:
       - push
 - name: master_pickerldrauf
+  depends_on:
+  - build
   image: docker:dind
   volumes:
   - name: dockersock
@@ -80,11 +90,20 @@ steps:
     branch:
       - master
 - name: pushraus
+  depends_on:
+  - pickerldrauf
+  - master_pickerldrauf
   image: docker:dind
   volumes:
   - name: dockersock
     path: /var/run/docker.sock
+  environment:
+    DOCKER_PASS:
+      from_secret: ghcr
+    DOCKER_USERNAME:
+      from_secret: ghcr-username
   commands:
+  - echo "$DOCKER_PASS" | docker login --username $DOCKER_USERNAME --password-stdin
   - docker push ghcr.io/csf-ngs/hinkskalle:latest
   - docker push ghcr.io/csf-ngs/hinkskalle:$(cat .tags)
   - docker push ghcr.io/csf-ngs/hinkskalle:${DRONE_BRANCH=master}

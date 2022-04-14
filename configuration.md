@@ -1,5 +1,6 @@
 ---
 title: Configuration
+weight: 3
 ---
 
 Configuration Values

@@ -1,5 +1,6 @@
 ---
-Title: 'Usage'
+Title: 'Clients'
+weight: 4
 ---
 
 How to use Hinkskalle in your pipelines/deployments
@@ -15,6 +16,17 @@ singularity remote login
 singularity pull library://entity/collection/container:tag
 singularity push -U image.sif library://entity/collection/container:tag
 singularity search resi # where is my cow?
+```
+
+## apptainer
+
+```bash
+apptainer remote add testhase https://kuebel.testha.se/
+apptainer remote use testhase
+apptainer remote login
+apptainer pull library://entity/collection/container:tag
+apptainer push -U image.sif library://entity/collection/container:tag
+apptainer search resi # where is my cow?
 ```
 
 ## docker

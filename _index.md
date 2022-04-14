@@ -1,9 +1,10 @@
 ---
 Title: Hinkskalle
 repo: 'https://github.com/csf-ngs/hinkskalle'
+weight: 10
 ---
 
-On-Premises Container Registry for OCI/[docker](https://www.docker.com/) and [singularity](https://github.com/sylabs/singularity)
+On-Premises Container Registry for OCI/[docker](https://www.docker.com/) and [singularity](https://github.com/sylabs/singularity)/[apptainer](https://apptainer.org/)
 
 <!--more-->
 
@@ -11,7 +12,7 @@ On-Premises Container Registry for OCI/[docker](https://www.docker.com/) and [si
 
 ## What Am I
 
-(buckethead) - I can store, retrieve and manage [OCI](https://opencontainers.org/) and [singularity](https://sylabs.io/singularity/) containers in a central library.
+(buckethead) - I can store, retrieve and manage [OCI](https://opencontainers.org/) and [singularity](https://sylabs.io/singularity/)/[apptainer](https://apptainer.org/) containers in a central library.
 
 Compatible with/re-implementation of the [singularity library protocol](https://github.com/singularityhub/library-api) and the [OCI distribution spec](https://docs.docker.com/registry/introduction/). 
 
@@ -23,7 +24,7 @@ Hinkskalle is supposed to be lightweight! If you need more (and a more mature sy
 - local users + LDAP authentication
 - minimal permission system
 
-### Singularity
+### Singularity+Apptainer
 
 - full library:// protocol (should be compatible to sylabs cloud), including architecture specific tags and signed containers (with public pgp keyserver or additional software)
 - shub:// *pull only* for legacy clients and pipelines
@@ -37,7 +38,7 @@ Hinkskalle is supposed to be lightweight! If you need more (and a more mature sy
 
 We can talk to:
 
-- [singularity](https://sylabs.io/singularity/) resp [apptainer](https://apptainer.org/)
+- [singularity](https://sylabs.io/singularity/)/[apptainer](https://apptainer.org/)
 - [docker](https://docker.com/)
 - [podman](https://podman.io/)
 - [oras](https://oras.land/)

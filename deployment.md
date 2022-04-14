@@ -1,6 +1,6 @@
 ---
 Title: 'Deployment with docker-compose'
-date: '2022-04-11'
+weight: 1
 ---
 
 How to run hinkskalle as a container without local installation (recommende)

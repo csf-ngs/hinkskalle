@@ -1,6 +1,6 @@
 ---
 Title: 'Installation'
-Date: '2022-04-11'
+weight: 2
 ---
 
 Local installation without docker

@@ -1,11 +1,13 @@
 ---
 Title: Hinkskalle
-date: '2022-04-11'
+repo: 'https://github.com/csf-ngs/hinkskalle'
 ---
 
 On-Premises Container Registry for OCI/[docker](https://www.docker.com/) and [singularity](https://github.com/sylabs/singularity)
 
 <!--more-->
+
+![light](/images/bunny-dark.svg)
 
 ## What Am I
 

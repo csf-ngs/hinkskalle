@@ -2,146 +2,21 @@
 
 [![Build Status](https://knecht.testha.se/api/badges/csf-ngs/hinkskalle/status.svg)](https://knecht.testha.se/csf-ngs/hinkskalle)
 
-(buckethead) - store and retrieve [singularity](https://sylabs.io/singularity/) containers in a central library.
+On-Premises Container Registry for OCI/[docker](https://www.docker.com/) and [singularity](https://github.com/sylabs/singularity)
 
-Compatible with/re-implementation of Sylab's singularity library protocol: [https://cloud.sylabs.io/library](https://cloud.sylabs.io/library)
+<!--more-->
 
-## Features
+## What Am I
 
-Hinkskalle is supposed to be lightweight!
+(buckethead) - I can store, retrieve and manage [OCI](https://opencontainers.org/) and [singularity](https://sylabs.io/singularity/) containers in a central library.
 
-- full library:// protocol (should be compatible to sylabs cloud), including architecture specific tags and signed containers (with public pgp keyserver or additional software)
-- shub:// *pull only* for legacy clients and pipelines
-- oras:// protocol support for push and pull (not very well tested)
-- [OCI distribution spec compliance](https://github.com/opencontainers/distribution-spec) for [docker](https://docs.docker.com/registry/introduction/) and [oras](https://oras.land/) (not very well tested)
-- simple container storage on local or network filesystems
-- LDAP authentication
-- Minimal permission system
+Compatible with/re-implementation of the [singularity library protocol](https://github.com/singularityhub/library-api) and the [OCI distribution spec](https://docs.docker.com/registry/introduction/).
 
-If you need more features, take a look at [https://github.com/singularityhub/sregistry](sregistry)!
+## Documentation
 
-## Clients
+Installation + Usage instructions can be found here:
 
-We can talk to:
-
-- [singularity](https://sylabs.io/singularity/)
-- [docker](https://docker.com/)
-- [podman](https://podman.io/)
-- [oras](https://oras.land/)
-
-Also check out the Hinkskalle API + CLI:
-
-- [hinkskalle-api](https://github.com/csf-ngs/hinkskalle-api)
-
-
-# Getting Started
-
-## Using a singularity library:
-
-- `singularity remote add testhase https://singularity.testha.se/`
-- `singularity remote use testhase`
-- `singularity remote login` 
-- `singularity pull library://entity/collection/container:tag`
-- `singularity push -U image.sif library://entity/collection/container:tag`
-- `singularity search resi # where is my cow?`
-
-## Prerequisites
-
-Hinkskalle requires Python3+. A SQL database server (PostgreSQL, MySQL, ...) is
-recommended, but entirely optional (sqlite is fine).
-
-# Container Deployment
-
-Using docker-compose.
-
-- Get a docker-compose file (e.g. [share/deploy/docker-compose.yml](share/deploy/docker-compose.yml))
-
-- Set up conf/hinkskalle.env, conf/secrets.env, conf/db_secrets.env (see examples in [share/deploy](share/deploy/))
-
-- docker-compose run api bash
-
-```bash
-cd backend
-# installs database schema
-flask localdb init
-# create admin user
-flask localdb add-user 
-```
-
-- fire up whole stack
-
-- if using ldap: 
-
-```bash
-docker-compose exec api bash
-cd backend
-flask ldap sync
-```
-
-The example docker-compose starts a backend server on port 7600. You will want
-to run it behind a reverse proxy serving via HTTPS (e.g. nginx, caddy, Apache,
-...).
-
-It also starts:
-
-- PostgreSQL Server for metadata (only available within the docker-compose network)
-- Redis Server for background/periodic job execution 
-- an [rq](https://python-rq.org/) worker to execute jobs
-- an [rq-scheduler](https://github.com/rq/rq-scheduler) to manage periodic maintenance jobs
-
-# Deployment
-
-## Download the source to a location of your choice
-
-- latest release from the [release page](./releases) and unpack
-
-### Install Required Python Packages
-
-```
-cd backend/
-# with sqlite only
-pip install .
-# or with postgres
-pip install '.[postgres]'
-```
-
-### Install Singularity
-
-Set up singularity according to the [instructions on sylabs.io](https://sylabs.io/docs/#singularity)
-
-It is required only for checking image signatures and showing the singularity
-definition file on the web.
-
-The singularity binary should end up in `$PATH` so that Hinkskalle can find it.
-`/usr/local/bin`, the default, is usually fine.
-
-### Configure Hinkskalle
-
-Hinkskalle reads its configuration from JSON files. By default it looks for
-
-- `conf/config.json`
-- `conf/secrets.json` (optional)
-
-My recommendation is to put passwords etc. in an extra file (which is in
-[.gitignore](.gitignore)) to make it harder to accidentally commit your
-credentials.
-
-See [share/doc/CONFIG.md](share/doc/CONFIG.md) for valid configuration options.
-
-## GnuPG Keyserver
-
-Signed and verified images require a central lookup of public keys. singularity
-provides the keys subcommand to manage your keys, upload them and search for
-public keys. 
-
-Since singularity can talk to any (public or not) keyserver, Hinkskalle does
-not come with keyserver functionality. Instead you can point it either to any
-keyserver (see [https://sks-keyservers.net/](https://sks-keyservers.net/) for a
-list) or run something like
-[HockeyPuck](https://github.com/hockeypuck/hockeypuck) yourself.
-
-The config variable `KEYSERVER_URL` should point to the webserver of the
-keyserver you have chosen.
+[https://testha.se/projects/hinkskalle/](https://testha.se/projects/hinkskalle/)
 
 # Development
 
@@ -209,12 +84,14 @@ script/start-dev-frontend.sh
 ## Backend Tests
 
 ```bash
+cd backend
 nose2
 ```
 
 ## Frontend Tests
 
 ```bash
+cd frontend
 yarn test:unit
 ```
 
@@ -244,6 +121,8 @@ share/generate-models.sh
 - [Vue.js](https://vuejs.org/)
 
 # Contributing
+
+Please do!
 
 # Authors
 

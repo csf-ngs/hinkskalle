@@ -1,4 +1,10 @@
-# Configuration Values
+---
+title: Configuration
+---
+
+Configuration Values
+
+<!--more-->
 
 Refer to
 [https://flask.palletsprojects.com/en/2.1.x/config/](https://flask.palletsprojects.com/en/2.1.x/config/)

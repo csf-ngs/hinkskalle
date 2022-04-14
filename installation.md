@@ -3,6 +3,10 @@ Title: 'Installation'
 Date: '2022-04-11'
 ---
 
+Local installation without docker
+
+<!--more-->
+
 ## Download the source to a location of your choice
 
 - latest release from the [release page](https://github.com/csf-ngs/hinkskalle/tags) and unpack

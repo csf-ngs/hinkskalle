@@ -3,11 +3,9 @@ Title: Hinkskalle
 date: '2022-04-11'
 ---
 
-Container registry for OCI/[docker](https://www.docker.com/) and [singularity](https://github.com/sylabs/singularity)
+On-Premises Container Registry for OCI/[docker](https://www.docker.com/) and [singularity](https://github.com/sylabs/singularity)
 
 <!--more-->
-
-[Container Deployment](./deployment) - [Installation](./installation) - [Configuration](./configuration)
 
 ## What Am I
 
@@ -17,7 +15,7 @@ Compatible with/re-implementation of the [singularity library protocol](https://
 
 ## Features
 
-Hinkskalle is supposed to be lightweight!
+Hinkskalle is supposed to be lightweight! If you need more (and a more mature system), take a look at [https://github.com/singularityhub/sregistry](sregistry)!
 
 - simple container storage on local or network filesystems
 - local users + LDAP authentication
@@ -32,3 +30,33 @@ Hinkskalle is supposed to be lightweight!
 ### OCI/docker/podman
 
 - [OCI distribution spec compliance](https://github.com/opencontainers/distribution-spec) for [docker](https://docs.docker.com/registry/introduction/) and [oras](https://oras.land/) (not very well tested)
+
+## Clients
+
+We can talk to:
+
+- [singularity](https://sylabs.io/singularity/) resp [apptainer](https://apptainer.org/)
+- [docker](https://docker.com/)
+- [podman](https://podman.io/)
+- [oras](https://oras.land/)
+
+Also check out the Hinkskalle API + CLI:
+
+- [hinkskalle-api](https://github.com/csf-ngs/hinkskalle-api)
+
+## GnuPG Keyserver
+
+Signed and verified images require a central lookup of public keys. singularity
+provides the keys subcommand to manage your keys, upload them and search for
+public keys.
+
+Since singularity can talk to any (public or not) keyserver, Hinkskalle does
+not come with keyserver functionality. Instead you can point it either to any
+keyserver (see [https://sks-keyservers.net/](https://sks-keyservers.net/) for a
+list) or run something like
+[HockeyPuck](https://github.com/hockeypuck/hockeypuck) yourself.
+
+## Prerequisites
+
+Hinkskalle requires Python3+. A SQL database server (PostgreSQL, MySQL, ...) is
+recommended, but entirely optional (sqlite is fine).

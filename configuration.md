@@ -6,11 +6,11 @@ Configuration Values
 
 <!--more-->
 
+## Flask
+
 Refer to
 [https://flask.palletsprojects.com/en/2.1.x/config/](https://flask.palletsprojects.com/en/2.1.x/config/)
 for general Flask configuration values.
-
-### Flask Config Values
 
 You might want to set these:
 
@@ -18,7 +18,7 @@ You might want to set these:
 - `PERMANENT_SESSION_LIFETIME` - session cookie expiration time
 - `SESSION_COOKIE_NAME` - name for cookie. Note that Hinkskalle does not use cookie-based sessions, only Authorization: Bearer tokens.
 
-### Hinskalle Config Values
+## Hinkskalle 
 
 - `IMAGE_PATH` - where should we store the uploaded images?
 - `IMAGE_PATH_HASH_LEVEL` - how many subdirectories should be created below IMAGE_PATH using the image has. Eg. the default: `2` would produce `IMAGE_PATH/a/b/sha256.abxxxxx`. Some file system types don't like directories with too many files in them. Applies only to new uploads.
@@ -35,13 +35,13 @@ You might want to set these:
 
 - `SQLALCHEMY_TRACK_MODIFICATIONS` - leave this to false
 
-### RQ Worker/Redis config
+## RQ Worker/Redis
 
 See [https://python-rq.org/docs/workers/](https://python-rq.org/docs/workers/) for general config settings.
 
 - `REDIS_URL` - where can we find our redis server?
 
-### Periodic Maintenance Tasks
+## Maintenance Tasks
 
 Configure a key `CRON` in `config.json` (times are in UTC!):
 
@@ -61,7 +61,7 @@ Available tasks:
 - `check_quotas`: recalculate space usage for all entities.
 - `ldap_sync_results`: sync user database with LDAP server. You might not need this.
 
-### Secrets
+## Secrets
 
 try to keep these out of `config.json`!
 
@@ -69,7 +69,7 @@ try to keep these out of `config.json`!
 - `DB_PASSWORD`  for postgresql db
 - `REDIS_PASSWORD` for redis (job queue)
 
-### Auth/LDAP config
+## Auth/LDAP 
 
 - `AUTH.LDAP.HOST` - where to find the ldap server
 - `AUTH.LDAP.PORT` - which port (default: 389)
@@ -92,7 +92,7 @@ try to keep these out of `config.json`!
 }
 ```
 
-# Environment Overrides
+## Environment Overrides
 
 Certain variables from the config file(s) can be set via the environment. If
 hinkskalle finds them there, it will overwrite the values:

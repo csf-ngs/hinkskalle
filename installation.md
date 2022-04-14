@@ -7,11 +7,11 @@ Local installation without docker
 
 <!--more-->
 
-## Download the source to a location of your choice
+## Source Code
 
 - latest release from the [release page](https://github.com/csf-ngs/hinkskalle/tags) and unpack
 
-### Install Required Python Packages
+## Required Python Packages
 
 ```
 cd backend/
@@ -21,7 +21,7 @@ pip install .
 pip install '.[postgres]'
 ```
 
-### Install Singularity
+## Singularity Binaries
 
 Set up singularity according to the [instructions on sylabs.io](https://sylabs.io/docs/#singularity)
 
@@ -31,7 +31,7 @@ definition file on the web.
 The singularity binary should end up in `$PATH` so that Hinkskalle can find it.
 `/usr/local/bin`, the default, is usually fine.
 
-### Configure Hinkskalle
+## Configuration
 
 Hinkskalle reads its configuration from JSON files. By default it looks for
 
@@ -43,5 +43,3 @@ My recommendation is to put passwords etc. in an extra file (which is in
 credentials.
 
 See [configuration](../configuration) for valid configuration options.
-
-

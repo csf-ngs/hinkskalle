@@ -7,15 +7,30 @@ How to run hinkskalle as a container without local installation (recommende)
 
 <!--more-->
 
-- Get a docker-compose file. Why not this one: [docker-compose.yml](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/docker-compose.yml)?
+## docker-compose
+
+Get a docker-compose file. Why not this one: [docker-compose.yml](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/docker-compose.yml)?
+
+Apart from the application server listening on port 7660 this also starts:
+
+- PostgreSQL Server for metadata (only available within the docker-compose network)
+- Redis Server for background/periodic job execution
+- an [rq](https://python-rq.org/) worker to execute jobs
+- an [rq-scheduler](https://github.com/rq/rq-scheduler) to manage periodic maintenance jobs
+
+
+## Configuration
+
+See [configuration](../configuration) for details
+
 - run `mkdir conf/`
 - Set up 
   - [conf/config.json](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/conf/config.json)
   - [conf/hinkskalle.env](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/conf/hinkskalle.env)
   - [conf/secrets.env](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/conf/secrets.env)
   - [conf/db_secrets.env](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/conf/db_secrets.env)
-  - see [configuration](../configuration) for details
-- Initialize Database
+
+## Database Setup
 
 ```bash
 docker-compose run api bash
@@ -26,8 +41,12 @@ flask localdb init
 flask localdb add-user
 ```
 
+## Startup
+
 - fire up whole stack with: `docker-compose up -d`
 - if using ldap:
+
+## LDAP Setup
 
 ```bash
 docker-compose exec api bash
@@ -35,16 +54,11 @@ cd backend
 flask ldap sync
 ```
 
+## Reverse Proxy
+
 The example docker-compose starts a backend server on port 7600. You will want
 to run it behind a reverse proxy serving via HTTPS (e.g. nginx, caddy, Apache,
 ...).
-
-It also starts:
-
-- PostgreSQL Server for metadata (only available within the docker-compose network)
-- Redis Server for background/periodic job execution
-- an [rq](https://python-rq.org/) worker to execute jobs
-- an [rq-scheduler](https://github.com/rq/rq-scheduler) to manage periodic maintenance jobs
 
 ## Keyserver
 

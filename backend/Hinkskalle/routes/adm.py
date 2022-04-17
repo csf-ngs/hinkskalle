@@ -73,7 +73,8 @@ class LdapStatusResponseSchema(ResponseSchema):
   rule='/v1/adm/<string:key>',
   method='GET',
   response_body_schema=AdmResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.admin) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.admin), # type: ignore
+  tags=['admin'],
 )
 def get_key(key):
   db_key: Adm = Adm.query.get(key)
@@ -92,7 +93,8 @@ def get_key(key):
   method='PUT',
   request_body_schema=AdmUpdateSchema(),
   response_body_schema=AdmResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.admin) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.admin), # type: ignore
+  tags=['admin'],
 )
 def update_key(key):
   body = rebar.validated_body
@@ -117,7 +119,8 @@ def update_key(key):
   rule='/v1/ldap/status',
   method='GET',
   response_body_schema=LdapStatusResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.admin) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.admin), # type: ignore
+  tags=['admin'],
 )
 def ldap_status():
   from Hinkskalle.util.auth.ldap import LDAPUsers
@@ -141,7 +144,8 @@ def ldap_status():
   rule='/v1/ldap/ping',
   method='GET',
   response_body_schema=LdapPingResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.admin) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.admin), # type: ignore
+  tags=['admin'],
 )
 def ping_ldap():
   from Hinkskalle.util.auth.ldap import LDAPUsers
@@ -164,6 +168,7 @@ def ping_ldap():
   method='POST',
   response_body_schema=JobResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.admin), # type: ignore
+  tags=['admin'],
 )
 def sync_ldap():
   """deprecated, use /v1/adm/ldap_sync_results/run"""
@@ -173,7 +178,8 @@ def sync_ldap():
   rule='/v1/adm/<string:key>/run',
   method='POST',
   response_body_schema=JobResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.admin) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.admin), # type: ignore
+  tags=['admin'],
 )
 def start_task(key):
   from Hinkskalle.util.jobs import adm_map
@@ -186,7 +192,8 @@ def start_task(key):
   rule='/v1/jobs/<string:id>',
   method='GET',
   response_body_schema=JobResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.admin) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.admin), # type: ignore
+  tags=['admin'],
 )
 def get_job(id):
   from Hinkskalle.util.jobs import get_job_info

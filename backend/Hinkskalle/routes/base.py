@@ -39,9 +39,11 @@ class ConfigResponseSchema(ResponseSchema):
 @registry.handles(
   rule='/version',
   method='GET',
-  response_body_schema=VersionResponseSchema()
+  response_body_schema=VersionResponseSchema(),
+  tags=['singularity']
 )
 def version():
+  """https://singularityhub.github.io/library-api/#/spec/main?id=get-version"""
   return {
     'data': {
       'version': 'v1.0.0',
@@ -52,9 +54,11 @@ def version():
 @registry.handles(
   rule='/assets/config/config.prod.json',
   method='GET',
-  response_body_schema=ConfigResponseSchema()
+  response_body_schema=ConfigResponseSchema(),
+  tags=['singularity']
 )
 def config():
+  """https://singularityhub.github.io/library-api/#/spec/main?id=get-version"""
   service_url = _get_service_url()
   return {
     'libraryAPI': {
@@ -80,6 +84,7 @@ class LatestContainerListResponseSchema(ResponseSchema):
   method='GET',
   response_body_schema=LatestContainerListResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def latest_container():
   tags = Tag.query.order_by(desc(Tag.createdAt))

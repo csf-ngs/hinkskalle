@@ -36,8 +36,10 @@ class GetDownloadTokenSchema(RequestSchema):
   method='GET',
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
   response_body_schema=TokenStatusResponseSchema(),
+  tags=['singularity']
 )
 def token_status():
+  """https://singularityhub.github.io/library-api/#/spec/main?id=get-v1token-status"""
   return {
     'status': 'welcome',
     'data': g.authenticated_user
@@ -48,6 +50,7 @@ def token_status():
   method='POST',
   request_body_schema=GetTokenRequestSchema(),
   response_body_schema=GetTokenResponseSchema(),
+  tags=['hinkskalle-ext'],
 )
 def get_token():
   body = rebar.validated_body
@@ -75,7 +78,8 @@ def get_token():
   rule='/v1/get-download-token',
   method='POST',
   request_body_schema=GetDownloadTokenSchema(),
-  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext'],
 )
 def get_download_token():
   data = rebar.validated_body

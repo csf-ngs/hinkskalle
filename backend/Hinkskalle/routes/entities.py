@@ -30,6 +30,7 @@ class EntityDeleteResponseSchema(ResponseSchema):
   method='GET',
   response_body_schema=EntityListResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext'],
 )
 def list_entities():
   if g.authenticated_user.is_admin:
@@ -43,8 +44,10 @@ def list_entities():
   method='GET',
   response_body_schema=EntityResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['singularity']
 )
 def get_entity(entity_id):
+  """https://singularityhub.github.io/library-api/#/spec/main?id=get-v1entitiesusername"""
   entity = _get_entity(entity_id)
   if not entity.check_access(g.authenticated_user):
     raise errors.Forbidden("Access denied to entity.")
@@ -55,8 +58,10 @@ def get_entity(entity_id):
   method='GET',
   response_body_schema=EntityResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['singularity']
 )
 def get_default_entity():
+  """https://singularityhub.github.io/library-api/#/spec/main?id=get-v1entitiesusername"""
   return get_entity(entity_id='default')
 
 @registry.handles(
@@ -65,6 +70,7 @@ def get_default_entity():
   request_body_schema=EntityCreateSchema(),
   response_body_schema=EntityResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['singularity']
 )
 def create_entity():
   body = rebar.validated_body
@@ -97,6 +103,7 @@ def create_entity():
   request_body_schema=EntityUpdateSchema(),
   response_body_schema=EntityResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def update_entity(entity_id):
   body = rebar.validated_body
@@ -120,7 +127,8 @@ def update_entity(entity_id):
   rule='/v1/entities/<string:entity_id>',
   method='DELETE',
   response_body_schema=EntityDeleteResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext'] 
 ) 
 def delete_entity(entity_id):
   entity = _get_entity(entity_id)

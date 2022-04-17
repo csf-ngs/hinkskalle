@@ -20,6 +20,7 @@ class ManifestResponseSchema(ResponseSchema):
   rule='/api/container/<string:collection_id>/<string:tagged_container_id>',
   method='GET',
   response_body_schema=ManifestResponseSchema(),
+  tags=['shub']
 )
 def get_manifest(collection_id, tagged_container_id):
   container_id, tag = _parse_tag(tagged_container_id)

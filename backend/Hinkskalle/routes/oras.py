@@ -138,9 +138,11 @@ def handle_oras_error(error: OrasError):
 @registry.handles(
   rule='/v2/',
   method='GET',
-  authenticators=authenticator.with_scope(Scopes.optional) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.optional), # type: ignore
+  tags=['oci']
 )
 def authenticate_check():
+  """https://github.com/opencontainers/distribution-spec/blob/main/spec.md#endpoints end-1"""
   if g.authenticated_user:
     current_app.logger.debug(f"authenticated ok: {g.authenticated_user.username}")
     return jsonify({ 'msg': 'Hejsan!' })
@@ -175,8 +177,10 @@ def authenticate_check():
 @registry.handles(
   rule='/v2/',
   method='POST',
+  tags=['oci']
 )
 def authenticate():
+  """https://github.com/opencontainers/distribution-spec/blob/main/spec.md#endpoints"""
   token = request.form.get('refresh_token')
   if not token:
     current_app.logger.debug(f"no token in form data")
@@ -204,9 +208,11 @@ def _auth_token(token: Token):
   rule='/v2/<distname:name>/tags/list',
   method='GET',
   query_string_schema=OrasListTagQuerySchema(),
-  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['oci']
 )
 def oras_list_tags(name: str):
+  """https://github.com/opencontainers/distribution-spec/blob/main/spec.md#endpoints end-8a"""
   args = rebar.validated_args
   container = _get_container(name)
   if not container.check_access(g.authenticated_user):
@@ -237,8 +243,10 @@ def oras_list_tags(name: str):
   rule='/v2/<distname:name>/manifests/<string:reference>',
   method='GET',
   authenticators=authenticator.with_scope(Scopes.user),  # type: ignore
+  tags=['oci'],
 )
 def oras_manifest(name: str, reference: str):
+  """https://github.com/opencontainers/distribution-spec/blob/main/spec.md#endpoints end-3"""
   # should check accept header for 
   # application/vnd.oci.image.manifest.v1+json
   container = _get_container(name)
@@ -285,8 +293,10 @@ def oras_manifest(name: str, reference: str):
   rule='/v2/<distname:name>/blobs/<string:digest>',
   method='GET',
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['oci']
 )
 def oras_blob(name, digest):
+  """https://github.com/opencontainers/distribution-spec/blob/main/spec.md#endpoints end-2"""
   # check accept header for
   # application/vnd.sylabs.sif.layer.v1.sif
   if not digest.startswith('sha256:'):
@@ -319,9 +329,11 @@ def oras_blob(name, digest):
 @registry.handles(
   rule='/v2/<distname:name>/manifests/<string:reference>',
   method='PUT',
-  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['oci']
 )
 def oras_push_manifest(name, reference):
+  """https://github.com/opencontainers/distribution-spec/blob/main/spec.md#endpoints end-7"""
   container = _get_container(name)
   if not container.check_access(g.authenticated_user):
     raise OrasDenied(f"Not your container")
@@ -390,8 +402,10 @@ def oras_push_manifest(name, reference):
   method='POST',
   query_string_schema=OrasBlobMountQuerySchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['oci']
 )
 def oras_start_upload_session(name):
+  """https://github.com/opencontainers/distribution-spec/blob/main/spec.md#endpoints end-4a"""
   args = rebar.validated_args
   headers = request.headers
 
@@ -553,6 +567,7 @@ def _do_mount(container: Container, _from: str, mount: str):
 @registry.handles(
   rule='/v2/__uploads/<string:upload_id>',
   method='PATCH',
+  tags=['hinkskalle-ext']
 )
 def oras_push_chunk_init(upload_id):
   try:
@@ -597,6 +612,7 @@ def oras_push_chunk_init(upload_id):
 @registry.handles(
   rule='/v2/__uploads/<string:upload_id>/<string:chunk_id>',
   method='PATCH',
+  tags=['hinkskalle-ext']
 )
 def oras_push_chunk(upload_id, chunk_id):
   upload, chunk = _get_chunk(upload_id, chunk_id)
@@ -606,7 +622,8 @@ def oras_push_chunk(upload_id, chunk_id):
 @registry.handles(
   rule='/v2/__uploads/<string:upload_id>/<string:chunk_id>',
   query_string_schema=OrasPushBlobQuerySchema(),
-  method='PUT'
+  method='PUT',
+  tags=['hinkskalle-ext']
 )
 def oras_push_chunk_finish(upload_id, chunk_id):
   args = rebar.validated_args
@@ -757,6 +774,7 @@ def _next_chunk(upload, chunk):
   rule='/v2/__uploads/<string:upload_id>',
   method='PUT',
   query_string_schema=OrasPushBlobQuerySchema(),
+  tags=['hinkskalle-ext']
 )
 def oras_push_registered(upload_id):
   args = rebar.validated_args
@@ -807,9 +825,11 @@ def oras_push_registered(upload_id):
 @registry.handles(
   rule='/v2/<distname:name>/manifests/<string:reference>',
   method='DELETE',
-  authenticators=authenticator.with_scope(Scopes.user)  # type: ignore
+  authenticators=authenticator.with_scope(Scopes.user),  # type: ignore
+  tags=['oci']
 )
 def delete_reference(name, reference):
+  """https://github.com/opencontainers/distribution-spec/blob/main/spec.md#endpoints end-9"""
   container = _get_container(name)
   if not container.check_access(g.authenticated_user):
     raise OrasDenied(f"Not your container")
@@ -839,9 +859,11 @@ def delete_reference(name, reference):
 @registry.handles(
   rule='/v2/<distname:name>/blobs/<string:digest>',
   method='DELETE',
-  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['oci']
 )
 def delete_blob(name, digest):
+  """https://github.com/opencontainers/distribution-spec/blob/main/spec.md#endpoints end-10"""
   container = _get_container(name)
   if not container.check_access(g.authenticated_user):
     raise OrasDenied(f"Not your container")

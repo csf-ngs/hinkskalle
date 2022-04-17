@@ -53,6 +53,7 @@ class UserDeleteResponseSchema(ResponseSchema):
   response_body_schema=UserListResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
   query_string_schema=UserSearchQuerySchema(),
+  tags=['hinkskalle-ext']
 )
 def list_users():
   args = rebar.validated_args
@@ -67,6 +68,7 @@ def list_users():
   method='GET',
   response_body_schema=UserResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def get_user(username):
   try:
@@ -81,7 +83,8 @@ def get_user(username):
   rule='/v1/users/<string:username>/stars',
   method='GET',
   response_body_schema=UserStarsResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def get_stars(username):
   try:
@@ -97,7 +100,8 @@ def get_stars(username):
   rule='/v1/users/<string:username>/stars/<string:container_id>',
   method='POST',
   response_body_schema=UserStarsResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def add_star(username, container_id):
   try:
@@ -123,7 +127,8 @@ def add_star(username, container_id):
   rule='/v1/users/<string:username>/stars/<string:container_id>',
   method='DELETE',
   response_body_schema=UserStarsResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def remove_star(username, container_id):
   try:
@@ -165,6 +170,7 @@ def _create_user(body, password=None):
   method='POST',
   request_body_schema=UserRegisterSchema(),
   response_body_schema=UserResponseSchema(),
+  tags=['hinkskalle-ext']
 )
 def register_account():
   body = rebar.validated_body
@@ -178,7 +184,8 @@ def register_account():
   method='POST',
   request_body_schema=UserCreateSchema(),
   response_body_schema=UserResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.admin) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.admin), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def create_user():
   body = rebar.validated_body
@@ -193,6 +200,7 @@ def create_user():
   request_body_schema=UserUpdateSchema(),
   response_body_schema=UserResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def update_user(username):
   body = rebar.validated_body
@@ -249,6 +257,7 @@ def update_user(username):
   method='DELETE',
   response_body_schema=UserDeleteResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.admin), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def delete_user(username):
   try:

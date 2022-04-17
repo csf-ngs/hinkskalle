@@ -93,8 +93,10 @@ class ImageFileCompleteResponseSchema(ResponseSchema):
   method='GET',
   query_string_schema=PullQuerySchema(),
   authenticators=authenticator.with_scope(Scopes.optional), # type: ignore 
+  tags=['singularity']
 )
 def pull_image(entity_id, collection_id, tagged_container_id):
+  """https://singularityhub.github.io/library-api/#/spec/main?id=get-v1imagefileusernamecollectionimagetagarcharch"""
   args = rebar.validated_args
   image = _get_image(entity_id, collection_id, tagged_container_id, arch=args.get('arch', None))
   if not image.check_access(g.authenticated_user):
@@ -125,6 +127,7 @@ def pull_image(entity_id, collection_id, tagged_container_id):
   method='GET',
   query_string_schema=PullQuerySchema(),
   authenticators=authenticator.with_scope(Scopes.optional), # type: ignore 
+  tags=['singularity']
 )
 def pull_image_default_entity(collection_id, tagged_container_id):
   return pull_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
@@ -135,6 +138,7 @@ def pull_image_default_entity(collection_id, tagged_container_id):
   method='GET',
   query_string_schema=PullQuerySchema(),
   authenticators=authenticator.with_scope(Scopes.optional), # type: ignore 
+  tags=['singularity']
 )
 def pull_image_default_collection_default_entity_single(tagged_container_id):
   return pull_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
@@ -159,8 +163,10 @@ def _get_image_id(image_id) -> Image:
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore 
   request_body_schema=ImageFilePostSchema(),
   response_body_schema=ImageFilePostResponseSchema(),
+  tags=['singularity']
 )
 def push_image_v2_init(image_id):
+  """https://singularityhub.github.io/library-api/#/spec/main?id=post-v2imagefile"""
   image = _get_image_id(image_id)
   body = rebar.validated_body
 
@@ -195,8 +201,10 @@ def push_image_v2_init(image_id):
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore 
   request_body_schema=MultiImageFilePostSchema(),
   response_body_schema=MultiImageFilePostResponseSchema(),
+  tags=['singularity'],
 )
 def push_image_v2_multi_init(image_id):
+  """https://singularityhub.github.io/library-api/#/spec/main?id=post-v2imagefileupload_id_multipart"""
   image = _get_image_id(image_id)
   body = rebar.validated_body
 
@@ -234,8 +242,10 @@ def push_image_v2_multi_init(image_id):
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore 
   request_body_schema=MultiImageFilePartSchema(),
   response_body_schema=ImageFilePostPartResponseSchema(),
+  tags=['singularity']
 )
 def push_image_v2_multi_part(image_id):
+  """https://singularityhub.github.io/library-api/#/spec/main?id=put-v2imagefileuploadid_multipart"""
   image = _get_image_id(image_id)
   body = rebar.validated_body
 
@@ -281,7 +291,8 @@ def push_image_v2_multi_part(image_id):
 
 @registry.handles(
   rule='/v2/imagefile/_upload/<string:upload_id>',
-  method='PUT'
+  method='PUT',
+  tags=['hinkskalle-ext']
 )
 def push_image_v2_upload(upload_id):
   try:
@@ -317,8 +328,10 @@ def push_image_v2_upload(upload_id):
   request_body_schema=UploadImageCompleteRequest(),
   response_body_schema=ImageFileCompleteResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore 
+  tags=['singularity']
 )
 def push_image_v2_complete(image_id):
+  """https://singularityhub.github.io/library-api/#/spec/main?id=put-v2imagefileimageid_complete"""
   image = _get_image_id(image_id)
   upload = image.uploads_ref.filter(ImageUploadUrl.state == UploadStates.uploaded, ImageUploadUrl.type == UploadTypes.single).order_by(ImageUploadUrl.createdAt.desc()).first()
   if not upload:
@@ -353,8 +366,10 @@ def push_image_v2_complete(image_id):
   request_body_schema=MultiUploadImageCompleteRequest(),
   response_body_schema=ImageFileCompleteResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore 
+  tags=['singularity']
 )
 def push_image_v2_multi_complete(image_id):
+  """https://singularityhub.github.io/library-api/#/spec/main?id=put-v2imagefileimageid_complete"""
   image = _get_image_id(image_id)
   body = rebar.validated_body
   upload = ImageUploadUrl.query.filter(ImageUploadUrl.id == body.get('uploadID')).first()
@@ -391,8 +406,10 @@ def push_image_v2_multi_complete(image_id):
   method='PUT',
   request_body_schema=MultiUploadImageAbortRequest(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore 
+  tags=['singularity']
 )
 def push_image_v2_multi_abort(image_id):
+  """https://singularityhub.github.io/library-api/#/spec/main?id=put-v2imagefileupload_id_multipart_abort"""
   image = _get_image_id(image_id)
   body = rebar.validated_body
 
@@ -414,8 +431,10 @@ def push_image_v2_multi_abort(image_id):
   rule='/v1/imagefile/<string:image_id>',
   method='POST',
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['singularity'],
 )
 def push_image(image_id):
+  """https://singularityhub.github.io/library-api/#/spec/main?id=post-v2imagefile"""
   image = _get_image_id(image_id)
 
   upload_tmp = os.path.join(current_app.config['IMAGE_PATH'], '_tmp')

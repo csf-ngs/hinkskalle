@@ -26,7 +26,8 @@ class ManifestListResponseSchema(ResponseSchema):
   rule='/v1/containers/<string:entity_id>/<string:collection_id>/<string:container_id>/manifests',
   method='GET',
   response_body_schema=ManifestListResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def list_manifests(entity_id, collection_id, container_id):
   container = _get_container(entity_id, collection_id, container_id)
@@ -39,7 +40,8 @@ def list_manifests(entity_id, collection_id, container_id):
   rule='/v1/manifests/<string:manifest_id>/download',
   method='GET',
   query_string_schema=DownloadQuerySchema(),
-  authenticators=authenticator.with_scope(Scopes.optional) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.optional), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def download_manifest(manifest_id):
   args = rebar.validated_args

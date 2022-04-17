@@ -35,8 +35,10 @@ class CollectionDeleteResponseSchema(ResponseSchema):
   request_body_schema=CollectionCreateSchema(),
   response_body_schema=CollectionResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['singularity'],
 )
 def create_collection():
+  """https://singularityhub.github.io/library-api/#/spec/main?id=post-v1collections"""
   body = rebar.validated_body
   try:
     entity = Entity.query.filter(Entity.id==body['entity']).one()
@@ -78,6 +80,7 @@ def create_collection():
   method='GET',
   response_body_schema=CollectionListResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def list_collections(entity_id):
   try:
@@ -98,8 +101,10 @@ def list_collections(entity_id):
   method='GET',
   response_body_schema=CollectionResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['singularity']
 )
 def get_collection(entity_id, collection_id):
+  """https://singularityhub.github.io/library-api/#/spec/main?id=get-v1collectionsusernamecollection"""
   collection = _get_collection(entity_id, collection_id)
   if not collection.check_access(g.authenticated_user):
     raise errors.Forbidden(f"access denied.")
@@ -109,7 +114,8 @@ def get_collection(entity_id, collection_id):
   rule='/v1/collections/<string:entity_id>/',
   method='GET',
   response_body_schema=CollectionResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['singularity'] 
 )
 def get_default_collection(entity_id):
   return get_collection(entity_id=entity_id, collection_id='default')
@@ -118,7 +124,8 @@ def get_default_collection(entity_id):
   rule='/v1/collections/',
   method='GET',
   response_body_schema=CollectionResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['singularity']
 )
 def get_default_collection_default_entity():
   return get_collection(entity_id='default', collection_id='default')
@@ -130,6 +137,7 @@ def get_default_collection_default_entity():
   request_body_schema=CollectionUpdateSchema(),
   response_body_schema=CollectionResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def update_collection(entity_id, collection_id):
   body = rebar.validated_body
@@ -155,6 +163,7 @@ def update_collection(entity_id, collection_id):
   method='DELETE',
   response_body_schema=CollectionDeleteResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def delete_collection(entity_id, collection_id):
   collection = _get_collection(entity_id, collection_id)

@@ -30,6 +30,7 @@ class SearchQuerySchema(RequestSchema):
   response_body_schema=SearchResponseSchema(),
   query_string_schema=SearchQuerySchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['singularity'],
 )
 def search():
   args = rebar.validated_args

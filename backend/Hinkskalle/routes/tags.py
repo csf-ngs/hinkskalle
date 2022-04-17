@@ -35,8 +35,10 @@ def _get_container(container_id, update=False):
   method='GET',
   response_body_schema=TagResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['singularity']
 )
 def get_tags(container_id):
+  """https://singularityhub.github.io/library-api/#/spec/main?id=get-v1tagscollection_id"""
   return { 'data': _get_container(container_id).imageTags }
 
 @registry.handles(
@@ -44,6 +46,7 @@ def get_tags(container_id):
   method='GET',
   response_body_schema=TagResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['singularity']
 )
 def get_tags_v2(container_id):
   return { 'data': _get_container(container_id).archImageTags }
@@ -52,7 +55,8 @@ def get_tags_v2(container_id):
   rule='/v2/tags/<string:container_id>',
   method='POST',
   response_body_schema=TagResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['singularity']
 )
 def update_tag_v2(container_id):
   container = _get_container(container_id, update=True)
@@ -98,8 +102,10 @@ def update_tag_v2(container_id):
   method='POST',
   response_body_schema=TagResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['singularity']
 )
 def update_tag(container_id):
+  """https://singularityhub.github.io/library-api/#/spec/main?id=post-v1tagsimageid"""
   container = _get_container(container_id, update=True)
 
   tag = request.get_json(force=True)

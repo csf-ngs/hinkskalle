@@ -35,6 +35,7 @@ class ContainerDeleteResponseSchema(ResponseSchema):
   method='GET',
   response_body_schema=ContainerListResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext'],
 )
 def list_containers(entity_id, collection_id):
   try:
@@ -59,8 +60,10 @@ def list_containers(entity_id, collection_id):
   method='GET',
   response_body_schema=ContainerResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['singularity']
 )
 def get_container(entity_id, collection_id, container_id):
+  """https://singularityhub.github.io/library-api/#/spec/main?id=get-v1containersusernamecollectionimage"""
   container = _get_container(entity_id, collection_id, container_id)
   if not container.check_access(g.authenticated_user):
     raise errors.Forbidden("access denied.")
@@ -72,6 +75,7 @@ def get_container(entity_id, collection_id, container_id):
   method='GET',
   response_body_schema=ContainerResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['singularity']
 )
 def get_default_container(container_id):
   return get_container('default', 'default', container_id)
@@ -84,6 +88,7 @@ def get_default_container(container_id):
   request_body_schema=ContainerCreateSchema(),
   response_body_schema=ContainerResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def create_container():
   body = rebar.validated_body
@@ -120,6 +125,7 @@ def create_container():
   request_body_schema=ContainerUpdateSchema(),
   response_body_schema=ContainerResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def update_container(entity_id, collection_id, container_id):
   body = rebar.validated_body
@@ -146,6 +152,7 @@ def update_container(entity_id, collection_id, container_id):
   query_string_schema=ContainerDeleteQuerySchema(),
   response_body_schema=ContainerDeleteResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def delete_container(entity_id, collection_id, container_id):
   args = rebar.validated_args

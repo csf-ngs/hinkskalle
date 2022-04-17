@@ -118,6 +118,7 @@ def _get_image(entity_id: str, collection_id: str, tagged_container_id: str, arc
   method='GET',
   response_body_schema=ImageListResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def list_images(entity_id, collection_id, container_id):
   container = _get_container(entity_id, collection_id, container_id)
@@ -134,8 +135,12 @@ def list_images(entity_id, collection_id, container_id):
   query_string_schema=ImageQuerySchema(),
   response_body_schema=ImageResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.optional), # type: ignore
+  tags=['singularity']
 )
 def get_image(entity_id, collection_id, tagged_container_id):
+  """https://singularityhub.github.io/library-api/#/spec/main?id=get-v1imagesusernamecollectionimagesha256archarch
+  https://singularityhub.github.io/library-api/#/spec/main?id=get-v1imagefileusernamecollectionimagetagarcharch
+  """
   args = rebar.validated_args
   image = _get_image(entity_id, collection_id, tagged_container_id, arch=args.get('arch'))
   if not image.check_access(g.authenticated_user):
@@ -157,6 +162,7 @@ def get_image(entity_id, collection_id, tagged_container_id):
   query_string_schema=ImageQuerySchema(),
   response_body_schema=ImageResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.optional), # type: ignore
+  tags=['singularity']
 )
 def get_image_default_entity_single(collection_id, tagged_container_id):
   return get_image(entity_id='default', collection_id=collection_id, tagged_container_id=tagged_container_id)
@@ -167,6 +173,7 @@ def get_image_default_entity_single(collection_id, tagged_container_id):
   query_string_schema=ImageQuerySchema(),
   response_body_schema=ImageResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.optional), # type: ignore
+  tags=['singularity']
 )
 def get_image_default_entity_default_collection_single(tagged_container_id):
   return get_image(entity_id='default', collection_id='default', tagged_container_id=tagged_container_id)
@@ -177,6 +184,7 @@ def get_image_default_entity_default_collection_single(tagged_container_id):
   request_body_schema=ImageCreateSchema(),
   response_body_schema=ImageResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def create_image():
   body = rebar.validated_body
@@ -223,6 +231,7 @@ def create_image():
   request_body_schema=ImageTagUpdateSchema(),
   response_body_schema=ImageTagResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def update_image_tags(entity_id, collection_id, tagged_container_id):
   body = rebar.validated_body
@@ -252,6 +261,7 @@ def update_image_tags(entity_id, collection_id, tagged_container_id):
   request_body_schema=ImageUpdateSchema(),
   response_body_schema=ImageResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def update_image(entity_id, collection_id, tagged_container_id):
   body = rebar.validated_body
@@ -279,7 +289,8 @@ def update_image(entity_id, collection_id, tagged_container_id):
   method='DELETE',
   query_string_schema=ImageQuerySchema(),
   response_body_schema=ImageDeleteResponseSchema(),
-  authenticators=authenticator.with_scope(Scopes.user) # type: ignore
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
 )
 def delete_image(entity_id, collection_id, tagged_container_id):
   args = rebar.validated_args
@@ -306,6 +317,7 @@ def _delete_image(image: Image):
   rule='/v1/images/<string:entity_id>/<string:collection_id>/<string:tagged_container_id>/inspect',
   method='GET',
   response_body_schema=ImageInspectResponseSchema(),
+  tags=['hinkskalle-ext']
 )
 def inspect_image(entity_id, collection_id, tagged_container_id):
   image = _get_image(entity_id, collection_id, tagged_container_id)

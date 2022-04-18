@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
+from pprint import pprint
 from ..model_base import ModelBase
 from .._util import _create_group, _create_user, _create_container
 
-from Hinkskalle.models import User, UserSchema, Group, Token, TokenSchema, Container
+from Hinkskalle.models import User, UserSchema, Group, GroupSchema, Token, TokenSchema, Container, UserGroup, GroupRoles
 
 from Hinkskalle import db
 
@@ -31,18 +32,17 @@ class TestUser(ModelBase):
   def test_group(self):
     user = _create_user()
     group1 = _create_group('Testhase1')
+    group1_opt = UserGroup(group=group1, user=user, role=GroupRoles.contributor)
 
-    user.groups.append(group1)
     db.session.commit()
 
     read_user = User.query.filter_by(username=user.username).one()
     read_group = Group.query.filter_by(name=group1.name).one()
 
-    self.assertListEqual(read_user.groups, [read_group])
+    self.assertListEqual([ m.group for m in read_user.groups], [read_group])
+    self.assertListEqual([ m.user for m in read_group.users], [read_user])
 
-    self.assertListEqual(read_group.users, [read_user])
-
-    read_user.groups.remove(read_group)
+    db.session.delete(group1_opt)
     db.session.commit()
 
     read_user = User.query.filter_by(username=user.username).one()
@@ -208,13 +208,18 @@ class TestUser(ModelBase):
 
   def test_schema_groups(self):
     schema = UserSchema()
+    group_schema = GroupSchema()
     user = _create_user()
     group = _create_group()
-    user.groups.append(group)
+    group_m = UserGroup(user=user, group=group, role=GroupRoles.contributor)
+    db.session.add(group_m)
     db.session.commit()
 
     serialized = schema.dump(user)
-    self.assertEqual(serialized['groups'][0]['id'], str(group.id))
+    self.assertEqual(serialized['groups'][0]['group']['id'], str(group.id))
+
+    serialized = group_schema.dump(group)
+    self.assertEqual(serialized['users'][0]['user']['id'], str(user.id))
 
 
 

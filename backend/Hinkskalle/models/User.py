@@ -3,6 +3,7 @@ from marshmallow import fields, Schema
 from datetime import datetime, timedelta
 from flask import current_app
 from sqlalchemy.orm import validates
+import enum
 
 from passlib.hash import sha512_crypt
 import secrets
@@ -10,12 +11,28 @@ import secrets
 user_stars = db.Table('user_stars', db.metadata,
   db.Column('user_id', db.Integer, db.ForeignKey('user.id'), nullable=False),
   db.Column('container_id', db.Integer, db.ForeignKey('container.id'), nullable=False),
+  keep_existing=True,
 )
 
-user_groups_table = db.Table('users_groups', db.metadata,
-  db.Column('user_id', db.Integer, db.ForeignKey('user.id'), nullable=False),
-  db.Column('group_id', db.Integer, db.ForeignKey('group.id'), nullable=False),
-)
+class GroupRoles(enum.Enum):
+  admin = 'admin'
+  contributor = 'contributor'
+  readonly = 'readonly'
+  def __str__(self):
+    return self.value
+
+class GroupSchema(Schema):
+  id = fields.String(required=True, dump_only=True)
+  name = fields.String(required=True)
+  email = fields.String(required=True)
+
+  users = fields.List(fields.Nested('GroupMemberSchema', allow_none=True))
+
+  createdAt = fields.DateTime(dump_only=True)
+  createdBy = fields.String(dump_only=True)
+  updatedAt = fields.DateTime(dump_only=True, allow_none=True)
+  deletedAt = fields.DateTime(dump_only=True, default=None)
+  deleted = fields.Boolean(dump_only=True, default=False)
 
 class UserSchema(Schema):
   id = fields.String(required=True, dump_only=True)
@@ -27,7 +44,7 @@ class UserSchema(Schema):
   is_active = fields.Boolean(data_key='isActive')
   source = fields.String()
 
-  groups = fields.List(fields.Nested('GroupSchema', allow_none=True, exclude=('users', )))
+  groups = fields.List(fields.Nested('UserMemberSchema', allow_none=True))
 
   createdAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(dump_only=True)
@@ -35,6 +52,22 @@ class UserSchema(Schema):
   deletedAt = fields.DateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
 
+
+class UserMemberSchema(Schema):
+  group = fields.Nested('GroupSchema', exclude=('users',))
+  role = fields.String()
+
+class GroupMemberSchema(Schema):
+  user = fields.Nested('UserSchema', exclude=('groups',))
+  role = fields.String()
+
+
+class UserGroup(db.Model):
+  user_id = db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
+  group_id = db.Column('group_id', db.Integer, db.ForeignKey('group.id'), primary_key=True)
+  role = db.Column('role', db.Enum(GroupRoles, name='group_roles'), default=GroupRoles.readonly.value, nullable=False)
+  user = db.relationship('User', back_populates='groups')
+  group = db.relationship('Group', back_populates='users')
 
 class User(db.Model):
   id = db.Column(db.Integer, primary_key=True)
@@ -47,7 +80,7 @@ class User(db.Model):
   is_active = db.Column(db.Boolean, default=True)
   source = db.Column(db.String(), default='local', nullable=False)
 
-  groups = db.relationship('Group', secondary=user_groups_table, back_populates='users')
+  groups = db.relationship('UserGroup', back_populates='user')
   tokens = db.relationship('Token', back_populates='user', cascade="all, delete-orphan")
   manual_tokens = db.relationship('Token', viewonly=True, primaryjoin="and_(User.id==Token.user_id, Token.source=='manual')")
   starred = db.relationship('Container', secondary=user_stars, back_populates='starred')
@@ -116,26 +149,12 @@ class User(db.Model):
       return False
 
 
-class GroupSchema(Schema):
-  id = fields.String(required=True, dump_only=True)
-  name = fields.String(required=True)
-  email = fields.String(required=True)
-
-  users = fields.List(fields.Nested('UserSchema', allow_none=True, exclude=('groups', )))
-
-  createdAt = fields.DateTime(dump_only=True)
-  createdBy = fields.String(dump_only=True)
-  updatedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deletedAt = fields.DateTime(dump_only=True, default=None)
-  deleted = fields.Boolean(dump_only=True, default=False)
-  
-
 class Group(db.Model):
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String(), unique=True, nullable=False)
   email = db.Column(db.String(), unique=True, nullable=False)
 
-  users = db.relationship('User', secondary=user_groups_table, back_populates='groups')
+  users = db.relationship('UserGroup', back_populates='group')
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String())

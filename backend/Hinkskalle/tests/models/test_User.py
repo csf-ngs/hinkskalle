@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 from pprint import pprint
+
+from marshmallow import ValidationError
 from ..model_base import ModelBase
 from .._util import _create_group, _create_user, _create_container
 
@@ -18,6 +20,11 @@ class TestUser(ModelBase):
     self.assertEqual(read_user.id, user.id)
     self.assertTrue(abs(read_user.createdAt - datetime.now()) < timedelta(seconds=1))
     self.assertFalse(read_user.is_admin)
+  
+  def test_username_check(self):
+    with self.assertRaisesRegex(ValueError, r'name contains invalid'):
+      User(username='bl^a&*.h@ase', email='test@testha.se', firstname='Bla', lastname='Hase')
+
   
   def test_user_case(self):
     user = _create_user('tEst.Hase')
@@ -49,6 +56,10 @@ class TestUser(ModelBase):
     read_group = Group.query.filter_by(name=group1.name).one()
     self.assertListEqual(read_user.groups, [])
     self.assertListEqual(read_group.users, [])
+  
+  def test_group_name_check(self):
+    with self.assertRaisesRegex(ValueError, r'name contains invalid'):
+      Group(name='T@sth@stenstall', email='stall@testha.se')
   
   def test_stars(self):
     user = _create_user()
@@ -167,6 +178,18 @@ class TestUser(ModelBase):
       'isAdmin': True
     })
     self.assertTrue(deserialized['is_admin'])
+  
+  def test_deserialize_username_check(self):
+    schema = UserSchema()
+    with self.assertRaisesRegex(ValidationError, r'username'):
+      deserialized = schema.load({
+        'username': 't@st.h@ase',
+        'email': 'test@ha.se',
+        'firstname': 'Test',
+        'lastname': 'Hase',
+        'isAdmin': True
+      })
+
 
   def test_schema_token(self):
     schema = TokenSchema()
@@ -220,6 +243,25 @@ class TestUser(ModelBase):
 
     serialized = group_schema.dump(group)
     self.assertEqual(serialized['users'][0]['user']['id'], str(user.id))
+  
+  def test_deserialize_groups(self):
+    schema = GroupSchema()
+
+    deserialized = schema.load({
+      'name': 'Testhasenstall',
+      'email': 'test@ha.se',
+    })
+    self.assertEqual(deserialized['name'], 'Testhasenstall')
+  
+  def test_deserialize_groups_name_check(self):
+    schema = GroupSchema()
+
+    with self.assertRaisesRegex(ValidationError, r'name contains invalid'):
+      schema.load({
+        'name': 'Testhasenst@ll',
+        'email': 'test@ha.se',
+      })
+
 
 
 

@@ -1,5 +1,6 @@
 from Hinkskalle import db
-from marshmallow import fields, Schema
+from Hinkskalle.util.name_check import validate_as_name, validate_name
+from marshmallow import fields, Schema, validates_schema, ValidationError
 from datetime import datetime, timedelta
 from flask import current_app
 from sqlalchemy.orm import validates
@@ -34,6 +35,12 @@ class GroupSchema(Schema):
   deletedAt = fields.DateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
 
+  @validates_schema
+  def validate_name(self, data, **kwargs):
+    errors = validate_name(data)
+    if errors:
+      raise ValidationError(errors)
+
 class UserSchema(Schema):
   id = fields.String(required=True, dump_only=True)
   username = fields.String(required=True)
@@ -52,6 +59,12 @@ class UserSchema(Schema):
   deletedAt = fields.DateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
 
+  @validates_schema
+  def validate_username(self, data, **kwargs):
+    errors = validate_name(data, key='username')
+    if errors:
+      raise ValidationError(errors)
+
 
 class UserMemberSchema(Schema):
   group = fields.Nested('GroupSchema', exclude=('users',))
@@ -62,14 +75,14 @@ class GroupMemberSchema(Schema):
   role = fields.String()
 
 
-class UserGroup(db.Model):
+class UserGroup(db.Model): # type: ignore
   user_id = db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
   group_id = db.Column('group_id', db.Integer, db.ForeignKey('group.id'), primary_key=True)
   role = db.Column('role', db.Enum(GroupRoles, name='group_roles'), default=GroupRoles.readonly.value, nullable=False)
   user = db.relationship('User', back_populates='groups')
   group = db.relationship('Group', back_populates='users')
 
-class User(db.Model):
+class User(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   username = db.Column(db.String(), unique=True, nullable=False)
   password = db.Column(db.String())
@@ -97,9 +110,15 @@ class User(db.Model):
   tags = db.relationship('Tag', back_populates='owner')
   uploads = db.relationship('ImageUploadUrl', back_populates='owner', cascade='all, delete-orphan')
 
-  @validates('username', 'email')
+  @validates('email')
   def convert_lower(self, key, value):
     return value.lower()
+
+  @validates('username')
+  def check_username(self, key, value):
+    value = value.lower()
+    validate_as_name(value)
+    return value
 
   def create_token(self, **attrs):
     token = Token(token=secrets.token_urlsafe(48), **attrs)
@@ -149,7 +168,7 @@ class User(db.Model):
       return False
 
 
-class Group(db.Model):
+class Group(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String(), unique=True, nullable=False)
   email = db.Column(db.String(), unique=True, nullable=False)
@@ -159,6 +178,12 @@ class Group(db.Model):
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String())
   updatedAt = db.Column(db.DateTime)
+
+  @validates('name')
+  def check_name(self, key, value):
+    validate_as_name(value)
+    return value
+
 
 class TokenSchema(Schema):
   id = fields.String(required=True, dump_only=True)
@@ -176,7 +201,7 @@ class TokenSchema(Schema):
   deletedAt = fields.DateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
 
-class Token(db.Model):
+class Token(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   token = db.Column(db.String(), unique=True, nullable=False)
   comment = db.Column(db.String())

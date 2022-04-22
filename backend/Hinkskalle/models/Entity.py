@@ -31,7 +31,7 @@ class EntitySchema(Schema):
     if errors:
       raise ValidationError(errors)
 
-class Entity(db.Model):
+class Entity(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String(), unique=True, nullable=False)
   description = db.Column(db.String())

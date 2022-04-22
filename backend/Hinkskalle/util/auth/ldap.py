@@ -76,6 +76,7 @@ class LDAPUsers(PasswordCheckerBase):
   
   def sync_user(self, entry):
     from Hinkskalle.models.User import User
+    from Hinkskalle.models.Entity import Entity
     from Hinkskalle import db
 
     attrs = entry.get('attributes')
@@ -101,6 +102,13 @@ class LDAPUsers(PasswordCheckerBase):
 
     db.session.add(user)
     db.session.commit()
+    try:
+      Entity.query.filter(Entity.name==user.username).one()
+    except NoResultFound:
+      entity = Entity(name=user.username, owner=user)
+      db.session.add(entity)
+      db.session.commit()
+
     return user
 
   def check_password(self, username: str, password: str):

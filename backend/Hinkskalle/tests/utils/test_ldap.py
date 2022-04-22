@@ -6,7 +6,7 @@ from ldap3 import MOCK_SYNC, OFFLINE_AD_2012_R2
 from rq import Queue
 from fakeredis import FakeStrictRedis
 
-from Hinkskalle.models import Adm, AdmKeys, User
+from Hinkskalle.models import Adm, AdmKeys, User, Entity
 from Hinkskalle.util.auth.ldap import LDAPUsers, LDAPService
 from Hinkskalle.util.auth.exceptions import *
 
@@ -65,6 +65,11 @@ class TestLdap(ModelBase):
     self.assertEqual(db_user.firstname, 'Test')
     self.assertEqual(db_user.lastname, 'Hase')
     self.assertIsNotNone(db_user.id)
+
+    db_entity = Entity.query.filter(Entity.name == db_user.username).first()
+    self.assertIsNotNone(db_entity)
+    self.assertEqual(db_entity.createdBy, db_user.username)
+
   
   def test_sync_existing(self):
     auth = self.mock.auth
@@ -80,12 +85,14 @@ class TestLdap(ModelBase):
     auth = self.mock.auth
     user = _create_user()
     user.source = 'ldap'
+    oldfirst = user.firstname
+    oldlast = user.lastname
     db.session.commit()
 
     db_user = auth.sync_user({ 'attributes': { 'cn': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
     self.assertEqual(db_user.id, user.id)
-    self.assertEqual(db_user.firstname, user.firstname)
-    self.assertEqual(db_user.lastname, user.lastname)
+    self.assertEqual(db_user.firstname, oldfirst+'oink')
+    self.assertEqual(db_user.lastname, oldlast+'oink')
 
   def test_sync_inactive(self):
     auth = self.mock.auth
@@ -145,14 +152,14 @@ class TestLdap(ModelBase):
     user = self.mock.create_user()
 
     with self.assertRaises(InvalidPassword):
-      check_user = auth.check_password(user.get('cn'), user.get('userPassword')+'oink')
+      check_user = auth.check_password(user.get('cn'), user.get('userPassword', '')+'oink')
 
   def test_invalid_password_recheck(self):
     auth = self.mock.auth
     user = self.mock.create_user()
 
     with self.assertRaises(InvalidPassword):
-      check_user = auth.check_password(user.get('cn'), user.get('userPassword')+'oink')
+      check_user = auth.check_password(user.get('cn'), user.get('userPassword', '')+'oink')
     
     # should work
     check_user = auth.check_password(user.get('cn'), user.get('userPassword'))
@@ -162,7 +169,7 @@ class TestLdap(ModelBase):
     user = self.mock.create_user()
 
     with self.assertRaises(InvalidPassword):
-      check_user = auth.check_password(user.get('cn'), None)
+      check_user = auth.check_password(user.get('cn'), None) # type:ignore
 
     with self.assertRaises(InvalidPassword):
       check_user = auth.check_password(user.get('cn'), '')

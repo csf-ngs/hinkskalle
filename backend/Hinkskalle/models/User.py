@@ -174,6 +174,7 @@ class Group(db.Model): # type: ignore
   email = db.Column(db.String(), unique=True, nullable=False)
 
   users = db.relationship('UserGroup', back_populates='group')
+  users_sth = db.relationship('UserGroup', viewonly=True, lazy='dynamic')
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String())

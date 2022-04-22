@@ -252,7 +252,20 @@ class TestUsers(RouteBase):
       ret = self.client.post(f"/v1/users/{db_user.username}/stars/{container.id}")
     self.assertEqual(ret.status_code, 403)
   
+  def test_register_disabled(self):
+    self.app.config['ENABLE_REGISTER']=False
+    user_data = {
+      'username': 'probier.hase',
+      'email': 'probier@ha.se',
+      'firstname': 'Probier',
+      'lastname': 'Hase',
+      'password': 'geheimbaer',
+    }
+    ret = self.client.post('/v1/register', json=user_data)
+    self.assertEqual(ret.status_code, 403)
+  
   def test_register(self):
+    self.app.config['ENABLE_REGISTER']=True
     user_data = {
       'username': 'probier.hase',
       'email': 'probier@ha.se',

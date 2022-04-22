@@ -173,6 +173,8 @@ def _create_user(body, password=None):
   tags=['hinkskalle-ext']
 )
 def register_account():
+  if not current_app.config.get('ENABLE_REGISTER', False):
+    raise errors.Forbidden(f"Registration is disabled.")
   body = rebar.validated_body
   new_user = _create_user(body, body.pop('password'))
 

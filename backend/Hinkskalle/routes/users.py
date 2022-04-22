@@ -7,6 +7,7 @@ from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
 from flask import request, current_app, g
+import re
 
 from Hinkskalle.models import UserSchema, User, ContainerSchema, Container, Entity
 
@@ -175,6 +176,7 @@ def _create_user(body, password=None):
 def register_account():
   if not current_app.config.get('ENABLE_REGISTER', False):
     raise errors.Forbidden(f"Registration is disabled.")
+
   body = rebar.validated_body
   new_user = _create_user(body, body.pop('password'))
 
@@ -241,16 +243,21 @@ def update_user(username):
   if new_password:
     user.set_password(new_password)
   
-  if username != user.username:
-    try:
-      entity = Entity.query.filter(Entity.name==username).one()
-      if entity.createdBy != username:
-        raise errors.PreconditionFailed(f"Cannot rename entity {entity.name}, not owned by user")
-      entity.name=user.username
-    except NoResultFound:
-      pass
+  with db.session.no_autoflush:
+    if username != user.username:
+      try:
+        entity = Entity.query.filter(Entity.name==username).one()
+        if entity.createdBy != username:
+          raise errors.PreconditionFailed(f"Cannot rename entity {entity.name}, not owned by user")
+        entity.name=user.username
+      except NoResultFound:
+        pass
 
-  db.session.commit()
+  try:
+    db.session.commit()
+  except IntegrityError as err:
+    raise errors.Conflict(f"Cannot change username, new name already taken")
+
 
   return { 'data': user }
 

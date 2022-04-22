@@ -166,6 +166,7 @@ class TestUser(ModelBase):
     user.is_admin=True
     serialized = schema.dump(user)
     self.assertTrue(serialized['isAdmin'])
+    self.assertTrue(serialized['isActive'])
 
   def test_deserialize(self):
     schema = UserSchema()
@@ -175,9 +176,11 @@ class TestUser(ModelBase):
       'email': 'test@ha.se',
       'firstname': 'Test',
       'lastname': 'Hase',
-      'isAdmin': True
+      'isAdmin': True,
+      'isActive': True,
     })
     self.assertTrue(deserialized['is_admin'])
+    self.assertTrue(deserialized['is_active'])
   
   def test_deserialize_username_check(self):
     schema = UserSchema()

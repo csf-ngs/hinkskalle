@@ -231,6 +231,46 @@ class TestUser(ModelBase):
     self.assertTrue(subject.check_update_access(try_admin))
     self.assertFalse(subject.check_update_access(try_normal))
     self.assertTrue(subject.check_update_access(subject))
+  
+  def test_group_access(self):
+    subject = _create_group()
+    try_admin = _create_user('admin.hase', is_admin=True)
+    try_normal = _create_user('normal.hase')
+    try_other = _create_user('other.hase')
+
+    self.assertTrue(subject.check_access(try_admin))
+    self.assertFalse(subject.check_access(try_normal))
+    self.assertFalse(subject.check_access(try_other))
+
+    ug = UserGroup(user=try_normal, group=subject)
+    db.session.add(ug)
+    db.session.commit()
+
+    self.assertTrue(subject.check_access(try_normal))
+    self.assertFalse(subject.check_access(try_other))
+  
+  def test_group_update_access(self):
+    subject = _create_group()
+    try_admin = _create_user('admin.hase', is_admin=True)
+    try_normal = _create_user('normal.hase')
+
+    self.assertTrue(subject.check_update_access(try_admin))
+    self.assertFalse(subject.check_update_access(try_normal))
+
+    ug = UserGroup(user=try_normal, group=subject)
+    db.session.add(ug)
+    db.session.commit()
+    for allow in [ GroupRoles.admin ]:
+      ug.role = allow
+      db.session.commit()
+      self.assertTrue(subject.check_update_access(try_normal))
+    for deny in [ GroupRoles.contributor, GroupRoles.readonly ]:
+      ug.role = deny
+      db.session.commit()
+      self.assertFalse(subject.check_update_access(try_normal))
+
+
+
 
   def test_schema_groups(self):
     schema = UserSchema()
@@ -264,7 +304,4 @@ class TestUser(ModelBase):
         'name': 'Testhasenst@ll',
         'email': 'test@ha.se',
       })
-
-
-
 

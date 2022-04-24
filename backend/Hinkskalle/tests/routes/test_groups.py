@@ -102,6 +102,24 @@ class TestGroups(RouteBase):
       "email": group1.email,
     }, json)
   
+  def test_get_members(self):
+    group1 = _create_group('Testhasenstall')
+    _set_member(group=group1, user=self.user, role=GroupRoles.contributor)
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/groups/{group1.name}")
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data') # type: ignore
+    members = json.get('users')
+    self.assertIsNotNone(members)
+    self.assertEqual(len(members), 1)
+    self.assertDictContainsSubset({
+      'role': str(GroupRoles.contributor)
+    }, members[0])
+    self.assertDictContainsSubset({
+      'username': self.username
+    }, members[0]['user'])
+  
   def test_get_user_member(self):
     group1 = _create_group('Testhasenstall')
     _set_member(self.user, group1)

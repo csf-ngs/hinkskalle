@@ -522,7 +522,7 @@ class TestUsers(RouteBase):
       ret = self.client.put(f"/v1/users/{user.username}", json={ "username": other_user.username })
     self.assertEqual(ret.status_code, 409)
     db_user = User.query.get(user_id)
-    self.assertEqual(db_user.username, 'update.hase')
+    self.assertEqual(db_user.username, 'update.user')
   
   def test_update_username_entity_collision(self):
     user = _create_user('update.hase')

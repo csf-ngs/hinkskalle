@@ -10,6 +10,8 @@ curl http://localhost:7660/swagger |
     -c Image \
     -c Group \
     -c User \
+    -c Group \
+    -c GroupMember \
     -c Token \
     -c Job \
     -c LdapStatus \

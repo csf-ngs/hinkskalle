@@ -27,7 +27,7 @@ class GroupSchema(Schema):
   name = fields.String(required=True)
   email = fields.String(required=True)
 
-  users = fields.List(fields.Nested('GroupMemberSchema', allow_none=True))
+  users = fields.List(fields.Nested('GroupMemberSchema', allow_none=True), dump_only=True)
 
   createdAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(dump_only=True)
@@ -51,7 +51,7 @@ class UserSchema(Schema):
   is_active = fields.Boolean(data_key='isActive')
   source = fields.String()
 
-  groups = fields.List(fields.Nested('UserMemberSchema', allow_none=True))
+  groups = fields.List(fields.Nested('UserMemberSchema', allow_none=True), dump_only=True)
 
   createdAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(dump_only=True)

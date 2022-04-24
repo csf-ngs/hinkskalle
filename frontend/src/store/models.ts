@@ -376,6 +376,7 @@ class Group {
   public id!: string
   public name!: string
   public updatedAt!: Date | null
+  public users!: GroupMember[]
   
 }
 
@@ -389,6 +390,7 @@ export function plainToGroup(json: any): Group {
     obj.id = json['id'];
     obj.name = json['name'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
+      if (!_isNil(json['users'])) obj.users = _map(json['users'], plainToGroupMember);
       
   return obj;
 }
@@ -411,7 +413,6 @@ class User {
   public deletedAt!: Date | null
   public email!: string
   public firstname!: string
-  public groups!: Group[]
   public id!: string
   public isActive!: boolean
   public isAdmin!: boolean
@@ -447,8 +448,7 @@ export function plainToUser(json: any): User {
     obj.deletedAt = _isNil(json['deletedAt']) ? null : new Date(json['deletedAt']);
       obj.email = json['email'];
     obj.firstname = json['firstname'];
-    if (!_isNil(json['groups'])) obj.groups = _map(json['groups'], plainToGroup);
-      obj.id = json['id'];
+    obj.id = json['id'];
     obj.isActive = json['isActive'];
     obj.isAdmin = json['isAdmin'];
     obj.lastname = json['lastname'];
@@ -463,8 +463,7 @@ export function serializeUser(obj: User, unroll=false): any {
   const json: any = {};
   json['email'] = obj.email;
       json['firstname'] = obj.firstname;
-      if (unroll) json['groups'] = _isNil(obj.groups) ? [] : _map(obj.groups, f => serializeGroup(f));
-        json['isActive'] = obj.isActive;
+      json['isActive'] = obj.isActive;
       json['isAdmin'] = obj.isAdmin;
       json['lastname'] = obj.lastname;
       json['source'] = obj.source;
@@ -480,6 +479,70 @@ export function serializeUser(obj: User, unroll=false): any {
 }
 
 export { User };
+
+
+class Group {
+  public createdAt!: Date | null
+  public createdBy!: string
+  public deleted!: boolean
+  public deletedAt!: Date | null
+  public email!: string
+  public id!: string
+  public name!: string
+  public updatedAt!: Date | null
+  public users!: GroupMember[]
+  
+}
+
+export function plainToGroup(json: any): Group {
+  const obj = new Group();
+  obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
+      obj.createdBy = json['createdBy'];
+    obj.deleted = json['deleted'];
+    obj.deletedAt = _isNil(json['deletedAt']) ? null : new Date(json['deletedAt']);
+      obj.email = json['email'];
+    obj.id = json['id'];
+    obj.name = json['name'];
+    obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
+      if (!_isNil(json['users'])) obj.users = _map(json['users'], plainToGroupMember);
+      
+  return obj;
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function serializeGroup(obj: Group, unroll=false): any {
+  const json: any = {};
+  json['email'] = obj.email;
+      json['name'] = obj.name;
+      
+  return json;
+}
+
+export { Group };
+
+
+class GroupMember {
+  public role!: string
+  public user!: User
+  
+}
+
+export function plainToGroupMember(json: any): GroupMember {
+  const obj = new GroupMember();
+  obj.role = json['role'];
+    if (!_isNil(json['user'])) obj.user = plainToUser(json['user']);
+      
+  return obj;
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function serializeGroupMember(obj: GroupMember, unroll=false): any {
+  const json: any = {};
+  json['role'] = obj.role;
+      if (unroll) json['user'] = _isNil(obj.user) ? null : serializeUser(obj.user);
+        
+  return json;
+}
+
+export { GroupMember };
 
 
 class Token {

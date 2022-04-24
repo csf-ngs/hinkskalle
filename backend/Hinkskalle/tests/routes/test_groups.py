@@ -1,6 +1,6 @@
 from pprint import pprint
 from ..route_base import RouteBase
-from .._util import _create_group, _set_member
+from .._util import _create_group, _set_member, _create_user
 from Hinkskalle import db
 from Hinkskalle.models.User import Group, GroupRoles, UserGroup, User
 from Hinkskalle.models.Entity import Entity
@@ -289,6 +289,154 @@ class TestGroups(RouteBase):
     }
     with self.fake_auth():
       ret = self.client.put(f"/v1/groups/{group.name}", json=group_data)
+    self.assertEqual(ret.status_code, 403)
+  
+  def test_update_members_add(self):
+    group = _create_group('Updatestall')
+    user1 = _create_user('test1.hase')
+    user2 = _create_user('test2.hase')
+
+    _set_member(group=group, user=user1, role=GroupRoles.contributor)
+    group_id = group.id
+
+    member_json = [
+      { 'role': str(GroupRoles.contributor), 'user': { 'username': user1.username }},
+      { 'role': str(GroupRoles.readonly), 'user': { 'username': user2.username }},
+    ]
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/groups/{group.name}/members", json=member_json)
+    self.assertEqual(ret.status_code, 200)
+
+    db_group = Group.query.get(group_id)
+    self.assertCountEqual(
+      [ { 'role': ug.role, 'username': ug.user.username } for ug in db_group.users ],
+      [ 
+        { 'role': GroupRoles.contributor, 'username': user1.username },
+        { 'role': GroupRoles.readonly, 'username': user2.username },
+      ]
+    )
+
+  def test_update_members_nonexisting(self):
+    group = _create_group('Updatestall')
+
+    member_json = [
+      { 'role': str(GroupRoles.contributor), 'user': { 'username': 'kasperl' }},
+    ]
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/groups/{group.name}/members", json=member_json)
+    self.assertEqual(ret.status_code, 404)
+
+  def test_update_members_ignore_fields(self):
+    group = _create_group('Updatestall')
+
+    member_json = [
+      { 'role': str(GroupRoles.contributor), 'user': { 'username': self.username, 'email': 'some@thi.ng' }},
+    ]
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/groups/{group.name}/members", json=member_json)
+    self.assertEqual(ret.status_code, 200)
+
+  def test_update_members_remove(self):
+    group = _create_group('Updatestall')
+    user1 = _create_user('test1.hase')
+    user2 = _create_user('test2.hase')
+
+    _set_member(group=group, user=user1, role=GroupRoles.contributor)
+    _set_member(group=group, user=user2, role=GroupRoles.readonly)
+    group_id = group.id
+
+    member_json = [
+      { 'role': str(GroupRoles.contributor), 'user': { 'username': user1.username }},
+    ]
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/groups/{group.name}/members", json=member_json)
+    self.assertEqual(ret.status_code, 200)
+
+    db_group = Group.query.get(group_id)
+    self.assertCountEqual(
+      [ { 'role': ug.role, 'username': ug.user.username } for ug in db_group.users ],
+      [ 
+        { 'role': GroupRoles.contributor, 'username': user1.username },
+      ]
+    )
+
+  def test_update_members_change(self):
+    group = _create_group('Updatestall')
+    user1 = _create_user('test1.hase')
+    user2 = _create_user('test2.hase')
+
+    _set_member(group=group, user=user1, role=GroupRoles.contributor)
+    _set_member(group=group, user=user2, role=GroupRoles.readonly)
+    group_id = group.id
+
+    member_json = [
+      { 'role': str(GroupRoles.contributor), 'user': { 'username': user1.username }},
+      { 'role': str(GroupRoles.admin), 'user': { 'username': user2.username }},
+    ]
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/groups/{group.name}/members", json=member_json)
+    self.assertEqual(ret.status_code, 200)
+
+    db_group = Group.query.get(group_id)
+    self.assertCountEqual(
+      [ { 'role': ug.role, 'username': ug.user.username } for ug in db_group.users ],
+      [ 
+        { 'role': GroupRoles.contributor, 'username': user1.username },
+        { 'role': GroupRoles.admin, 'username': user2.username },
+      ]
+    )
+
+  def test_update_members_user(self):
+    group = _create_group('Updatestall')
+    ug = _set_member(group=group, user=self.user, role=GroupRoles.admin)
+
+    user2 = _create_user('test2.hase')
+    group_id = group.id
+
+    member_json = [
+      { 'role': str(GroupRoles.admin), 'user': { 'username': self.username }},
+      { 'role': str(GroupRoles.readonly), 'user': { 'username': user2.username }},
+    ]
+
+    with self.fake_auth():
+      ret = self.client.put(f"/v1/groups/{group.name}/members", json=member_json)
+    self.assertEqual(ret.status_code, 200)
+
+    db_group = Group.query.get(group_id)
+    self.assertCountEqual(
+      [ { 'role': ug.role, 'username': ug.user.username } for ug in db_group.users ],
+      [ 
+        { 'role': GroupRoles.admin, 'username': self.username },
+        { 'role': GroupRoles.readonly, 'username': user2.username },
+      ]
+    )
+
+  def test_update_members_user_denied(self):
+    group = _create_group('Updatestall')
+    ug = _set_member(group=group, user=self.user)
+
+    for role in [ GroupRoles.readonly, GroupRoles.contributor ]:
+      ug.role = role
+      db.session.commit()
+
+      members_json = [
+        {'role': str(role), 'user': { 'username': self.username } }
+      ]
+      with self.fake_auth():
+        ret = self.client.put(f"/v1/groups/{group.name}/members", json=members_json)
+      self.assertEqual(ret.status_code, 403)
+
+  def test_update_members_user_nomember_denied(self):
+    group = _create_group('Updatestall')
+
+    members_json = []
+    with self.fake_auth():
+      ret = self.client.put(f"/v1/groups/{group.name}/members", json=members_json)
     self.assertEqual(ret.status_code, 403)
   
   def test_delete(self):

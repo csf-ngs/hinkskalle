@@ -5,12 +5,12 @@ from Hinkskalle.routes import auth
 from Hinkskalle.util.auth.token import Scopes
 
 from flask_rebar import RequestSchema, ResponseSchema, errors
-from marshmallow import fields, Schema
+from marshmallow import fields, Schema, EXCLUDE
 from flask import g
 from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from sqlalchemy.exc import IntegrityError
 
-from Hinkskalle.models import GroupSchema, Group, UserGroup, Entity
+from Hinkskalle.models import GroupSchema, Group, UserGroup, Entity, User
 
 class GroupResponseSchema(ResponseSchema):
   data = fields.Nested(GroupSchema)
@@ -26,10 +26,22 @@ class GroupCreateSchema(GroupSchema, RequestSchema):
 
 class GroupUpdateSchema(GroupSchema, RequestSchema):
   name = fields.String(required=False)
-  pass
 
 class GroupDeleteResponseSchema(ResponseSchema):
   status = fields.String()
+
+class MemberSchema(Schema):
+  username = fields.String(required=True)
+  class Meta:
+    unknown = EXCLUDE
+
+class LGroupMemberSchema(Schema):
+  role = fields.String(required=True)
+  user = fields.Nested(MemberSchema)
+
+class GroupMembersResponseSchema(ResponseSchema):
+  data = fields.Nested(LGroupMemberSchema, many=True)
+
 
 @registry.handles(
   rule='/v1/groups',
@@ -128,6 +140,48 @@ def update_group(name: str):
     raise errors.Conflict(f"Cannot change group name, new name already taken")
   
   return { 'data': group }
+
+@registry.handles(
+  rule='/v1/groups/<string:name>/members',
+  method='PUT',
+  request_body_schema=LGroupMemberSchema(many=True),
+  response_body_schema=GroupMembersResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
+)
+def update_members(name: str):
+  body = rebar.validated_body
+
+  try:
+    group: Group = Group.query.filter(Group.name==name).one()
+  except NoResultFound:
+    raise errors.NotFound(f"group {name} not found")
+  
+  if not group.check_update_access(g.authenticated_user):
+    raise errors.Forbidden(f"no access to group {name}")
+
+  current = { ug.user.username: ug for ug in group.users }
+  should = { ug['user']['username']: ug for ug in body }
+
+  for (username, ug) in current.items():
+    if username in should:
+      ug.role=should[username]['role']
+      should.pop(username)
+    else:
+      db.session.delete(ug)
+  
+  for (username, ug) in should.items():
+    try:
+      user = User.query.filter(User.username==username).one()
+    except NoResultFound:
+      raise errors.NotFound(f"user {username} does not exist")
+    ug = UserGroup(user=user, group=group, role=ug['role'])
+    db.session.add(ug)
+  
+  db.session.commit()
+  return { 'data': group.users }
+
+
 
 @registry.handles(
   rule='/v1/groups/<string:name>',

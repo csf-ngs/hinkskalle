@@ -93,7 +93,7 @@ class User(db.Model): # type: ignore
   is_active = db.Column(db.Boolean, default=True)
   source = db.Column(db.String(), default='local', nullable=False)
 
-  groups = db.relationship('UserGroup', back_populates='user')
+  groups = db.relationship('UserGroup', back_populates='user', cascade='all, delete-orphan')
   tokens = db.relationship('Token', back_populates='user', cascade="all, delete-orphan")
   manual_tokens = db.relationship('Token', viewonly=True, primaryjoin="and_(User.id==Token.user_id, Token.source=='manual')")
   starred = db.relationship('Container', secondary=user_stars, back_populates='starred')
@@ -101,7 +101,7 @@ class User(db.Model): # type: ignore
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String())
-  updatedAt = db.Column(db.DateTime)
+  updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
   entities = db.relationship('Entity', back_populates='owner')
   collections = db.relationship('Collection', back_populates='owner')
@@ -173,17 +173,34 @@ class Group(db.Model): # type: ignore
   name = db.Column(db.String(), unique=True, nullable=False)
   email = db.Column(db.String(), unique=True, nullable=False)
 
-  users = db.relationship('UserGroup', back_populates='group')
+  users = db.relationship('UserGroup', back_populates='group', cascade='all, delete-orphan')
   users_sth = db.relationship('UserGroup', viewonly=True, lazy='dynamic')
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String())
-  updatedAt = db.Column(db.DateTime)
+  updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
   @validates('name')
   def check_name(self, key, value):
     validate_as_name(value)
     return value
+  
+  def check_access(self, user: User) -> bool:
+    if user.is_admin:
+      return True
+    ug = self.users_sth.filter(UserGroup.user_id == user.id).first()
+    if ug:
+      return True
+    return False
+
+  def check_update_access(self, user: User) -> bool:
+    if user.is_admin:
+      return True
+    ug = self.users_sth.filter(UserGroup.user_id == user.id).first()
+    if ug and ug.role == GroupRoles.admin:
+      return True
+    return False
+
 
 
 class TokenSchema(Schema):

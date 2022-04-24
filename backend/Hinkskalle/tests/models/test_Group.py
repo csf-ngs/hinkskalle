@@ -1,4 +1,7 @@
 from datetime import datetime, timedelta
+from pprint import pprint
+
+from Hinkskalle.models.User import GroupRoles, UserGroup
 from ..model_base import ModelBase
 from .._util import _create_group, _create_user
 
@@ -31,11 +34,12 @@ class TestGroup(ModelBase):
     schema = GroupSchema()
     user = _create_user()
     group = _create_group()
-    group.users.append(user)
+    group.users.append(UserGroup(user=user, group=group, role=GroupRoles.readonly))
     db.session.commit()
 
     serialized = schema.dump(group)
-    self.assertEqual(serialized['users'][0]['id'], str(user.id))
+    self.assertEqual(serialized['users'][0]['user']['id'], str(user.id))
+    self.assertEqual(serialized['users'][0]['role'], str(GroupRoles.readonly))
 
 
 

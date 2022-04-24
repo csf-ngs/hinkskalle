@@ -5,9 +5,7 @@ from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import or_
-from flask import request, current_app, g
-import re
+from flask import current_app, g
 
 from Hinkskalle.models import UserSchema, User, ContainerSchema, Container, Entity
 

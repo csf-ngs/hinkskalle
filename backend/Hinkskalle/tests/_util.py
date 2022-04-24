@@ -2,7 +2,7 @@ import typing
 import hashlib
 import tempfile
 
-from Hinkskalle.models.User import User, Group
+from Hinkskalle.models.User import GroupRoles, User, Group, UserGroup
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Collection import Collection
 from Hinkskalle.models.Container import Container
@@ -16,11 +16,17 @@ def _create_user(name='test.hase', is_admin=False) -> User:
   db.session.commit()
   return user
 
-def _create_group(name='Testhasenstall') -> Group:
-  group = Group(name=name, email=name+'@ha.se')
+def _create_group(name='Testhasenstall', **kwargs) -> Group:
+  group = Group(name=name, email=name+'@ha.se', **kwargs)
   db.session.add(group)
   db.session.commit()
   return group
+
+def _set_member(user: User, group: Group, role=GroupRoles.contributor) -> UserGroup:
+  ug = UserGroup(user=user, group=group, role=role)
+  db.session.add(ug)
+  db.session.commit()
+  return ug
 
 def _create_collection(name='test-collection') -> typing.Tuple[Collection, Entity]:
   try:

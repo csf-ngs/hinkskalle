@@ -182,7 +182,7 @@ class Group(db.Model): # type: ignore
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
-  entity = db.relationship('Entity', back_populates='group', uselist=False)
+  entity = db.relationship('Entity', back_populates='group', uselist=False, cascade='all, delete-orphan')
 
   @validates('name')
   def check_name(self, key, value):

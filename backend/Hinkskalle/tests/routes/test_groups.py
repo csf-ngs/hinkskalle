@@ -1,6 +1,6 @@
 from pprint import pprint
 from ..route_base import RouteBase
-from .._util import _create_group, _set_member, _create_user
+from .._util import _create_group, _set_member, _create_user, _create_collection
 from Hinkskalle import db
 from Hinkskalle.models.User import Group, GroupRoles, UserGroup, User
 from Hinkskalle.models.Entity import Entity
@@ -100,7 +100,27 @@ class TestGroups(RouteBase):
       "id": str(group1.id),
       "name": group1.name,
       "email": group1.email,
+      "entity_ref": None,
     }, json)
+  
+  def test_get_entity_ref(self):
+    group1 = _create_group('Testhasenstall')
+
+    entity = Entity(name=group1.name, group=group1)
+    db.session.add(entity)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/groups/{group1.name}")
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data') # type: ignore
+    self.assertDictContainsSubset({
+      "id": str(group1.id),
+      "name": group1.name,
+      "email": group1.email,
+      "entity_ref": group1.entity.name,
+    }, json)
+
   
   def test_get_members(self):
     group1 = _create_group('Testhasenstall')
@@ -145,16 +165,19 @@ class TestGroups(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['name'], group_data['name'])
+    self.assertEqual(data['entity_ref'], group_data['name'].lower())
+
     db_group = Group.query.get(data['id'])
     self.assertEqual(db_group.name, group_data['name'])
     self.assertEqual(db_group.email, group_data['email'])
     self.assertEqual(db_group.createdBy, self.admin_username)
   
     try:
-      db_entity = Entity.query.filter(Entity.name==group_data['name'].lower()).one()
+      db_entity = Entity.query.filter(Entity.name==data['entity_ref']).one()
     except NoResultFound:
       self.fail('db entity not found')
     self.assertEqual(db_entity.createdBy, self.admin_username)
+    self.assertEqual(db_entity.group_id, db_group.id)
 
   def test_create_entity_exists(self):
     group_data = {
@@ -193,6 +216,9 @@ class TestGroups(RouteBase):
     self.assertEqual(db_group.createdBy, self.username)
     db_member = db_group.users_sth.join(UserGroup.user).filter(User.username==self.username).one()
     self.assertEqual(db_member.role, GroupRoles.admin)
+
+    db_entity = Entity.query.filter(Entity.name==ret_group['entity_ref']).one()
+    self.assertEqual(db_entity.createdBy, self.username)
   
   def test_update(self):
     group = _create_group('Updatestall')
@@ -218,7 +244,7 @@ class TestGroups(RouteBase):
   
   def test_update_name_change_entity(self):
     group = _create_group('Updatestall')
-    entity = Entity(name=group.name)
+    entity = Entity(name=group.name, group=group)
     db.session.add(entity)
     db.session.commit()
 
@@ -241,7 +267,7 @@ class TestGroups(RouteBase):
   def test_update_name_entity_collision(self):
     group = _create_group('Updatestall')
 
-    group_entity = Entity(name='updatestall')
+    group_entity = Entity(name='updatestall', group=group)
     entity = Entity(name='oink')
     db.session.add(group_entity)
     db.session.add(entity)
@@ -449,7 +475,7 @@ class TestGroups(RouteBase):
   
   def test_delete_entity(self):
     group = _create_group('Deletestall')
-    entity = Entity(name=group.name)
+    entity = Entity(name=group.name, group=group)
     db.session.add(entity)
     db.session.commit()
 
@@ -457,8 +483,20 @@ class TestGroups(RouteBase):
       ret = self.client.delete(f"/v1/groups/{group.name}")
     self.assertEqual(ret.status_code, 200)
 
-    self.assertIsNone(Entity.query.filter(Entity.name=='Deletestall').first())
-  
+    self.assertIsNone(Entity.query.filter(Entity.name=='deletestall').first())
+
+  def test_delete_entity_referenced(self):
+    group = _create_group('Deletestall')
+    entity = Entity(name=group.name, group=group)
+    db.session.add(entity)
+    coll = _create_collection()[0]
+    coll.entity_ref = entity
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/groups/{group.name}")
+    self.assertEqual(ret.status_code, 412)
+
   def test_delete_user(self):
     group = _create_group('Updatestall')
     ug = _set_member(group=group, user=self.user, role=GroupRoles.admin)
@@ -466,7 +504,7 @@ class TestGroups(RouteBase):
     with self.fake_auth():
       ret = self.client.delete(f"/v1/groups/{group.name}")
     self.assertEqual(ret.status_code, 200)
-  
+
   def test_delete_user_denied(self):
     group = _create_group('Updatestall')
     ug = _set_member(group=group, user=self.user)
@@ -484,24 +522,3 @@ class TestGroups(RouteBase):
     with self.fake_auth():
       ret = self.client.delete(f"/v1/groups/{group.name}")
     self.assertEqual(ret.status_code, 403)
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-  
-
-
-    
-
-
-

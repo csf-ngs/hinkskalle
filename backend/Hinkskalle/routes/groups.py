@@ -93,7 +93,7 @@ def create_group():
   new_group.createdBy=g.authenticated_user.username
   ug = UserGroup(user=g.authenticated_user, group=new_group, role=GroupRoles.admin)
 
-  entity = Entity(name=new_group.name, owner=g.authenticated_user)
+  entity = Entity(name=new_group.name, owner=g.authenticated_user, group=new_group)
   try:
     db.session.add(new_group)
     db.session.add(entity)
@@ -127,12 +127,8 @@ def update_group(name: str):
     setattr(group, key, body[key])
   
   with db.session.no_autoflush:
-    if name != group.name:
-      try:
-        entity = Entity.query.filter(Entity.name==name.lower()).one()
-        entity.name=group.name
-      except NoResultFound:
-        pass
+    if name != group.name and group.entity is not None:
+      group.entity.name = group.name
   
   try:
     db.session.commit()
@@ -199,7 +195,10 @@ def delete_group(name):
   if not group.check_update_access(g.authenticated_user):
     raise errors.Forbidden(f"no access to group {name}")
   
-  db.session.delete(group)
-  db.session.commit()
+  try:
+    db.session.delete(group)
+    db.session.commit()
+  except IntegrityError:
+    raise errors.PreconditionFailed(f"Cannot delete, entity not empty")
 
   return { 'status': 'ok' }

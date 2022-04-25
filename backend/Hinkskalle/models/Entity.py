@@ -45,7 +45,10 @@ class Entity(db.Model): # type: ignore
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
+  group_id = db.Column(db.Integer, db.ForeignKey('group.id'), unique=True)
+
   owner = db.relationship('User', back_populates='entities')
+  group = db.relationship('Group', back_populates='entity')
 
   collections_ref = db.relationship('Collection', back_populates='entity_ref', lazy='dynamic')
 

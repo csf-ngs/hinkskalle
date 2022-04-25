@@ -1,3 +1,4 @@
+import typing
 from Hinkskalle import db
 from Hinkskalle.util.name_check import validate_as_name, validate_name
 from marshmallow import fields, Schema, validates_schema, ValidationError
@@ -26,6 +27,7 @@ class GroupSchema(Schema):
   id = fields.String(required=True, dump_only=True)
   name = fields.String(required=True)
   email = fields.String(required=True)
+  entity_ref = fields.String(dump_only=True, allow_none=True)
 
   users = fields.List(fields.Nested('GroupMemberSchema', allow_none=True), dump_only=True)
 
@@ -177,13 +179,19 @@ class Group(db.Model): # type: ignore
   users_sth = db.relationship('UserGroup', viewonly=True, lazy='dynamic')
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
-  createdBy = db.Column(db.String())
+  createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
+
+  entity = db.relationship('Entity', back_populates='group', uselist=False)
 
   @validates('name')
   def check_name(self, key, value):
     validate_as_name(value)
     return value
+  
+  @property
+  def entity_ref(self) -> typing.Optional[str]:
+    return self.entity.name if self.entity else None
   
   def check_access(self, user: User) -> bool:
     if user.is_admin:

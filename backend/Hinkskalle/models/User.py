@@ -193,10 +193,13 @@ class Group(db.Model): # type: ignore
   def entity_ref(self) -> typing.Optional[str]:
     return self.entity.name if self.entity else None
   
+  def get_member(self, user: User) -> typing.Optional[UserGroup]:
+    return self.users_sth.filter(UserGroup.user_id == user.id).first()
+  
   def check_access(self, user: User) -> bool:
     if user.is_admin:
       return True
-    ug = self.users_sth.filter(UserGroup.user_id == user.id).first()
+    ug = self.get_member(user)
     if ug:
       return True
     return False

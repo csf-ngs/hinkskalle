@@ -1,11 +1,13 @@
 from datetime import datetime, timedelta
+import typing
 
 from Hinkskalle.models.Entity import Entity, EntitySchema
 from Hinkskalle.models.Collection import Collection
 from Hinkskalle import db
 from Hinkskalle.models.Image import UploadStates
+from Hinkskalle.models.User import GroupRoles
 from ..model_base import ModelBase
-from .._util import _create_user, _create_image
+from .._util import _create_user, _create_image, _create_group, _set_member
 
 class TestEntity(ModelBase):
 
@@ -141,12 +143,37 @@ class TestEntity(ModelBase):
     default = Entity(name='default')
     self.assertFalse(default.check_update_access(user))
 
+  def test_group_access(self):
+    user = _create_user(name='user.oink', is_admin=False)
+    group = _create_group(name='Oinkhasenstall')
+    entity = Entity(name='test-hase', group=group)
+
+    self.assertFalse(entity.check_access(user))
+    ug = _set_member(user, group)
+    for role in [ GroupRoles.admin, GroupRoles.contributor, GroupRoles.readonly ]:
+      ug.role=role
+      self.assertTrue(entity.check_access(user))
+  
+  def test_group_update_access(self):
+    user = _create_user(name='user.oink', is_admin=False)
+    group = _create_group(name='Oinkhasenstall')
+    entity = Entity(name='test-hase', group=group)
+
+    self.assertFalse(entity.check_update_access(user))
+
+    ug = _set_member(user, group)
+    for role in [ GroupRoles.admin, GroupRoles.contributor ]:
+      ug.role=role
+      self.assertTrue(entity.check_update_access(user))
+    for role in [ GroupRoles.readonly ]:
+      ug.role=role
+      self.assertFalse(entity.check_update_access(user))
 
 
   def test_schema(self):
     entity = Entity(name='Test Hase')
     schema = EntitySchema()
-    serialized = schema.dump(entity)
+    serialized = typing.cast(dict, schema.dump(entity))
     self.assertEqual(serialized['id'], entity.id)
     self.assertEqual(serialized['name'], entity.name)
 
@@ -154,7 +181,7 @@ class TestEntity(ModelBase):
     self.assertFalse(serialized['deleted'])
 
     entity.used_quota = 999
-    serialized = schema.dump(entity)
+    serialized = typing.cast(dict, schema.dump(entity))
     self.assertEqual(serialized['usedQuota'], 999)
 
 

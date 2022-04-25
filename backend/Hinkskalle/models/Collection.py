@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy.orm import validates
 from Hinkskalle.util.name_check import validate_name
 
-from Hinkskalle.models.User import User
+from Hinkskalle.models.User import GroupRoles, User
 
 class CollectionSchema(Schema):
   id = fields.String(required=True, dump_only=True)
@@ -32,7 +32,7 @@ class CollectionSchema(Schema):
       raise ValidationError(errors)
 
 
-class Collection(db.Model):
+class Collection(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String(), nullable=False)
   description = db.Column(db.String())
@@ -80,6 +80,12 @@ class Collection(db.Model):
       return True
     elif self.owner == user:
       return True
+    elif self.entity_ref.group is not None:
+      ug = self.entity_ref.group.get_member(user)
+      if ug is None or ug.role == GroupRoles.readonly:
+        return False
+      else:
+        return True
     else:
       return False
     

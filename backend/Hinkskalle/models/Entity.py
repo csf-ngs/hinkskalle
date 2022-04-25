@@ -6,7 +6,7 @@ from sqlalchemy.orm import validates
 from flask import current_app
 from Hinkskalle.models.Image import UploadStates
 from Hinkskalle.util.name_check import validate_name
-from Hinkskalle.models.User import User
+from Hinkskalle.models.User import GroupRoles, User
 
 class EntitySchema(Schema):
   id = fields.String(required=True, dump_only=True)
@@ -96,6 +96,9 @@ class Entity(db.Model): # type: ignore
       return True
     elif self.name == 'default':
       return True
+    elif self.group is not None:
+      ug = self.group.get_member(user)
+      return ug is not None
     else:
       return False
   
@@ -104,6 +107,12 @@ class Entity(db.Model): # type: ignore
       return True
     elif self.owner == user:
       return True
+    elif self.group is not None:
+      ug = self.group.get_member(user)
+      if ug is None or ug.role == GroupRoles.readonly:
+        return False
+      else:
+        return True
     else:
       return False
 

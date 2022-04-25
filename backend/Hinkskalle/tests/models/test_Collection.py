@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta
+import typing
 
 from Hinkskalle.models import Entity, Collection, CollectionSchema, Container
 
 from Hinkskalle import db
+from Hinkskalle.models.User import GroupRoles
 from ..model_base import ModelBase
-from .._util import _create_user, _create_collection
+from .._util import _create_user, _create_collection, _create_group, _set_member
 
 
 class TestCollection(ModelBase):
@@ -68,7 +70,7 @@ class TestCollection(ModelBase):
     self.assertTrue(coll.check_access(user))
     coll.owner=other_user
     self.assertTrue(coll.check_access(user))
-  
+
   def test_update_access(self):
     admin = _create_user(name='admin.oink', is_admin=True)
     user = _create_user(name='user.oink', is_admin=False)
@@ -86,11 +88,41 @@ class TestCollection(ModelBase):
     db.session.commit()
     self.assertFalse(coll.check_update_access(user))
 
+  def test_group_access(self):
+    user = _create_user('user.oink', is_admin=False)
+    group = _create_group('Testhasenstall')
+    coll, entity = _create_collection('group')
+    entity.group=group
+
+    self.assertFalse(coll.check_access(user))
+
+    ug = _set_member(user, group)
+    for role in GroupRoles:
+      ug.role = role
+      self.assertTrue(coll.check_access(user))
+  
+  def test_group_access_update(self):
+    user = _create_user('user.oink', is_admin=False)
+    group = _create_group('Testhasenstall')
+    coll, entity = _create_collection('group')
+    entity.group=group
+
+    self.assertFalse(coll.check_update_access(user))
+
+    ug = _set_member(user, group)
+    for role in [GroupRoles.admin, GroupRoles.contributor]:
+      ug.role = role
+      self.assertTrue(coll.check_update_access(user))
+    
+    for role in [GroupRoles.readonly]:
+      ug.role = role
+      self.assertFalse(coll.check_update_access(user))
+
   def test_schema(self):
     schema = CollectionSchema()
     coll, entity = _create_collection()
 
-    serialized = schema.dump(coll)
+    serialized = typing.cast(dict, schema.dump(coll))
     self.assertEqual(serialized['id'], str(coll.id))
     self.assertEqual(serialized['name'], coll.name)
 

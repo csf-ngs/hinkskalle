@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from pprint import pprint
+import typing
 
 from marshmallow import ValidationError
 from ..model_base import ModelBase
@@ -151,7 +152,7 @@ class TestUser(ModelBase):
     schema = UserSchema()
     user = _create_user()
 
-    serialized = schema.dump(user)
+    serialized = typing.cast(dict, schema.dump(user))
     self.assertEqual(serialized['id'], str(user.id))
     self.assertEqual(serialized['username'], user.username)
     self.assertFalse(serialized['isAdmin'])
@@ -164,21 +165,21 @@ class TestUser(ModelBase):
     self.assertNotIn('password', serialized)
 
     user.is_admin=True
-    serialized = schema.dump(user)
+    serialized = typing.cast(dict, schema.dump(user))
     self.assertTrue(serialized['isAdmin'])
     self.assertTrue(serialized['isActive'])
 
   def test_deserialize(self):
     schema = UserSchema()
 
-    deserialized = schema.load({
+    deserialized = typing.cast(dict, schema.load({
       'username':'test.hase', 
       'email': 'test@ha.se',
       'firstname': 'Test',
       'lastname': 'Hase',
       'isAdmin': True,
       'isActive': True,
-    })
+    }))
     self.assertTrue(deserialized['is_admin'])
     self.assertTrue(deserialized['is_active'])
   
@@ -199,7 +200,7 @@ class TestUser(ModelBase):
     user = _create_user()
     token = Token(user=user, token='geheimhase')
 
-    serialized = schema.dump(token)
+    serialized = typing.cast(dict, schema.dump(token))
     self.assertEqual(serialized['token'], 'geheimhase')
     self.assertEqual(serialized['user']['id'], str(user.id))
   
@@ -281,19 +282,19 @@ class TestUser(ModelBase):
     db.session.add(group_m)
     db.session.commit()
 
-    serialized = schema.dump(user)
+    serialized = typing.cast(dict, schema.dump(user))
     self.assertEqual(serialized['groups'][0]['group']['id'], str(group.id))
 
-    serialized = group_schema.dump(group)
+    serialized = typing.cast(dict, group_schema.dump(group))
     self.assertEqual(serialized['users'][0]['user']['id'], str(user.id))
   
   def test_deserialize_groups(self):
     schema = GroupSchema()
 
-    deserialized = schema.load({
+    deserialized = typing.cast(dict, schema.load({
       'name': 'Testhasenstall',
       'email': 'test@ha.se',
-    })
+    }))
     self.assertEqual(deserialized['name'], 'Testhasenstall')
   
   def test_deserialize_groups_name_check(self):

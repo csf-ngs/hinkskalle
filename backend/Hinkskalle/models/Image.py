@@ -74,7 +74,7 @@ class UploadTypes(enum.Enum):
   multipart = 'multipart'
   multipart_chunk = 'multipart_chunk'
 
-class ImageUploadUrl(db.Model):
+class ImageUploadUrl(db.Model): # type: ignore
   id = db.Column(db.String(), primary_key=True, default=generate_uuid, unique=True)
   expiresAt = db.Column(db.DateTime, default=upload_expiration)
   path = db.Column(db.String(), nullable=False)
@@ -111,7 +111,7 @@ class ImageTypes(enum.Enum):
   oci = 'oci'
   other = 'other'
 
-class Image(db.Model):
+class Image(db.Model): # type: ignore
   valid_media_types = {
     'application/vnd.docker.image.rootfs.diff.tar.gzip': True,
     'application/vnd.oci.image.layer.v1.tar+gzip': True,
@@ -190,7 +190,7 @@ class Image(db.Model):
     return manifest
 
   @hybrid_property
-  def media_type(self) -> str:
+  def media_type(self) -> str: # type: ignore
     return self._media_type
   
   @media_type.setter
@@ -219,7 +219,7 @@ class Image(db.Model):
       return set()
     
     ret = []
-    for key in self.sigdata.get('SignerKeys'):
+    for key in self.sigdata.get('SignerKeys', []):
       ret.append(key['Signer']['Fingerprint'])
     return set(ret)
 

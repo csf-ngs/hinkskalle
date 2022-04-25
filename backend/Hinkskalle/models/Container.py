@@ -4,12 +4,12 @@ from Hinkskalle import db
 from datetime import datetime
 from sqlalchemy.orm import validates
 from sqlalchemy import func
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound # type: ignore
 import enum
 
 from Hinkskalle.models.Image import Image, UploadStates
 from Hinkskalle.models.Tag import Tag
-from Hinkskalle.models.User import User
+from Hinkskalle.models.User import GroupRoles, User
 
 from marshmallow import fields, Schema, validates_schema, ValidationError
 from Hinkskalle.util.name_check import validate_name
@@ -57,7 +57,7 @@ class ContainerSchema(Schema):
     if errors:
       raise ValidationError(errors)
 
-class Container(db.Model):
+class Container(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String(), nullable=False)
   description = db.Column(db.String())
@@ -196,5 +196,11 @@ class Container(db.Model):
       return True
     elif self.owner == user:
       return True
+    elif self.collection_ref.entity_ref.group:
+      ug = self.collection_ref.entity_ref.group.get_member(user)
+      if ug is None or ug.role == GroupRoles.readonly:
+        return False
+      else:
+        return True
     else:
       return False

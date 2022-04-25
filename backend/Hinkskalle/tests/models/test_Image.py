@@ -1,4 +1,5 @@
 from typing import Tuple
+import typing
 import unittest
 from unittest import mock
 from datetime import datetime, timedelta
@@ -11,12 +12,13 @@ from Hinkskalle.models.Collection import Collection
 from Hinkskalle.models.Container import Container
 from Hinkskalle.models.Image import Image, ImageSchema, UploadStates
 from Hinkskalle.models.Tag import Tag
+from Hinkskalle.models.User import GroupRoles
 
 from Hinkskalle.tests.models.test_Collection import _create_collection
 
 from Hinkskalle import db
 from ..model_base import ModelBase
-from .._util import _create_user, _create_image
+from .._util import _create_user, _create_image, _create_group, _set_member
 
 class TestImage(ModelBase):
 
@@ -55,10 +57,10 @@ class TestImage(ModelBase):
 
     manifest = image.generate_manifest()
 
-    self.assertRegex(manifest.content, r'"schemaVersion": 2')
-    self.assertRegex(manifest.content, rf'"digest": "sha256:{image.hash.replace("sha256.", "")}"')
-    self.assertRegex(manifest.content, rf'"org.opencontainers.image.title": "{image.container_ref.name}"')
-    self.assertRegex(manifest.content, rf'"size": {image.size}')
+    self.assertRegex(manifest.content, r'"schemaVersion": 2') # type: ignore
+    self.assertRegex(manifest.content, rf'"digest": "sha256:{image.hash.replace("sha256.", "")}"') # type: ignore
+    self.assertRegex(manifest.content, rf'"org.opencontainers.image.title": "{image.container_ref.name}"') # type: ignore
+    self.assertRegex(manifest.content, rf'"size": {image.size}') # type: ignore
 
   def test_manifest_mediatype(self):
     image = _create_image(media_type='application/vnd.docker.image.rootfs.diff.tar.gzip')[0]
@@ -122,6 +124,52 @@ class TestImage(ModelBase):
 
     container.owner = user
     self.assertTrue(image.check_update_access(user))
+  
+  def test_group_access(self):
+    user = _create_user(name='user.oink', is_admin=False)
+    group = _create_group('Testhasenstall')
+
+    image, _, _, entity = _create_image()
+    entity.group = group
+
+    self.assertTrue(image.check_access(user))
+
+    ug = _set_member(user, group)
+    for role in GroupRoles:
+      ug.role = role
+      self.assertTrue(image.check_access(user))
+  
+  def test_group_access_private(self):
+    user = _create_user(name='user.oink', is_admin=False)
+    group = _create_group('Testhasenstall')
+
+    image, container, _, entity = _create_image()
+    entity.group = group
+    container.private = True
+
+    self.assertFalse(image.check_access(user))
+
+    ug = _set_member(user, group)
+    for role in GroupRoles:
+      ug.role = role
+      self.assertTrue(image.check_access(user))
+
+  def test_group_access_update(self):
+    user = _create_user(name='user.oink', is_admin=False)
+    group = _create_group('Testhasenstall')
+
+    image, _, _, entity = _create_image()
+    entity.group = group
+    self.assertFalse(image.check_update_access(user))
+
+    ug = _set_member(user, group)
+    for role in [ GroupRoles.admin, GroupRoles.contributor ]:
+      ug.role = role
+      self.assertTrue(image.check_update_access(user))
+    
+    for role in [ GroupRoles.readonly ]:
+      ug.role = role
+      self.assertFalse(image.check_update_access(user))
 
 
   def test_schema(self):
@@ -129,7 +177,7 @@ class TestImage(ModelBase):
 
     image = _create_image()[0]
 
-    serialized = schema.dump(image)
+    serialized = typing.cast(dict, schema.dump(image))
     self.assertEqual(serialized['hash'], image.hash)
 
     entity = Entity(name='Test Hase')
@@ -147,7 +195,7 @@ class TestImage(ModelBase):
     image.container_id=container.id
     db.session.commit()
 
-    serialized = schema.dump(image)
+    serialized = typing.cast(dict, schema.dump(image))
     self.assertEqual(serialized['container'], str(container.id))
     self.assertEqual(serialized['containerName'], container.name)
     self.assertEqual(serialized['collection'], str(coll.id))
@@ -168,7 +216,7 @@ class TestImage(ModelBase):
     db.session.add(tag2)
     db.session.commit()
 
-    serialized = schema.dump(image)
+    serialized = typing.cast(dict, schema.dump(image))
     self.assertListEqual(serialized['tags'], ['v1', 'v2'])
     Tag.__table__.delete()
   
@@ -288,13 +336,13 @@ class TestImage(ModelBase):
 
     self.assertFalse(image.hide)
 
-    image.media_type='testhase'
+    image.media_type='testhase' # type: ignore
     self.assertTrue(image.hide)
-    image.media_type='application/vnd.sylabs.sif.layer.v1.sif'
+    image.media_type='application/vnd.sylabs.sif.layer.v1.sif' # type: ignore
     self.assertFalse(image.hide)
 
     image.hide = True
-    image.media_type = None
+    image.media_type = None # type: ignore
     self.assertFalse(image.hide)
 
   def test_make_filename(self):
@@ -302,7 +350,7 @@ class TestImage(ModelBase):
     fn = image.make_filename()
     self.assertEquals(fn, f"{image.hash}.sif")
 
-    image.media_type='grunz'
+    image.media_type='grunz' # type: ignore
     fn = image.make_filename()
     self.assertEquals(fn, f"{image.hash}")
   
@@ -311,6 +359,6 @@ class TestImage(ModelBase):
     fn = image.make_prettyname('v1')
     self.assertEquals(fn, f"{image.entityName}/{image.collectionName}/{image.containerName}_v1.sif")
 
-    image.media_type='grunz'
+    image.media_type='grunz' # type: ignore
     fn = image.make_prettyname('v1')
     self.assertEquals(fn, f"{image.entityName}/{image.collectionName}/{image.containerName}_v1")

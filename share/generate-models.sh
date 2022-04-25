@@ -8,7 +8,6 @@ curl http://localhost:7660/swagger |
     -c Container \
     -c Entity \
     -c Image \
-    -c Group \
     -c User \
     -c Group \
     -c GroupMember \

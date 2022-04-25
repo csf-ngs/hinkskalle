@@ -367,45 +367,6 @@ export interface InspectAttributes {
 export { Image };
 
 
-class Group {
-  public createdAt!: Date | null
-  public createdBy!: string
-  public deleted!: boolean
-  public deletedAt!: Date | null
-  public email!: string
-  public id!: string
-  public name!: string
-  public updatedAt!: Date | null
-  public users!: GroupMember[]
-  
-}
-
-export function plainToGroup(json: any): Group {
-  const obj = new Group();
-  obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
-      obj.createdBy = json['createdBy'];
-    obj.deleted = json['deleted'];
-    obj.deletedAt = _isNil(json['deletedAt']) ? null : new Date(json['deletedAt']);
-      obj.email = json['email'];
-    obj.id = json['id'];
-    obj.name = json['name'];
-    obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
-      if (!_isNil(json['users'])) obj.users = _map(json['users'], plainToGroupMember);
-      
-  return obj;
-}
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function serializeGroup(obj: Group, unroll=false): any {
-  const json: any = {};
-  json['email'] = obj.email;
-      json['name'] = obj.name;
-      
-  return json;
-}
-
-export { Group };
-
-
 class User {
   public createdAt!: Date | null
   public createdBy!: string
@@ -487,6 +448,7 @@ class Group {
   public deleted!: boolean
   public deletedAt!: Date | null
   public email!: string
+  public entity_ref!: string
   public id!: string
   public name!: string
   public updatedAt!: Date | null
@@ -501,6 +463,7 @@ export function plainToGroup(json: any): Group {
     obj.deleted = json['deleted'];
     obj.deletedAt = _isNil(json['deletedAt']) ? null : new Date(json['deletedAt']);
       obj.email = json['email'];
+    obj.entity_ref = json['entity_ref'];
     obj.id = json['id'];
     obj.name = json['name'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);

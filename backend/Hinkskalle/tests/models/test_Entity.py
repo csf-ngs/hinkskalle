@@ -145,6 +145,8 @@ class TestEntity(ModelBase):
 
   def test_schema(self):
     entity = Entity(name='Test Hase')
+    db.session.add(entity)
+    db.session.commit()
     schema = EntitySchema()
     serialized = schema.dump(entity)
     self.assertEqual(serialized['id'], entity.id)
@@ -152,6 +154,8 @@ class TestEntity(ModelBase):
 
     self.assertIsNone(serialized['deletedAt'])
     self.assertFalse(serialized['deleted'])
+
+    self.assertRegex(serialized['createdAt'], r'[+-]?\d\d:\d\d$')
 
     entity.used_quota = 999
     serialized = schema.dump(entity)

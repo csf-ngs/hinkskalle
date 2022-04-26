@@ -214,6 +214,32 @@ class TestContainers(RouteBase):
     self.assertEqual(data['collection'], str(coll.id))
     self.assertEqual(data['createdBy'], self.admin_username)
   
+  def test_create_singularity(self):
+    coll, _ = _create_collection()
+    with self.fake_admin_auth():
+      ret = self.client.post('/v1/containers', json={
+        'deleted': False, 
+        'createdBy': '', 
+        'createdAt': '0001-01-01T00:00:00Z', 
+        'updatedAt': '0001-01-01T00:00:00Z', 
+        'deletedAt': '0001-01-01T00:00:00Z', 
+        'id': '', 
+        'name': 'alpine', 
+        'description': 'No description', 
+        'fullDescription': '', 
+        'collection': str(coll.id), 
+        'images': None, 
+        'imageTags': None, 
+        'archTags': None, 
+        'size': 0, 
+        'downloadCount': 0, 
+        'stars': 0, 
+        'private': False, 
+        'readOnly': False, 
+        'customData': ''
+    })
+    self.assertEqual(ret.status_code, 200)
+  
   def test_create_sticky(self):
     coll, entity = _create_collection()
     entity.owner = self.user

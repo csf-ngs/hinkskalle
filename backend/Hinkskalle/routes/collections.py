@@ -32,7 +32,7 @@ class CollectionDeleteResponseSchema(ResponseSchema):
 @registry.handles(
   rule='/v1/collections',
   method='POST',
-  request_body_schema=CollectionCreateSchema(),
+  request_body_schema=CollectionCreateSchema(unknown='exclude'),
   response_body_schema=CollectionResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
   tags=['singularity'],

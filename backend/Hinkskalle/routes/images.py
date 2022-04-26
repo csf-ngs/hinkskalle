@@ -181,7 +181,7 @@ def get_image_default_entity_default_collection_single(tagged_container_id):
 @registry.handles(
   rule='/v1/images',
   method='POST',
-  request_body_schema=ImageCreateSchema(),
+  request_body_schema=ImageCreateSchema(unknown='exclude'),
   response_body_schema=ImageResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
   tags=['hinkskalle-ext']

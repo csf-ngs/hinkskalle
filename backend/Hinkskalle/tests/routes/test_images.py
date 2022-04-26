@@ -328,6 +328,28 @@ class TestImages(RouteBase):
     self.assertEqual(data['hash'], 'sha256.oink')
     self.assertEqual(data['container'], str(container.id))
     self.assertEqual(data['createdBy'], self.admin_username)
+  
+  def test_create_singularity(self):
+    container, _, _ = _create_container()
+    with self.fake_admin_auth():
+      ret = self.client.post('/v1/images', json={
+        'deleted': False, 
+        'createdBy': '', 
+        'createdAt': '0001-01-01T00:00:00Z', 
+        'updatedAt': '0001-01-01T00:00:00Z', 
+        'deletedAt': '0001-01-01T00:00:00Z', 
+        'id': '', 
+        'hash': 'sha256.c032321b292ab9ec25cdd4e4b57bba979629a24c35c97bb034898fc06472145d', 
+        'description': '', 
+        'container': str(container.id), 
+        'size': 0, 
+        'uploaded': False, 
+        'customData': '', 
+        'containerStars': 0, 
+        'containerDownloads': 0
+      })
+    self.assertEqual(ret.status_code, 200)
+
 
   def test_create_readonly(self):
     container, _, _ = _create_container()

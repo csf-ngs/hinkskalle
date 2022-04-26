@@ -19,7 +19,7 @@ user_groups_table = db.Table('users_groups', db.metadata,
   db.Column('group_id', db.Integer, db.ForeignKey('group.id'), nullable=False),
 )
 
-class UserSchema(LocalSchema):
+class UserSchema(BaseSchema):
   id = fields.String(required=True, dump_only=True)
   username = fields.String(required=True)
   email = fields.String(required=True)

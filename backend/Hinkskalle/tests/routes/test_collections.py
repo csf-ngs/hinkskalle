@@ -214,7 +214,7 @@ class TestCollections(RouteBase):
     self.assertEqual(data['createdBy'], self.admin_username)
 
     db_collection = Collection.query.get(data['id'])
-    self.assertTrue(abs(db_collection.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+    self.assertTrue(abs(db_collection.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
   
   def test_create_singularity(self):
     entity = Entity(name='test-hase', owner=self.user)
@@ -436,7 +436,7 @@ class TestCollections(RouteBase):
     self.assertTrue(dbColl.private)
     self.assertEqual(dbColl.customData, 'hot drei Eckn')
 
-    self.assertTrue(abs(dbColl.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+    self.assertTrue(abs(dbColl.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
   
   def test_update_dumponly(self):
     coll, entity = _create_collection('grunz')

@@ -589,7 +589,7 @@ class TestImages(RouteBase):
     self.assertEqual(dbImage.description, 'Mei Huat')
     self.assertEqual(dbImage.customData, 'hot drei Eckn')
 
-    self.assertTrue(abs(dbImage.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+    self.assertTrue(abs(dbImage.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
   
   def test_update_dumponly(self):
     image = _create_image()[0]

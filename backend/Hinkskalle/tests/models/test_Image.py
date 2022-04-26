@@ -38,7 +38,7 @@ class TestImage(ModelBase):
     db.session.commit()
 
     read_image: Image = Image.query.get(image.id)
-    self.assertTrue(abs(read_image.createdAt - datetime.now()) < timedelta(seconds=1))
+    self.assertTrue(abs(read_image.createdAt - datetime.now()) < timedelta(seconds=2))
 
     self.assertEqual(read_image.container, container.id)
     self.assertEqual(read_image.containerName, container.name)

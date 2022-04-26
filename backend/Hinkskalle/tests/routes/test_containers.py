@@ -370,7 +370,7 @@ class TestContainers(RouteBase):
     self.assertTrue(dbContainer.readOnly)
     self.assertEqual(dbContainer.vcsUrl, 'http://da.ham')
 
-    self.assertTrue(abs(dbContainer.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+    self.assertTrue(abs(dbContainer.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
   
   def test_update_dumponly(self):
     container, coll, entity = _create_container('grunz')

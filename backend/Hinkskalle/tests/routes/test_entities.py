@@ -146,7 +146,7 @@ class TestEntities(RouteBase):
     self.assertEqual(data['createdBy'], self.admin_username)
 
     db_entity = Entity.query.get(data['id'])
-    self.assertTrue(abs(db_entity.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+    self.assertTrue(abs(db_entity.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
   
   def test_create_singularity(self):
     with self.fake_admin_auth():
@@ -264,7 +264,7 @@ class TestEntities(RouteBase):
     dbEntity = Entity.query.filter(Entity.name=='grunz').one()
     self.assertEqual(dbEntity.description, 'Oink oink')
     self.assertTrue(dbEntity.defaultPrivate)
-    self.assertTrue(abs(dbEntity.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+    self.assertTrue(abs(dbEntity.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
     
     with self.fake_admin_auth():
       ret = self.client.put('/v1/entities/grunz', json={

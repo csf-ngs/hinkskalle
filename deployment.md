@@ -36,9 +36,11 @@ See [configuration](../configuration) for details
 docker-compose run api bash
 cd backend
 # installs database schema
-flask localdb init
+flask db upgrade
 # create admin user
-flask localdb add-user
+flask localdb add-user -u admin.hase -p somethingonlyyouknow -e admin@testha.se -f Admin -l Hase --admin
+# create regular user (or use web interface)
+flask localdb add-user -u user.hase -p alsosomethingfairlysecret -e user@testha.se -f User -l Hase
 ```
 
 ## Startup

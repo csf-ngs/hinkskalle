@@ -149,7 +149,7 @@ class TestEntity(ModelBase):
     db.session.commit()
     schema = EntitySchema()
     serialized = schema.dump(entity)
-    self.assertEqual(serialized['id'], entity.id)
+    self.assertEqual(serialized['id'], str(entity.id))
     self.assertEqual(serialized['name'], entity.name)
 
     self.assertIsNone(serialized['deletedAt'])

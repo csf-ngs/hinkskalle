@@ -12,7 +12,8 @@ from Hinkskalle.models.Tag import Tag
 from Hinkskalle.models.User import User
 
 from marshmallow import fields, Schema, validates_schema, ValidationError
-from Hinkskalle.util.name_check import validate_name
+from ..util.name_check import validate_name
+from ..util.schema import BaseSchema, LocalDateTime
 
 class ContainerTypes(enum.Enum):
   singularity = 'singularity'
@@ -21,7 +22,7 @@ class ContainerTypes(enum.Enum):
   mixed = 'mixed'
 
 
-class ContainerSchema(Schema):
+class ContainerSchema(BaseSchema):
   id = fields.String(dump_only=True, required=True)
   name = fields.String(required=True)
   description = fields.String(allow_none=True)
@@ -35,10 +36,10 @@ class ContainerSchema(Schema):
   customData = fields.String(allow_none=True)
   vcsUrl = fields.String(allow_none=True)
   usedQuota = fields.Integer(dump_only=True, attribute='used_quota')
-  createdAt = fields.DateTime(dump_only=True)
+  createdAt = LocalDateTime(dump_only=True)
   createdBy = fields.String(allow_none=True)
-  updatedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deletedAt = fields.DateTime(dump_only=True, default=None)
+  updatedAt = LocalDateTime(dump_only=True, allow_none=True)
+  deletedAt = LocalDateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
 
   # image ids, not used? keep to validate schema

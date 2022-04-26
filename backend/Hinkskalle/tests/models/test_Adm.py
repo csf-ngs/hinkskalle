@@ -12,7 +12,7 @@ class TestAdm(ModelBase):
 
     fromDb = Adm.query.get(AdmKeys.ldap_sync_results)
     self.assertDictEqual(fromDb.val, { 'knofel': 100 })
-    self.assertTrue(abs(fromDb.createdAt - datetime.now()) < timedelta(seconds=1))
+    self.assertTrue(abs(fromDb.createdAt - datetime.now()) < timedelta(seconds=2))
   
   def test_schema(self):
     schema = AdmSchema()

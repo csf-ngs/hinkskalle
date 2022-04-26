@@ -214,7 +214,29 @@ class TestCollections(RouteBase):
     self.assertEqual(data['createdBy'], self.admin_username)
 
     db_collection = Collection.query.get(data['id'])
-    self.assertTrue(abs(db_collection.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+    self.assertTrue(abs(db_collection.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
+  
+  def test_create_singularity(self):
+    entity = Entity(name='test-hase', owner=self.user)
+    db.session.add(entity)
+    db.session.commit()
+    with self.fake_admin_auth():
+      ret = self.client.post('/v1/collections', json={
+        'deleted': False, 
+        'createdBy': '', 
+        'createdAt': '0001-01-01T00:00:00Z', 
+        'updatedAt': '0001-01-01T00:00:00Z', 
+        'deletedAt': '0001-01-01T00:00:00Z', 
+        'id': '', 
+        'name': 'os', 
+        'description': 'No description', 
+        'entity': str(entity.id), 
+        'containers': None, 
+        'size': 0, 
+        'private': False, 
+        'customData': ''
+    })
+    self.assertEqual(ret.status_code, 200)
 
   def test_create_behalf(self):
     entity = Entity(name='test-hase', owner=self.user)
@@ -414,7 +436,7 @@ class TestCollections(RouteBase):
     self.assertTrue(dbColl.private)
     self.assertEqual(dbColl.customData, 'hot drei Eckn')
 
-    self.assertTrue(abs(dbColl.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+    self.assertTrue(abs(dbColl.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
   
   def test_update_dumponly(self):
     coll, entity = _create_collection('grunz')

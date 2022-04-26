@@ -9,6 +9,7 @@ from marshmallow import fields, Schema
 
 from Hinkskalle.models.Adm import AdmSchema, Adm, AdmKeys
 from flask_rq2.job import Job
+from ..util.schema import BaseSchema, LocalDateTime
 
 class AdmResponseSchema(ResponseSchema):
   data = fields.Nested(AdmSchema)
@@ -34,7 +35,7 @@ def _serialize_job(job: Job) -> dict:
     'funcName': job.func_name,
   }
 
-class JobSchema(Schema):
+class JobSchema(BaseSchema):
   id = fields.String()
   meta = fields.Dict()
   origin = fields.String()
@@ -46,9 +47,9 @@ class JobSchema(Schema):
   resultTTL = fields.Int()
   timeout = fields.String()
   result = fields.String(allow_none=True)
-  enqueuedAt = fields.DateTime()
-  startedAt = fields.DateTime(allow_none=True)
-  endedAt = fields.DateTime(allow_none=True)
+  enqueuedAt = LocalDateTime()
+  startedAt = LocalDateTime(allow_none=True)
+  endedAt = LocalDateTime(allow_none=True)
   excInfo = fields.String(allow_none=True)
   funcName = fields.String()
 

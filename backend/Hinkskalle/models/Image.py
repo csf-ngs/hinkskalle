@@ -15,8 +15,10 @@ import enum
 import os.path
 import subprocess
 
+from ..util.schema import BaseSchema, LocalDateTime
 
-class ImageSchema(Schema):
+
+class ImageSchema(BaseSchema):
   id = fields.String(required=True, dump_only=True)
   description = fields.String(allow_none=True)
   hash = fields.String(allow_none=True)
@@ -34,12 +36,12 @@ class ImageSchema(Schema):
   containerDownloads = fields.Integer(dump_only=True)
   downloadCount = fields.Integer(dump_only=True)
 
-  createdAt = fields.DateTime(dump_only=True)
+  createdAt = LocalDateTime(dump_only=True)
   createdBy = fields.String(dump_only=True)
-  updatedAt = fields.DateTime(dump_only=True, allow_none=True)
-  expiresAt = fields.DateTime(allow_none=True)
+  updatedAt = LocalDateTime(dump_only=True, allow_none=True)
+  expiresAt = LocalDateTime(allow_none=True)
 
-  deletedAt = fields.DateTime(dump_only=True, default=None)
+  deletedAt = LocalDateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
 
   container = fields.String(required=True)

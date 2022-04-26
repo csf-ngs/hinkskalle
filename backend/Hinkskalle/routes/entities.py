@@ -67,14 +67,13 @@ def get_default_entity():
 @registry.handles(
   rule='/v1/entities',
   method='POST',
-  request_body_schema=EntityCreateSchema(),
+  request_body_schema=EntityCreateSchema(unknown='exclude'),
   response_body_schema=EntityResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
   tags=['singularity']
 )
 def create_entity():
   body = rebar.validated_body
-  current_app.logger.debug(body)
   body.pop('id', None)
   if body.get('name', '') == '':
     body['name']='default'

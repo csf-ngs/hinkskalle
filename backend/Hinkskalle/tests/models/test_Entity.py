@@ -16,7 +16,7 @@ class TestEntity(ModelBase):
 
     read_entity = Entity.query.filter_by(name='test-hase').first()
     self.assertEqual(read_entity.id, entity.id)
-    self.assertTrue(abs(read_entity.createdAt - datetime.now()) < timedelta(seconds=1))
+    self.assertTrue(abs(read_entity.createdAt - datetime.now()) < timedelta(seconds=2))
   
   def test_entity_case(self):
     entity = Entity(name='TestHase')
@@ -145,13 +145,17 @@ class TestEntity(ModelBase):
 
   def test_schema(self):
     entity = Entity(name='Test Hase')
+    db.session.add(entity)
+    db.session.commit()
     schema = EntitySchema()
     serialized = schema.dump(entity)
-    self.assertEqual(serialized['id'], entity.id)
+    self.assertEqual(serialized['id'], str(entity.id))
     self.assertEqual(serialized['name'], entity.name)
 
     self.assertIsNone(serialized['deletedAt'])
     self.assertFalse(serialized['deleted'])
+
+    self.assertRegex(serialized['createdAt'], r'[+-]?\d\d:\d\d$')
 
     entity.used_quota = 999
     serialized = schema.dump(entity)

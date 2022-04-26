@@ -21,7 +21,7 @@ def upgrade():
     new_type = sa.Enum('single', 'multipart', 'multipart_chunk', name='upload_types')
     new_type.create(op.get_bind())
     new_type = sa.Enum('initialized', 'uploading', 'uploaded', 'failed', 'broken', 'completed', name='upload_state_types')
-    new_type.create(ob.get_bind())
+    new_type.create(op.get_bind())
     with op.batch_alter_table('image_upload_url', schema=None) as batch_op:
         batch_op.add_column(sa.Column('type', new_type, nullable=True))
 

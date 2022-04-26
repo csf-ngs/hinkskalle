@@ -36,7 +36,7 @@ RUN yarn build
 
 FROM ubuntu:20.04
 
-ENV TZ=Europe/Vienna
+ENV TZ=GMT
 
 RUN apt-get update \
   && apt-get upgrade -y \

@@ -33,6 +33,7 @@ from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidP
 from .util import _get_container as __get_container, _get_service_url
 from .imagefiles import _move_image, _receive_upload as __receive_upload, _rebuild_chunks
 from .images import _delete_image
+from ..util.schema import BaseSchema, LocalDateTime
 
 class OrasPushBlobQuerySchema(RequestSchema):
   digest = fields.String(required=True)
@@ -43,7 +44,7 @@ class OrasListTagQuerySchema(RequestSchema):
 
 class OrasBlobMountQuerySchema(RequestSchema):
   private = fields.Bool(required=False)
-  expiresAt = fields.DateTime(required=False, allow_none=True)
+  expiresAt = LocalDateTime(required=False, allow_none=True)
   staged = fields.Bool(required=False)
   digest = fields.String(required=False)
   mount = fields.String(required=False)

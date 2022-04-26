@@ -19,7 +19,7 @@ class TestUser(ModelBase):
 
     read_user = User.query.filter_by(username='test.hase').first()
     self.assertEqual(read_user.id, user.id)
-    self.assertTrue(abs(read_user.createdAt - datetime.now()) < timedelta(seconds=1))
+    self.assertTrue(abs(read_user.createdAt - datetime.now()) < timedelta(seconds=2))
     self.assertFalse(read_user.is_admin)
   
   def test_username_check(self):

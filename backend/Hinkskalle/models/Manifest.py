@@ -10,6 +10,7 @@ import json
 import hashlib
 from sqlalchemy.ext.hybrid import hybrid_property
 from marshmallow import Schema, fields
+from ..util.schema import BaseSchema, LocalDateTime
 
 class ManifestTypes(enum.Enum):
   docker = 'docker'
@@ -45,12 +46,12 @@ class ManifestContentSchema(Schema):
   layers = fields.Nested(ManifestLayerSchema, many=True)
   annotations = fields.Dict()
 
-class ManifestSchema(Schema):
+class ManifestSchema(BaseSchema):
   id = fields.String(dump_only=True)
   hash = fields.String()
   content = fields.Dict(attribute='content_json')
-  createdAt = fields.DateTime(dump_only=True)
-  updatedAt = fields.DateTime(dump_only=True)
+  createdAt = LocalDateTime(dump_only=True)
+  updatedAt = LocalDateTime(dump_only=True)
   createdBy = fields.String(dump_only=True)
 
   type = fields.String(dump_only=True)

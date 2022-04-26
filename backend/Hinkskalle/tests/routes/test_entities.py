@@ -146,7 +146,26 @@ class TestEntities(RouteBase):
     self.assertEqual(data['createdBy'], self.admin_username)
 
     db_entity = Entity.query.get(data['id'])
-    self.assertTrue(abs(db_entity.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+    self.assertTrue(abs(db_entity.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
+  
+  def test_create_singularity(self):
+    with self.fake_admin_auth():
+      ret = self.client.post('/v1/entities', json={
+        'deleted': False, 
+        'createdBy': '', 
+        'createdAt': '0001-01-01T00:00:00Z', 
+        'updatedAt': '0001-01-01T00:00:00Z', 
+        'deletedAt': '0001-01-01T00:00:00Z', 
+        'id': '', 
+        'name': 'barba.rix', 
+        'description': 'No description', 
+        'collections': None, 
+        'size': 0, 
+        'quota': 0, 
+        'defaultPrivate': False, 
+        'customData': ''
+    })
+    self.assertEqual(ret.status_code, 200)
   
   def test_create_check_name(self):
     for fail in ['Babsi Streusand', '-oink', '_oink', '.oink', 'Babsi&Streusand', 'oink-', 'oink.', 'oink_']:
@@ -245,7 +264,7 @@ class TestEntities(RouteBase):
     dbEntity = Entity.query.filter(Entity.name=='grunz').one()
     self.assertEqual(dbEntity.description, 'Oink oink')
     self.assertTrue(dbEntity.defaultPrivate)
-    self.assertTrue(abs(dbEntity.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=1))
+    self.assertTrue(abs(dbEntity.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
     
     with self.fake_admin_auth():
       ret = self.client.put('/v1/entities/grunz', json={

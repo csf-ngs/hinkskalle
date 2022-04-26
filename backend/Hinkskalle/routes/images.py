@@ -181,7 +181,7 @@ def get_image_default_entity_default_collection_single(tagged_container_id):
 @registry.handles(
   rule='/v1/images',
   method='POST',
-  request_body_schema=ImageCreateSchema(),
+  request_body_schema=ImageCreateSchema(unknown='exclude'),
   response_body_schema=ImageResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
   tags=['hinkskalle-ext']
@@ -275,8 +275,8 @@ def update_image(entity_id, collection_id, tagged_container_id):
     raise errors.Forbidden('access denied')
 
   if image.owner != g.authenticated_user:
-    if body.get('expiresAt') and body['expiresAt'] != image.expiresAt:
-      raise errors.Forbidden(f"Unable to change expiration date on admin generated image")
+    if body.get('expiresAt') and body['expiresAt'].replace(tzinfo=None) != image.expiresAt:
+      raise errors.Forbidden(f"Unable to change expiration date on admin generated image ({body.get('expiresAt')} <-> {image.expiresAt}")
   for key in body:
     setattr(image, key, body[key])
   image.updatedAt = datetime.datetime.now()

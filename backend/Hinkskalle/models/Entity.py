@@ -1,21 +1,22 @@
 from asyncio.proactor_events import _ProactorBaseWritePipeTransport
 from Hinkskalle import db
-from marshmallow import fields, Schema, validates_schema, ValidationError
+from marshmallow import fields, validates_schema, ValidationError
 from datetime import datetime
 from sqlalchemy.orm import validates
 from flask import current_app
 from Hinkskalle.models.Image import UploadStates
 from Hinkskalle.util.name_check import validate_name
 from Hinkskalle.models.User import GroupRoles, User
+from ..util.schema import LocalDateTime, BaseSchema
 
-class EntitySchema(Schema):
+class EntitySchema(BaseSchema):
   id = fields.String(required=True, dump_only=True)
   name = fields.String(required=True)
   description = fields.String(allow_none=True)
-  createdAt = fields.DateTime(dump_only=True)
+  createdAt = LocalDateTime(dump_only=True)
   createdBy = fields.String(allow_none=True)
-  updatedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deletedAt = fields.DateTime(dump_only=True, default=None)
+  updatedAt = LocalDateTime(dump_only=True, allow_none=True)
+  deletedAt = LocalDateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
   size = fields.Integer(dump_only=True)
   quota = fields.Integer()
@@ -30,6 +31,7 @@ class EntitySchema(Schema):
     errors = validate_name(data)
     if errors:
       raise ValidationError(errors)
+    
 
 class Entity(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)

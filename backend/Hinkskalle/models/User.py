@@ -10,6 +10,8 @@ import enum
 from passlib.hash import sha512_crypt
 import secrets
 
+from ..util.schema import BaseSchema, LocalDateTime
+
 user_stars = db.Table('user_stars', db.metadata,
   db.Column('user_id', db.Integer, db.ForeignKey('user.id'), nullable=False),
   db.Column('container_id', db.Integer, db.ForeignKey('container.id'), nullable=False),
@@ -43,7 +45,7 @@ class GroupSchema(Schema):
     if errors:
       raise ValidationError(errors)
 
-class UserSchema(Schema):
+class UserSchema(BaseSchema):
   id = fields.String(required=True, dump_only=True)
   username = fields.String(required=True)
   email = fields.String(required=True)
@@ -55,10 +57,10 @@ class UserSchema(Schema):
 
   groups = fields.List(fields.Nested('UserMemberSchema', allow_none=True), dump_only=True)
 
-  createdAt = fields.DateTime(dump_only=True)
+  createdAt = LocalDateTime(dump_only=True)
   createdBy = fields.String(dump_only=True)
-  updatedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deletedAt = fields.DateTime(dump_only=True, default=None)
+  updatedAt = LocalDateTime(dump_only=True, allow_none=True)
+  deletedAt = LocalDateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
 
   @validates_schema
@@ -214,20 +216,20 @@ class Group(db.Model): # type: ignore
 
 
 
-class TokenSchema(Schema):
+class TokenSchema(BaseSchema):
   id = fields.String(required=True, dump_only=True)
   token = fields.String(required=True, dump_only=True)
   comment = fields.String(allow_none=True)
 
   user = fields.Nested('UserSchema')
 
-  expiresAt = fields.DateTime(allow_none=True)
+  expiresAt = LocalDateTime(allow_none=True)
   source = fields.String(dump_only=True, allow_none=True)
 
-  createdAt = fields.DateTime(dump_only=True)
+  createdAt = LocalDateTime(dump_only=True)
   createdBy = fields.String(dump_only=True)
-  updatedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deletedAt = fields.DateTime(dump_only=True, default=None)
+  updatedAt = LocalDateTime(dump_only=True, allow_none=True)
+  deletedAt = LocalDateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
 
 class Token(db.Model): # type: ignore

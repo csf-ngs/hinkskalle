@@ -20,7 +20,7 @@ class TestGroup(ModelBase):
 
     read_group = Group.query.filter_by(name='Testhasenstall').first()
     self.assertEqual(read_group.id, group.id)
-    self.assertTrue(abs(read_group.createdAt - datetime.now()) < timedelta(seconds=1))
+    self.assertTrue(abs(read_group.createdAt - datetime.now()) < timedelta(seconds=2))
   
   def test_entity(self):
     group = _create_group('Testhasentall')

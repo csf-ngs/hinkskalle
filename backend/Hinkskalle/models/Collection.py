@@ -1,19 +1,20 @@
 from Hinkskalle import db
 from marshmallow import Schema, fields, validates_schema, ValidationError
+from ..util.schema import BaseSchema, LocalDateTime
 from datetime import datetime
 from sqlalchemy.orm import validates
 from Hinkskalle.util.name_check import validate_name
 
 from Hinkskalle.models.User import GroupRoles, User
 
-class CollectionSchema(Schema):
+class CollectionSchema(BaseSchema):
   id = fields.String(required=True, dump_only=True)
   name = fields.String(required=True)
   description = fields.String(allow_none=True)
-  createdAt = fields.DateTime(dump_only=True)
+  createdAt = LocalDateTime(dump_only=True)
   createdBy = fields.String(allow_none=True)
-  updatedAt = fields.DateTime(dump_only=True, allow_none=True)
-  deletedAt = fields.DateTime(dump_only=True, default=None)
+  updatedAt = LocalDateTime(dump_only=True, allow_none=True)
+  deletedAt = LocalDateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
   size = fields.Integer(dump_only=True)
   private = fields.Boolean()

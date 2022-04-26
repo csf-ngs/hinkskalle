@@ -85,7 +85,7 @@ def get_default_container(container_id):
 @registry.handles(
   rule='/v1/containers',
   method='POST',
-  request_body_schema=ContainerCreateSchema(),
+  request_body_schema=ContainerCreateSchema(unknown='exclude'),
   response_body_schema=ContainerResponseSchema(),
   authenticators=authenticator.with_scope(Scopes.user), # type: ignore
   tags=['hinkskalle-ext']

@@ -22,7 +22,7 @@ class TestContainer(ModelBase):
 
     read_container = Container.query.filter_by(name=container.name).one()
     self.assertEqual(read_container.id, container.id)
-    self.assertTrue(abs(read_container.createdAt - datetime.now()) < timedelta(seconds=1))
+    self.assertTrue(abs(read_container.createdAt - datetime.now()) < timedelta(seconds=2))
 
     self.assertEqual(read_container.collection, coll.id)
     self.assertEqual(read_container.collectionName, coll.name)
@@ -145,7 +145,7 @@ class TestContainer(ModelBase):
 
     new_tag = container.tag_image('v1', image1.id)
     self.assertEqual(new_tag.image_ref.id, image1.id)
-    self.assertTrue(abs(new_tag.createdAt - datetime.now()) < timedelta(seconds=1))
+    self.assertTrue(abs(new_tag.createdAt - datetime.now()) < timedelta(seconds=2))
     self.assertIsNone(new_tag.updatedAt)
     tags = Tag.query.filter(Tag.image_id.in_([ c.id for c in container.images_ref ])).all()
     self.assertListEqual(
@@ -155,7 +155,7 @@ class TestContainer(ModelBase):
 
     new_tag = container.tag_image('v1', image1.id)
     self.assertEqual(new_tag.image_ref.id, image1.id)
-    self.assertTrue(abs(new_tag.updatedAt - datetime.now()) < timedelta(seconds=1))
+    self.assertTrue(abs(new_tag.updatedAt - datetime.now()) < timedelta(seconds=2))
     tags = Tag.query.filter(Tag.image_id.in_([ c.id for c in container.images_ref ])).all()
     self.assertListEqual(
       [f"{tag.name}:{tag.image_ref.id}" for tag in tags ],
@@ -164,7 +164,7 @@ class TestContainer(ModelBase):
 
     new_tag = container.tag_image('v1.1', image1.id)
     self.assertEqual(new_tag.image_ref.id, image1.id)
-    self.assertTrue(abs(new_tag.createdAt - datetime.now()) < timedelta(seconds=1))
+    self.assertTrue(abs(new_tag.createdAt - datetime.now()) < timedelta(seconds=2))
     self.assertIsNone(new_tag.updatedAt)
     tags = Tag.query.filter(Tag.image_id.in_([ c.id for c in container.images_ref ])).all()
     self.assertListEqual(
@@ -178,7 +178,7 @@ class TestContainer(ModelBase):
 
     new_tag = container.tag_image('v2', image2.id)
     self.assertEqual(new_tag.image_ref.id, image2.id)
-    self.assertTrue(abs(new_tag.createdAt - datetime.now()) < timedelta(seconds=1))
+    self.assertTrue(abs(new_tag.createdAt - datetime.now()) < timedelta(seconds=2))
     self.assertIsNone(new_tag.updatedAt)
     tags = Tag.query.filter(Tag.image_id.in_([ c.id for c in container.images_ref ])).all()
     self.assertListEqual(
@@ -188,7 +188,7 @@ class TestContainer(ModelBase):
 
     new_tag = container.tag_image('v1.1', image2.id)
     self.assertEqual(new_tag.image_ref.id, image2.id)
-    self.assertTrue(abs(new_tag.updatedAt - datetime.now()) < timedelta(seconds=1))
+    self.assertTrue(abs(new_tag.updatedAt - datetime.now()) < timedelta(seconds=2))
     tags = Tag.query.filter(Tag.image_id.in_([ c.id for c in container.images_ref ])).all()
     self.assertListEqual(
       [f"{tag.name}:{tag.image_ref.id}" for tag in tags ],

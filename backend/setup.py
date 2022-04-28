@@ -22,7 +22,8 @@ setup(
         'Flask-RQ2',
         'ldap3',
         'pyjwt',
-        'humanize'
+        'humanize',
+        'python-slugify'
     ],
     extras_require={
       'dev': ['nose2','fakeredis','psycopg2', 'nose2-html-report', 'nose2[coverage_plugin]'],

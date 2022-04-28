@@ -9,6 +9,7 @@ import store from './store'
 import TopBarComponent from './components/TopBar.vue';
 import TextInputComponent from './components/TextInput.vue';
 import ContainerStarsComponent from './components/ContainerStars.vue';
+import ErrorMessageComponent from './components/ErrorMessage.vue';
 
 import { abbreviate, pluralize, prettyBytes, prettyDateTime } from '@/util/pretty';
 
@@ -17,6 +18,7 @@ Vue.config.productionTip = false
 Vue.component('top-bar', TopBarComponent);
 Vue.component('hsk-text-input', TextInputComponent);
 Vue.component('container-stars', ContainerStarsComponent);
+Vue.component('error-message', ErrorMessageComponent);
 Vue.use(VueClipboard);
 Vue.use(VueMoment);
 Vue.filter('abbreviate', abbreviate);

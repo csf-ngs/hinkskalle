@@ -2,15 +2,7 @@
   <div class="container-details">
     <top-bar title="Container Details">
     </top-bar>
-    <v-container v-if="localState.error">
-      <v-row>
-        <v-col cols="12">
-          <v-alert border="left" color="red">
-            {{localState.error}}
-          </v-alert>
-        </v-col>
-      </v-row>
-    </v-container>
+    <error-message v-if="localState.error" :error="localState.error"></error-message>
     <v-container v-if="localState.container">
       <v-row>
         <v-col cols="12" md="10" offset-md="1">
@@ -35,7 +27,7 @@
           </v-row>
           <v-row dense>
             <v-col>
-              <hsk-text-input label="Created" :static-value="localState.container.createdAt | moment('YYYY-MM-DD HH:mm:ss')"></hsk-text-input>
+              <hsk-text-input label="Created" :static-value="localState.container.createdAt | prettyDateTime"></hsk-text-input>
             </v-col>
             <v-col>
               <hsk-text-input label="Created By" :static-value="localState.container.createdBy"></hsk-text-input>
@@ -211,13 +203,7 @@ export default Vue.extend({
           }
         })
         .catch(err => {
-          if (err.response.status === 403) {
-            this.localState.error = 'Access denied! Try one of your own containers.';
-          }
-          else {
-            this.$store.commit('snackbar/showError', err);
-            this.localState.error = 'Failed to load container.';
-          }
+          this.localState.error = err;
         });
     },
     loadManifests() {

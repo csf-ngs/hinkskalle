@@ -127,10 +127,12 @@
               <v-row>
                 <v-col v-for="item in props.items" :key="item.id" cols="12" md="6">
                   <v-card class="group">
-                    <v-card-title class="headline">
-                      <v-icon>{{ roleIcon(item) }}</v-icon>
-                      {{item.name}}
-                    </v-card-title>
+                    <router-link :to="{ name: 'GroupDetails', params: { group: item.name } }" class="text-decoration-none">
+                      <v-card-title class="headline">
+                        <v-icon>{{ roleIcon(item) }}</v-icon>
+                        {{item.name}}
+                      </v-card-title>
+                    </router-link>
                     <v-divider></v-divider>
                     <v-list dense>
                       <v-list-item>

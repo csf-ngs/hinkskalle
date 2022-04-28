@@ -2,6 +2,15 @@
   <div class="container-details">
     <top-bar title="Container Details">
     </top-bar>
+    <v-container v-if="localState.error">
+      <v-row>
+        <v-col cols="12">
+          <v-alert border="left" color="red">
+            {{localState.error}}
+          </v-alert>
+        </v-col>
+      </v-row>
+    </v-container>
     <v-container v-if="localState.container">
       <v-row>
         <v-col cols="12" md="10" offset-md="1">
@@ -148,6 +157,7 @@ import { orderBy as _orderBy } from 'lodash';
 
 interface State {
   container: Container | null;
+  error: string | null;
 }
 
 export default Vue.extend({
@@ -159,6 +169,7 @@ export default Vue.extend({
   data: (): { localState: State } => ({
     localState: {
       container: null,
+      error: null,
     }
   }),
   watch: {
@@ -188,6 +199,7 @@ export default Vue.extend({
   },
   methods: {
     loadContainer() {
+      this.localState.error = null;
       this.$store.dispatch('containers/get', { entityName: this.$route.params.entity, collectionName: this.$route.params.collection, containerName: this.$route.params.container })
         .then((container: Container) => {
           this.localState.container = container;
@@ -199,7 +211,13 @@ export default Vue.extend({
           }
         })
         .catch(err => {
-          this.$store.commit('snackbar/showError', err);
+          if (err.response.status === 403) {
+            this.localState.error = 'Access denied! Try one of your own containers.';
+          }
+          else {
+            this.$store.commit('snackbar/showError', err);
+            this.localState.error = 'Failed to load container.';
+          }
         });
     },
     loadManifests() {

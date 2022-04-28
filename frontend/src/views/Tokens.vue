@@ -89,7 +89,7 @@
             </template>
             <template v-slot:item.expiresAt="{ item }">
               <span v-if="item.expiresAt">
-                {{item.expiresAt | moment('YYYY-MM-DD HH:mm:ss')}}
+                {{item.expiresAt | prettyDateTime}}
               </span>
               <span v-else>
                 <em>no expiration</em>

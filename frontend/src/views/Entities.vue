@@ -104,13 +104,13 @@
                           <v-col cols="12" md="4">
                             <hsk-text-input
                               label="Created"
-                              :static-value="localState.editItem.createdAt | moment('YYYY-MM-DD HH:mm')"
+                              :static-value="localState.editItem.createdAt | prettyDateTime"
                               ></hsk-text-input>
                           </v-col>
                           <v-col cols="12" md="4">
                             <hsk-text-input
                               label="Updated"
-                              :static-value="updatedAt"
+                              :static-value="localState.editItem.updatedAt | prettyDateTime"
                               ></hsk-text-input>
                           </v-col>
                         </v-row>
@@ -181,10 +181,10 @@
                         <v-list-item-content>
                           <v-list-item-title class="d-flex justify-space-between">
                             <div>
-                              {{item.createdAt | moment('YYYY-MM-DD HH:mm')}} | {{item.createdBy}}
+                              {{item.createdAt | prettyDateTime}} | {{item.createdBy}}
                             </div>
                             <div>
-                              {{item.updatedAt | moment('YYYY-MM-DD HH:mm')}} 
+                              {{item.updatedAt | prettyDateTime}} 
                             </div>
                           </v-list-item-title>
                           <v-list-item-subtitle class="d-flex justify-space-between">
@@ -217,7 +217,6 @@
 <script lang="ts">
 import Vue from 'vue';
 import { Entity, User, checkName } from '../store/models';
-import moment from 'moment';
 import { clone as _clone } from 'lodash';
 import UserInput from '@/components/UserInput.vue';
 
@@ -270,11 +269,6 @@ export default Vue.extend({
     },
     editTitle(): string {
       return this.localState.editItem.id ? 'Edit Entity' : 'New Entity';
-    },
-    updatedAt(): string {
-      return this.localState.editItem.updatedAt ?
-        moment(this.localState.editItem.updatedAt).format('YYYY-MM-DD HH:mm') :
-        '-';
     },
     currentUser(): User {
       return this.$store.getters.currentUser;

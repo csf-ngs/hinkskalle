@@ -70,6 +70,7 @@
                               label="Email"
                               field="email"
                               :obj="localState.editItem"
+                              required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
                         </v-row>
@@ -84,13 +85,13 @@
                           <v-col cols="12" md="4">
                             <hsk-text-input
                               label="Created"
-                              :static-value="localState.editItem.createdAt | moment('YYYY-MM-DD HH:mm')"
+                              :static-value="localState.editItem.createdAt | prettyDateTime"
                               ></hsk-text-input>
                           </v-col>
                           <v-col cols="12" md="4">
                             <hsk-text-input
                               label="Updated"
-                              :static-value="updatedAt"
+                              :static-value="localState.editItem.updatedAt | prettyDateTime"
                               ></hsk-text-input>
                           </v-col>
                         </v-row>
@@ -164,10 +165,10 @@
                         <v-list-item-content>
                           <v-list-item-title class="d-flex justify-space-between">
                             <div>
-                              {{item.createdAt | moment('YYYY-MM-DD HH:mm')}} | {{item.createdBy}}
+                              {{item.createdAt | prettyDateTime}} | {{item.createdBy}}
                             </div>
                             <div>
-                              {{item.updatedAt | moment('YYYY-MM-DD HH:mm')}} 
+                              {{item.updatedAt | prettyDateTime}} 
                             </div>
                           </v-list-item-title>
                           <v-list-item-subtitle class="d-flex justify-space-between">
@@ -198,7 +199,7 @@
 import Vue from 'vue';
 import { checkName, Group, GroupRoles, User } from '../store/models';
 import { clone as _clone } from 'lodash';
-import moment from 'moment';
+import UserInput from '@/components/UserInput.vue';
 
 interface State {
   editItem: Group;
@@ -218,6 +219,7 @@ function defaultItem(): Group {
 
 export default Vue.extend({
   name: 'HskGroups',
+  components: { 'hsk-user-input': UserInput },
   mounted() {
     this.loadGroups();
   },
@@ -246,11 +248,6 @@ export default Vue.extend({
     },
     editTitle(): string {
       return this.localState.editItem.id ? 'Edit Group' : 'New Group';
-    },
-    updatedAt(): string {
-      return this.localState.editItem.updatedAt ?
-        moment(this.localState.editItem.updatedAt).format('YYYY-MM-DD HH:mm') :
-        '-';
     },
     currentUser(): User {
       return this.$store.getters.currentUser;

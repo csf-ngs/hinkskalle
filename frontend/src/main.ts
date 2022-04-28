@@ -10,7 +10,7 @@ import TopBarComponent from './components/TopBar.vue';
 import TextInputComponent from './components/TextInput.vue';
 import ContainerStarsComponent from './components/ContainerStars.vue';
 
-import { abbreviate, pluralize, prettyBytes } from '@/util/pretty';
+import { abbreviate, pluralize, prettyBytes, prettyDateTime } from '@/util/pretty';
 
 Vue.config.productionTip = false
 
@@ -22,6 +22,7 @@ Vue.use(VueMoment);
 Vue.filter('abbreviate', abbreviate);
 Vue.filter('pluralize', pluralize);
 Vue.filter('prettyBytes', prettyBytes);
+Vue.filter('prettyDateTime', prettyDateTime)
 
 new Vue({
   router,

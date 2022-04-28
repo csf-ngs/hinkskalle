@@ -6,6 +6,7 @@ import Tokens from '../views/Tokens.vue';
 import Account from '../views/Account.vue';
 import Collections from '../views/Collections.vue';
 import Entities from '../views/Entities.vue';
+import Groups from '../views/Groups.vue';
 import Containers from '../views/Containers.vue';
 import ContainerDetails from '../views/ContainerDetails.vue';
 import Users from '../views/Users.vue';
@@ -81,6 +82,12 @@ const routes: Array<RouteConfig> = [
     path: '/entities',
     name: 'Entities',
     component: Entities,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/groups',
+    name: 'Groups',
+    component: Groups,
     meta: { requiresAuth: true },
   },
   {

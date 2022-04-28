@@ -17,6 +17,12 @@
               <v-list-item-title>{{currentUser.fullname}}</v-list-item-title>
             </v-list-item-content>
           </v-list-item>
+          <v-list-item link :to="'/groups'">
+            <v-list-item-icon><v-icon>mdi-account-group</v-icon></v-list-item-icon>
+            <v-list-item-content>
+              <v-list-item-title>Groups</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
           <v-list-item link :to="'/tokens'">
             <v-list-item-icon><v-icon>mdi-key-chain-variant</v-icon></v-list-item-icon>
             <v-list-item-content>

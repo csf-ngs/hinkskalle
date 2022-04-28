@@ -1,22 +1,22 @@
 <template>
-  <div class="entities">
-    <top-bar title="Entities"></top-bar>
+  <div class="groups">
+    <top-bar title="Groups"></top-bar>
     <v-container>
       <v-row>
         <v-col cols="12" md="10" offset-md="1">
-          <v-data-iterator 
-            id="entities"
-            :items="entities"
+          <v-data-iterator
+            id="groups"
+            :items="groups"
             :search="localState.search"
             :sort-by="localState.sortBy"
             :sort-desc="localState.sortDesc"
             :loading="loading">
             <template v-slot:header>
               <v-toolbar flat>
-                <v-text-field id="search" 
-                  v-model="localState.search" 
-                  prepend-inner-icon="mdi-magnify" 
-                  label="Search..." 
+                <v-text-field id="search"
+                  v-model="localState.search"
+                  prepend-inner-icon="mdi-magnify"
+                  label="Search..."
                   single-line outlined dense hide-details></v-text-field>
                 <v-spacer></v-spacer>
                 <v-select class="mr-1"
@@ -36,10 +36,9 @@
                 <v-dialog v-model="localState.showEdit" max-width="700px">
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn 
-                      v-if="currentUser.isAdmin" 
-                      id="create-entity" 
+                      id="create-group" 
                       dense depressed
-                      v-bind="attrs" v-on="on">Create Entity</v-btn>
+                      v-bind="attrs" v-on="on">Create Group</v-btn>
                   </template>
                   <v-card>
                     <v-card-title class="headline">{{editTitle}}</v-card-title>
@@ -54,7 +53,6 @@
                               field="name"
                               :obj="localState.editItem"
                               :readonly="!!localState.editItem.id"
-                              :check="[checkName]"
                               required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
@@ -66,29 +64,11 @@
                               :obj="localState.editItem"
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
-                        </v-row>
-                        <v-row>
-                          <v-col cols="12" md="6">
-                            <hsk-text-input
-                              id="quota"
-                              label="Quota (0 = unlimited)"
-                              field="prettyQuota"
-                              :obj="localState.editItem"
-                              @updated="localState.editItem=$event"></hsk-text-input>
-                          </v-col>
-                          <v-col cols="12" md="6">
-                            <hsk-text-input
-                              id="usedQuota"
-                              label="Space Used"
-                              :static-value="localState.editItem.usedQuota || 0 | prettyBytes()"></hsk-text-input>
-                          </v-col>
-                        </v-row>
-                        <v-row>
                           <v-col cols="12">
                             <hsk-text-input 
-                              type="yesno"
-                              label="Default Private"
-                              field="defaultPrivate"
+                              id="email"
+                              label="Email"
+                              field="email"
                               :obj="localState.editItem"
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
@@ -130,7 +110,7 @@
                     <v-card-actions>
                       <v-spacer></v-spacer>
                       <v-btn color="secondary darken-1" text @click="closeDelete">Let mercy rule.</v-btn>
-                      <v-btn color="warning accent-1" text @click="deleteEntityConfirm">Get it out of my sight.</v-btn>
+                      <v-btn color="warning accent-1" text @click="deleteConfirm">Get it out of my sight.</v-btn>
                     </v-card-actions>
                   </v-card>
                 </v-dialog>
@@ -139,33 +119,36 @@
                   id="refresh" 
                   class="ml-2"
                   dense depressed 
-                  @click="loadEntities()"><v-icon>mdi-refresh</v-icon></v-btn>
+                  @click="loadGroups()"><v-icon>mdi-refresh</v-icon></v-btn>
               </v-toolbar>
             </template>
             <template v-slot:default="props">
               <v-row>
-                <v-col v-for="item in props.items" :key="item.id" 
-                  cols="12" md="6">
-                  <v-card class="entity">
-                    <router-link :to="{ name: 'EntityCollections', params: { entity: item.name } }" class="text-decoration-none">
-                      <v-card-title class="headline">
-                        <v-icon>{{ entityIcon(item) }}</v-icon>
-                        {{item.name}}
-                        <v-icon v-if="item.defaultPrivate">mdi-lock</v-icon>
-                      </v-card-title>
-                    </router-link>
+                <v-col v-for="item in props.items" :key="item.id" cols="12" md="6">
+                  <v-card class="group">
+                    <v-card-title class="headline">
+                      <v-icon>{{ roleIcon(item) }}</v-icon>
+                      {{item.name}}
+                    </v-card-title>
                     <v-divider></v-divider>
                     <v-list dense>
                       <v-list-item>
                         <v-list-item-content>
+                          <v-list-item-title>
+                            You are: {{ item.getRole(currentUser) }}
+                          </v-list-item-title>
+                        </v-list-item-content>
+                      </v-list-item>
+                      <v-list-item>
+                        <v-list-item-content>
                           <v-list-item-title class="d-flex justify-space-between">
                             <div>
-                              {{item.size}} {{item.size | pluralize('collection')}}
+                              {{item.users.length}} {{item.users.length | pluralize('user')}}
                             </div>
                             <div>
-                              {{item.usedQuota | prettyBytes()}}
-                              <span v-if="item.quota === 0">/ &infin;</span>
-                              <span v-else>/ {{item.quota | prettyBytes()}}</span>
+                              <router-link :to="{ name: 'EntityCollections', params: { entity: item.entityRef } }" class="text-decoration-none">
+                                <v-icon>mdi-folder-multiple</v-icon> {{item.collections}} {{item.collections | pluralize('collection')}}
+                              </router-link>
                             </div>
                           </v-list-item-title>
                         </v-list-item-content>
@@ -197,11 +180,8 @@
                     <v-card-actions>
                       <v-spacer></v-spacer>
                       <template v-if="item.canEdit(currentUser)">
-                        <v-icon small class="mr-1" @click="editEntity(item)">mdi-pencil</v-icon>
-                        <v-icon small @click="deleteEntity(item)">mdi-delete</v-icon>
-                      </template>
-                      <template v-else>
-                        <v-icon small>mdi-cancel</v-icon>
+                        <v-icon small class="mr-1" @click="editGroup(item)">mdi-pencil</v-icon>
+                        <v-icon small @click="deleteGroup(item)">md-delete</v-icon>
                       </template>
                     </v-card-actions>
                   </v-card>
@@ -216,60 +196,56 @@
 </template>
 <script lang="ts">
 import Vue from 'vue';
-import { Entity, User, checkName } from '../store/models';
-import moment from 'moment';
+import { checkName, Group, GroupRoles, User } from '../store/models';
 import { clone as _clone } from 'lodash';
-import UserInput from '@/components/UserInput.vue';
+import moment from 'moment';
 
 interface State {
-  search: string;
-  editItem: Entity;
+  editItem: Group;
   showEdit: boolean;
   editValid: boolean;
   showDelete: boolean;
+  search: string,
   sortBy: string;
   sortDesc: boolean;
 }
 
-function defaultItem(): Entity {
-  const item = new Entity();
+function defaultItem(): Group {
+  const item = new Group();
   item.createdAt = new Date();
   return item;
 }
 
 export default Vue.extend({
-  name: 'HskEntities',
-  components: { 'hsk-user-input': UserInput },
+  name: 'HskGroups',
   mounted() {
-    this.loadEntities();
+    this.loadGroups();
   },
   data: (): { localState: State; sortKeys: { key: string; desc: string }[] } => ({
     localState: {
-      search: '',
       showEdit: false,
       showDelete: false,
       editItem: defaultItem(),
       editValid: true,
+      search: '',
       sortBy: 'name',
       sortDesc: false,
     },
     sortKeys: [
-      { key: 'name', desc: 'Name' }, 
-      { key: 'createdAt', desc: "Create Date" }, 
-      { key: 'updatedAt', desc: "Last Updated" },
-      { key: 'size', desc: '# Collections' },
-      { key: 'usedQuota', desc: 'Size' },
+      { key: 'name', desc: 'Name' },
+      { key: 'createdAt', desc: 'Create Date' },
+      { key: 'updatedAt', desc: 'Last Updated' },
     ]
   }),
   computed: {
-    entities(): Entity[] {
-      return this.$store.getters['entities/list'];
+    groups(): Group[] {
+      return this.$store.getters['groups/list'];
     },
     loading(): boolean {
-      return this.$store.getters['entities/status']==='loading';
+      return this.$store.getters['groups/status']==='loading';
     },
     editTitle(): string {
-      return this.localState.editItem.id ? 'Edit Entity' : 'New Entity';
+      return this.localState.editItem.id ? 'Edit Group' : 'New Group';
     },
     updatedAt(): string {
       return this.localState.editItem.updatedAt ?
@@ -293,20 +269,20 @@ export default Vue.extend({
     },
   },
   methods: {
-    loadEntities() {
-      this.$store.dispatch('entities/list')
+    loadGroups() {
+      this.$store.dispatch('groups/list')
         .catch(err => this.$store.commit('snackbar/showError', err));
     },
-    editEntity(entity: Entity) {
-      this.localState.editItem = _clone(entity);
+    editGroup(group: Group) {
+      this.localState.editItem = _clone(group);
       this.localState.showEdit = true;
     },
-    deleteEntity(entity: Entity) {
-      this.localState.editItem = _clone(entity);
+    deleteGroup(group: Group) {
+      this.localState.editItem = _clone(group);
       this.localState.showDelete = true;
     },
-    deleteEntityConfirm() {
-      this.$store.dispatch('entities/delete', this.localState.editItem)
+    deleteConfirm() {
+      this.$store.dispatch('groups/delete', this.localState.editItem)
         .then(() => this.$store.commit('snackbar/showSuccess', "It's gone!"))
         .catch(err => this.$store.commit('snackbar/showError', err));
     },
@@ -324,7 +300,7 @@ export default Vue.extend({
     },
     save() {
       const action = this.localState.editItem.id ? 
-        'entities/update' : 'entities/create';
+        'groups/update' : 'groups/create';
       this.$store.dispatch(action, this.localState.editItem)
         .then(() => this.$store.commit('snackbar/showSuccess', 'Yay!'))
         .catch(err => this.$store.commit('snackbar/showError', err));
@@ -333,17 +309,20 @@ export default Vue.extend({
     checkName(name: string): string | boolean {
       return checkName(name);
     },
-    entityIcon(entity: Entity): string {
-      if (entity.isGroup) {
-        return 'mdi-account-group';
-      }
-      else if (entity.createdBy == this.currentUser.username) {
-        return 'mdi-account';
-      }
-      else {
-        return '';
+    roleIcon(group: Group): string {
+      const role = group.getRole(this.currentUser);
+      switch(role) {
+        case GroupRoles.admin:
+          return 'mdi-book-account';
+        case GroupRoles.contributor:
+          return 'mdi-book-plus';
+        case GroupRoles.readonly:
+          return 'mdi-book-lock';
+        default:
+          return 'mdi-head-question';
       }
     }
-  },
+  }
 });
+
 </script>

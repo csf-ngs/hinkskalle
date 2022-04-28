@@ -189,7 +189,9 @@ class Entity {
   public deleted!: boolean
   public deletedAt!: Date | null
   public description!: string
+  public groupRef!: string
   public id!: string
+  public isGroup!: boolean
   public name!: string
   public quota!: number
   public size!: number
@@ -230,7 +232,9 @@ export function plainToEntity(json: any): Entity {
     obj.deleted = json['deleted'];
     obj.deletedAt = _isNil(json['deletedAt']) ? null : new Date(json['deletedAt']);
       obj.description = json['description'];
+    obj.groupRef = json['groupRef'];
     obj.id = json['id'];
+    obj.isGroup = json['isGroup'];
     obj.name = json['name'];
     obj.quota = json['quota'];
     obj.size = json['size'];
@@ -442,28 +446,52 @@ export function serializeUser(obj: User, unroll=false): any {
 export { User };
 
 
+export enum GroupRoles {
+  admin = 'admin',
+  contributor = 'contributor',
+  readonly = 'readonly',
+}
+
+import { find as _find } from 'lodash';
 class Group {
+  public collections!: number
   public createdAt!: Date | null
   public createdBy!: string
   public deleted!: boolean
   public deletedAt!: Date | null
+  public description!: string
   public email!: string
-  public entity_ref!: string
+  public entityRef!: string
   public id!: string
   public name!: string
   public updatedAt!: Date | null
   public users!: GroupMember[]
   
+
+  public getRole(user: User | null): string | null {
+    if (!user) {
+      return null;
+    }
+    const member = _find(this.users, ug => ug.user.username === user.username);
+    return !member ? null : member.role;
+  }
+
+  public canEdit(user: User | null): boolean {
+    const role = this.getRole(user);
+    return !!user && (user.isAdmin || this.createdBy===user.username || (!!role && role === GroupRoles.admin));
+  }
 }
 
 export function plainToGroup(json: any): Group {
   const obj = new Group();
-  obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
+  obj.collections = json['collections'];
+    obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
       obj.createdBy = json['createdBy'];
     obj.deleted = json['deleted'];
     obj.deletedAt = _isNil(json['deletedAt']) ? null : new Date(json['deletedAt']);
-      obj.email = json['email'];
-    obj.entity_ref = json['entity_ref'];
+      obj.description = json['description'];
+    obj.email = json['email'];
+    obj.entityRef = json['entityRef'];
     obj.id = json['id'];
     obj.name = json['name'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
@@ -474,7 +502,8 @@ export function plainToGroup(json: any): Group {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeGroup(obj: Group, unroll=false): any {
   const json: any = {};
-  json['email'] = obj.email;
+  json['description'] = obj.description;
+      json['email'] = obj.email;
       json['name'] = obj.name;
       
   return json;

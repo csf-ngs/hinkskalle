@@ -10,6 +10,7 @@ Vue.use(Vuex);
 import { User, plainToUser, serializeUser, } from './models';
 import snackbarModule, { State as SnackbarState } from './modules/snackbar';
 import entitiesModule, { State as EntitiesState } from './modules/entities';
+import groupsModule, { State as GroupsState } from './modules/groups';
 import containersModule, { State as ContainersState } from './modules/containers';
 import collectionsModule, { State as CollectionsState }  from './modules/collections';
 import imagesModule, { State as ImagesState } from './modules/images';
@@ -31,6 +32,7 @@ interface State {
   containers?: ContainersState;
   collections?: CollectionsState;
   entities?: EntitiesState;
+  groups?: GroupsState;
   search?: SearchState;
   adm?: AdmState;
   manifests?: ManifestsState;
@@ -127,6 +129,7 @@ export default new Vuex.Store({
     containers: containersModule,
     collections: collectionsModule,
     entities: entitiesModule,
+    groups: groupsModule,
     search: searchModule,
     adm: admModule,
     manifests: manifestsModule,

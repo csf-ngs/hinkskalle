@@ -1,7 +1,27 @@
 {% import 'typescript/utils.ts.j2' as utils %}
 
+export enum GroupRoles {
+  admin = 'admin',
+  contributor = 'contributor',
+  readonly = 'readonly',
+}
+
+import { find as _find } from 'lodash';
 class {{classname}} {
   {{utils.auto_attributes(fields)}}
+
+  public getRole(user: User | null): string | null {
+    if (!user) {
+      return null;
+    }
+    const member = _find(this.users, ug => ug.user.username === user.username);
+    return !member ? null : member.role;
+  }
+
+  public canEdit(user: User | null): boolean {
+    const role = this.getRole(user);
+    return !!user && (user.isAdmin || this.createdBy===user.username || (!!role && role === GroupRoles.admin));
+  }
 }
 
 export function plainTo{{classname}}(json: any): {{classname}} {

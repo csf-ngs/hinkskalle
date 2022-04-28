@@ -100,7 +100,7 @@ class TestGroups(RouteBase):
       "id": str(group1.id),
       "name": group1.name,
       "email": group1.email,
-      "entity_ref": None,
+      "entityRef": None,
     }, json)
   
   def test_get_entity_ref(self):
@@ -118,7 +118,7 @@ class TestGroups(RouteBase):
       "id": str(group1.id),
       "name": group1.name,
       "email": group1.email,
-      "entity_ref": group1.entity.name,
+      "entityRef": group1.entity.name,
     }, json)
 
   
@@ -165,7 +165,7 @@ class TestGroups(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['name'], group_data['name'])
-    self.assertEqual(data['entity_ref'], group_data['name'].lower())
+    self.assertEqual(data['entityRef'], group_data['name'].lower())
 
     db_group = Group.query.get(data['id'])
     self.assertEqual(db_group.name, group_data['name'])
@@ -173,11 +173,23 @@ class TestGroups(RouteBase):
     self.assertEqual(db_group.createdBy, self.admin_username)
   
     try:
-      db_entity = Entity.query.filter(Entity.name==data['entity_ref']).one()
+      db_entity = Entity.query.filter(Entity.name==data['entityRef']).one()
     except NoResultFound:
       self.fail('db entity not found')
     self.assertEqual(db_entity.createdBy, self.admin_username)
     self.assertEqual(db_entity.group_id, db_group.id)
+
+  def test_create_slugify(self):
+    group_data = {
+      'name': 'Test h&sen ställ.',
+      'email': 'some@thi.ng',
+    }
+    with self.fake_admin_auth():
+      ret = self.client.post('/v1/groups', json=group_data)
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data') # type: ignore
+    self.assertEqual(data['entityRef'], 'test-h-sen-stall')
+    db_entity = Entity.query.filter(Entity.name==data['entityRef']).one()
 
   def test_create_entity_exists(self):
     group_data = {
@@ -217,7 +229,7 @@ class TestGroups(RouteBase):
     db_member = db_group.users_sth.join(UserGroup.user).filter(User.username==self.username).one()
     self.assertEqual(db_member.role, GroupRoles.admin)
 
-    db_entity = Entity.query.filter(Entity.name==ret_group['entity_ref']).one()
+    db_entity = Entity.query.filter(Entity.name==ret_group['entityRef']).one()
     self.assertEqual(db_entity.createdBy, self.username)
   
   def test_update(self):

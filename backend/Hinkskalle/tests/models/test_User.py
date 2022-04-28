@@ -58,10 +58,6 @@ class TestUser(ModelBase):
     self.assertListEqual(read_user.groups, [])
     self.assertListEqual(read_group.users, [])
   
-  def test_group_name_check(self):
-    with self.assertRaisesRegex(ValueError, r'name contains invalid'):
-      Group(name='T@sth@stenstall', email='stall@testha.se')
-  
   def test_stars(self):
     user = _create_user()
     container = _create_container()[0]
@@ -297,12 +293,4 @@ class TestUser(ModelBase):
     }))
     self.assertEqual(deserialized['name'], 'Testhasenstall')
   
-  def test_deserialize_groups_name_check(self):
-    schema = GroupSchema()
-
-    with self.assertRaisesRegex(ValidationError, r'name contains invalid'):
-      schema.load({
-        'name': 'Testhasenst@ll',
-        'email': 'test@ha.se',
-      })
 

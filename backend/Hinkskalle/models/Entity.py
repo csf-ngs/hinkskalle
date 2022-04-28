@@ -1,4 +1,4 @@
-from asyncio.proactor_events import _ProactorBaseWritePipeTransport
+import typing
 from Hinkskalle import db
 from marshmallow import fields, validates_schema, ValidationError
 from datetime import datetime
@@ -23,6 +23,9 @@ class EntitySchema(BaseSchema):
   usedQuota = fields.Integer(dump_only=True, attribute='used_quota')
   defaultPrivate = fields.Boolean()
   customData = fields.String(allow_none=True)
+
+  isGroup = fields.Boolean(dump_only=True, attribute='is_group')
+  groupRef = fields.String(dump_only=True, allow_none=True, attribute='group_ref')
 
   collections = fields.List(fields.String(), allow_none=True, dump_only=True)
 
@@ -62,6 +65,14 @@ class Entity(db.Model): # type: ignore
   @property
   def size(self) -> int:
     return self.collections_ref.count()
+  
+  @property
+  def is_group(self) -> bool:
+    return self.group_id is not None
+  
+  @property
+  def group_ref(self) -> typing.Optional[str]:
+    return self.group.name if self.group else None
 
   def calculate_used(self) -> int:
     entity_size = 0

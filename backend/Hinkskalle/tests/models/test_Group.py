@@ -47,16 +47,20 @@ class TestGroup(ModelBase):
     serialized = typing.cast(dict, schema.dump(group))
     self.assertEqual(serialized['id'], str(group.id))
 
-    self.assertIsNone(serialized['entity_ref'])
+    self.assertIsNone(serialized['entityRef'])
 
     self.assertFalse(serialized['deleted'])
     self.assertIsNone(serialized['deletedAt'])
 
-    entity = Entity(name='oinkstall', group=group)
+  def test_schema_entity(self):
+    schema = GroupSchema()
+    group = _create_group()
+    entity = Entity(name='testhasenstall', group=group)
     db.session.add(entity)
+    db.session.commit()
 
     serialized = typing.cast(dict, schema.dump(group))
-    self.assertEqual(serialized['entity_ref'], entity.name)
+    self.assertEqual(serialized['entityRef'], entity.name)
 
 
   

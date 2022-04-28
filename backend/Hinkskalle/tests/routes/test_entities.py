@@ -70,6 +70,8 @@ class TestEntities(RouteBase):
       'deletedAt': None,
       'deleted': False,
       'usedQuota': 0,
+      'groupRef': None,
+      'isGroup': False,
     })
   
   def test_get_case(self):

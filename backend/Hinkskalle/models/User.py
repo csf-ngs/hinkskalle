@@ -29,21 +29,17 @@ class GroupSchema(Schema):
   id = fields.String(required=True, dump_only=True)
   name = fields.String(required=True)
   email = fields.String(required=True)
-  entity_ref = fields.String(dump_only=True, allow_none=True)
+  description = fields.String(allow_none=True)
+  entityRef = fields.String(dump_only=True, allow_none=True, attribute='entity_ref')
 
   users = fields.List(fields.Nested('GroupMemberSchema', allow_none=True), dump_only=True)
+  collections = fields.Integer(dump_only=True)
 
   createdAt = fields.DateTime(dump_only=True)
   createdBy = fields.String(dump_only=True)
   updatedAt = fields.DateTime(dump_only=True, allow_none=True)
   deletedAt = fields.DateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
-
-  @validates_schema
-  def validate_name(self, data, **kwargs):
-    errors = validate_name(data)
-    if errors:
-      raise ValidationError(errors)
 
 class UserSchema(BaseSchema):
   id = fields.String(required=True, dump_only=True)
@@ -175,7 +171,8 @@ class User(db.Model): # type: ignore
 class Group(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String(), unique=True, nullable=False)
-  email = db.Column(db.String(), unique=True, nullable=False)
+  email = db.Column(db.String(), nullable=False)
+  description = db.Column(db.String())
 
   users = db.relationship('UserGroup', back_populates='group', cascade='all, delete-orphan')
   users_sth = db.relationship('UserGroup', viewonly=True, lazy='dynamic')
@@ -186,15 +183,14 @@ class Group(db.Model): # type: ignore
 
   entity = db.relationship('Entity', back_populates='group', uselist=False, cascade='all, delete-orphan')
 
-  @validates('name')
-  def check_name(self, key, value):
-    validate_as_name(value)
-    return value
-  
   @property
   def entity_ref(self) -> typing.Optional[str]:
     return self.entity.name if self.entity else None
   
+  @property
+  def collections(self) -> int:
+    return self.entity.size if self.entity else 0
+
   def get_member(self, user: User) -> typing.Optional[UserGroup]:
     return self.users_sth.filter(UserGroup.user_id == user.id).first()
   

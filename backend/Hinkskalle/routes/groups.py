@@ -9,6 +9,7 @@ from marshmallow import fields, Schema, EXCLUDE
 from flask import g
 from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from sqlalchemy.exc import IntegrityError
+from slugify import slugify
 
 from Hinkskalle.models import GroupSchema, Group, UserGroup, Entity, User
 
@@ -93,7 +94,7 @@ def create_group():
   new_group.createdBy=g.authenticated_user.username
   ug = UserGroup(user=g.authenticated_user, group=new_group, role=GroupRoles.admin)
 
-  entity = Entity(name=new_group.name, owner=g.authenticated_user, group=new_group)
+  entity = Entity(name=slugify(new_group.name), owner=g.authenticated_user, group=new_group)
   try:
     db.session.add(new_group)
     db.session.add(entity)
@@ -128,7 +129,7 @@ def update_group(name: str):
   
   with db.session.no_autoflush:
     if name != group.name and group.entity is not None:
-      group.entity.name = group.name
+      group.entity.name = slugify(group.name)
   
   try:
     db.session.commit()

@@ -187,6 +187,16 @@ class TestEntity(ModelBase):
     entity.used_quota = 999
     serialized = typing.cast(dict, schema.dump(entity))
     self.assertEqual(serialized['usedQuota'], 999)
+  
+  def test_schema_group(self):
+    group = _create_group()
+    entity = Entity(name='Test Hase', group=group)
+    db.session.add(entity)
+    db.session.commit()
+    schema = EntitySchema()
+    serialized = typing.cast(dict, schema.dump(entity))
+    self.assertTrue(serialized['isGroup'])
+    self.assertEqual(serialized['groupRef'], group.name)
 
 
   def test_quota_default(self):

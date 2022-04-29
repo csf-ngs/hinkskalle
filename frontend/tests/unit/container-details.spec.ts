@@ -59,8 +59,7 @@ describe('ContainerDetails.vue', () => {
     expect(actions['containers/get']).toHaveBeenCalledTimes(1);
     await Vue.nextTick();
     await Vue.nextTick();
-    await Vue.nextTick();
-    expect(mutations['snackbar/showError']).toHaveBeenCalledWith(expect.anything(), "fail");
+    expect(wrapper.vm.$data.localState.error).toBe('fail');
   });
 
   it('shows error on get images fail', async () => {

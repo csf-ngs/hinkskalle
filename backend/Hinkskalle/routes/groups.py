@@ -33,6 +33,12 @@ class GroupDeleteResponseSchema(ResponseSchema):
 
 class MemberSchema(Schema):
   username = fields.String(required=True)
+  id = fields.String(dump_only=True)
+  email = fields.String(dump_only=True)
+  firstname = fields.String(dump_only=True)
+  lastname = fields.String(dump_only=True)
+  is_active = fields.Boolean(data_key='isActive', dump_only=True)
+  is_admin = fields.Boolean(data_key='isAdmin', dump_only=True)
   class Meta:
     unknown = EXCLUDE
 

@@ -8,6 +8,7 @@ import Vue from 'vue';
 import TopBarComponent from '@/components/TopBar.vue';
 import TextInput from '@/components/TextInput.vue';
 import ContainerStars from '@/components/ContainerStars.vue';
+import ErrorMessageComponent from '@/components/ErrorMessage.vue';
 
 Vue.use(Vuetify);
 
@@ -20,9 +21,11 @@ localVue.use(VueMoment);
 localVue.component('top-bar', TopBarComponent);
 localVue.component('hsk-text-input', TextInput);
 localVue.component('container-stars', ContainerStars);
+localVue.component('error-message', ErrorMessageComponent);
 localVue.filter('abbreviate', (v: string) => v);
 localVue.filter('pluralize', (v: number, w: string) => w);
 localVue.filter('prettyBytes', prettyBytes);
+localVue.filter('prettyDateTime', (v: Date): string => v ? v.toISOString() : '-' );
 
 export const localVueNoRouter = createLocalVue();
 localVueNoRouter.use(Vuex);

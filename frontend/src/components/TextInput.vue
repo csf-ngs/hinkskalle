@@ -50,6 +50,23 @@
       :items="[ { value: false, text: 'No' }, { value: true, text: 'Yes' } ]"
       @change="saveValue()"
     ></v-select>
+    <v-select v-if="type=='select'"
+      :outlined="!(localState.static || readonly || disabled || inline)" 
+      hide-details="auto"
+      v-model="localState.value"
+      :dense="inline"
+      :label="label"
+      :loading="localState.status=='saving'"
+      :success="localState.status=='success'"
+      :error="localState.status=='failed'"
+      :disabled="disabled"
+      :readonly="localState.static || readonly" 
+      :rules="rules"
+      :required="required"
+      :append-icon="readonly || localState.static ? 'mdi-pencil-off-outline' : ''"
+      :items="options"
+      @change="saveValue()"
+    ></v-select>
   </div>
   
 </template>
@@ -100,6 +117,14 @@ export default Vue.extend({
       type: Array,
       default: () => undefined,
     },
+    options: {
+      type: Array,
+      default: () => [],
+    },
+    inline: {
+      type: Boolean,
+      default: false,
+    }
   },
   data: function(): { localState: State } {
     return {

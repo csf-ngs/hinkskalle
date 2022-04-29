@@ -502,7 +502,8 @@ export function plainToGroup(json: any): Group {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeGroup(obj: Group, unroll=false): any {
   const json: any = {};
-  json['description'] = obj.description;
+  json['createdBy'] = obj.createdBy;
+      json['description'] = obj.description;
       json['email'] = obj.email;
       json['name'] = obj.name;
       

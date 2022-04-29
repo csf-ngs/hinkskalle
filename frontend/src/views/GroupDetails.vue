@@ -20,7 +20,7 @@
                 :obj="localState.group"
                 action="groups/update"
                 :readonly="!canEdit"
-                @upted="localState.group=$event"></hsk-text-input>
+                @updated="localState.group=$event"></hsk-text-input>
             </v-col>
           </v-row>
           <v-row>
@@ -31,7 +31,7 @@
                 :obj="localState.group"
                 action="groups/update"
                 :readonly="!canEdit"
-                @upted="localState.group=$event"></hsk-text-input>
+                @updated="localState.group=$event"></hsk-text-input>
             </v-col>
           </v-row>
           <v-row dense>
@@ -59,19 +59,80 @@
             id="members"
             :headers="headers"
             :items="localState.group.users"
+            :search="localState.search"
+            :sort-by="localState.sortBy"
+            :sort-desc="localState.sortDesc"
+            :loading="loading"
             >
+            <template v-slot:top>
+              <v-toolbar flat>
+                <v-text-field 
+                  v-model="localState.search" 
+                  prepend-inner-icon="mdi-magnify" 
+                  label="Search..." 
+                  single-line outlined dense hide-details></v-text-field>
+                <v-spacer></v-spacer>
+                <v-dialog max-width="700px" v-model="localState.showAdd" v-if="canEdit">
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn
+                      dense depressed
+                      v-bind="attrs" v-on="on">Add Member</v-btn>
+                  </template>
+                  <v-card>
+                    <v-card-title class="headline">Add Member</v-card-title>
+                    <v-card-text>
+                      <v-form v-model="localState.editValid">
+                        <hsk-user-input
+                          required
+                          label="Username"
+                          v-model="localState.editItem.user.username"></hsk-user-input>
+                        <hsk-text-input
+                          id="role"
+                          label="Role"
+                          type="select"
+                          field="role"
+                          :obj="localState.editItem"
+                          required
+                          :options="availableRoles"
+                          @updated="localState.editItem=$event"
+                        ></hsk-text-input>
+                      </v-form>
+                    </v-card-text>
+                    <v-card-actions>
+                      <v-spacer></v-spacer>
+                      <v-btn color="secondary accent-1" text @click="closeAdd">Mabye not today.</v-btn>
+                      <v-btn color="primary darken-1" :disabled="!localState.editValid" text @click="addUser">Save It!</v-btn>
+                    </v-card-actions>
+                  </v-card>
+                </v-dialog>
+              </v-toolbar>
+            </template>
+            <!-- eslint-disable-next-line vue/valid-v-slot --> 
             <template v-slot:item.user.username="{ item }">
               {{item.user.username}}
             </template>
+            <!-- eslint-disable-next-line vue/valid-v-slot --> 
             <template v-slot:item.user.lastname="{ item }">
               {{item.user.firstname}} {{item.user.lastname}}
             </template>
+            <!-- eslint-disable-next-line vue/valid-v-slot --> 
             <template v-slot:item.role="{ item }">
-              {{item.role}}
+              <hsk-text-input
+                id="role"
+                label=""
+                type="select"
+                field="role"
+                :obj="item"
+                required
+                inline
+                :readonly="!canEdit"
+                :options="availableRoles"
+                @updated="updateRole($event)"
+              ></hsk-text-input>
             </template>
+            <!-- eslint-disable-next-line vue/valid-v-slot --> 
             <template v-slot:item.actions="{ item }">
-              <v-icon small @click="editMember(item)">mdi-pencil</v-icon>
-              <v-icon small @click="deleteMember(item)">mdi-delete</v-icon>
+              <v-icon v-if="canEdit" small @click="deleteUser(item)">mdi-delete</v-icon>
             </template>
           </v-data-table>
         </v-col>
@@ -82,16 +143,33 @@
 <script lang="ts">
 import Vue from 'vue';
 import { DataTableHeader } from 'vuetify';
-import { Entity, Group, User } from '../store/models';
+import { Entity, Group, GroupMember, GroupRoles, User } from '../store/models';
+import UserInput from '@/components/UserInput.vue';
+import { concat as _concat, filter as _filter } from 'lodash';
 
 interface State {
   group: Group | null;
   entity: Entity | null;
   error: string | null;
+  search: string;
+  sortBy: string;
+  sortDesc: boolean;
+  editValid: boolean;
+  showAdd: boolean;
+  editItem: GroupMember;
+}
+
+function defaultItem(): GroupMember {
+  const item = new GroupMember();
+  item.role = GroupRoles.contributor;
+  item.user = new User();
+  item.user.username = '';
+  return item;
 }
 
 export default Vue.extend({
   name: 'GroupDetails',
+  components: { 'hsk-user-input': UserInput },
   mounted() {
     this.loadGroup();
   },
@@ -106,6 +184,12 @@ export default Vue.extend({
       group: null,
       entity: null,
       error: null,
+      search: '',
+      sortBy: 'user.username',
+      sortDesc: false,
+      showAdd: false,
+      editValid: true,
+      editItem: defaultItem(),
     }
   }),
   watch: {
@@ -115,7 +199,7 @@ export default Vue.extend({
   },
   computed: {
     loading(): boolean {
-      return this.$store.getters['container/status']==='loading';
+      return this.$store.getters['groups/status']==='loading';
     },
     currentUser(): User {
       return this.$store.getters.currentUser;
@@ -123,6 +207,11 @@ export default Vue.extend({
     canEdit(): boolean {
       return this.localState.group !== null && this.localState.group.canEdit(this.currentUser)
     },
+    availableRoles(): Record<string, unknown>[] {
+      return Object.keys(GroupRoles).map(r => {
+        return { value: r, text: r };
+      });
+    }
   },
   methods: {
     loadGroup() {
@@ -138,6 +227,43 @@ export default Vue.extend({
         .catch(err => {
           this.localState.error = err;
         });
+    },
+    closeAdd() {
+      this.localState.showAdd = false;
+      this.$nextTick(() => {
+        this.localState.editItem = defaultItem();
+      });
+    },
+    _saveMembers(): Promise<GroupMember[]> {
+      return this.$store.dispatch('groups/setMembers', this.localState.group)
+        .then(members => {
+          this.$store.commit('snackbar/showSuccess', 'Hooray, Success!');
+          return members;
+        })
+        .catch(err => this.$store.commit('snackbar/showError', err));
+    },
+    deleteUser(ug: GroupMember) {
+      if (!this.localState.group) return;
+      this.localState.group.users = 
+        _filter(this.localState.group.users, l => l.user.username !== ug.user.username);
+      this._saveMembers();
+    },
+    updateRole(upd: GroupMember) {
+      if (!this.localState.group) return;
+      this.localState.group.users = _concat(
+        _filter(this.localState.group.users, l => l.user.username !== upd.user.username),
+        upd
+      );
+      this._saveMembers();
+    },
+    addUser() {
+      if (!this.localState.group) return;
+      if (this.localState.editItem.user.username) {
+        this.localState.group.users = 
+          _concat(this.localState.group.users, this.localState.editItem);
+      }
+      this._saveMembers();
+      this.closeAdd();
     }
   }
 })

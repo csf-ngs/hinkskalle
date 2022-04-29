@@ -1,6 +1,6 @@
 import { Module } from 'vuex';
 
-import { Group, plainToGroup, serializeGroup } from '../models';
+import { Group, GroupMember, plainToGroup, plainToGroupMember, serializeGroup, serializeGroupMember } from '../models';
 
 import { AxiosError, AxiosResponse } from 'axios';
 
@@ -77,7 +77,7 @@ const groupsModule: Module<State, any> = {
     create: ({ commit, rootState }, group: Group): Promise<Group> => {
       return new Promise<Group>((resolve, reject) => {
         commit('loading');
-        rootState.backend.post(`/v1/groups`, serializeGroup(group))
+        rootState.backend.post(`/v1/groups`, serializeGroup(group, true))
           .then((response: AxiosResponse) => {
             const created = plainToGroup(response.data.data);
             commit('succeeded');
@@ -93,11 +93,28 @@ const groupsModule: Module<State, any> = {
     update: ({ commit, rootState }, group: Group): Promise<Group> => {
       return new Promise<Group>((resolve, reject) => {
         commit('loading');
-        rootState.backend.put(`/v1/groups/${group.name}`, serializeGroup(group))
+        rootState.backend.put(`/v1/groups/${group.name}`, serializeGroup(group, true))
           .then((response: AxiosResponse) => {
             const updated = plainToGroup(response.data.data);
             commit('succeeded');
             commit('update', updated);
+            resolve(updated);
+          })
+          .catch((err: AxiosError) => {
+            commit('failed', err);
+            reject(err);
+          });
+      });
+    },
+    setMembers: ({ commit, rootState }, group: Group): Promise<GroupMember[]> => {
+      return new Promise<GroupMember[]>((resolve, reject) => {
+        commit('loading');
+        rootState.backend.put(`/v1/groups/${group.name}/members`, _map(group.users, ug => serializeGroupMember(ug, true)))
+          .then((response: AxiosResponse) => {
+            const updated = _map(response.data.data, plainToGroupMember);
+            commit('succeeded');
+            group.users = updated;
+            commit('update', group);
             resolve(updated);
           })
           .catch((err: AxiosError) => {

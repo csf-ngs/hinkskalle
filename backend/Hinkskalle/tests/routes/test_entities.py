@@ -72,6 +72,7 @@ class TestEntities(RouteBase):
       'usedQuota': 0,
       'groupRef': None,
       'isGroup': False,
+      'canEdit': True,
     })
   
   def test_get_case(self):
@@ -104,6 +105,7 @@ class TestEntities(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(entity.id))
+    self.assertTrue(data['canEdit'])
   
   def test_get_user_default(self):
     entity = Entity(name='default')
@@ -115,6 +117,7 @@ class TestEntities(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(entity.id))
+    self.assertFalse(data['canEdit'])
 
     with self.fake_auth():
       ret = self.client.get('/v1/entities/default')
@@ -232,6 +235,7 @@ class TestEntities(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['name'], self.username)
+    self.assertTrue(data['canEdit'], True)
   
   def test_create_user_name_check(self):
     with self.fake_auth():
@@ -330,6 +334,7 @@ class TestEntities(RouteBase):
         'defaultPrivate': True,
       })
     self.assertEqual(ret.status_code, 200)
+    self.assertTrue(ret.get_json().get('data')['canEdit']) # type: ignore
 
     dbEntity = Entity.query.filter(Entity.name=='grunz').one()
     self.assertEqual(dbEntity.description, 'Oink oink')

@@ -178,6 +178,7 @@ class TestEntity(ModelBase):
     serialized = typing.cast(dict, schema.dump(entity))
     self.assertEqual(serialized['id'], str(entity.id))
     self.assertEqual(serialized['name'], entity.name)
+    self.assertFalse(serialized['canEdit'])
 
     self.assertIsNone(serialized['deletedAt'])
     self.assertFalse(serialized['deleted'])

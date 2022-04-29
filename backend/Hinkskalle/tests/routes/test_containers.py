@@ -78,6 +78,7 @@ class TestContainers(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(container.id))
+    self.assertTrue(data['canEdit'])
   
   def test_get_case(self):
     container = _create_container()[0]
@@ -179,6 +180,7 @@ class TestContainers(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(container.id))
+    self.assertTrue(data['canEdit'])
 
   def test_get_user_other_own_collection(self):
     container, coll, entity = _create_container()
@@ -190,6 +192,7 @@ class TestContainers(RouteBase):
     with self.fake_auth():
       ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
     self.assertEqual(ret.status_code, 200)
+    self.assertTrue(ret.get_json().get('data')['canEdit']) # type: ignore
 
   def test_get_user_other(self):
     container, coll, entity = _create_container()
@@ -213,6 +216,7 @@ class TestContainers(RouteBase):
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['collection'], str(coll.id))
     self.assertEqual(data['createdBy'], self.admin_username)
+    self.assertTrue(data['canEdit'])
   
   def test_create_singularity(self):
     coll, _ = _create_collection()
@@ -362,6 +366,7 @@ class TestContainers(RouteBase):
       })
     
     self.assertEqual(ret.status_code, 200)
+    self.assertTrue(ret.get_json().get('data')['canEdit']) # type: ignore
 
     dbContainer = Container.query.filter(Container.name==container.name).one()
     self.assertEqual(dbContainer.description, 'Mei Huat')

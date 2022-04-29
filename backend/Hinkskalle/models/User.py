@@ -3,7 +3,7 @@ from Hinkskalle import db
 from Hinkskalle.util.name_check import validate_as_name, validate_name
 from marshmallow import fields, Schema, validates_schema, ValidationError
 from datetime import datetime, timedelta
-from flask import current_app
+from flask import current_app, g
 from sqlalchemy.orm import validates
 import enum
 
@@ -41,6 +41,8 @@ class GroupSchema(Schema):
   deletedAt = fields.DateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
 
+  canEdit = fields.Boolean(dump_only=True, default=False)
+
 class UserSchema(BaseSchema):
   id = fields.String(required=True, dump_only=True)
   username = fields.String(required=True)
@@ -58,6 +60,8 @@ class UserSchema(BaseSchema):
   updatedAt = LocalDateTime(dump_only=True, allow_none=True)
   deletedAt = LocalDateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
+
+  canEdit = fields.Boolean(dump_only=True, default=False)
 
   @validates_schema
   def validate_username(self, data, **kwargs):
@@ -159,6 +163,10 @@ class User(db.Model): # type: ignore
     else:
       return False
 
+  @property
+  def canEdit(self) -> bool:
+    return self.check_update_access(g.authenticated_user)
+
   def check_update_access(self, user) -> bool:
     if user.is_admin:
       return True
@@ -204,6 +212,10 @@ class Group(db.Model): # type: ignore
     if ug:
       return True
     return False
+
+  @property
+  def canEdit(self) -> bool:
+    return self.check_update_access(g.authenticated_user)
 
   def check_update_access(self, user: User) -> bool:
     if user.is_admin:

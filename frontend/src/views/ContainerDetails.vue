@@ -95,7 +95,7 @@
                       field="readOnly"
                       :obj="localState.container"
                       action="containers/update"
-                      :readonly="!localState.container.canEdit(currentUser)"
+                      :readonly="!localState.container.canEdit"
                       @updated="localState.container=$event"></hsk-text-input>
                   </v-col>
                 </v-row>
@@ -186,7 +186,7 @@ export default Vue.extend({
       return this.$store.getters.currentUser;
     },
     canEdit(): boolean {
-      return this.localState.container !== null && !this.localState.container.readOnly && this.localState.container.canEdit(this.currentUser)
+      return this.localState.container !== null && !this.localState.container.readOnly && this.localState.container.canEdit
     }
   },
   methods: {

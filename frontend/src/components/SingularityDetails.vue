@@ -153,7 +153,7 @@ export default Vue.extend({
       return this.$store.getters.currentUser;
     },
     canEdit(): boolean {
-      return !this.readonly && (this.localState.image?.canEdit(this.currentUser) ?? false)
+      return !this.readonly && (this.localState.image?.canEdit ?? false)
     },
   },
   watch: {

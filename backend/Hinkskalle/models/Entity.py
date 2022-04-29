@@ -3,7 +3,7 @@ from Hinkskalle import db
 from marshmallow import fields, validates_schema, ValidationError
 from datetime import datetime
 from sqlalchemy.orm import validates
-from flask import current_app
+from flask import current_app, g
 from Hinkskalle.models.Image import UploadStates
 from Hinkskalle.util.name_check import validate_name
 from Hinkskalle.models.User import GroupRoles, User
@@ -28,6 +28,8 @@ class EntitySchema(BaseSchema):
   groupRef = fields.String(dump_only=True, allow_none=True, attribute='group_ref')
 
   collections = fields.List(fields.String(), allow_none=True, dump_only=True)
+
+  canEdit = fields.Boolean(default=False, dump_only=True)
 
   @validates_schema
   def validate_name(self, data, **kwargs):
@@ -115,6 +117,10 @@ class Entity(db.Model): # type: ignore
     else:
       return False
   
+  @property
+  def canEdit(self) -> bool:
+    return self.check_update_access(g.authenticated_user)
+
   def check_update_access(self, user: User) -> bool:
     if user.is_admin:
       return True

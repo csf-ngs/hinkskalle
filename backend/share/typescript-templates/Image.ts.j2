@@ -16,10 +16,6 @@ class {{classname}} {
     return `${this.path}:${this.tags.length>0 ? this.tags.join(",") : this.hash}`
   }
 
-  public canEdit(user: User | null): boolean {
-    return !!user && (user.isAdmin || this.createdBy===user.username);
-  }
-
   public pullUrl(tag: string) {
     return libraryUrl(this, tag);
   }

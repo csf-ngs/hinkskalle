@@ -17,6 +17,7 @@ export function checkName(name: string): boolean | string {
 
 
 class Collection {
+  public canEdit!: boolean
   public containers!: string[]
   public createdAt!: Date | null
   public createdBy!: string
@@ -44,14 +45,12 @@ class Collection {
     return this.fullPath;
   }
   
-  public canEdit(user: User | null): boolean {
-    return !!user && (user.isAdmin || this.createdBy===user.username);
-  }
 }
 
 export function plainToCollection(json: any): Collection {
   const obj = new Collection();
-  obj.containers = json['containers'];
+  obj.canEdit = json['canEdit'];
+    obj.containers = json['containers'];
     obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
       obj.createdBy = json['createdBy'];
     obj.customData = json['customData'];
@@ -88,6 +87,7 @@ export { Collection };
 
 class Container {
   public archTags!: any
+  public canEdit!: boolean
   public collection!: string
   public collectionName!: string
   public createdAt!: Date | null
@@ -124,14 +124,12 @@ class Container {
     return this.fullPath;
   }
 
-  public canEdit(user: User | null): boolean {
-    return !!user && (user.isAdmin || this.createdBy===user.username);
-  }
 }
 
 export function plainToContainer(json: any): Container {
   const obj = new Container();
   obj.archTags = json['archTags'];
+    obj.canEdit = json['canEdit'];
     obj.collection = json['collection'];
     obj.collectionName = json['collectionName'];
     obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
@@ -181,6 +179,7 @@ export { Container };
 
 import { prettyBytes, unPrettyBytes } from '@/util/pretty';
 class Entity {
+  public canEdit!: boolean
   public collections!: string[]
   public createdAt!: Date | null
   public createdBy!: string
@@ -209,10 +208,6 @@ class Entity {
     return this.fullPath;
   }
 
-  public canEdit(user: User | null): boolean {
-    return !!user && (user.isAdmin || this.createdBy===user.username);
-  }
-
   public get prettyQuota(): string {
     return prettyBytes(this.quota);
   }
@@ -224,7 +219,8 @@ class Entity {
 
 export function plainToEntity(json: any): Entity {
   const obj = new Entity();
-  obj.collections = json['collections'];
+  obj.canEdit = json['canEdit'];
+    obj.collections = json['collections'];
     obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
       obj.createdBy = json['createdBy'];
     obj.customData = json['customData'];
@@ -265,6 +261,7 @@ import { libraryUrl } from '@/util/pullCmds';
 class Image {
   public arch!: string
   public blob!: string
+  public canEdit!: boolean
   public collection!: string
   public collectionName!: string
   public container!: string
@@ -305,10 +302,6 @@ class Image {
     return `${this.path}:${this.tags.length>0 ? this.tags.join(",") : this.hash}`
   }
 
-  public canEdit(user: User | null): boolean {
-    return !!user && (user.isAdmin || this.createdBy===user.username);
-  }
-
   public pullUrl(tag: string) {
     return libraryUrl(this, tag);
   }
@@ -318,6 +311,7 @@ export function plainToImage(json: any): Image {
   const obj = new Image();
   obj.arch = json['arch'];
     obj.blob = json['blob'];
+    obj.canEdit = json['canEdit'];
     obj.collection = json['collection'];
     obj.collectionName = json['collectionName'];
     obj.container = json['container'];
@@ -372,6 +366,7 @@ export { Image };
 
 
 class User {
+  public canEdit!: boolean
   public createdAt!: Date | null
   public createdBy!: string
   public deleted!: boolean
@@ -398,16 +393,13 @@ class User {
     return this.isAdmin ? 'admin' : 'user';
   }
 
-  public canEdit(user: User | null): boolean {
-    return !!user && (user.isAdmin || this.username===user.username);
-  }
-
   public stars: Container[] = []
 }
 
 export function plainToUser(json: any): User {
   const obj = new User();
-  obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
+  obj.canEdit = json['canEdit'];
+    obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
       obj.createdBy = json['createdBy'];
     obj.deleted = json['deleted'];
     obj.deletedAt = _isNil(json['deletedAt']) ? null : new Date(json['deletedAt']);
@@ -454,6 +446,7 @@ export enum GroupRoles {
 
 import { find as _find } from 'lodash';
 class Group {
+  public canEdit!: boolean
   public collections!: number
   public createdAt!: Date | null
   public createdBy!: string
@@ -476,15 +469,12 @@ class Group {
     return !member ? null : member.role;
   }
 
-  public canEdit(user: User | null): boolean {
-    const role = this.getRole(user);
-    return !!user && (user.isAdmin || this.createdBy===user.username || (!!role && role === GroupRoles.admin));
-  }
 }
 
 export function plainToGroup(json: any): Group {
   const obj = new Group();
-  obj.collections = json['collections'];
+  obj.canEdit = json['canEdit'];
+    obj.collections = json['collections'];
     obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
       obj.createdBy = json['createdBy'];
     obj.deleted = json['deleted'];

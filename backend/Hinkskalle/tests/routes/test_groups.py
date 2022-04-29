@@ -101,6 +101,7 @@ class TestGroups(RouteBase):
       "name": group1.name,
       "email": group1.email,
       "entityRef": None,
+      "canEdit": True,
     }, json)
   
   def test_get_entity_ref(self):
@@ -148,6 +149,7 @@ class TestGroups(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(group1.id))
+    self.assertFalse(data['canEdit'])
   
   def test_get_user_not_member(self):
     group1 = _create_group('Testhasenstall')
@@ -166,6 +168,7 @@ class TestGroups(RouteBase):
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['name'], group_data['name'])
     self.assertEqual(data['entityRef'], group_data['name'].lower())
+    self.assertTrue(data['canEdit'])
 
     db_group = Group.query.get(data['id'])
     self.assertEqual(db_group.name, group_data['name'])
@@ -223,6 +226,7 @@ class TestGroups(RouteBase):
       ret = self.client.post('/v1/groups', json=group_data)
     self.assertEqual(ret.status_code, 200)
     ret_group = ret.get_json().get('data') # type: ignore
+    self.assertTrue(ret_group['canEdit'])
     db_group = Group.query.get(ret_group['id'])
 
     self.assertEqual(db_group.createdBy, self.username)
@@ -240,6 +244,7 @@ class TestGroups(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.put(f"/v1/groups/{group.name}", json=update_data)
     self.assertEqual(ret.status_code, 200)
+    self.assertTrue(ret.get_json().get('data')['canEdit']) # type: ignore
 
     db_group = Group.query.get(group.id)
     self.assertEqual(db_group.email, update_data['email'])
@@ -302,6 +307,7 @@ class TestGroups(RouteBase):
     with self.fake_auth():
       ret = self.client.put(f"/v1/groups/{group.name}", json=group_data)
     self.assertEqual(ret.status_code, 200)
+    self.assertTrue(ret.get_json().get('data')['canEdit']) # type: ignore
     db_group = Group.query.get(group.id)
     self.assertEqual(db_group.email, group_data['email'])
   

@@ -19,7 +19,7 @@
                 field="email"
                 :obj="localState.group"
                 action="groups/update"
-                :readonly="!canEdit"
+                :readonly="!localState.group.canEdit"
                 @updated="localState.group=$event"></hsk-text-input>
             </v-col>
           </v-row>
@@ -30,7 +30,7 @@
                 field="description"
                 :obj="localState.group"
                 action="groups/update"
-                :readonly="!canEdit"
+                :readonly="!localState.group.canEdit"
                 @updated="localState.group=$event"></hsk-text-input>
             </v-col>
           </v-row>
@@ -72,7 +72,7 @@
                   label="Search..." 
                   single-line outlined dense hide-details></v-text-field>
                 <v-spacer></v-spacer>
-                <v-dialog max-width="700px" v-model="localState.showAdd" v-if="canEdit">
+                <v-dialog max-width="700px" v-model="localState.showAdd" v-if="localState.group.canEdit">
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn
                       dense depressed
@@ -125,14 +125,14 @@
                 :obj="item"
                 required
                 inline
-                :readonly="!canEdit"
+                :readonly="!localState.group.canEdit"
                 :options="availableRoles"
                 @updated="updateRole($event)"
               ></hsk-text-input>
             </template>
             <!-- eslint-disable-next-line vue/valid-v-slot --> 
             <template v-slot:item.actions="{ item }">
-              <v-icon v-if="canEdit" small @click="deleteUser(item)">mdi-delete</v-icon>
+              <v-icon v-if="localState.group.canEdit" small @click="deleteUser(item)">mdi-delete</v-icon>
             </template>
           </v-data-table>
         </v-col>
@@ -203,9 +203,6 @@ export default Vue.extend({
     },
     currentUser(): User {
       return this.$store.getters.currentUser;
-    },
-    canEdit(): boolean {
-      return this.localState.group !== null && this.localState.group.canEdit(this.currentUser)
     },
     availableRoles(): Record<string, unknown>[] {
       return Object.keys(GroupRoles).map(r => {

@@ -89,6 +89,7 @@ class TestImages(RouteBase):
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(image.id))
     self.assertListEqual(data['tags'], ['latest'])
+    self.assertFalse(data['canEdit'])
   
   def test_get_not_sif(self):
     image = _create_image(media_type='pr0n')[0]
@@ -149,6 +150,7 @@ class TestImages(RouteBase):
     with self.fake_auth():
       ret = self.client.get(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}")
       self.assertEqual(ret.status_code, 200)
+    self.assertTrue(ret.get_json().get('data')['canEdit']) # type: ignore
 
   def test_get_default_entity(self):
     image, _, _, entity = _create_image()
@@ -328,6 +330,7 @@ class TestImages(RouteBase):
     self.assertEqual(data['hash'], 'sha256.oink')
     self.assertEqual(data['container'], str(container.id))
     self.assertEqual(data['createdBy'], self.admin_username)
+    self.assertTrue(data['canEdit'])
   
   def test_create_singularity(self):
     container, _, _ = _create_container()
@@ -584,6 +587,7 @@ class TestImages(RouteBase):
         'customData': 'hot drei Eckn',
       })
     self.assertEqual(ret.status_code, 200)
+    self.assertTrue(ret.get_json().get('data')['canEdit']) # type: ignore
 
     dbImage = Image.query.get(image.id)
     self.assertEqual(dbImage.description, 'Mei Huat')

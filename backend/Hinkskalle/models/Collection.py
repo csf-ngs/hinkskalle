@@ -4,6 +4,7 @@ from ..util.schema import BaseSchema, LocalDateTime
 from datetime import datetime
 from sqlalchemy.orm import validates
 from Hinkskalle.util.name_check import validate_name
+from flask import g
 
 from Hinkskalle.models.User import GroupRoles, User
 
@@ -25,6 +26,8 @@ class CollectionSchema(BaseSchema):
   entityName = fields.String(dump_only=True)
 
   containers = fields.List(fields.String(), allow_none=True, dump_only=True)
+
+  canEdit = fields.Boolean(dump_only=True, default=False)
 
   @validates_schema
   def validate_name(self, data, **kwargs):
@@ -76,6 +79,10 @@ class Collection(db.Model): # type: ignore
     else:
       return self.entity_ref.check_access(user)
   
+  @property
+  def canEdit(self) -> bool:
+    return self.check_update_access(g.authenticated_user)
+
   def check_update_access(self, user: User) -> bool:
     if user.is_admin:
       return True

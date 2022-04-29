@@ -4,7 +4,7 @@ from typing import List
 from sqlalchemy.ext.hybrid import hybrid_property
 from Hinkskalle import db
 from Hinkskalle.models.User import User
-from flask import current_app
+from flask import current_app, g
 from marshmallow import Schema, fields
 from datetime import datetime, timedelta
 import json
@@ -52,6 +52,8 @@ class ImageSchema(BaseSchema):
   entityName = fields.String(dump_only=True)
   tags = fields.List(fields.String(), dump_only=True)
   fingerprints = fields.List(fields.String(), dump_only=True)
+
+  canEdit = fields.Boolean(dump_only=True, default=False)
 
 def generate_uuid() -> str:
   return str(uuid.uuid4())
@@ -330,6 +332,10 @@ class Image(db.Model): # type: ignore
     
     return self.container_ref.check_access(user)
   
+  @property
+  def canEdit(self) -> bool:
+    return self.check_update_access(g.authenticated_user)
+
   def check_update_access(self, user) -> bool:
     return self.container_ref.check_update_access(user)
    

@@ -44,7 +44,7 @@
                 <v-dialog v-model="localState.showEdit" max-width="700px">
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn 
-                      v-if="collection && collection.canEdit(currentUser)" 
+                      v-if="collection && collection.canEdit" 
                       id="create-container" 
                       dense depressed
                       v-bind="attrs" v-on="on">Create Container</v-btn>
@@ -229,7 +229,7 @@
                     </v-list>
                     <v-card-actions>
                       <v-spacer></v-spacer>
-                      <template v-if="item.canEdit(currentUser)">
+                      <template v-if="item.canEdit">
                         <v-icon small class="mr-1" @click="editContainer(item)">mdi-pencil</v-icon>
                         <v-icon small @click="deleteContainer(item)">mdi-delete</v-icon>
                       </template>

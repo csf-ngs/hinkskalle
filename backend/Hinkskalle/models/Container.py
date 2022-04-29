@@ -1,5 +1,5 @@
 import typing
-from flask import current_app
+from flask import current_app, g
 from Hinkskalle import db
 from datetime import datetime
 from sqlalchemy.orm import validates
@@ -51,6 +51,8 @@ class ContainerSchema(BaseSchema):
   entityName = fields.String(dump_only=True)
   imageTags = fields.Dict(dump_only=True, allow_none=True)
   archTags = fields.Dict(dump_only=True, allow_none=True)
+
+  canEdit = fields.Boolean(dump_only=True, default=False)
 
   @validates_schema
   def validate_name(self, data, **kwargs):
@@ -192,6 +194,10 @@ class Container(db.Model): # type: ignore
     else:
       return self.collection_ref.check_access(user)
   
+  @property
+  def canEdit(self) -> bool:
+    return self.check_update_access(g.authenticated_user)
+
   def check_update_access(self, user: User) -> bool:
     if user.is_admin:
       return True

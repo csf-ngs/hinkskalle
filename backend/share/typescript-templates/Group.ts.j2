@@ -18,10 +18,6 @@ class {{classname}} {
     return !member ? null : member.role;
   }
 
-  public canEdit(user: User | null): boolean {
-    const role = this.getRole(user);
-    return !!user && (user.isAdmin || this.createdBy===user.username || (!!role && role === GroupRoles.admin));
-  }
 }
 
 export function plainTo{{classname}}(json: any): {{classname}} {

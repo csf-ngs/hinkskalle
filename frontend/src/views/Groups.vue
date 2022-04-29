@@ -182,7 +182,7 @@
                     </v-list>
                     <v-card-actions>
                       <v-spacer></v-spacer>
-                      <template v-if="item.canEdit(currentUser)">
+                      <template v-if="item.canEdit">
                         <v-icon small class="mr-1" @click="editGroup(item)">mdi-pencil</v-icon>
                         <v-icon small @click="deleteGroup(item)">md-delete</v-icon>
                       </template>

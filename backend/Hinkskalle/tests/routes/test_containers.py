@@ -192,7 +192,7 @@ class TestContainers(RouteBase):
     with self.fake_auth():
       ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
     self.assertEqual(ret.status_code, 200)
-    self.assertTrue(ret.get_json().get('data')['canEdit']) # type: ignore
+    self.assertFalse(ret.get_json().get('data')['canEdit']) # type: ignore
 
   def test_get_user_other(self):
     container, coll, entity = _create_container()

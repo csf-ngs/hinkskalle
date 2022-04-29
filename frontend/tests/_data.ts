@@ -66,10 +66,10 @@ export function makeTestLatestObj(from: any=null): Upload[] {
 export function makeTestCollections() {
   return [
     {
-      id: '1', name: 'esel', description: 'eyore', createdAt: new Date(), entityName: 'oinktity',
+      id: '1', name: 'esel', description: 'eyore', createdAt: new Date(), entityName: 'oinktity', canEdit: true,
     },
     {
-      id: '2', name: 'schaf', description: 'shawn', createdAt: new Date(), entityName: 'wooftity',
+      id: '2', name: 'schaf', description: 'shawn', createdAt: new Date(), entityName: 'wooftity', canEdit: true,
     }
   ];
 }
@@ -81,10 +81,10 @@ export function makeTestCollectionsObj(from: any=null): Collection[] {
 export function makeTestEntities() {
   return [
     {
-      id: '1', name: 'esel', description: 'eyore', createdAt: new Date(), quota: 0,
+      id: '1', name: 'esel', description: 'eyore', createdAt: new Date(), quota: 0, canEdit: true,
     },
     {
-      id: '2', name: 'schaf', description: 'shawn', createdAt: new Date(), quota: 0,
+      id: '2', name: 'schaf', description: 'shawn', createdAt: new Date(), quota: 0, canEdit: true,
     }
   ];
 }

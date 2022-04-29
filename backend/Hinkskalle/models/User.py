@@ -32,11 +32,11 @@ class GroupSchema(Schema):
   description = fields.String(allow_none=True)
   entityRef = fields.String(dump_only=True, allow_none=True, attribute='entity_ref')
 
-  users = fields.List(fields.Nested('GroupMemberSchema', allow_none=True), dump_only=True)
+  users = fields.List(fields.Nested('GroupMemberSchema'), dump_only=True)
   collections = fields.Integer(dump_only=True)
 
   createdAt = fields.DateTime(dump_only=True)
-  createdBy = fields.String(dump_only=True)
+  createdBy = fields.String(allow_none=True)
   updatedAt = fields.DateTime(dump_only=True, allow_none=True)
   deletedAt = fields.DateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
@@ -182,6 +182,7 @@ class Group(db.Model): # type: ignore
   updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
   entity = db.relationship('Entity', back_populates='group', uselist=False, cascade='all, delete-orphan')
+  owner = db.relationship('User')
 
   @property
   def entity_ref(self) -> typing.Optional[str]:
@@ -197,6 +198,8 @@ class Group(db.Model): # type: ignore
   def check_access(self, user: User) -> bool:
     if user.is_admin:
       return True
+    if self.owner == user:
+      return True
     ug = self.get_member(user)
     if ug:
       return True
@@ -204,6 +207,8 @@ class Group(db.Model): # type: ignore
 
   def check_update_access(self, user: User) -> bool:
     if user.is_admin:
+      return True
+    if self.owner == user:
       return True
     ug = self.users_sth.filter(UserGroup.user_id == user.id).first()
     if ug and ug.role == GroupRoles.admin:

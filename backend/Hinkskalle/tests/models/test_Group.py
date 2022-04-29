@@ -39,6 +39,61 @@ class TestGroup(ModelBase):
     db.session.rollback()
     self.assertEqual(group.entity.name, 'testhasenstall')
 
+  def test_access(self):
+    subject = _create_group()
+    try_admin = _create_user('admin.hase', is_admin=True)
+    try_normal = _create_user('normal.hase')
+    try_other = _create_user('other.hase')
+
+    self.assertTrue(subject.check_access(try_admin))
+    self.assertFalse(subject.check_access(try_normal))
+    self.assertFalse(subject.check_access(try_other))
+
+    ug = UserGroup(user=try_normal, group=subject)
+    db.session.add(ug)
+    db.session.commit()
+
+    self.assertTrue(subject.check_access(try_normal))
+    self.assertFalse(subject.check_access(try_other))
+  
+  def test_access_owner(self):
+    try_normal = _create_user('normal.hase', is_admin=False)
+    subject = _create_group()
+
+    self.assertFalse(subject.check_access(try_normal))
+    subject.owner=try_normal
+    self.assertTrue(subject.check_access(try_normal))
+  
+  def test_update_access(self):
+    subject = _create_group()
+    try_admin = _create_user('admin.hase', is_admin=True)
+    try_normal = _create_user('normal.hase')
+
+    self.assertTrue(subject.check_update_access(try_admin))
+    self.assertFalse(subject.check_update_access(try_normal))
+
+    ug = UserGroup(user=try_normal, group=subject)
+    db.session.add(ug)
+    db.session.commit()
+    for allow in [ GroupRoles.admin ]:
+      ug.role = allow
+      db.session.commit()
+      self.assertTrue(subject.check_update_access(try_normal))
+    for deny in [ GroupRoles.contributor, GroupRoles.readonly ]:
+      ug.role = deny
+      db.session.commit()
+      self.assertFalse(subject.check_update_access(try_normal))
+
+  def test_update_access_owner(self):
+    subject = _create_group()
+    try_normal = _create_user('normal.hase', is_admin=False)
+    self.assertFalse(subject.check_update_access(try_normal))
+
+    subject.owner=try_normal
+    self.assertTrue(subject.check_update_access(try_normal))
+
+
+
   
   def test_schema(self):
     schema = GroupSchema()
@@ -76,6 +131,12 @@ class TestGroup(ModelBase):
     self.assertEqual(serialized['users'][0]['user']['username'], user.username) 
     self.assertEqual(serialized['users'][0]['role'], str(GroupRoles.readonly))
 
+  def test_deserialize(self):
+    schema = GroupSchema()
 
-
-
+    deserialized = typing.cast(dict, schema.load({
+      'name': 'Testhasenstall',
+      'email': 'test@ha.se',
+    }))
+    self.assertEqual(deserialized['name'], 'Testhasenstall')
+  

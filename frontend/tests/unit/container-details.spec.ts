@@ -6,7 +6,7 @@ import VueRouter from 'vue-router';
 
 import ContainerDetails from '@/views/ContainerDetails.vue';
 
-import { localVue, localVueNoRouter } from '../setup';
+import { localVue } from '../setup';
 
 import { makeTestContainersObj } from '../_data';
 
@@ -24,7 +24,12 @@ describe('ContainerDetails.vue', () => {
 
   beforeEach(() => {
     vuetify = new Vuetify();
-    router = new VueRouter();
+    router = new VueRouter({
+      routes: [ 
+        { path: '/testhase', name: 'Containers' },
+        { path: '/testhase', name: 'Collections' },
+      ],
+    });
 
     const tests = makeTestContainersObj();
 

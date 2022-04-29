@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { Container, plainToContainer, Upload, plainToUpload, User, plainToUser, Collection, plainToCollection, Entity, plainToEntity, SearchResult, plainToSearchResult } from '@/store/models';
+import { Container, plainToContainer, Upload, plainToUpload, User, plainToUser, Collection, plainToCollection, Entity, plainToEntity, SearchResult, plainToSearchResult, plainToGroup, Group } from '@/store/models';
 
 import { map as _map } from 'lodash';
 
@@ -17,6 +17,19 @@ export function makeTestUser() {
 
 export function makeTestUserObj(from: any=null): User {
   return plainToUser(from || makeTestUser());
+}
+
+export function makeTestGroup() {
+  return {
+    id: "1",
+    name: "Testhasentall",
+    email: "stall@testha.se",
+    description: "oink",
+  }
+}
+
+export function makeTestGroupObj(from: any=null): Group {
+  return plainToGroup(from || makeTestGroup())
 }
 
 export function makeTestContainers() {

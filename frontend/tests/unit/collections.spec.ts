@@ -25,6 +25,7 @@ beforeAll(() => {
   _each(testCollectionsObj, c => c.createdBy = testUserObj.username );
 
   testEntityObj = new Entity();
+  testEntityObj.canEdit = true;
   testEntityObj.createdBy = testUserObj.username;
 });
 

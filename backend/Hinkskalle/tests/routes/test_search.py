@@ -1,3 +1,6 @@
+from email.mime import image
+from pprint import pprint
+import typing
 import unittest
 
 from ..route_base import RouteBase
@@ -20,11 +23,13 @@ class TestSearch(RouteBase):
     container.name='ptERANodon'
     db.session.commit()
 
+    dpd = typing.cast(dict, ContainerSchema().dump(container))
+    dpd['canEdit']=True
     expected = {
       'collection': [],
       'entity': [],
       'image': [],
-      'container': [ ContainerSchema().dump(container) ]
+      'container': [ dpd ]
     }
 
     for search in [container.name, container.name[3:6], container.name[3:6].lower()]:
@@ -40,9 +45,11 @@ class TestSearch(RouteBase):
     entity.name='ptERANodon'
     db.session.commit()
 
+    dpd = typing.cast(dict, EntitySchema().dump(entity))
+    dpd['canEdit']=True
     expected = {
       'collection': [],
-      'entity': [ EntitySchema().dump(entity) ],
+      'entity': [ dpd ],
       'image': [],
       'container': []
     }
@@ -59,8 +66,10 @@ class TestSearch(RouteBase):
     collection.name='ptERANodon'
     db.session.commit()
 
+    dpd = typing.cast(dict, CollectionSchema().dump(collection))
+    dpd['canEdit']=True
     expected = {
-      'collection': [ CollectionSchema().dump(collection) ],
+      'collection': [ dpd ],
       'entity': [],
       'image': [],
       'container': []
@@ -78,9 +87,13 @@ class TestSearch(RouteBase):
     container.name='anKYLOsaurus'
     db.session.commit()
 
+    con_dpd = typing.cast(dict, ContainerSchema().dump(container))
+    con_dpd['canEdit']=True
+    img_dpd = typing.cast(dict, ImageSchema().dump(image1))
+    img_dpd['canEdit']=True
     expected = {
-      'container': [ContainerSchema().dump(container)],
-      'image': [ImageSchema().dump(image1)],
+      'container': [ con_dpd ],
+      'image': [ img_dpd ],
       'entity': [],
       'collection': [],
     }
@@ -98,9 +111,15 @@ class TestSearch(RouteBase):
     image2.container_ref = image1.container_ref
     db.session.commit()
 
+    con_dpd = typing.cast(dict, ContainerSchema().dump(image1.container_ref))
+    con_dpd['canEdit'] = True
+
+    img_dpd = typing.cast(dict, ImageSchema().dump(image1))
+    img_dpd['canEdit'] = True
+
     expected = {
-      'container': [ContainerSchema().dump(image1.container_ref)],
-      'image': [ImageSchema().dump(image1)],
+      'container': [ con_dpd ],
+      'image': [ img_dpd ],
       'entity': [],
       'collection': [],
     }
@@ -121,9 +140,15 @@ class TestSearch(RouteBase):
     image2.container_ref = container
     db.session.commit()
 
+    con_dpd = typing.cast(dict, ContainerSchema().dump(container))
+    con_dpd['canEdit'] = True
+
+    img_dpd = typing.cast(dict, ImageSchema().dump(image1))
+    img_dpd['canEdit'] = True
+
     expected = {
-      'container': [ContainerSchema().dump(container)],
-      'image': [ImageSchema().dump(image1)],
+      'container': [ con_dpd ],
+      'image': [ img_dpd ],
       'entity': [],
       'collection': [],
     }
@@ -141,9 +166,13 @@ class TestSearch(RouteBase):
     image2 = Image.query.get(image2_id)
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data') # type: ignore
+
+    img2_dpd = typing.cast(dict, ImageSchema().dump(image2))
+    img2_dpd['canEdit'] = True
+
     self.assertDictEqual(json, {
-      'container': [ContainerSchema().dump(container)],
-      'image': [ImageSchema().dump(image2), ImageSchema().dump(image1)],
+      'container': [ con_dpd ],
+      'image': [ img2_dpd, img_dpd ],
       'entity': [],
       'collection': [],
     })
@@ -155,9 +184,11 @@ class TestSearch(RouteBase):
     image1.hash='sha256.tintifaxkasperlkrokodil'
     db.session.commit()
 
+    img_dpd = typing.cast(dict, ImageSchema().dump(image1))
+    img_dpd['canEdit']=True
     expected = {
       'container': [],
-      'image': [ImageSchema().dump(image1)],
+      'image': [ img_dpd ],
       'entity': [],
       'collection': [],
     }
@@ -187,9 +218,11 @@ class TestSearch(RouteBase):
 
     db.session.commit()
 
+    img_dpd = typing.cast(dict, ImageSchema().dump(image1))
+    img_dpd['canEdit']=True
     expected = {
       'container': [],
-      'image': [ImageSchema().dump(image1)],
+      'image': [ img_dpd ],
       'entity': [],
       'collection': [],
     }
@@ -208,9 +241,11 @@ class TestSearch(RouteBase):
 
     db.session.commit()
 
+    img_dpd = typing.cast(dict, ImageSchema().dump(image1))
+    img_dpd['canEdit']=True
     expected = {
       'container': [],
-      'image': [ImageSchema().dump(image1)],
+      'image': [ img_dpd ],
       'entity': [],
       'collection': [],
     }
@@ -228,11 +263,20 @@ class TestSearch(RouteBase):
     container.name="oink-container"
     db.session.commit()
 
+    coll_dpd = typing.cast(dict, CollectionSchema().dump(collection))
+    coll_dpd['canEdit']=True
+    ent_dpd = typing.cast(dict, EntitySchema().dump(entity))
+    ent_dpd['canEdit']=True
+    con_dpd = typing.cast(dict, ContainerSchema().dump(container))
+    con_dpd['canEdit']=True
+    img_dpd = typing.cast(dict, ImageSchema().dump(image))
+    img_dpd['canEdit']=True
+
     expected = {
-      'collection': [ CollectionSchema().dump(collection) ],
-      'entity': [ EntitySchema().dump(entity) ],
-      'container': [ ContainerSchema().dump(container) ],
-      'image': [ ImageSchema().dump(image) ]
+      'collection': [ coll_dpd ],
+      'entity': [ ent_dpd ],
+      'container': [ con_dpd ],
+      'image': [ img_dpd ]
     }
 
     with self.fake_admin_auth():
@@ -263,10 +307,13 @@ class TestSearch(RouteBase):
     entity.name='default'
     db.session.commit()
 
+    con_dpd = typing.cast(dict, ContainerSchema().dump(container))
+    con_dpd['canEdit']=False
+
     expected = {
       'collection': [],
       'entity': [],
-      'container': [ ContainerSchema().dump(container) ],
+      'container': [ con_dpd ],
       'image': []
     }
 
@@ -281,10 +328,13 @@ class TestSearch(RouteBase):
     entity.owner=self.user
     db.session.commit()
 
+    con_dpd = typing.cast(dict, ContainerSchema().dump(container))
+    con_dpd['canEdit']=False
+
     expected = {
       'collection': [],
       'entity': [],
-      'container': [ ContainerSchema().dump(container) ],
+      'container': [ con_dpd ],
       'image': []
     }
 
@@ -298,10 +348,13 @@ class TestSearch(RouteBase):
     container.description='aNkyLOSaurUS'
     db.session.commit()
 
+    con_dpd = typing.cast(dict, ContainerSchema().dump(container))
+    con_dpd['canEdit']=True
+
     expected = {
       'collection': [],
       'entity': [],
-      'container': [ ContainerSchema().dump(container) ],
+      'container': [ con_dpd ],
       'image': []
     }
 
@@ -317,10 +370,13 @@ class TestSearch(RouteBase):
     container2.description=container.description
     db.session.commit()
 
+    con_dpd = typing.cast(dict, ContainerSchema().dump(container))
+    con_dpd['canEdit']=True
+
     expected = {
       'collection': [],
       'entity': [],
-      'container': [ ContainerSchema().dump(container) ],
+      'container': [ con_dpd ],
       'image': []
     }
 

@@ -44,7 +44,7 @@
                 <v-dialog v-model="localState.showEdit" max-width="700px">
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn 
-                      v-if="collection && collection.canEdit(currentUser)" 
+                      v-if="collection && collection.canEdit" 
                       id="create-container" 
                       dense depressed
                       v-bind="attrs" v-on="on">Create Container</v-btn>
@@ -118,13 +118,13 @@
                           <v-col cols="12" md="4">
                             <hsk-text-input
                               label="Created"
-                              :static-value="localState.editItem.createdAt | moment('YYYY-MM-DD HH:mm')"
+                              :static-value="localState.editItem.createdAt | prettyDateTime"
                               ></hsk-text-input>
                           </v-col>
                           <v-col cols="12" md="4">
                             <hsk-text-input
                               label="Updated"
-                              :static-value="updatedAt"
+                              :static-value="localState.editItem.updatedAt | prettyDateTime"
                               ></hsk-text-input>
                           </v-col>
                         </v-row>
@@ -214,10 +214,10 @@
                         <v-list-item-content>
                           <v-list-item-title class="d-flex justify-space-between">
                             <div>
-                              {{item.createdAt | moment('YYYY-MM-DD HH:mm')}} | {{item.createdBy}}
+                              {{item.createdAt | prettyDateTime}} | {{item.createdBy}}
                             </div>
                             <div>
-                              {{item.updatedAt | moment('YYYY-MM-DD HH:mm')}} 
+                              {{item.updatedAt | prettyDateTime}} 
                             </div>
                           </v-list-item-title>
                           <v-list-item-subtitle class="d-flex justify-space-between">
@@ -229,7 +229,7 @@
                     </v-list>
                     <v-card-actions>
                       <v-spacer></v-spacer>
-                      <template v-if="item.canEdit(currentUser)">
+                      <template v-if="item.canEdit">
                         <v-icon small class="mr-1" @click="editContainer(item)">mdi-pencil</v-icon>
                         <v-icon small @click="deleteContainer(item)">mdi-delete</v-icon>
                       </template>
@@ -249,7 +249,6 @@
 </template>
 <script lang="ts">
 import Vue from 'vue';
-import moment from 'moment';
 import { clone as _clone, } from 'lodash';
 
 import { Container, Collection, User, checkName } from '../store/models';
@@ -313,11 +312,6 @@ export default Vue.extend({
     },
     editTitle(): string {
       return this.localState.editItem.id ? 'Edit Container' : 'New Container';
-    },
-    updatedAt(): string {
-      return this.localState.editItem.updatedAt ?
-        moment(this.localState.editItem.updatedAt).format('YYYY-MM-DD HH:mm') :
-        '-';
     },
     currentUser(): User {
       return this.$store.getters.currentUser;

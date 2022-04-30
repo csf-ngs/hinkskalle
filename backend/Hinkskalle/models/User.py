@@ -1,8 +1,11 @@
+import typing
 from Hinkskalle import db
-from marshmallow import fields, Schema
+from Hinkskalle.util.name_check import validate_as_name, validate_name
+from marshmallow import fields, Schema, validates_schema, ValidationError
 from datetime import datetime, timedelta
-from flask import current_app
+from flask import current_app, g
 from sqlalchemy.orm import validates
+import enum
 
 from passlib.hash import sha512_crypt
 import secrets
@@ -12,12 +15,33 @@ from ..util.schema import BaseSchema, LocalDateTime
 user_stars = db.Table('user_stars', db.metadata,
   db.Column('user_id', db.Integer, db.ForeignKey('user.id'), nullable=False),
   db.Column('container_id', db.Integer, db.ForeignKey('container.id'), nullable=False),
+  keep_existing=True,
 )
 
-user_groups_table = db.Table('users_groups', db.metadata,
-  db.Column('user_id', db.Integer, db.ForeignKey('user.id'), nullable=False),
-  db.Column('group_id', db.Integer, db.ForeignKey('group.id'), nullable=False),
-)
+class GroupRoles(enum.Enum):
+  admin = 'admin'
+  contributor = 'contributor'
+  readonly = 'readonly'
+  def __str__(self):
+    return self.value
+
+class GroupSchema(Schema):
+  id = fields.String(required=True, dump_only=True)
+  name = fields.String(required=True)
+  email = fields.String(required=True)
+  description = fields.String(allow_none=True)
+  entityRef = fields.String(dump_only=True, allow_none=True, attribute='entity_ref')
+
+  users = fields.List(fields.Nested('GroupMemberSchema'), dump_only=True)
+  collections = fields.Integer(dump_only=True)
+
+  createdAt = fields.DateTime(dump_only=True)
+  createdBy = fields.String(allow_none=True)
+  updatedAt = fields.DateTime(dump_only=True, allow_none=True)
+  deletedAt = fields.DateTime(dump_only=True, default=None)
+  deleted = fields.Boolean(dump_only=True, default=False)
+
+  canEdit = fields.Boolean(dump_only=True, default=False)
 
 class UserSchema(BaseSchema):
   id = fields.String(required=True, dump_only=True)
@@ -29,7 +53,7 @@ class UserSchema(BaseSchema):
   is_active = fields.Boolean(data_key='isActive')
   source = fields.String()
 
-  groups = fields.List(fields.Nested('GroupSchema', allow_none=True, exclude=('users', )))
+  groups = fields.List(fields.Nested('UserMemberSchema', allow_none=True), dump_only=True)
 
   createdAt = LocalDateTime(dump_only=True)
   createdBy = fields.String(dump_only=True)
@@ -37,8 +61,32 @@ class UserSchema(BaseSchema):
   deletedAt = LocalDateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
 
+  canEdit = fields.Boolean(dump_only=True, default=False)
 
-class User(db.Model):
+  @validates_schema
+  def validate_username(self, data, **kwargs):
+    errors = validate_name(data, key='username')
+    if errors:
+      raise ValidationError(errors)
+
+
+class UserMemberSchema(Schema):
+  group = fields.Nested('GroupSchema', exclude=('users',))
+  role = fields.String()
+
+class GroupMemberSchema(Schema):
+  user = fields.Nested('UserSchema', exclude=('groups',))
+  role = fields.String()
+
+
+class UserGroup(db.Model): # type: ignore
+  user_id = db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
+  group_id = db.Column('group_id', db.Integer, db.ForeignKey('group.id'), primary_key=True)
+  role = db.Column('role', db.Enum(GroupRoles, name='group_roles'), default=GroupRoles.readonly.value, nullable=False)
+  user = db.relationship('User', back_populates='groups')
+  group = db.relationship('Group', back_populates='users')
+
+class User(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   username = db.Column(db.String(), unique=True, nullable=False)
   password = db.Column(db.String())
@@ -49,7 +97,7 @@ class User(db.Model):
   is_active = db.Column(db.Boolean, default=True)
   source = db.Column(db.String(), default='local', nullable=False)
 
-  groups = db.relationship('Group', secondary=user_groups_table, back_populates='users')
+  groups = db.relationship('UserGroup', back_populates='user', cascade='all, delete-orphan')
   tokens = db.relationship('Token', back_populates='user', cascade="all, delete-orphan")
   manual_tokens = db.relationship('Token', viewonly=True, primaryjoin="and_(User.id==Token.user_id, Token.source=='manual')")
   starred = db.relationship('Container', secondary=user_stars, back_populates='starred')
@@ -57,7 +105,7 @@ class User(db.Model):
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
   createdBy = db.Column(db.String())
-  updatedAt = db.Column(db.DateTime)
+  updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
   entities = db.relationship('Entity', back_populates='owner')
   collections = db.relationship('Collection', back_populates='owner')
@@ -66,9 +114,15 @@ class User(db.Model):
   tags = db.relationship('Tag', back_populates='owner')
   uploads = db.relationship('ImageUploadUrl', back_populates='owner', cascade='all, delete-orphan')
 
-  @validates('username', 'email')
+  @validates('email')
   def convert_lower(self, key, value):
     return value.lower()
+
+  @validates('username')
+  def check_username(self, key, value):
+    value = value.lower()
+    validate_as_name(value)
+    return value
 
   def create_token(self, **attrs):
     token = Token(token=secrets.token_urlsafe(48), **attrs)
@@ -109,6 +163,10 @@ class User(db.Model):
     else:
       return False
 
+  @property
+  def canEdit(self) -> bool:
+    return self.check_update_access(g.authenticated_user)
+
   def check_update_access(self, user) -> bool:
     if user.is_admin:
       return True
@@ -118,30 +176,58 @@ class User(db.Model):
       return False
 
 
-class GroupSchema(BaseSchema):
-  id = fields.String(required=True, dump_only=True)
-  name = fields.String(required=True)
-  email = fields.String(required=True)
-
-  users = fields.List(fields.Nested('UserSchema', allow_none=True, exclude=('groups', )))
-
-  createdAt = LocalDateTime(dump_only=True)
-  createdBy = fields.String(dump_only=True)
-  updatedAt = LocalDateTime(dump_only=True, allow_none=True)
-  deletedAt = LocalDateTime(dump_only=True, default=None)
-  deleted = fields.Boolean(dump_only=True, default=False)
-  
-
-class Group(db.Model):
+class Group(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String(), unique=True, nullable=False)
-  email = db.Column(db.String(), unique=True, nullable=False)
+  email = db.Column(db.String(), nullable=False)
+  description = db.Column(db.String())
 
-  users = db.relationship('User', secondary=user_groups_table, back_populates='groups')
+  users = db.relationship('UserGroup', back_populates='group', cascade='all, delete-orphan')
+  users_sth = db.relationship('UserGroup', viewonly=True, lazy='dynamic')
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
-  createdBy = db.Column(db.String())
-  updatedAt = db.Column(db.DateTime)
+  createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
+  updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
+
+  entity = db.relationship('Entity', back_populates='group', uselist=False, cascade='all, delete-orphan')
+  owner = db.relationship('User')
+
+  @property
+  def entity_ref(self) -> typing.Optional[str]:
+    return self.entity.name if self.entity else None
+  
+  @property
+  def collections(self) -> int:
+    return self.entity.size if self.entity else 0
+
+  def get_member(self, user: User) -> typing.Optional[UserGroup]:
+    return self.users_sth.filter(UserGroup.user_id == user.id).first()
+  
+  def check_access(self, user: User) -> bool:
+    if user.is_admin:
+      return True
+    if self.owner == user:
+      return True
+    ug = self.get_member(user)
+    if ug:
+      return True
+    return False
+
+  @property
+  def canEdit(self) -> bool:
+    return self.check_update_access(g.authenticated_user)
+
+  def check_update_access(self, user: User) -> bool:
+    if user.is_admin:
+      return True
+    if self.owner == user:
+      return True
+    ug = self.users_sth.filter(UserGroup.user_id == user.id).first()
+    if ug and ug.role == GroupRoles.admin:
+      return True
+    return False
+
+
 
 class TokenSchema(BaseSchema):
   id = fields.String(required=True, dump_only=True)
@@ -159,7 +245,7 @@ class TokenSchema(BaseSchema):
   deletedAt = LocalDateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
 
-class Token(db.Model):
+class Token(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   token = db.Column(db.String(), unique=True, nullable=False)
   comment = db.Column(db.String())

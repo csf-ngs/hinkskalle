@@ -1,3 +1,4 @@
+import typing
 from Hinkskalle.models.Manifest import Manifest
 from datetime import datetime, timedelta
 from typing import Tuple
@@ -6,9 +7,10 @@ from unittest.case import skip
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Container import ContainerTypes
 from Hinkskalle.models import Collection, Container, ContainerSchema, Image, Tag, UploadStates
+from Hinkskalle.models.User import GroupRoles
 from .test_Image import _create_image
 from ..model_base import ModelBase
-from .._util import _create_user, _create_container, _create_image
+from .._util import _create_user, _create_container, _create_image, _create_group, _set_member
 
 from Hinkskalle import db
 
@@ -362,6 +364,39 @@ class TestContainer(ModelBase):
     container.owner = user
     self.assertTrue(container.check_update_access(user))
 
+  def test_group_access(self):
+    user = _create_user(name='user.oink', is_admin=False)
+    group = _create_group('Testhasenstall')
+
+    container, collection, entity = _create_container()
+    entity.group = group
+
+    self.assertFalse(container.check_access(user))
+
+    ug = _set_member(user, group)
+    for role in GroupRoles:
+      ug.role=role
+      self.assertTrue(container.check_access(user))
+  
+  def test_group_access_update(self):
+    user = _create_user(name='user.oink', is_admin=False)
+    group = _create_group('Testhasenstall')
+
+    container, collection, entity = _create_container()
+    entity.group = group
+
+    self.assertFalse(container.check_update_access(user))
+
+    ug = _set_member(user, group)
+    for role in [ GroupRoles.admin, GroupRoles.contributor ]:
+      ug.role=role
+      self.assertTrue(container.check_update_access(user))
+
+    for role in [ GroupRoles.readonly ]:
+      ug.role=role
+      self.assertFalse(container.check_update_access(user))
+
+
   def test_schema(self):
     entity = Entity(name='test-hase')
     db.session.add(entity)
@@ -376,7 +411,7 @@ class TestContainer(ModelBase):
     db.session.commit()
 
     schema = ContainerSchema()
-    serialized = schema.dump(container)
+    serialized = typing.cast(dict, schema.dump(container))
     self.assertEqual(serialized['id'], str(container.id))
     self.assertEqual(serialized['name'], container.name)
     self.assertEqual(serialized['private'], False)
@@ -385,7 +420,7 @@ class TestContainer(ModelBase):
     self.assertFalse(serialized['deleted'])
     self.assertEqual(serialized['stars'], 0)
 
-    serialized = schema.dump(container)
+    serialized = typing.cast(dict, schema.dump(container))
     self.assertEqual(serialized['collection'], str(coll.id))
     self.assertEqual(serialized['collectionName'], coll.name)
     self.assertEqual(serialized['entity'], str(entity.id))
@@ -408,26 +443,26 @@ class TestContainer(ModelBase):
     db.session.commit()
 
     schema = ContainerSchema()
-    serialized = schema.dump(container)
+    serialized = typing.cast(dict, schema.dump(container))
     self.assertDictEqual(serialized['imageTags'], { 'v1': str(image1.id), 'v2': str(image2.id) })
   
   def test_type(self):
     image = _create_image()[0]
     self.assertEqual(image.container_ref.type, ContainerTypes.singularity.name)
 
-    image.media_type='application/vnd.oci.image.layer.v1.tar+gzip'
+    image.media_type='application/vnd.oci.image.layer.v1.tar+gzip' # type: ignore
     self.assertEqual(image.container_ref.type, ContainerTypes.generic.name)
 
-    image.media_type='application/vnd.docker.image.rootfs.diff.tar.gzip'
+    image.media_type='application/vnd.docker.image.rootfs.diff.tar.gzip' # type: ignore
     self.assertEqual(image.container_ref.type, ContainerTypes.docker.name)
 
     image2 = _create_image(hash='sha256.gunz')[0]
     image2.container_ref=image.container_ref
-    image2.media_type = Image.singularity_media_type
-    image.media_type = Image.singularity_media_type
+    image2.media_type = Image.singularity_media_type # type: ignore
+    image.media_type = Image.singularity_media_type # type: ignore
 
     self.assertEqual(image.container_ref.type, ContainerTypes.singularity.name)
-    image2.media_type='application/vnd.oci.image.layer.v1.tar+gzip'
+    image2.media_type='application/vnd.oci.image.layer.v1.tar+gzip' # type: ignore
     self.assertEqual(image.container_ref.type, ContainerTypes.mixed.name)
   
   def test_type_hidden(self):
@@ -436,7 +471,7 @@ class TestContainer(ModelBase):
 
     image2 = _create_image(hash='sha256.grunz')[0]
     image2.container_ref=image.container_ref
-    image2.media_type = 'application/vnd.oci.image.layer.v1.tar+gzip'
+    image2.media_type = 'application/vnd.oci.image.layer.v1.tar+gzip' # type: ignore
     self.assertEqual(image.container_ref.type, ContainerTypes.mixed.name)
     image2.hide = True
     self.assertEqual(image.container_ref.type, ContainerTypes.singularity.name)

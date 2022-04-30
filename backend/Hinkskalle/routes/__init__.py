@@ -14,5 +14,6 @@ import Hinkskalle.routes.manifests
 
 import Hinkskalle.routes.users
 import Hinkskalle.routes.tokens
+import Hinkskalle.routes.groups
 
 import Hinkskalle.routes.adm

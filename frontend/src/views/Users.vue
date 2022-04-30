@@ -140,15 +140,19 @@
                   @click="loadUsers()"><v-icon>mdi-refresh</v-icon></v-btn>
               </v-toolbar>
             </template>
+            <!-- eslint-disable-next-line vue/valid-v-slot --> 
             <template v-slot:item.lastname="{ item }">
               {{item.firstname}} {{item.lastname}}
             </template>
+            <!-- eslint-disable-next-line vue/valid-v-slot --> 
             <template v-slot:item.isActive="{ item }">
               <v-icon small>{{item.isActive ? 'mdi-check' : 'mdi-minus'}}</v-icon>
             </template>
+            <!-- eslint-disable-next-line vue/valid-v-slot --> 
             <template v-slot:item.isAdmin="{ item }">
               <v-icon :small="!item.isAdmin">{{item.isAdmin ? 'mdi-wizard-hat' : 'mdi-minus'}}</v-icon>
             </template>
+            <!-- eslint-disable-next-line vue/valid-v-slot --> 
             <template v-slot:item.actions="{ item }">
               <v-icon
                 small

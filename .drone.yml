@@ -18,7 +18,7 @@ steps:
   commands:
   - cd backend
   - pip3 install -e '.[dev]'
-  - nose2
+  - nose2 --with-coverage
 - name: testhase-front
   image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.0-tmpfix
   commands:

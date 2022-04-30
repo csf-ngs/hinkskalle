@@ -14,10 +14,6 @@ class {{classname}} {
     return this.fullPath;
   }
 
-  public canEdit(user: User | null): boolean {
-    return !!user && (user.isAdmin || this.createdBy===user.username);
-  }
-
   public get prettyQuota(): string {
     return prettyBytes(this.quota);
   }

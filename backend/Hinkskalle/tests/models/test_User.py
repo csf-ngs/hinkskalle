@@ -1,8 +1,12 @@
 from datetime import datetime, timedelta
+from pprint import pprint
+import typing
+
+from marshmallow import ValidationError
 from ..model_base import ModelBase
 from .._util import _create_group, _create_user, _create_container
 
-from Hinkskalle.models import User, UserSchema, Group, Token, TokenSchema, Container
+from Hinkskalle.models import User, UserSchema, Group, GroupSchema, Token, TokenSchema, Container, UserGroup, GroupRoles
 
 from Hinkskalle import db
 
@@ -18,6 +22,11 @@ class TestUser(ModelBase):
     self.assertTrue(abs(read_user.createdAt - datetime.now()) < timedelta(seconds=2))
     self.assertFalse(read_user.is_admin)
   
+  def test_username_check(self):
+    with self.assertRaisesRegex(ValueError, r'name contains invalid'):
+      User(username='bl^a&*.h@ase', email='test@testha.se', firstname='Bla', lastname='Hase')
+
+  
   def test_user_case(self):
     user = _create_user('tEst.Hase')
     user.email = 'tEst@hA.Se'
@@ -31,18 +40,17 @@ class TestUser(ModelBase):
   def test_group(self):
     user = _create_user()
     group1 = _create_group('Testhase1')
+    group1_opt = UserGroup(group=group1, user=user, role=GroupRoles.contributor)
 
-    user.groups.append(group1)
     db.session.commit()
 
     read_user = User.query.filter_by(username=user.username).one()
     read_group = Group.query.filter_by(name=group1.name).one()
 
-    self.assertListEqual(read_user.groups, [read_group])
+    self.assertListEqual([ m.group for m in read_user.groups], [read_group])
+    self.assertListEqual([ m.user for m in read_group.users], [read_user])
 
-    self.assertListEqual(read_group.users, [read_user])
-
-    read_user.groups.remove(read_group)
+    db.session.delete(group1_opt)
     db.session.commit()
 
     read_user = User.query.filter_by(username=user.username).one()
@@ -140,7 +148,7 @@ class TestUser(ModelBase):
     schema = UserSchema()
     user = _create_user()
 
-    serialized = schema.dump(user)
+    serialized = typing.cast(dict, schema.dump(user))
     self.assertEqual(serialized['id'], str(user.id))
     self.assertEqual(serialized['username'], user.username)
     self.assertFalse(serialized['isAdmin'])
@@ -153,27 +161,42 @@ class TestUser(ModelBase):
     self.assertNotIn('password', serialized)
 
     user.is_admin=True
-    serialized = schema.dump(user)
+    serialized = typing.cast(dict, schema.dump(user))
     self.assertTrue(serialized['isAdmin'])
+    self.assertTrue(serialized['isActive'])
 
   def test_deserialize(self):
     schema = UserSchema()
 
-    deserialized = schema.load({
+    deserialized = typing.cast(dict, schema.load({
       'username':'test.hase', 
       'email': 'test@ha.se',
       'firstname': 'Test',
       'lastname': 'Hase',
-      'isAdmin': True
-    })
+      'isAdmin': True,
+      'isActive': True,
+    }))
     self.assertTrue(deserialized['is_admin'])
+    self.assertTrue(deserialized['is_active'])
+  
+  def test_deserialize_username_check(self):
+    schema = UserSchema()
+    with self.assertRaisesRegex(ValidationError, r'username'):
+      deserialized = schema.load({
+        'username': 't@st.h@ase',
+        'email': 'test@ha.se',
+        'firstname': 'Test',
+        'lastname': 'Hase',
+        'isAdmin': True
+      })
+
 
   def test_schema_token(self):
     schema = TokenSchema()
     user = _create_user()
     token = Token(user=user, token='geheimhase')
 
-    serialized = schema.dump(token)
+    serialized = typing.cast(dict, schema.dump(token))
     self.assertEqual(serialized['token'], 'geheimhase')
     self.assertEqual(serialized['user']['id'], str(user.id))
   
@@ -205,16 +228,19 @@ class TestUser(ModelBase):
     self.assertTrue(subject.check_update_access(try_admin))
     self.assertFalse(subject.check_update_access(try_normal))
     self.assertTrue(subject.check_update_access(subject))
-
+  
   def test_schema_groups(self):
     schema = UserSchema()
+    group_schema = GroupSchema()
     user = _create_user()
     group = _create_group()
-    user.groups.append(group)
+    group_m = UserGroup(user=user, group=group, role=GroupRoles.contributor)
+    db.session.add(group_m)
     db.session.commit()
 
-    serialized = schema.dump(user)
-    self.assertEqual(serialized['groups'][0]['id'], str(group.id))
+    serialized = typing.cast(dict, schema.dump(user))
+    self.assertEqual(serialized['groups'][0]['group']['id'], str(group.id))
 
-
-
+    serialized = typing.cast(dict, group_schema.dump(group))
+    self.assertEqual(serialized['users'][0]['user']['id'], str(user.id))
+  

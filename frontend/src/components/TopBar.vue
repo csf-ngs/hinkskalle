@@ -72,7 +72,7 @@ export default Vue.extend({
   },
   computed: {
     isLoggedIn(): boolean {
-      return this.$store.getters.isLggedIn;
+      return this.$store.getters.isLoggedIn;
     },
     loading(): boolean {
       return this.$store.getters['search/status'] === 'loading';

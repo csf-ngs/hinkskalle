@@ -84,6 +84,7 @@ class TestCollections(RouteBase):
     data = ret.get_json().get('data') # type: ignore
 
     self.assertEqual(data['id'], str(coll.id))
+    self.assertTrue(data['canEdit'])
 
   def test_get_case(self):
     coll, _ = _create_collection('TestHase')
@@ -156,6 +157,7 @@ class TestCollections(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(coll.id))
+    self.assertTrue(data['canEdit'])
 
   def test_get_user_default_entity(self):
     coll, entity = _create_collection()
@@ -167,6 +169,7 @@ class TestCollections(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(coll.id))
+    self.assertFalse(data['canEdit'])
   
   def test_get_user_other_entity(self):
     coll, entity = _create_collection()
@@ -212,6 +215,7 @@ class TestCollections(RouteBase):
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['entity'], str(entity.id))
     self.assertEqual(data['createdBy'], self.admin_username)
+    self.assertTrue(data['canEdit'])
 
     db_collection = Collection.query.get(data['id'])
     self.assertTrue(abs(db_collection.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
@@ -348,6 +352,7 @@ class TestCollections(RouteBase):
         'entity': str(entity.id),
       })
     self.assertEqual(ret.status_code, 200)
+    self.assertTrue(ret.get_json().get('data')['canEdit']) # type: ignore
 
   def test_create_user_default_entity(self):
     entity = Entity(name='default')
@@ -430,6 +435,7 @@ class TestCollections(RouteBase):
         'customData': 'hot drei Eckn',
       })
     self.assertEqual(ret.status_code, 200)
+    self.assertTrue(ret.get_json().get('data')['canEdit']) # type: ignore
 
     dbColl = Collection.query.filter(Collection.name==coll.name).one()
     self.assertEqual(dbColl.description, 'Mei Huat')
@@ -494,6 +500,7 @@ class TestCollections(RouteBase):
         'customData': 'hot drei Eckn',
       })
     self.assertEqual(ret.status_code, 200)
+    self.assertTrue(ret.get_json().get('data')['canEdit']) # type: ignore
 
     dbColl = Collection.query.filter(Collection.name==coll.name).one()
     self.assertEqual(dbColl.description, 'Mei Huat')

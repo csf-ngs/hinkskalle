@@ -92,6 +92,7 @@ class TestUsers(RouteBase):
       "deletedAt": None,
       "deleted": False,
       "groups": [],
+      "canEdit": True,
     })
   
   def test_get_user_self(self):
@@ -102,6 +103,7 @@ class TestUsers(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(db_user.id))
+    self.assertTrue(data['canEdit'])
 
   
   def test_get_user_other(self):
@@ -112,6 +114,7 @@ class TestUsers(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(db_user.id))
+    self.assertFalse(data['canEdit'])
   
 
   def test_get_stars(self):
@@ -252,7 +255,20 @@ class TestUsers(RouteBase):
       ret = self.client.post(f"/v1/users/{db_user.username}/stars/{container.id}")
     self.assertEqual(ret.status_code, 403)
   
+  def test_register_disabled(self):
+    self.app.config['ENABLE_REGISTER']=False
+    user_data = {
+      'username': 'probier.hase',
+      'email': 'probier@ha.se',
+      'firstname': 'Probier',
+      'lastname': 'Hase',
+      'password': 'geheimbaer',
+    }
+    ret = self.client.post('/v1/register', json=user_data)
+    self.assertEqual(ret.status_code, 403)
+  
   def test_register(self):
+    self.app.config['ENABLE_REGISTER']=True
     user_data = {
       'username': 'probier.hase',
       'email': 'probier@ha.se',
@@ -279,6 +295,35 @@ class TestUsers(RouteBase):
     self.assertIsNotNone(db_entity)
     self.assertEqual(db_entity.createdBy, db_user.username)
 
+  def test_register_exists(self):
+    self.app.config['ENABLE_REGISTER']=True
+    user = _create_user('probier.hase')
+    user_data = {
+      'username': 'probier.hase',
+      'email': 'probier@ha.se',
+      'firstname': 'Probier',
+      'lastname': 'Hase',
+      'password': 'geheimbaer',
+    }
+
+    ret = self.client.post('/v1/register', json=user_data)
+    self.assertEqual(ret.status_code, 412)
+
+  def test_register_entity_exists(self):
+    self.app.config['ENABLE_REGISTER']=True
+    entity = Entity(name='probier.hase')
+    db.session.add(entity)
+    db.session.commit()
+    user_data = {
+      'username': 'probier.hase',
+      'email': 'probier@ha.se',
+      'firstname': 'Probier',
+      'lastname': 'Hase',
+      'password': 'geheimbaer',
+    }
+
+    ret = self.client.post('/v1/register', json=user_data)
+    self.assertEqual(ret.status_code, 412)
 
     
   def test_create(self):
@@ -297,6 +342,8 @@ class TestUsers(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['username'], user_data['username'])
+    self.assertTrue(data['canEdit'])
+
     db_user = User.query.get(data['id'])
     for f in ['email', 'firstname', 'lastname', 'source', 'isAdmin', 'isActive']:
       uf = 'is_active' if f == 'isActive' else 'is_admin' if f == 'isAdmin' else f
@@ -388,6 +435,7 @@ class TestUsers(RouteBase):
       ret = self.client.put(f"/v1/users/{user.username}", json=update_data)
 
     self.assertEqual(ret.status_code, 200)
+    self.assertTrue(ret.get_json().get('data')['canEdit']) # type: ignore
 
     db_user = User.query.get(user.id)
     for f in ['email', 'firstname', 'lastname', 'source', 'isAdmin', 'isActive']:
@@ -471,6 +519,34 @@ class TestUsers(RouteBase):
     self.assertEqual(ret.status_code, 412)
     self.assertRegexpMatches(ret.get_json().get('message'), 'Cannot rename entity') # type: ignore
   
+  def test_update_username_collision(self):
+    user = _create_user('update.user')
+    other_user = _create_user('hase.update')
+
+    user_id = user.id
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/users/{user.username}", json={ "username": other_user.username })
+    self.assertEqual(ret.status_code, 409)
+    db_user = User.query.get(user_id)
+    self.assertEqual(db_user.username, 'update.user')
+  
+  def test_update_username_entity_collision(self):
+    user = _create_user('update.hase')
+    entity = Entity(name=user.username, owner=user)
+    other_entity = Entity(name='hase.update')
+
+    db.session.add(entity)
+    db.session.add(other_entity)
+    db.session.commit()
+
+    user_id = user.id
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/users/{user.username}", json={ "username": other_entity.name })
+    self.assertEqual(ret.status_code, 409)
+
+    db_user = User.query.get(user_id)
+    self.assertEqual(db_user.username, 'update.hase')
+  
   def test_update_user(self):
     user_data = {
       "username": "wer.anders",
@@ -482,6 +558,7 @@ class TestUsers(RouteBase):
       ret = self.client.put(f"/v1/users/{self.username}", json=user_data)
     
     self.assertEqual(ret.status_code, 200)
+    self.assertTrue(ret.get_json().get('data')['canEdit']) # type: ignore
     db_user = User.query.filter(User.username==user_data['username']).one()
     self.assertEqual(db_user.username, user_data['username'])
     self.assertEqual(db_user.email, user_data['email'])

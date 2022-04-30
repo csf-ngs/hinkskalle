@@ -34,8 +34,8 @@ def get_cron():
     return dt.replace(tzinfo=timezone.utc).astimezone() if dt else None
   ret = []
   for j in jobs:
-    j[0].enqueued_at=to_local(j[0].enqueued_at)
-    ret.append((j[0], to_local(j[1])))
+    j[0].enqueued_at=to_local(j[0].enqueued_at) # type: ignore
+    ret.append((j[0], to_local(j[1]))) # type: ignore
   return ret
 
 

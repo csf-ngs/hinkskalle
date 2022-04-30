@@ -2,6 +2,7 @@
   <div class="container-details">
     <top-bar title="Container Details">
     </top-bar>
+    <error-message v-if="localState.error" :error="localState.error"></error-message>
     <v-container v-if="localState.container">
       <v-row>
         <v-col cols="12" md="10" offset-md="1">
@@ -26,7 +27,7 @@
           </v-row>
           <v-row dense>
             <v-col>
-              <hsk-text-input label="Created" :static-value="localState.container.createdAt | moment('YYYY-MM-DD HH:mm:ss')"></hsk-text-input>
+              <hsk-text-input label="Created" :static-value="localState.container.createdAt | prettyDateTime"></hsk-text-input>
             </v-col>
             <v-col>
               <hsk-text-input label="Created By" :static-value="localState.container.createdBy"></hsk-text-input>
@@ -94,7 +95,7 @@
                       field="readOnly"
                       :obj="localState.container"
                       action="containers/update"
-                      :readonly="!localState.container.canEdit(currentUser)"
+                      :readonly="!localState.container.canEdit"
                       @updated="localState.container=$event"></hsk-text-input>
                   </v-col>
                 </v-row>
@@ -148,6 +149,7 @@ import { orderBy as _orderBy } from 'lodash';
 
 interface State {
   container: Container | null;
+  error: string | null;
 }
 
 export default Vue.extend({
@@ -159,6 +161,7 @@ export default Vue.extend({
   data: (): { localState: State } => ({
     localState: {
       container: null,
+      error: null,
     }
   }),
   watch: {
@@ -183,11 +186,12 @@ export default Vue.extend({
       return this.$store.getters.currentUser;
     },
     canEdit(): boolean {
-      return this.localState.container !== null && !this.localState.container.readOnly && this.localState.container.canEdit(this.currentUser)
+      return this.localState.container !== null && !this.localState.container.readOnly && this.localState.container.canEdit
     }
   },
   methods: {
     loadContainer() {
+      this.localState.error = null;
       this.$store.dispatch('containers/get', { entityName: this.$route.params.entity, collectionName: this.$route.params.collection, containerName: this.$route.params.container })
         .then((container: Container) => {
           this.localState.container = container;
@@ -199,7 +203,7 @@ export default Vue.extend({
           }
         })
         .catch(err => {
-          this.$store.commit('snackbar/showError', err);
+          this.localState.error = err;
         });
     },
     loadManifests() {

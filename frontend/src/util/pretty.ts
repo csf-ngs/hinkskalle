@@ -1,4 +1,5 @@
 import { round as _round } from 'lodash';
+import moment from 'moment';
 
 export function abbreviate(value: string, maxlen: number): string {
   if (isNaN(maxlen)) maxlen=20;
@@ -49,4 +50,10 @@ export function unPrettyBytes(pretty: string): number {
     throw new Error(`Invalid exp ${match[3]}`);
   }
   return num * Math.pow(1000, exp) * (neg ? -1 : 1);
+}
+
+export function prettyDateTime(dt: Date | null): string {
+  return dt ?
+    moment(dt).format('YYYY-MM-DD HH:mm') : 
+    '-';
 }

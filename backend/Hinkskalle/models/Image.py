@@ -4,7 +4,7 @@ from typing import List
 from sqlalchemy.ext.hybrid import hybrid_property
 from Hinkskalle import db
 from Hinkskalle.models.User import User
-from flask import current_app
+from flask import current_app, g
 from marshmallow import Schema, fields
 from datetime import datetime, timedelta
 import json
@@ -53,6 +53,8 @@ class ImageSchema(BaseSchema):
   tags = fields.List(fields.String(), dump_only=True)
   fingerprints = fields.List(fields.String(), dump_only=True)
 
+  canEdit = fields.Boolean(dump_only=True, default=False)
+
 def generate_uuid() -> str:
   return str(uuid.uuid4())
 def upload_expiration() -> datetime:
@@ -76,7 +78,7 @@ class UploadTypes(enum.Enum):
   multipart = 'multipart'
   multipart_chunk = 'multipart_chunk'
 
-class ImageUploadUrl(db.Model):
+class ImageUploadUrl(db.Model): # type: ignore
   id = db.Column(db.String(), primary_key=True, default=generate_uuid, unique=True)
   expiresAt = db.Column(db.DateTime, default=upload_expiration)
   path = db.Column(db.String(), nullable=False)
@@ -113,7 +115,7 @@ class ImageTypes(enum.Enum):
   oci = 'oci'
   other = 'other'
 
-class Image(db.Model):
+class Image(db.Model): # type: ignore
   valid_media_types = {
     'application/vnd.docker.image.rootfs.diff.tar.gzip': True,
     'application/vnd.oci.image.layer.v1.tar+gzip': True,
@@ -192,7 +194,7 @@ class Image(db.Model):
     return manifest
 
   @hybrid_property
-  def media_type(self) -> str:
+  def media_type(self) -> str: # type: ignore
     return self._media_type
   
   @media_type.setter
@@ -221,7 +223,7 @@ class Image(db.Model):
       return set()
     
     ret = []
-    for key in self.sigdata.get('SignerKeys'):
+    for key in self.sigdata.get('SignerKeys', []):
       ret.append(key['Signer']['Fingerprint'])
     return set(ret)
 
@@ -330,6 +332,10 @@ class Image(db.Model):
     
     return self.container_ref.check_access(user)
   
+  @property
+  def canEdit(self) -> bool:
+    return self.check_update_access(g.authenticated_user)
+
   def check_update_access(self, user) -> bool:
     return self.container_ref.check_update_access(user)
    

@@ -114,7 +114,7 @@ class Manifest(db.Model):
   @property
   def filename(self) -> str:
     def accumulate(x: str, y: dict) -> str:
-      y_title = y.get('annotations', {}).get('org.opencontainers.image.title', None)
+      y_title = y.get('annotations', {}).get('org.opencontainers.image.title', '')
       if y.get('annotations', {}).get('io.deis.oras.content.unpack', "false") == "true":
         y_title += '.tar'
         if y.get('mediaType', '').endswith('+gzip'):

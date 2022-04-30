@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { Container, plainToContainer, Upload, plainToUpload, User, plainToUser, Collection, plainToCollection, Entity, plainToEntity, SearchResult, plainToSearchResult } from '@/store/models';
+import { Container, plainToContainer, Upload, plainToUpload, User, plainToUser, Collection, plainToCollection, Entity, plainToEntity, SearchResult, plainToSearchResult, plainToGroup, Group } from '@/store/models';
 
 import { map as _map } from 'lodash';
 
@@ -17,6 +17,19 @@ export function makeTestUser() {
 
 export function makeTestUserObj(from: any=null): User {
   return plainToUser(from || makeTestUser());
+}
+
+export function makeTestGroup() {
+  return {
+    id: "1",
+    name: "Testhasentall",
+    email: "stall@testha.se",
+    description: "oink",
+  }
+}
+
+export function makeTestGroupObj(from: any=null): Group {
+  return plainToGroup(from || makeTestGroup())
 }
 
 export function makeTestContainers() {
@@ -53,10 +66,10 @@ export function makeTestLatestObj(from: any=null): Upload[] {
 export function makeTestCollections() {
   return [
     {
-      id: '1', name: 'esel', description: 'eyore', createdAt: new Date(), entityName: 'oinktity',
+      id: '1', name: 'esel', description: 'eyore', createdAt: new Date(), entityName: 'oinktity', canEdit: true,
     },
     {
-      id: '2', name: 'schaf', description: 'shawn', createdAt: new Date(), entityName: 'wooftity',
+      id: '2', name: 'schaf', description: 'shawn', createdAt: new Date(), entityName: 'wooftity', canEdit: true,
     }
   ];
 }
@@ -68,10 +81,10 @@ export function makeTestCollectionsObj(from: any=null): Collection[] {
 export function makeTestEntities() {
   return [
     {
-      id: '1', name: 'esel', description: 'eyore', createdAt: new Date(), quota: 0,
+      id: '1', name: 'esel', description: 'eyore', createdAt: new Date(), quota: 0, canEdit: true,
     },
     {
-      id: '2', name: 'schaf', description: 'shawn', createdAt: new Date(), quota: 0,
+      id: '2', name: 'schaf', description: 'shawn', createdAt: new Date(), quota: 0, canEdit: true,
     }
   ];
 }

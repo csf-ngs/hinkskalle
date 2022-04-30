@@ -1,12 +1,12 @@
-from asyncio.proactor_events import _ProactorBaseWritePipeTransport
+import typing
 from Hinkskalle import db
 from marshmallow import fields, validates_schema, ValidationError
 from datetime import datetime
 from sqlalchemy.orm import validates
-from flask import current_app
+from flask import current_app, g
 from Hinkskalle.models.Image import UploadStates
 from Hinkskalle.util.name_check import validate_name
-from Hinkskalle.models.User import User
+from Hinkskalle.models.User import GroupRoles, User
 from ..util.schema import LocalDateTime, BaseSchema
 
 class EntitySchema(BaseSchema):
@@ -24,7 +24,12 @@ class EntitySchema(BaseSchema):
   defaultPrivate = fields.Boolean()
   customData = fields.String(allow_none=True)
 
+  isGroup = fields.Boolean(dump_only=True, attribute='is_group')
+  groupRef = fields.String(dump_only=True, allow_none=True, attribute='group_ref')
+
   collections = fields.List(fields.String(), allow_none=True, dump_only=True)
+
+  canEdit = fields.Boolean(default=False, dump_only=True)
 
   @validates_schema
   def validate_name(self, data, **kwargs):
@@ -33,7 +38,7 @@ class EntitySchema(BaseSchema):
       raise ValidationError(errors)
     
 
-class Entity(db.Model):
+class Entity(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String(), unique=True, nullable=False)
   description = db.Column(db.String())
@@ -47,7 +52,10 @@ class Entity(db.Model):
   createdBy = db.Column(db.String(), db.ForeignKey('user.username'))
   updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
+  group_id = db.Column(db.Integer, db.ForeignKey('group.id'), unique=True)
+
   owner = db.relationship('User', back_populates='entities')
+  group = db.relationship('Group', back_populates='entity')
 
   collections_ref = db.relationship('Collection', back_populates='entity_ref', lazy='dynamic')
 
@@ -59,6 +67,14 @@ class Entity(db.Model):
   @property
   def size(self) -> int:
     return self.collections_ref.count()
+  
+  @property
+  def is_group(self) -> bool:
+    return self.group_id is not None
+  
+  @property
+  def group_ref(self) -> typing.Optional[str]:
+    return self.group.name if self.group else None
 
   def calculate_used(self) -> int:
     entity_size = 0
@@ -95,14 +111,27 @@ class Entity(db.Model):
       return True
     elif self.name == 'default':
       return True
+    elif self.group is not None:
+      ug = self.group.get_member(user)
+      return ug is not None
     else:
       return False
   
+  @property
+  def canEdit(self) -> bool:
+    return self.check_update_access(g.authenticated_user)
+
   def check_update_access(self, user: User) -> bool:
     if user.is_admin:
       return True
     elif self.owner == user:
       return True
+    elif self.group is not None:
+      ug = self.group.get_member(user)
+      if ug is None or ug.role == GroupRoles.readonly:
+        return False
+      else:
+        return True
     else:
       return False
 

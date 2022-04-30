@@ -1,4 +1,4 @@
-import { prettyBytes, unPrettyBytes } from '@/util/pretty';
+import { prettyBytes, unPrettyBytes, prettyDateTime } from '@/util/pretty';
 
 describe('prettyBytes', () => {
   it('makes bytes pretty', () => {
@@ -32,4 +32,13 @@ describe('unPrettyBytes', () => {
     expect(unPrettyBytes('100Gb')).toBe(100000000000);
     expect(unPrettyBytes('100g')).toBe(100000000000);
   });
+});
+
+describe('prettyDateTime', () => {
+  it('formats a date object', () => {
+    expect(prettyDateTime(new Date('1995-12-17T03:24:00'))).toBe('1995-12-17 03:24');
+  });
+  it('formats null', () => {
+    expect(prettyDateTime(null)).toBe('-');
+  })
 });

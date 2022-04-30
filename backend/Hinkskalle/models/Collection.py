@@ -4,8 +4,9 @@ from ..util.schema import BaseSchema, LocalDateTime
 from datetime import datetime
 from sqlalchemy.orm import validates
 from Hinkskalle.util.name_check import validate_name
+from flask import g
 
-from Hinkskalle.models.User import User
+from Hinkskalle.models.User import GroupRoles, User
 
 class CollectionSchema(BaseSchema):
   id = fields.String(required=True, dump_only=True)
@@ -26,6 +27,8 @@ class CollectionSchema(BaseSchema):
 
   containers = fields.List(fields.String(), allow_none=True, dump_only=True)
 
+  canEdit = fields.Boolean(dump_only=True, default=False)
+
   @validates_schema
   def validate_name(self, data, **kwargs):
     errors = validate_name(data)
@@ -33,7 +36,7 @@ class CollectionSchema(BaseSchema):
       raise ValidationError(errors)
 
 
-class Collection(db.Model):
+class Collection(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String(), nullable=False)
   description = db.Column(db.String())
@@ -76,11 +79,21 @@ class Collection(db.Model):
     else:
       return self.entity_ref.check_access(user)
   
+  @property
+  def canEdit(self) -> bool:
+    return self.check_update_access(g.authenticated_user)
+
   def check_update_access(self, user: User) -> bool:
     if user.is_admin:
       return True
     elif self.owner == user:
       return True
+    elif self.entity_ref.group is not None:
+      ug = self.entity_ref.group.get_member(user)
+      if ug is None or ug.role == GroupRoles.readonly:
+        return False
+      else:
+        return True
     else:
       return False
     

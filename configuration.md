@@ -30,10 +30,8 @@ You might want to set these:
 - `DEFAULT_ARCH` - which archtitecture should we use for the default `latest` tag if no explicit tag is specified for a push (default `amd64`)
 - `DEFAULT_USER_QUOTA` - in bytes, how much space to allow for images per user entity. 0 to disable (= default)
 - `DOWNLOAD_TOKEN_EXPIRATION` - in seconds, how long should download links be valid. Each token grants access to images in specific manifests and should be handled with care.
-
 - `SQLALCHEMY_DATABASE_URI` - database location. E.g. `sqlite:///data/db/hinkskalle.db`, or `postgresql+psycopg2://knihskalle:%PASSWORD%@hinkdb/hinkskalle"`. Any `%PASSWORD%` string will be replaced by the config value for `DB_PASSWORD`
 - `KEYSERVER_URL` - public key storage/search. Hinkskalle does not come with its own keyserver. Point this to a compatible GnuPG keyserver (see [https://sks-keyservers.net/](https://sks-keyservers.net/) for a list). You can also run your own: [https://github.com/hockeypuck/hockeypuck](https://github.com/hockeypuck/hockeypuck)
-
 - `SQLALCHEMY_TRACK_MODIFICATIONS` - leave this to false
 
 ## RQ Worker/Redis

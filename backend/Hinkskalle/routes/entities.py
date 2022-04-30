@@ -1,3 +1,4 @@
+import pprint
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
@@ -7,7 +8,7 @@ from sqlalchemy import or_, func
 from flask import request, current_app, g
 import datetime
 
-from Hinkskalle.models import EntitySchema, Entity, User
+from Hinkskalle.models import EntitySchema, Entity, User, Group, UserGroup
 from .util import _get_entity
 
 class EntityResponseSchema(ResponseSchema):
@@ -36,7 +37,14 @@ def list_entities():
   if g.authenticated_user.is_admin:
     objs = Entity.query.all()
   else:
-    objs = Entity.query.filter(or_(Entity.owner==g.authenticated_user, Entity.name=='default'))
+    allents = Entity.query.first()
+    objs = Entity.query.outerjoin(Group).outerjoin(UserGroup).filter(
+      or_(
+        Entity.owner==g.authenticated_user, 
+        Entity.name=='default', 
+        UserGroup.user==g.authenticated_user
+      )
+    )
   return { 'data': list(objs) }
 
 @registry.handles(

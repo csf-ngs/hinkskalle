@@ -1,5 +1,6 @@
 import datetime
 from ..route_base import RouteBase
+from .._util import _create_group, _set_member
 
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Collection import Collection
@@ -40,7 +41,27 @@ class TestEntities(RouteBase):
       ret = self.client.get('/v1/entities')
     self.assertEqual(ret.status_code, 200)
     json = ret.get_json().get('data') # type: ignore
-    self.assertListEqual([ e['name'] for e in json ], [ default.name, entity1.name ])
+    self.assertListEqual([ e['name'] for e in json ], [ 'default', 'muhkuh' ])
+  
+  def test_list_user_group(self):
+    group = _create_group('Testhasenstall')
+    entity1 = Entity(name='muhkuh', group=group)
+    db.session.add(entity1)
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.get('/v1/entities')
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data') # type: ignore
+    self.assertListEqual([ e['name'] for e in json ], [])
+
+    _set_member(self.user, group)
+
+    with self.fake_auth():
+      ret = self.client.get('/v1/entities')
+    self.assertEqual(ret.status_code, 200)
+    json = ret.get_json().get('data') # type: ignore
+    self.assertListEqual([ e['name'] for e in json ], [ 'muhkuh' ])
 
   def test_get_noauth(self):
     ret = self.client.get('/v1/entities/grunz')

@@ -192,6 +192,7 @@ def authenticate():
   except errors.Unauthorized as err:
     current_app.logger.debug(f"get identity: {err.error_message}")
     raise OrasUnauthorized(err.error_message)
+  db_token.generatedToken = token
   return _auth_token(db_token) 
 
 def _auth_token(token: Token):
@@ -199,7 +200,7 @@ def _auth_token(token: Token):
   return jsonify({
     "token_type": "Bearer",
     "expires_in": expires_in.seconds,
-    "access_token": token.token,
+    "access_token": token.generatedToken,
     "scope": "all"
   })
 

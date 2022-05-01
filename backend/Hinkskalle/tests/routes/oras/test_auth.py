@@ -32,8 +32,8 @@ class TestOrasAuth(RouteBase):
     self.assertEqual(ret.status_code, 200)
     token_data = ret.get_json()
     self.assertIn('access_token', token_data)
-    token = token_data['access_token']
-    db_token = Token.query.filter(Token.token==token).first()
+    token = token_data['access_token'] # type: ignore
+    db_token = Token.query.filter(Token.key_uid==token[:12]).first()
     self.assertIsNotNone(db_token)
 
   def test_get_base_basic_auth_wrong_password(self):
@@ -90,13 +90,14 @@ class TestOrasAuth(RouteBase):
 
   def test_post_base(self):
     user = _create_user('oink.hase')
-    token = Token(token='oink', user_id=user.id)
+    token = Token(token='oinkoinkoinkoink', user_id=user.id)
     db.session.add(token)
     db.session.commit()
-    ret = self.client.post('/v2/', data={'refresh_token': 'oink'})
+    db.session.expunge_all()
+    ret = self.client.post('/v2/', data={'refresh_token': 'oinkoinkoinkoink'})
     self.assertEqual(ret.status_code, 200)
 
     token_data = ret.get_json()
     self.assertIn('access_token', token_data)
-    token = token_data['access_token']
-    self.assertEqual(token, 'oink')
+    token = token_data['access_token'] # type: ignore
+    self.assertEqual(token, 'oinkoinkoinkoink')

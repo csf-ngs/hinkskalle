@@ -54,9 +54,12 @@ class TokenAuthenticator(Authenticator):
 
   def _get_identity(self, token: str):
     from Hinkskalle.models.User import Token
-    db_token = Token.query.filter(Token.token == token, Token.deleted == False).first()
+    token_uid = token[:12]
+    db_token = Token.query.filter(Token.key_uid == token_uid, Token.deleted == False).first()
     if not db_token:
       current_app.logger.debug('Token not in db')
+      raise errors.Unauthorized('Invalid token')
+    if not db_token.check_token(token):
       raise errors.Unauthorized('Invalid token')
     if not db_token.user.is_active:
       current_app.logger.debug(f'{db_token.user.username} deactivated')

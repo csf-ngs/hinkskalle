@@ -64,8 +64,8 @@ steps:
   - name: dockersock
     path: /var/run/docker.sock
   commands:
-  - docker tag ghcr.io/csf-ngs/hinkskalle:${DRONE_BRANCH=master} ghcr.io/csf-ngs/hinkskalle:${DRONE_TAG}
-  - docker tag ghcr.io/csf-ngs/hinkskalle:${DRONE_BRANCH=master} ghcr.io/csf-ngs/hinkskalle:latest
+  - "docker tag ghcr.io/csf-ngs/hinkskalle:${DRONE_BRANCH=master} ghcr.io/csf-ngs/hinkskalle:${DRONE_TAG}"
+  - docker tag "ghcr.io/csf-ngs/hinkskalle:${DRONE_BRANCH=master}" "ghcr.io/csf-ngs/hinkskalle:latest"
   when:
     event:
       - tag
@@ -98,7 +98,7 @@ steps:
       from_secret: ghcr-username
   commands:
   - echo "$DOCKER_PASS" | docker login --username $DOCKER_USERNAME --password-stdin ghcr.io
-  - docker push ghcr.io/csf-ngs/hinkskalle:${DRONE_TAG}
+  - "docker push ghcr.io/csf-ngs/hinkskalle:${DRONE_TAG}"
   - docker push ghcr.io/csf-ngs/hinkskalle:latest
   when:
     event:

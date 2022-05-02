@@ -23,6 +23,7 @@ class TestPasswordAuth(RouteBase):
 
     data = ret.get_json().get('data') # type: ignore
     self.assertIn('id', data)
+    self.assertIn('generatedToken', data)
     self.assertIn('expiresAt', data)
 
     self.assertEqual(len(user.tokens), 1)

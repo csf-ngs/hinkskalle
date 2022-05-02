@@ -97,7 +97,7 @@ export default new Vuex.Store({
         commit('authRequested');
         state.backend.post('/v1/get-token', { username: user.username, password: user.password })
           .then(response => {
-            const token = response.data.data.token;
+            const token = response.data.data.generatedToken;
             localStorage.setItem('token', token);
             const user = plainToUser(response.data.data.user);
             localStorage.setItem('user', JSON.stringify(response.data.data.user));

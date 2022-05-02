@@ -1,13 +1,15 @@
-# v4.3.0 (NEXT)
+# v4.3.0 (2022-05-02)
 
+- feature: groups/teams
+- fix #22: api keys are stored as salted hashes
 - fix #3: replace uploaded flag with upload state; do not clear image location when file not found (could just be temporarily mislaid)
-- better handling of disabled ldap auth
-- complain when no secret key is configured
-- update flask and flask-rebar to latest
-- update vue + dependencies
+- fix: better handling of disabled ldap auth
+- fix: complain when no secret key is configured
+- dev: update flask and flask-rebar to latest
+- dev: update vue + dependencies
 - docs: example deployment fixed
 - dev: build docker image from scratch without the vbcf.ngs base image
-- dev: use circleci for ci testing + container builds
+- dev: set up drone ci/cd
 
 # v4.2.9 (2021-09-02)
 

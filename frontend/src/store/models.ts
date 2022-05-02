@@ -535,9 +535,10 @@ class Token {
   public deleted!: boolean
   public deletedAt!: Date | null
   public expiresAt!: Date | null
+  public generatedToken!: string
   public id!: string
+  public key_uid!: string
   public source!: string
-  public token!: string
   public updatedAt!: Date | null
   public user!: User
   
@@ -551,9 +552,10 @@ export function plainToToken(json: any): Token {
     obj.deleted = json['deleted'];
     obj.deletedAt = _isNil(json['deletedAt']) ? null : new Date(json['deletedAt']);
       obj.expiresAt = _isNil(json['expiresAt']) ? null : new Date(json['expiresAt']);
-      obj.id = json['id'];
+      obj.generatedToken = json['generatedToken'];
+    obj.id = json['id'];
+    obj.key_uid = json['key_uid'];
     obj.source = json['source'];
-    obj.token = json['token'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
       if (!_isNil(json['user'])) obj.user = plainToUser(json['user']);
       

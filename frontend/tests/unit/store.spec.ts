@@ -90,7 +90,7 @@ describe('store actions', () => {
     mockAxios.post.mockResolvedValue({
       data: { 
         data: {
-          token: 'superoink',
+          generatedToken: 'superoink',
           user: testUser,
         },
       }

@@ -7,7 +7,7 @@ export function generateMsg(error: AxiosError): string {
   let msg = 'unknown';
   if (error.response) {
     msg = `Code ${error.response.status}: `
-    const data = error.response.data;
+    const data = error.response.data as any;
     console.log(data);
     if (_has(data, 'errors')) {
       _each(data.errors, (v,k) => {

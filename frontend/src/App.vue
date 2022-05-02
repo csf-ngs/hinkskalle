@@ -189,10 +189,10 @@ export default Vue.extend({
 
 <style>
 html .v-application {
-  font-family: "DM Sans", "Roboto", sans-serif;
+  font-family: "Titillium Web", "Roboto", sans-serif;
 }
 .v-application code, .v-application kbd, .v-application pre, .v-application samp {
-  font-family: "DM Mono", "Roboto Mono", monospace;
+  font-family: "JetBrains Mono", "Roboto Mono", monospace;
 }
 span.v-badge--inline i.v-icon {
   margin-right: -5px;

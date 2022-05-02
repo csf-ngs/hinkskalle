@@ -4,7 +4,7 @@ import { Group, GroupMember, plainToGroup, plainToGroupMember, serializeGroup, s
 
 import { AxiosError, AxiosResponse } from 'axios';
 
-import { map as _map, find as _find, concat as _concat, filter as _filter } from 'lodash';
+import { map as _map, concat as _concat, filter as _filter } from 'lodash';
 
 export interface State {
   status: '' | 'loading' | 'failed' | 'success';

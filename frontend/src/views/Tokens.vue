@@ -7,6 +7,23 @@
           <h1>You are looking at {{activeUser.fullname}}s tokens</h1>
         </v-col>
       </v-row>
+      <v-row v-if="localState.createdToken">
+        <v-col cols="12" md="10" offset-md="1">
+          <v-alert prominent type="info" border="left" dismissible>
+            <div class="text-h5">
+              Here is your new token!
+            </div>
+            <div>
+              <code class="generatedToken">{{localState.createdToken.generatedToken}}
+                <v-btn icon small @click="copyToken(localState.createdToken)"><v-icon>mdi-content-copy</v-icon></v-btn>
+              </code>
+            </div>
+            <div>
+              Please commit it to memory or entrust it to your favorite password manager. You will never see it again!
+            </div>
+          </v-alert>
+        </v-col>
+      </v-row>
       <v-row>
         <v-col cols="12" md="10" offset-md="1">
           <v-data-table
@@ -84,9 +101,11 @@
                   @click="loadTokens()"><v-icon>mdi-refresh</v-icon></v-btn>
               </v-toolbar>
             </template>
+            <!-- eslint-disable-next-line vue/valid-v-slot -->
             <template v-slot:item.token="{ item }">
-              <v-icon small @click="copyToken(item)">mdi-content-copy</v-icon> {{item.token | abbreviate(15) }}
+              <code>{{item.key_uid }}</code>
             </template>
+            <!-- eslint-disable-next-line vue/valid-v-slot -->
             <template v-slot:item.expiresAt="{ item }">
               <span v-if="item.expiresAt">
                 {{item.expiresAt | prettyDateTime}}
@@ -95,6 +114,7 @@
                 <em>no expiration</em>
               </span>
             </template>
+            <!-- eslint-disable-next-line vue/valid-v-slot -->
             <template v-slot:item.actions="{ item }">
               <v-icon
                 small
@@ -114,6 +134,16 @@
     </v-container>
   </div>
 </template>
+<style scoped>
+code.generatedToken {
+  font-size: 1.1rem;
+  background-color: #cfe4f5;
+  color: #111;
+}
+code.generatedToken .v-icon {
+  color: #111;
+}
+</style>
 
 <script lang="ts">
 import Vue from 'vue';
@@ -130,11 +160,13 @@ interface State {
   showDelete: boolean;
   showExpiration: boolean;
   editItem: Token;
+  createdToken: Token | null;
 }
 
 export default Vue.extend({
   name: 'HskTokens',
   mounted() {
+    this.localState.createdToken = null;
     this.loadTokens();
   },
   watch: {
@@ -155,7 +187,7 @@ export default Vue.extend({
   data: (): { headers: DataTableHeader[]; localState: State } => ({
     headers: [
       { text: 'id', value: 'id', sortable: true, filterable: false, width: '9%' },
-      { text: 'Token', value: 'token', sortable: false, width: '20%' },
+      { text: 'Key ID', value: 'token', sortable: false, width: '20%' },
       { text: 'Comment', value: 'comment', sortable: true, width: '' },
       { text: 'Expires', value: 'expiresAt', sortable: true, filterable: false, width: '20%' },
       { text: 'Actions', value: 'actions', sortable: false, filterable: false, width: '1%' },
@@ -168,6 +200,7 @@ export default Vue.extend({
       editItem: new Token(),
       sortBy: 'id',
       sortDesc: false,
+      createdToken: null,
     },
   }),
   computed: {
@@ -241,12 +274,17 @@ export default Vue.extend({
       const action = this.localState.editItem.id ?
         'tokens/update' : 'tokens/create';
       this.$store.dispatch(action, this.localState.editItem)
-        .then(() => this.$store.commit('snackbar/showSuccess', 'Saved!'))
+        .then(upd => {
+          this.$store.commit('snackbar/showSuccess', 'Saved!');
+          if (action === 'tokens/create') {
+            this.localState.createdToken = upd;
+          }
+        })
         .catch(err => this.$store.commit('snackbar/showError', err))
       this.closeEdit();
     },
     copyToken(item: Token) {
-      this.$copyText(item.token)
+      this.$copyText(item.generatedToken)
         .then(() => this.$store.commit('snackbar/open', "Copied to clipboard."))
     },
   },

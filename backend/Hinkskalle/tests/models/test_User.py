@@ -6,7 +6,7 @@ from marshmallow import ValidationError
 from ..model_base import ModelBase
 from .._util import _create_group, _create_user, _create_container
 
-from Hinkskalle.models import User, UserSchema, Group, GroupSchema, Token, TokenSchema, Container, UserGroup, GroupRoles
+from Hinkskalle.models import User, UserSchema, Group, GroupSchema, Container, UserGroup, GroupRoles
 
 from Hinkskalle import db
 
@@ -89,27 +89,6 @@ class TestUser(ModelBase):
     self.assertEqual(read_container.stars, 0)
 
   
-  def test_token(self):
-    user = _create_user()
-    token1 = Token(user=user, token='geheimhase')
-    db.session.add(token1)
-    db.session.commit()
-
-    read_token = Token.query.filter(Token.token=='geheimhase').one()
-    self.assertEqual(read_token.user_id, user.id)
-    self.assertEqual(read_token.user, user)
-
-    read_user = User.query.filter_by(username=user.username).one()
-    self.assertListEqual(read_user.tokens, [read_token])
-  
-  def test_generate_token(self):
-    user = _create_user()
-    token1 = user.create_token()
-    
-    self.assertGreater(len(token1.token), 32)
-    self.assertEqual(token1.user_id, user.id)
-    self.assertListEqual(user.tokens, [token1])
-  
   def test_password(self):
     user = _create_user()
     user.set_password('geheimhase')
@@ -129,20 +108,6 @@ class TestUser(ModelBase):
     db.session.commit()
     self.assertFalse(user.check_password('something'))
   
-  def test_user_tokens(self):
-    user = _create_user()
-    token1 = Token(token='geheim')
-    token2 = Token(token='auchgeheim')
-    user.tokens = [ token1, token2 ]
-
-    self.assertTrue(len(user.tokens)==2)
-    self.assertTrue(len(user.manual_tokens)==0)
-
-    token1.source='manual'
-    db.session.commit()
-    self.assertListEqual([ t.id for t in user.manual_tokens ], [ token1.id ])
-
-
   
   def test_schema(self):
     schema = UserSchema()
@@ -191,15 +156,6 @@ class TestUser(ModelBase):
       })
 
 
-  def test_schema_token(self):
-    schema = TokenSchema()
-    user = _create_user()
-    token = Token(user=user, token='geheimhase')
-
-    serialized = typing.cast(dict, schema.dump(token))
-    self.assertEqual(serialized['token'], 'geheimhase')
-    self.assertEqual(serialized['user']['id'], str(user.id))
-  
   def test_access(self):
     subject = _create_user()
 

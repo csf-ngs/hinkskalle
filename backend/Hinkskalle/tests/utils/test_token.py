@@ -127,7 +127,7 @@ class TestTokenAuth(RouteBase):
     self.assertEqual(scoped.scope, Scopes.optional)
 
     with self.assertRaises(ValueError):
-      scoped = TokenAuthenticator().with_scope('oink')
+      scoped = TokenAuthenticator().with_scope('oink') # type: ignore
 
   def test_scoped_optional(self):
     test_user = _create_user()

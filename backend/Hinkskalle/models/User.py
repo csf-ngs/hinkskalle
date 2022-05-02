@@ -5,6 +5,7 @@ from marshmallow import fields, Schema, validates_schema, ValidationError
 from datetime import datetime, timedelta
 from flask import current_app, g
 from sqlalchemy.orm import validates
+from sqlalchemy.ext.hybrid import hybrid_property
 import enum
 
 from passlib.hash import sha512_crypt
@@ -231,7 +232,8 @@ class Group(db.Model): # type: ignore
 
 class TokenSchema(BaseSchema):
   id = fields.String(required=True, dump_only=True)
-  token = fields.String(required=True, dump_only=True)
+  generatedToken = fields.String(dump_only=True)
+  key_uid = fields.String(required=True, dump_only=True)
   comment = fields.String(allow_none=True)
 
   user = fields.Nested('UserSchema')
@@ -247,7 +249,8 @@ class TokenSchema(BaseSchema):
 
 class Token(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
-  token = db.Column(db.String(), unique=True, nullable=False)
+  _token = db.Column('token', db.String(), nullable=False)
+  key_uid = db.Column(db.String(), unique=True, nullable=False)
   comment = db.Column(db.String())
   user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
@@ -262,6 +265,32 @@ class Token(db.Model): # type: ignore
   deleted = db.Column(db.Boolean, default=False)
 
   defaultExpiration = timedelta(days=1)
+
+  generatedToken: str
+
+  @hybrid_property
+  def token(self) -> str: # type: ignore
+    return self._token
+  
+  @token.setter
+  def token(self, upd: str):
+    if upd and not upd.startswith('$'):
+      self._token = sha512_crypt.hash(upd, rounds=10000)
+      self.generatedToken = upd
+      self.key_uid = upd[:12]
+    else:
+      self._token = upd
+  
+  def check_token(self, token: str) -> bool:
+    if not self.token:
+      current_app.logger.debug(f"Token {self.key_uid} token is NULL")
+      return False
+    try:
+      result = sha512_crypt.verify(token, self._token)
+    except Exception as err:
+      current_app.logger.info(f"Token {self.key_uid}/{self.user.username} hash check failed: {err}")
+      return False
+    return result
 
   def refresh(self) -> None:
     self.expiresAt = datetime.now() + Token.defaultExpiration

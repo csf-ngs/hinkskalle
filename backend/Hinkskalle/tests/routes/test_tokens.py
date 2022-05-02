@@ -5,6 +5,7 @@ from Hinkskalle.models.User import Token
 from Hinkskalle import db
 
 import datetime
+import typing
 
 class TestTokens(RouteBase):
   def setUp(self):
@@ -32,7 +33,7 @@ class TestTokens(RouteBase):
     with self.fake_auth():
       ret = self.client.get(f"/v1/users/{self.username}/tokens")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertIsInstance(json, list)
     self.assertListEqual([ t['id'] for t in json ], [ str(self.user_token_id) ])
 
@@ -42,7 +43,7 @@ class TestTokens(RouteBase):
     with self.fake_auth():
       ret = self.client.get(f"/v1/users/{self.username}/tokens")
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertIsInstance(json, list)
     self.assertListEqual([ t['id'] for t in json ], [ ])
 
@@ -63,10 +64,13 @@ class TestTokens(RouteBase):
     with self.fake_auth():
       ret = self.client.post(f"/v1/users/{self.username}/tokens", json={})
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
-    self.assertGreater(len(json['token']), 32)
+    json = ret.get_json().get('data') # type: ignore
+    self.assertNotIn('token', json)
+    self.assertGreater(len(json['generatedToken']), 32)
+    gen_uid = typing.cast(str, json['generatedToken'])[:12]
+    self.assertEqual(json['key_uid'], gen_uid)
 
-    db_token = Token.query.filter(Token.token == json['token']).first()
+    db_token = Token.query.filter(Token.key_uid == json['key_uid']).first()
     self.assertIsNotNone(db_token)
     self.assertEqual(db_token.source, 'manual')
   
@@ -76,10 +80,10 @@ class TestTokens(RouteBase):
     with self.fake_auth():
       ret = self.client.post(f"/v1/users/{self.username}/tokens", json=post)
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertEqual(json['comment'], post['comment'])
 
-    db_token = Token.query.filter(Token.token == json['token']).first()
+    db_token = Token.query.filter(Token.key_uid == json['key_uid']).first()
     self.assertIsNotNone(db_token)
     self.assertEqual(db_token.comment, post['comment'])
     self.assertEqual(db_token.expiresAt, now)
@@ -105,10 +109,10 @@ class TestTokens(RouteBase):
     with self.fake_auth():
       ret = self.client.put(f"/v1/users/{self.username}/tokens/{self.user_token_id}", json=post)
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertEqual(json['comment'], post['comment'])
 
-    db_token = Token.query.filter(Token.token == json['token']).first()
+    db_token = Token.query.filter(Token.key_uid == json['key_uid']).first()
     self.assertIsNotNone(db_token)
     self.assertEqual(db_token.comment, post['comment'])
     self.assertEqual(db_token.expiresAt, now)
@@ -132,11 +136,12 @@ class TestTokens(RouteBase):
     new_token = Token(token='Ken sent me', user=self.user)
     db.session.add(new_token)
     db.session.commit()
+    new_uid = new_token.key_uid
     with self.fake_auth():
       ret = self.client.delete(f"/v1/users/{self.user.username}/tokens/{new_token.id}")
     self.assertEqual(ret.status_code, 200)
 
-    self.assertIsNone(Token.query.filter(Token.token=='Ken sent me').first())
+    self.assertIsNone(Token.query.filter(Token.key_uid==new_uid).first())
   
   def test_delete_other(self):
     new_token = Token(token='Ken sent me', user=self.other_user)

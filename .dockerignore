@@ -7,3 +7,5 @@ backend/test_report.html
 backend/coverage_report
 **/__pycache__
 *.pyc
+frontend/test-report.html
+backend/htmlcov

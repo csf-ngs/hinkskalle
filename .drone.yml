@@ -6,11 +6,6 @@ concurrency:
   limit: 1
 
 steps:
-- name: fetch
-  image: drone/git
-  commands:
-    - git fetch --tags
-    - (git describe || git rev-parse --short HEAD) > .tags
 - name: testhase
   image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.0-tmpfix
   environment:
@@ -34,14 +29,13 @@ steps:
   - name: dockersock
     path: /var/run/docker.sock
   commands:
-  - TAG=$(cat .tags)
   - >
     docker build 
     --label org.label-schema.build-date="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
     --label org.label-schema.vcs-url="$DRONE_GIT_HTTP_URL"
     --label org.label-schema.vcs-ref="$DRONE_COMMIT_SHA"
     --label at.ac.vbcf.ngs.blame="$DRONE_COMMIT_AUTHOR"
-    -t ghcr.io/csf-ngs/hinkskalle:$TAG .
+    -t ghcr.io/csf-ngs/hinkskalle:${DRONE_BRANCH=master} .
 - name: reporthinaus
   depends_on:
   - testhase
@@ -70,30 +64,14 @@ steps:
   - name: dockersock
     path: /var/run/docker.sock
   commands:
-  - TAG=$(cat .tags)
-  - docker tag ghcr.io/csf-ngs/hinkskalle:$TAG ghcr.io/csf-ngs/hinkskalle:${DRONE_BRANCH=master}
+  - docker tag ghcr.io/csf-ngs/hinkskalle:${DRONE_BRANCH=master} ghcr.io/csf-ngs/hinkskalle:${DRONE_TAG}
+  - docker tag ghcr.io/csf-ngs/hinkskalle:${DRONE_BRANCH=master} ghcr.io/csf-ngs/hinkskalle:latest
   when:
     event:
-      - push
-- name: master_pickerldrauf
-  depends_on:
-  - bauhaus
-  image: docker:dind
-  volumes:
-  - name: dockersock
-    path: /var/run/docker.sock
-  - name: dockerauth
-    path: /root/.docker/config.json
-  commands:
-  - TAG=$(cat .tags)
-  - docker tag ghcr.io/csf-ngs/hinkskalle:$TAG ghcr.io/csf-ngs/hinkskalle:latest
-  when:
-    branch:
-      - master
+      - tag
 - name: pushraus
   depends_on:
-  - pickerldrauf
-  - master_pickerldrauf
+  - bauhaus
   image: docker:dind
   volumes:
   - name: dockersock
@@ -105,9 +83,26 @@ steps:
       from_secret: ghcr-username
   commands:
   - echo "$DOCKER_PASS" | docker login --username $DOCKER_USERNAME --password-stdin ghcr.io
-  - docker push ghcr.io/csf-ngs/hinkskalle:latest
-  - docker push ghcr.io/csf-ngs/hinkskalle:$(cat .tags)
   - docker push ghcr.io/csf-ngs/hinkskalle:${DRONE_BRANCH=master}
+- name: tag_pushraus
+  depends_on:
+  - pickerldrauf
+  image: docker:dind
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  environment:
+    DOCKER_PASS:
+      from_secret: ghcr
+    DOCKER_USERNAME:
+      from_secret: ghcr-username
+  commands:
+  - echo "$DOCKER_PASS" | docker login --username $DOCKER_USERNAME --password-stdin ghcr.io
+  - docker push ghcr.io/csf-ngs/hinkskalle:${DRONE_TAG}
+  - docker push ghcr.io/csf-ngs/hinkskalle:latest
+  when:
+    event:
+      - tag
 volumes:
 - name: dockersock
   host:

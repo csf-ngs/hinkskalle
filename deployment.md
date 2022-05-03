@@ -43,6 +43,15 @@ flask localdb add-user -u admin.hase -p somethingonlyyouknow -e admin@testha.se 
 flask localdb add-user -u user.hase -p alsosomethingfairlysecret -e user@testha.se -f User -l Hase
 ```
 
+If you are using postgresql (recommended):
+
+```bash
+docker-compose run hinkdb psql -U hinkhase hinkskalle # your db config!
+alter table image alter column sigdata type jsonb;
+```
+
+This is necessary until [#12](https://github.com/csf-ngs/hinkskalle/issues/12) is fixed.
+
 ## Startup
 
 - fire up whole stack with: `docker-compose up -d`

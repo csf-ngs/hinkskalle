@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-mkdir -p conf/
+mkdir -p conf/ results/
 echo "POSTGRES_PASSWORD=supersecret" > conf/db_secrets.env
 echo "HINKSKALLE_SECRET_KEY=superdupersecret" > conf/secrets.env
 echo "DB_PASSWORD=supersecret" >> conf/secrets.env

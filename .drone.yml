@@ -12,7 +12,7 @@ steps:
   - name: dockersock
     path: /var/run/docker.sock
   commands:
-    - apk update && apk add docker-compose
+    - apk update && apk add docker-compose bash
     - cd share/oci
     - export DEV_VERSION=v2.0.1-tmpfix
     - export BACKEND_PORT=17760

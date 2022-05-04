@@ -13,16 +13,13 @@ steps:
     path: /var/run/docker.sock
   commands:
     - apk update && apk add docker-compose
-    - echo "POSTGRES_PASSWORD=supersecret" > conf/db_secrets.env
-    - echo "HINKSKALLE_SECRET_KEY=superdupersecret" > conf/secrets.env
-    - echo "DB_PASSWORD=supersecret" >> conf/secrets.env
-    - touch conf/slapd_secrets.env
-    - docker-compose up -d api
     - cd share/oci
+    - export DEV_VERSION=v2.0.1-tmpfix
+    - export BACKEND_PORT=17760
+    - export BACKEND_HOST=conformhase
     - ./conformance-test.sh
-    - docker-compose down
 - name: testhase
-  image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.0-tmpfix
+  image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.1-tmpfix
   environment:
     HINKSKALLE_SETTINGS: ../../conf/config.json
   commands:
@@ -30,7 +27,7 @@ steps:
   - pip3 install -e '.[dev]'
   - nose2 --with-coverage
 - name: testhase-front
-  image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.0-tmpfix
+  image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.1-tmpfix
   commands:
   - cd frontend
   - yarn install

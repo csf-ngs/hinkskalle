@@ -6,6 +6,20 @@ concurrency:
   limit: 1
 
 steps:
+- name: conformhase
+  image: docker:dind
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  commands:
+    - apk update && apk add docker-compose
+    - echo "POSTGRES_PASSWORD=supersecret" > conf/db_secrets.env
+    - echo "HINKSKALLE_SECRET_KEY=superdupersecret" > conf/secrets.env
+    - echo "DB_PASSWORD=supersecret" >> conf/secrets.env
+    - docker-compose up -d api
+    - cd share/oci
+    - ./conformance-test.sh
+    - docker-compose down
 - name: testhase
   image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.0-tmpfix
   environment:

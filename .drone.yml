@@ -11,12 +11,13 @@ steps:
   volumes:
   - name: dockersock
     path: /var/run/docker.sock
+  environment:
+    DEV_VERSION: v2.0.1-tmpfix
+    BACKEND_PORT: 17760
+    BACKEND_HOST: conformhase
   commands:
     - apk update && apk add docker-compose bash
     - cd share/oci
-    - export DEV_VERSION=v2.0.1-tmpfix
-    - export BACKEND_PORT=17760
-    - export BACKEND_HOST=conformhase
     - ./conformance-test.sh
 - name: testhase
   image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.1-tmpfix

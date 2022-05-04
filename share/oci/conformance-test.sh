@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 
+set -x
+
 mkdir -p conf/ results/
 echo "POSTGRES_PASSWORD=supersecret" > conf/db_secrets.env
 echo "HINKSKALLE_SECRET_KEY=superdupersecret" > conf/secrets.env
 echo "DB_PASSWORD=supersecret" >> conf/secrets.env
 
+set -eo pipefail
+docker-compose --project-directory ../../ config
 docker-compose --project-directory ../../ up -d
 sleep 5
 docker-compose --project-directory ../../ exec api flask localdb add-user -u conform.hase -p conform -e conform@testha.se -f Conform -l Hase --admin
+set +eo pipefail
 echo "Starting tests..."
 docker run --rm \
   --network host \

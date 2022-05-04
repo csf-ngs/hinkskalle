@@ -16,6 +16,7 @@ steps:
     - echo "POSTGRES_PASSWORD=supersecret" > conf/db_secrets.env
     - echo "HINKSKALLE_SECRET_KEY=superdupersecret" > conf/secrets.env
     - echo "DB_PASSWORD=supersecret" >> conf/secrets.env
+    - touch conf/slapd_secrets.env
     - docker-compose up -d api
     - cd share/oci
     - ./conformance-test.sh

@@ -15,6 +15,7 @@ docker-compose --project-directory ../../ exec -T api flask localdb add-user -u 
 set +eo pipefail
 echo "Starting tests..."
 docker run --rm \
+  --add-host=host.docker.internal:host-gateway \
   -v $(pwd)/results:/results \
   -w /results \
   -e OCI_ROOT_URL="http://${BACKEND_HOST:-host.docker.internal}:${BACKEND_PORT:-17660}" \

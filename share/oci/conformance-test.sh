@@ -14,9 +14,9 @@ sleep 1
 docker-compose -p conformance --project-directory ../../ exec -T api flask localdb add-user -u conform.hase -p conform -e conform@testha.se -f Conform -l Hase --admin
 set +eo pipefail
 echo "Starting tests..."
-docker run --name conformance-tests \
+docker run --rm --name conformance-tests \
   --add-host=host.docker.internal:host-gateway \
-  -v $(pwd)/results:/results \
+  -v ${PROJECT_BASE:-$(pwd)}/results:/results \
   -w /results \
   -e OCI_ROOT_URL="http://${BACKEND_HOST:-host.docker.internal}:${BACKEND_PORT:-7660}" \
   -e OCI_NAMESPACE="myorg/myrepo" \
@@ -31,5 +31,5 @@ docker run --name conformance-tests \
   -e OCI_DELETE_MANIFEST_BEFORE_BLOBS=1 \
   ghcr.io/csf-ngs/oci-conformance
 
-docker-compose -p conformance --project-directory ../../ logs api > results/api.log
+docker-compose -p conformance --project-directory ../../ logs api > ${PROJECT_BASE:-$(pwd)}/results/api.log
 docker-compose -p conformance --project-directory ../../ down

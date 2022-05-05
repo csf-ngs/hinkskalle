@@ -23,7 +23,7 @@ steps:
     - mkdir -p share/oci/results
     - cd /tmp/conformance/share/oci
     - ./conformance-test.sh
-    - cp results/* $DRONE_WORKSPACE/share/oci/results/
+    - cp /tmp/conformance/results/* $DRONE_WORKSPACE/share/oci/results/
 - name: testhase
   image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.1-tmpfix
   environment:

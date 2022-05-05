@@ -33,4 +33,3 @@ docker run --rm \
 
 docker-compose -p conformance --project-directory ../../ logs api > results/api.log
 docker-compose -p conformance --project-directory ../../ down
-rm -rf /var/tmp/conformance-tmp/*

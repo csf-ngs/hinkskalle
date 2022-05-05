@@ -24,6 +24,7 @@ steps:
     - cd /tmp/conformance/share/oci
     - ./conformance-test.sh
     - cp /tmp/conformance/results/* /tmp/conformance/share/oci/results/* $DRONE_WORKSPACE/share/oci/results/
+    - rm -rf /tmp/conformance/*
 - name: testhase
   image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.1-tmpfix
   environment:

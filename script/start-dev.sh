@@ -1,6 +1,7 @@
 #!/bin/bash
 
 SESSION=hink
+sleep 1
 flask db upgrade
 
 # can't use dev server because of weird problems

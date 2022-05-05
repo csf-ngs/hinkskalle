@@ -11,13 +11,16 @@ steps:
   volumes:
   - name: dockersock
     path: /var/run/docker.sock
+  - name: conformance-tmp
+    path: /tmp/conformance
   environment:
     DEV_VERSION: v2.0.1-tmpfix
     BACKEND_PORT: 17760
     BACKEND_HOST: conformhase
   commands:
     - apk update && apk add docker-compose bash
-    - cd share/oci
+    - cp -a backend conf script share /tmp/conformance/
+    - cd /tmp/conformance/share/oci
     - ./conformance-test.sh
 - name: testhase
   image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.1-tmpfix
@@ -127,3 +130,7 @@ volumes:
 - name: assets
   host:
     path: /home/docker/caddy/site/knecht
+- name: conformance-tmp
+  host:
+    path: /var/tmp/conformance-tmp
+  

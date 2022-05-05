@@ -77,7 +77,9 @@ steps:
   - cp -r backend/htmlcov /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/
   - cp frontend/test-report.html /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/frontend-report.html
   - mkdir -p /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/oci
-  - cp share/oci/results/{api.log,junit.xml,report.html} /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/oci/
+  - cp share/oci/results/api.log /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/oci/
+  - cp share/oci/results/junit.xml /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/oci/
+  - cp share/oci/results/report.html /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/oci/
 - name: pickerldrauf
   depends_on:
   - bauhaus

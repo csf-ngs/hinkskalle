@@ -3,7 +3,7 @@ services:
   api:
     image: "ghcr.io/csf-ngs/hinkskalle-dev:$DEV_VERSION"
     volumes:
-      - '.:/srv/hinkskalle/src'
+      - '${PROJECT_BASE:-.}:/srv/hinkskalle/src'
     command: '../script/start-dev.sh'
     environment:
       PORT: 5000

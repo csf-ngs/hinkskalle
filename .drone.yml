@@ -20,8 +20,11 @@ steps:
   commands:
     - apk update && apk add docker-compose bash
     - cp -a backend conf script share /tmp/conformance/
+    - mkdir -p share/oci/results
     - cd /tmp/conformance/share/oci
     - ./conformance-test.sh
+    - cp results/* $DRONE_WORKSPACE/share/oci/results/
+    - rm -rf /tmp/conformance/*
 - name: testhase
   image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.1-tmpfix
   environment:

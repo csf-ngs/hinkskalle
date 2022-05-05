@@ -31,5 +31,6 @@ docker run --rm \
   -e OCI_DELETE_MANIFEST_BEFORE_BLOBS=1 \
   ghcr.io/csf-ngs/oci-conformance
 
-docker-compose -p conformance --project-directory ../../ logs api > ${PROJECT_BASE:-$(pwd)}/results/api.log
+docker-compose -p conformance --project-directory ../../ logs api > results/api.log
 docker-compose -p conformance --project-directory ../../ down
+rm -rf /var/tmp/conformance-tmp/*

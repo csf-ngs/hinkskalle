@@ -10,7 +10,7 @@ echo "DB_PASSWORD=supersecret" >> conf/secrets.env
 set -eo pipefail
 docker-compose --project-directory ../../ config
 docker-compose --project-directory ../../ up -d
-sleep 5
+sleep 1
 docker-compose --project-directory ../../ exec api flask localdb add-user -u conform.hase -p conform -e conform@testha.se -f Conform -l Hase --admin
 set +eo pipefail
 echo "Starting tests..."

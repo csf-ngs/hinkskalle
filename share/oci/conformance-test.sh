@@ -14,7 +14,7 @@ sleep 1
 docker-compose -p conformance --project-directory ../../ exec -T api flask localdb add-user -u conform.hase -p conform -e conform@testha.se -f Conform -l Hase --admin
 set +eo pipefail
 echo "Starting tests..."
-docker run --rm \
+docker run --name conformance-tests \
   --add-host=host.docker.internal:host-gateway \
   -v $(pwd)/results:/results \
   -w /results \

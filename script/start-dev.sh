@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SESSION=hink
-sleep 1
+sleep 2
 echo "running migrations..."
 flask db upgrade
 

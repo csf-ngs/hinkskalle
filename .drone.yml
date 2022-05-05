@@ -16,7 +16,6 @@ steps:
   environment:
     DEV_VERSION: v2.0.1-tmpfix
     BACKEND_PORT: 17760
-    BACKEND_HOST: conformhase
     PROJECT_BASE: /var/tmp/conformance-tmp
   commands:
     - apk update && apk add docker-compose bash

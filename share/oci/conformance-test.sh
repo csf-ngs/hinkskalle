@@ -15,10 +15,9 @@ docker-compose --project-directory ../../ exec -T api flask localdb add-user -u 
 set +eo pipefail
 echo "Starting tests..."
 docker run --rm \
-  --network host \
   -v $(pwd)/results:/results \
   -w /results \
-  -e OCI_ROOT_URL="http://${BACKEND_HOST:-127.0.0.1}:${BACKEND_PORT:-17660}" \
+  -e OCI_ROOT_URL="http://${BACKEND_HOST:-host.docker.internal}:${BACKEND_PORT:-17660}" \
   -e OCI_NAMESPACE="myorg/myrepo" \
   -e OCI_USERNAME="conform.hase" \
   -e OCI_PASSWORD="conform" \

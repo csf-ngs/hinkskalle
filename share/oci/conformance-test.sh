@@ -7,11 +7,13 @@ echo "POSTGRES_PASSWORD=supersecret" > conf/db_secrets.env
 echo "HINKSKALLE_SECRET_KEY=superdupersecret" > conf/secrets.env
 echo "DB_PASSWORD=supersecret" >> conf/secrets.env
 
+dockercompose='docker-compose -p conformance --project-directory ../../ -f ./docker-compose.yml'
+
 set -eo pipefail
-docker-compose -p conformance --project-directory ../../ config
-docker-compose -p conformance --project-directory ../../ up -d
-sleep 1
-docker-compose -p conformance --project-directory ../../ exec -T api flask localdb add-user -u conform.hase -p conform -e conform@testha.se -f Conform -l Hase --admin
+$dockercompose config
+$dockercompose up -d
+sleep 3
+$dockercompose exec -T api flask localdb add-user -u conform.hase -p conform -e conform@testha.se -f Conform -l Hase --admin
 set +eo pipefail
 echo "Starting tests..."
 docker run --rm \
@@ -31,5 +33,5 @@ docker run --rm \
   -e OCI_DELETE_MANIFEST_BEFORE_BLOBS=1 \
   ghcr.io/csf-ngs/oci-conformance
 
-docker-compose -p conformance --project-directory ../../ logs api > results/api.log
-docker-compose -p conformance --project-directory ../../ down
+$dockercompose logs api > results/api.log
+$dockercompose down

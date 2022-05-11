@@ -1,3 +1,10 @@
+# v4.3.1 (next)
+
+- dev: run oci conformance tests in ci pipeline (#18)
+- fix #12: use jsonb fields for postgresql
+- fix: sqlite migrations need `batch_alter_table`
+
+
 # v4.3.0 (2022-05-02)
 
 - feature: groups/teams

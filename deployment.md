@@ -1,13 +1,13 @@
 ---
-Title: 'Deployment with docker-compose'
+Title: 'Setup'
 weight: 1
 ---
 
-How to run hinkskalle as a container without local installation (recommende)
+How to run hinkskalle as a container (recommended) or local installation
 
 <!--more-->
 
-## docker-compose
+## Deployment with docker-compose
 
 Get a docker-compose file. Why not this one: [docker-compose.yml](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/docker-compose.yml)?
 
@@ -19,7 +19,7 @@ Apart from the application server listening on port 7660 this also starts:
 - an [rq-scheduler](https://github.com/rq/rq-scheduler) to manage periodic maintenance jobs
 
 
-## Configuration
+### Configuration
 
 See [configuration](../configuration) for details
 
@@ -30,7 +30,7 @@ See [configuration](../configuration) for details
   - [conf/secrets.env](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/conf/secrets.env)
   - [conf/db_secrets.env](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/conf/db_secrets.env)
 
-## Database Setup
+### Database Setup
 
 ```bash
 docker-compose run api bash
@@ -43,21 +43,12 @@ flask localdb add-user -u admin.hase -p somethingonlyyouknow -e admin@testha.se 
 flask localdb add-user -u user.hase -p alsosomethingfairlysecret -e user@testha.se -f User -l Hase
 ```
 
-If you are using postgresql (recommended):
-
-```bash
-docker-compose run hinkdb psql -U hinkhase hinkskalle # your db config!
-alter table image alter column sigdata type jsonb;
-```
-
-This is necessary until [#12](https://github.com/csf-ngs/hinkskalle/issues/12) is fixed.
-
-## Startup
+### Startup
 
 - fire up whole stack with: `docker-compose up -d`
 - if using ldap:
 
-## LDAP Setup
+### LDAP Setup
 
 ```bash
 docker-compose exec api bash
@@ -65,13 +56,13 @@ cd backend
 flask ldap sync
 ```
 
-## Reverse Proxy
+### Reverse Proxy
 
 The example docker-compose starts a backend server on port 7600. You will want
 to run it behind a reverse proxy serving via HTTPS (e.g. nginx, caddy, Apache,
 ...).
 
-## Keyserver
+### Keyserver
 
 If you would like to run your own keyserver put something like this in your `docker-compose.yaml`:
 
@@ -102,3 +93,40 @@ services:
 ```
 
 This will start an instance of [Hockeypuck](https://hockeypuck.io/). The config variable `KEYSERVER_URL` should point to `http://localhost:11371/`.
+
+## Install from Source Code
+
+- latest release from the [release page](https://github.com/csf-ngs/hinkskalle/tags) and unpack
+
+### Required Python Packages
+
+```
+cd backend/
+# with sqlite only
+pip install .
+# or with postgres
+pip install '.[postgres]'
+```
+
+### Singularity Binaries
+
+Set up singularity according to the [instructions on sylabs.io](https://sylabs.io/docs/#singularity)
+
+It is required only for checking image signatures and showing the singularity
+definition file on the web.
+
+The singularity binary should end up in `$PATH` so that Hinkskalle can find it.
+`/usr/local/bin`, the default, is usually fine.
+
+### Configuration
+
+Hinkskalle reads its configuration from JSON files. By default it looks for
+
+- `conf/config.json`
+- `conf/secrets.json` (optional)
+
+My recommendation is to put passwords etc. in an extra file (which is in
+[.gitignore](.gitignore)) to make it harder to accidentally commit your
+credentials.
+
+See [configuration](../configuration) for valid configuration options.

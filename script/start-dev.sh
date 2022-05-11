@@ -1,6 +1,8 @@
 #!/bin/bash
 
 SESSION=hink
+sleep 2
+echo "running migrations..."
 flask db upgrade
 
 # can't use dev server because of weird problems
@@ -12,6 +14,7 @@ flask db upgrade
 # etc etc
 # causes the oci conformance tests to fail
 #flask run -h 0.0.0.0 --reload --no-debugger
+echo "starting dev server..."
 gunicorn -u hinkskalle \
   --access-logfile - \
   --error-logfile - \

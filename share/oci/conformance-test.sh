@@ -1,13 +1,26 @@
 #!/usr/bin/env bash
 
-pushd ../../
-docker-compose exec api flask localdb add-user -u conform.hase -p conform -e conform@testha.se -f Conform -l Hase --admin
-popd
+set -x
+
+mkdir -p conf/ results/
+echo "POSTGRES_PASSWORD=supersecret" > conf/db_secrets.env
+echo "HINKSKALLE_SECRET_KEY=superdupersecret" > conf/secrets.env
+echo "DB_PASSWORD=supersecret" >> conf/secrets.env
+
+dockercompose='docker-compose -p conformance --project-directory ../../ -f ./docker-compose.yml'
+
+set -eo pipefail
+$dockercompose config
+$dockercompose up -d
+sleep 3
+$dockercompose exec -T api flask localdb add-user -u conform.hase -p conform -e conform@testha.se -f Conform -l Hase --admin
+set +eo pipefail
+echo "Starting tests..."
 docker run --rm \
-  --network host \
-  -v $(pwd)/results:/results \
+  --add-host=host.docker.internal:host-gateway \
+  -v ${PROJECT_BASE:-$(pwd)}/results:/results \
   -w /results \
-  -e OCI_ROOT_URL="http://127.0.0.1:7660" \
+  -e OCI_ROOT_URL="http://${BACKEND_HOST:-host.docker.internal}:${BACKEND_PORT:-7660}" \
   -e OCI_NAMESPACE="myorg/myrepo" \
   -e OCI_USERNAME="conform.hase" \
   -e OCI_PASSWORD="conform" \
@@ -20,6 +33,5 @@ docker run --rm \
   -e OCI_DELETE_MANIFEST_BEFORE_BLOBS=1 \
   ghcr.io/csf-ngs/oci-conformance
 
-pushd ../../
-docker-compose exec api flask localdb remove-user conform.hase
-popd
+$dockercompose logs api > results/api.log
+$dockercompose down

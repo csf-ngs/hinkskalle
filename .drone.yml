@@ -6,8 +6,27 @@ concurrency:
   limit: 1
 
 steps:
+- name: conformhase
+  image: docker:dind
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  - name: conformance-tmp
+    path: /tmp/conformance
+  environment:
+    DEV_VERSION: v2.0.1-tmpfix
+    BACKEND_PORT: 17760
+    PROJECT_BASE: /var/tmp/conformance-tmp
+  commands:
+    - apk update && apk add docker-compose bash
+    - cp -a backend conf script share /tmp/conformance/
+    - mkdir -p share/oci/results
+    - cd /tmp/conformance/share/oci
+    - ./conformance-test.sh
+    - cp /tmp/conformance/results/* /tmp/conformance/share/oci/results/* $DRONE_WORKSPACE/share/oci/results/
+    - rm -rf /tmp/conformance/*
 - name: testhase
-  image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.0-tmpfix
+  image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.1-tmpfix
   environment:
     HINKSKALLE_SETTINGS: ../../conf/config.json
   commands:
@@ -15,7 +34,7 @@ steps:
   - pip3 install -e '.[dev]'
   - nose2 --with-coverage
 - name: testhase-front
-  image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.0-tmpfix
+  image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.1-tmpfix
   commands:
   - cd frontend
   - yarn install
@@ -24,6 +43,7 @@ steps:
   depends_on:
   - testhase
   - testhase-front
+  - conformhase
   image: docker:dind
   volumes:
   - name: dockersock
@@ -40,6 +60,7 @@ steps:
   depends_on:
   - testhase
   - testhase-front
+  - conformhase
   image: alpine
   volumes:
   - name: assets
@@ -56,6 +77,10 @@ steps:
   - cp backend/test_report.html /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/backend-report.html
   - cp -r backend/htmlcov /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/
   - cp frontend/test-report.html /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/frontend-report.html
+  - mkdir -p /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/oci
+  - cp share/oci/results/api.log /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/oci/
+  - cp share/oci/results/junit.xml /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/oci/
+  - cp share/oci/results/report.html /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/oci/
 - name: pickerldrauf
   depends_on:
   - bauhaus
@@ -110,3 +135,7 @@ volumes:
 - name: assets
   host:
     path: /home/docker/caddy/site/knecht
+- name: conformance-tmp
+  host:
+    path: /var/tmp/conformance-tmp
+  

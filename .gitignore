@@ -23,3 +23,4 @@ backend/nose*
 frontend/test-report.html
 backend/build
 backend/venv
+share/oci/conf/*secrets.env

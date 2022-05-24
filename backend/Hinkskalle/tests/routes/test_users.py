@@ -6,6 +6,7 @@ from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.User import User
 from Hinkskalle import db
 
+from unittest import mock
 import datetime
 
 class TestUsers(RouteBase):
@@ -52,6 +53,13 @@ class TestUsers(RouteBase):
     self.assertIsInstance(json, list)
     self.assertEqual(len(json), 5)
     self.assertListEqual([ u['username'] for u in json ], [ self.admin_username, self.username, self.other_username, user1.username, user2.username ])
+
+  def test_list_invalid_username(self):
+    with mock.patch('Hinkskalle.util.name_check.validate_as_name'):
+      user1 = _create_user('müh&.küh')
+    with self.fake_admin_auth():
+      ret = self.client.get('/v1/users')
+    self.assertEqual(ret.status_code, 200)
   
   def test_list_user_query(self):
     user1 = _create_user('test.schaf')
@@ -94,6 +102,13 @@ class TestUsers(RouteBase):
       "groups": [],
       "canEdit": True,
     })
+  
+  def test_get_invalid_username(self):
+    with mock.patch('Hinkskalle.util.name_check.validate_as_name'):
+      user1 = _create_user('müh.&küh')
+    with self.fake_admin_auth():
+      ret = self.client.get(f"/v1/users/{user1.username}")
+    self.assertEqual(ret.status_code, 200)
   
   def test_get_user_self(self):
     db_user = User.query.filter(User.username==self.username).one()
@@ -442,6 +457,27 @@ class TestUsers(RouteBase):
       uf = 'is_active' if f == 'isActive' else 'is_admin' if f == 'isAdmin' else f
       self.assertEqual(getattr(db_user, uf), update_data[f])
     self.assertTrue(abs(db_user.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
+  
+  def test_update_username(self):
+    user = _create_user('update.hase')
+    update_data = {
+      'username': 'neuhase.updated'
+    }
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/users/{user.username}", json=update_data)
+    self.assertEqual(ret.status_code, 200)
+
+    db_user = User.query.get(user.id)
+    self.assertEqual(db_user.username, update_data['username'])
+  
+  def test_update_username_invalid(self):
+    user = _create_user('update.hase')
+    update_data = {
+      'username': 'üpdäte.haße'
+    }
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/users/{user.username}", json=update_data)
+    self.assertEqual(ret.status_code, 400)
 
   def test_update_password(self):
     user_data = {

@@ -69,6 +69,12 @@ class TestLdap(ModelBase):
     db_entity = Entity.query.filter(Entity.name == db_user.username).first()
     self.assertIsNotNone(db_entity)
     self.assertEqual(db_entity.createdBy, db_user.username)
+  
+  def test_sync_invalid_username(self):
+    auth = self.mock.auth
+    db_user = auth.sync_user({ 'attributes': { 'cn': 'täst&.haße', 'mail': 'test@ha.se', 'givenName': 'Test', 'sn': 'Hase' }})
+    self.assertEqual(db_user.username, 'tast.hasse')
+
 
   
   def test_sync_existing(self):

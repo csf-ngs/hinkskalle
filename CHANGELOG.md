@@ -1,5 +1,6 @@
-# v4.3.1 (next)
+# v4.3.1 (2022-05-24)
 
+- fix #27: serialize invalid (legacy) usernames
 - dev: run oci conformance tests in ci pipeline (#18)
 - fix #12: use jsonb fields for postgresql
 - fix: sqlite migrations need `batch_alter_table`

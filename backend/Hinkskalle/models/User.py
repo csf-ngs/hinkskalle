@@ -1,6 +1,7 @@
 import typing
 from Hinkskalle import db
-from Hinkskalle.util.name_check import validate_as_name, validate_name
+import Hinkskalle.util.name_check
+#from Hinkskalle.util.name_check import validate_as_name, validate_name
 from marshmallow import fields, Schema, validates_schema, ValidationError
 from datetime import datetime, timedelta
 from flask import current_app, g
@@ -66,7 +67,7 @@ class UserSchema(BaseSchema):
 
   @validates_schema
   def validate_username(self, data, **kwargs):
-    errors = validate_name(data, key='username')
+    errors = Hinkskalle.util.name_check.validate_name(data, key='username')
     if errors:
       raise ValidationError(errors)
 
@@ -122,7 +123,7 @@ class User(db.Model): # type: ignore
   @validates('username')
   def check_username(self, key, value):
     value = value.lower()
-    validate_as_name(value)
+    Hinkskalle.util.name_check.validate_as_name(value)
     return value
 
   def create_token(self, **attrs):

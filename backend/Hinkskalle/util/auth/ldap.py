@@ -7,6 +7,8 @@ from ldap3 import Server, Connection, ObjectDef, Reader, SUBTREE, SYNC, SCHEMA
 from ldap3.utils.conv import escape_filter_chars
 from ldap3.core.exceptions import LDAPBindError, LDAPInvalidCredentialsResult, LDAPPasswordIsMandatoryError, LDAPNoSuchObjectResult
 
+from slugify import slugify
+
 from flask import g, current_app
 
 # mock ldap returns scalar, real ldap (slapd) a list
@@ -94,7 +96,7 @@ class LDAPUsers(PasswordCheckerBase):
       user.is_admin = False
       user.is_active = True
     
-    user.username = _get_attr(attrs.get('cn'))
+    user.username = slugify(_get_attr(attrs.get('cn')), separator='.')
     user.email = _get_attr(attrs.get('mail'))
     user.firstname = _get_attr(attrs.get('givenName'))
     user.lastname = _get_attr(attrs.get('sn'))

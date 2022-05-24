@@ -11,10 +11,13 @@ from Hinkskalle.models import UserSchema, User, ContainerSchema, Container, Enti
 
 import datetime
 
-class UserResponseSchema(ResponseSchema):
+# use Schema here instead of flask_rebar's ResponseSchema
+# ResponseSchema switches on validation on dump, which would
+# throw exceptions on legacy usernames
+class UserResponseSchema(Schema):
   data = fields.Nested(UserSchema)
 
-class UserListResponseSchema(ResponseSchema):
+class UserListResponseSchema(Schema):
   data = fields.Nested(UserSchema, many=True)
 
 class UserRegisterSchema(RequestSchema):

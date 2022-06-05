@@ -71,6 +71,10 @@ docker-compose config --volumes | xargs docker volume rm
 Dev server: [http://localhost:7660](http://localhost:7660)
 
 ```bash
+# WARNING: On first startup we need to install node modules and build the frontend
+# this might take a few minutes and the dev server will show
+# The requested URL was not found on the server. until that's done.
+#
 # Whole stack (rarely needed)
 docker-compose up -d
 # bare minimum

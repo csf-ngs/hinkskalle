@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$1" = "--rebuild" ]; then
+if [ "$1" = "--rebuild" -o ! -e "node_modules" ]; then
   rm -rf node_modules
   yarn install
 fi

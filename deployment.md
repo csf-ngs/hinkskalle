@@ -32,29 +32,40 @@ See [configuration](../configuration) for details
 
 ### Database Setup
 
+With the default docker-compose file:
+
 ```bash
+# start db server first to trigger database initialization
+docker-compose up -d hinkdb
 docker-compose run api bash
-cd backend
 # installs database schema
-flask db upgrade
+docker-compose run --rm api flask db upgrade
 # create admin user
-flask localdb add-user -u admin.hase -p somethingonlyyouknow -e admin@testha.se -f Admin -l Hase --admin
+docker-compose run --rm api flask localdb add-user \
+  -u admin.hase \
+  -p somethingonlyyouknow \
+  -e admin@testha.se \
+  -f Admin -l Hase \
+  --admin
 # create regular user (or use web interface)
-flask localdb add-user -u user.hase -p alsosomethingfairlysecret -e user@testha.se -f User -l Hase
+docker-compose run --rm api flask localdb add-user \
+  -u user.hase \
+  -p alsosomethingfairlysecret \
+  -e user@testha.se \
+  -f User -l Hase
+```
+
+### LDAP Setup (optional)
+
+Initial sync all LDAP users:
+
+```bash
+docker-compose run --rm api flask ldap sync
 ```
 
 ### Startup
 
 - fire up whole stack with: `docker-compose up -d`
-- if using ldap:
-
-### LDAP Setup
-
-```bash
-docker-compose exec api bash
-cd backend
-flask ldap sync
-```
 
 ### Reverse Proxy
 

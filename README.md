@@ -26,11 +26,102 @@ Installation + Usage instructions can be found here:
 git clone https://github.com/csf-ngs/hinkskalle.git
 ```
 
+## Docker development environment
+
+Achieve the best development experience with continuous reloads and frontend
+builds! No need to set up/mess up your computer!
+
+Hinkskalle comes with a development environment based on [docker-compose](https://docs.docker.com/compose/). 
+
+The [ghcr.io/csf-ngs/hinkskalle-dev](https://github.com/csf-ngs/hinkskalle-dev) image contains a complete development environment. 
+
+### First Setup
+
+Initial setup (or maybe you want to reset your dev environment):
+
+```bash
+# (of course you can use your own favorite dummy secrets)
+cat <<_EOF > conf/db_secrets.env
+POSTGRES_PASSWORD=supersecret
+_EOF
+
+cat <<_EOF > conf/secrets.env
+HINKSKALLE_SECRET_KEY=superdupersecret
+DB_PASSWORD=supersecret
+HINKSKALLE_LDAP_BIND_PASSWORD=superldapsecret
+_EOF
+
+cat <<_EOF > conf/slapd_secrets.env
+LDAP_ROOT_PASSWORD=superrootsecret
+LDAP_LOGIN_PASSWORD=superldapsecret
+_EOF
+
+# start hinkdb first to set up base database
+docker-compose up -d hinkdb
+# install current database schema
+docker-compose run api flask db upgrade
+
+# clean everything
+docker-compose down
+docker-compose config --volumes | xargs docker volume rm 
+```
+
+### Running Development Instances
+
+Dev server: [http://localhost:7660](http://localhost:7660)
+
+```bash
+# Whole stack (rarely needed)
+docker-compose up -d
+# bare minimum
+docker-compose up -d api build_frontend
+# log output
+docker-compose logs -f
+```
+
+The current working directory (base) is mounted into the relevant containers.
+You can edit the source files with your favorite editor/IDE directly. Services
+will automatically rebuild and/or restart on changes.
+
+This starts the following services:
+
+#### `api`: Local Backend Instance at port 7660
+
+Using [script/start-dev.sh](script/start-dev.sh). Restarts on changes in backend/
+
+#### `build_frontend`: Continuous Frontend Build
+
+Using [script/start-dev-frontend.sh](script/start-dev-frontend.sh), basically a `yarn build --watch`
+
+#### `hinkdb`: Postgres database
+
+#### `rq_scheduler`, `rq_worker`, `redis`: Backend async job queue (optional)
+
+#### `ldap`: for testing LDAP authentication (optional)
+
+#### `hockeypuck`, `hockeypuck_db`: PGP keyserver (optional)
+
+### Side Notes
+
+- uploaded images are stored in `./tmp`
+
 ## Development Install
+
+Needs postgresql dev libraries! Install according to your OS instructions, e.g.:
+
+```bash
+# mac os x
+brew install postgresql
+# ubuntu/debian
+apt install postgresql-dev
+# etc.
+```
 
 ```bash
 cd backend/
-pip install '.[dev]'
+python3 -m venv ven
+source venv/bin/activate
+pip install -e '.[dev]'
 ```
 
 This will also install nose2, Jinja2, fakeredis and psycopg2 for running tests
@@ -48,7 +139,9 @@ yarn install
 
 ## Patch Singularity
 
-Singularity absolutely requires that the library server is reachable via https.
+***Not necessary for singularity v3.9.0 or newer***
+
+Singularity absolutely required that the library server is reachable via https.
 While you can set this up for your development server, it's much easier to
 patch the source code and recompile your own.
 
@@ -70,8 +163,6 @@ patch -p1 < /path/to/oras-plain-http.patch
 ```
 
 ## Start Development Server
-
-Achieve the best development experience with continuous reloads and frontend builds!
 
 ```bash
 script/start-dev.sh
@@ -105,7 +196,7 @@ cd share/oci
 ./conformance-test.sh
 ```
 
-Your backend should be available at localhost:7660 (default dev docker compose).
+Your backend should be available at localhost:7660 
 
 ## Generate Typescript Classes for models
 

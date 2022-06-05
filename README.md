@@ -140,7 +140,7 @@ apt install postgresql-dev
 
 ```bash
 cd backend/
-python3 -m venv ven
+python3 -m venv venv
 source venv/bin/activate
 pip install -e '.[dev]'
 ```

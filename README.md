@@ -58,10 +58,27 @@ _EOF
 
 # start hinkdb first to set up base database
 docker-compose up -d hinkdb
+# give it a second
 # install current database schema
-docker-compose run api flask db upgrade
+docker-compose run --rm api flask db upgrade
 
-# clean everything
+# set up first admin user
+docker-compose run --rm api flask localdb add-user \
+    -u admin.hase \
+    -p oink \
+    -e 'admin.hase@testha.se' \
+    -f Admin \
+    -l Hase \
+    --admin
+# set up a normal user
+docker-compose run --rm api flask localdb add-user \
+    -u test.hase \
+    -p oink \
+    -e 'test.hase@testha.se' \
+    -f Test \
+    -l Hase 
+
+# ONLY when you need to reset the dev env: clean everything
 docker-compose down
 docker-compose config --volumes | xargs docker volume rm 
 ```

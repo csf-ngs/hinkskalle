@@ -14,7 +14,7 @@ steps:
   - name: conformance-tmp
     path: /tmp/conformance
   environment:
-    DEV_VERSION: v2.0.1-tmpfix
+    DEV_VERSION: &DEV v2.0.2
     BACKEND_PORT: 17760
     PROJECT_BASE: /var/tmp/conformance-tmp
   commands:
@@ -26,7 +26,7 @@ steps:
     - cp /tmp/conformance/results/* /tmp/conformance/share/oci/results/* $DRONE_WORKSPACE/share/oci/results/
     - rm -rf /tmp/conformance/*
 - name: testhase
-  image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.1-tmpfix
+  image: ghcr.io/csf-ngs/hinkskalle-dev:*DEV
   environment:
     HINKSKALLE_SETTINGS: ../../conf/config.json
   commands:
@@ -34,7 +34,7 @@ steps:
   - pip3 install -e '.[dev]'
   - nose2 --with-coverage
 - name: testhase-front
-  image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.1-tmpfix
+  image: ghcr.io/csf-ngs/hinkskalle-dev:*DEV
   commands:
   - cd frontend
   - yarn install

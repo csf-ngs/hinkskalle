@@ -13,6 +13,7 @@ set -eo pipefail
 $dockercompose config
 $dockercompose up -d
 sleep 3
+$dockercompose exec -T api flask db upgrade
 $dockercompose exec -T api flask localdb add-user -u conform.hase -p conform -e conform@testha.se -f Conform -l Hase --admin
 set +eo pipefail
 echo "Starting tests..."

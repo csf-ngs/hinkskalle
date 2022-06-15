@@ -92,6 +92,6 @@ ENV FLASK_APP=Hinkskalle
 ENV HINKSKALLE_SETTINGS=/srv/hinkskalle/conf/config.json
 ENV BACKEND_URL=http://localhost:5000
 ENV ENABLE_REGISTER=false
-CMD [ "gosu", "hinkskalle", "./script/start.sh" ]
+CMD [ "gosu", "hinkskalle", "/srv/hinkskalle/script/start.sh" ]
 EXPOSE 5000
 LABEL org.opencontainers.image.source https://github.com/csf-ngs/hinkskalle

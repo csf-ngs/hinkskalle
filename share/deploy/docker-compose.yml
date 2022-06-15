@@ -1,5 +1,7 @@
 version: "3"
 volumes:
+  images:
+    driver: local
   hink_db:
     driver: local
 services:
@@ -11,9 +13,10 @@ services:
       - "conf/hinkskalle.env"
     environment:
       - PREFERRED_URL_SCHEME=https
+    working_dir: '/srv/hinkskalle/backend'
     volumes:
       - ./conf/config.json:/srv/hinkskalle/conf/config.json
-      - /mnt/singularity:/mnt/images
+      - images:/mnt/images
     ports:
       - '7600:5000'
     depends_on:

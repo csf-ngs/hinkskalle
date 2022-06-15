@@ -27,9 +27,18 @@ See [configuration](../configuration) for details
 - Set up 
   - [conf/config.json](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/conf/config.json)
   - [conf/hinkskalle.env](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/conf/hinkskalle.env)
+    (change `HINKSKALLE_BACKEND_URL`, see below)
   - [conf/secrets.env](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/conf/secrets.env)
   - [conf/db_secrets.env](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/conf/db_secrets.env)
-- check the image storage path in the docker-compose file
+- check the image storage path in the docker-compose file, see below
+
+## Backend URL
+
+Configure `HINKSKALLE_BACKEND_URL` to be the *public* URL of your server.
+
+- for testing this will most likely be `http://127.0.0.1:7600/`
+- behind a reverse proxy (recommended): the URL you are mapping to hinkskalle
+- note that Hinkskalle does not speak https. If you would like to expose your server directly, this should be the servername and port, e.g. `http://pkg.internal:7600/`
 
 ### Image Storage
 

@@ -29,6 +29,15 @@ See [configuration](../configuration) for details
   - [conf/hinkskalle.env](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/conf/hinkskalle.env)
   - [conf/secrets.env](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/conf/secrets.env)
   - [conf/db_secrets.env](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/conf/db_secrets.env)
+- check the image storage path in the docker-compose file
+
+### Image Storage
+
+All your images (or OCI layers) are stored in a directory somewhere on your filesystem. In [share/deploy/docker-compose.yml](https://github.com/csf-ngs/hinkskalle/blob/59d4a27fe225e40ae1a91ee5f022f78bcd4d150b/share/deploy/docker-compose.yml#L16) The internal storage directory `/mnt/images` (configured in [share/deploy/config/config.json](https://github.com/csf-ngs/hinkskalle/blob/59d4a27fe225e40ae1a91ee5f022f78bcd4d150b/share/deploy/conf/config.json#L5) is mounted from a docker volume. Other options would be:
+
+- a network file system (with some caveats for performance)
+- a local directory on your server (think of backups, available space)
+- a docker volume (same)
 
 ### Database Setup
 
@@ -37,7 +46,6 @@ With the default docker-compose file:
 ```bash
 # start db server first to trigger database initialization
 docker-compose up -d hinkdb
-docker-compose run api bash
 # installs database schema
 docker-compose run --rm api flask db upgrade
 # create admin user

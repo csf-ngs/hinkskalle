@@ -1,3 +1,8 @@
+# v4.3.2 (2022-06-15)
+
+- `script/start.sh` no longer expects to be started from a particular directory
+- use abs path for start CMD in docker container
+
 # v4.3.1 (2022-05-24)
 
 - fix #27: serialize invalid (legacy) usernames

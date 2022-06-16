@@ -12,11 +12,11 @@ class PasswordAuthenticators():
   def init_app(self, app):
     self.config = app.config.get('AUTH', {})
     self.checkers=[]
-    if self.config.get('LDAP'):
+    if self.config.get('LDAP', {}).get('HOST'):
       app.logger.debug("adding ldap users...")
       self.checkers.append(LDAPUsers(app=app))
     self.checkers.append(LocalUsers())
-  
+ 
   def check_password(self, username: str, password: str):
     for checker in self.checkers:
       try:

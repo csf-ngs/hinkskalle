@@ -12,6 +12,7 @@
           <v-col cols="12">
             <v-tabs v-model="localState.usageTab" light centered>
               <v-tab>Singularity</v-tab>
+              <v-tab>Apptainer</v-tab>
               <v-tab>Docker</v-tab>
               <v-tab>ORAS</v-tab>
               <v-tab>CLI</v-tab>
@@ -49,6 +50,42 @@
   singularity remote add --no-login hinkskalle {{backendUrl}}
   singularity remote use hinkskalle
   singularity pull library://pipeline/samtools:v1.9 # or other public containers
+                    </pre>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+          </v-tab-item>
+          <v-tab-item>
+            <v-row>
+              <v-col cols="12" md="8" offset-md="2">
+                <v-card tile height="100%">
+                  <v-card-title>
+                    Apptainer Pull and Push:
+                  </v-card-title>
+                  <v-card-subtitle>
+                    Compatible with the <a href="https://apptainer.org/">Apptainer</a> library protocol.  
+                    <span v-if="!isLoggedIn">
+                      Unauthenticated users can only pull!
+                    </span>
+                    <span v-else>
+                      <router-link to="/tokens">Get your token here.</router-link>
+                    </span>
+                  </v-card-subtitle>
+                  <v-card-text>
+                    <pre v-if="isLoggedIn">
+  apptainer remote add hinkskalle {{backendUrl}}
+  # paste token
+  apptainer remote use hinkskalle
+  # or (can also be done later)
+  apptainer remote login hinkskalle
+  apptainer push yourimage.sif library://{{currentUser.username}}/[collection]/[container]:[tag]
+  apptainer pull library://{{currentUser.username}}/[collection]/[container]:[tag]
+                    </pre>
+                    <pre v-else>
+  apptainer remote add --no-login hinkskalle {{backendUrl}}
+  apptainer remote use hinkskalle
+  apptainer pull library://pipeline/samtools:v1.9 # or other public containers
                     </pre>
                   </v-card-text>
                 </v-card>

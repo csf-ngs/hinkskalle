@@ -41,7 +41,7 @@
 import Vue from 'vue';
 
 import { Container, UploadTag } from '../store/models';
-import { pullCmd, libraryUrl } from '@/util/pullCmds';
+import { pullCmd, libraryUrl, singularityCmd } from '@/util/pullCmds';
 import ContainerType from '@/components/ContainerType.vue';
 
 export default Vue.extend({
@@ -66,7 +66,7 @@ export default Vue.extend({
         prom = this.$copyText(pullCmd({ path: container.fullPath, type: tag.manifestType }, tag.name));
       }
       else if (tag.imageType && tag.imageType === 'singularity') {
-        prom = this.$copyText(`singularity pull library://${libraryUrl({ path: container.fullPath }, tag.name)}`)
+        prom = this.$copyText(`${singularityCmd()} pull library://${libraryUrl({ path: container.fullPath }, tag.name)}`)
       }
       else {
         return;

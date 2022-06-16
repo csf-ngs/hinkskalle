@@ -32,7 +32,7 @@ See [configuration](../configuration) for details
   - [conf/db_secrets.env](https://github.com/csf-ngs/hinkskalle/blob/master/share/deploy/conf/db_secrets.env)
 - check the image storage path in the docker-compose file, see below
 
-## Backend URL
+### Backend URL
 
 Configure `HINKSKALLE_BACKEND_URL` to be the *public* URL of your server.
 

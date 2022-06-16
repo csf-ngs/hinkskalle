@@ -7,6 +7,16 @@ Configuration Values
 
 <!--more-->
 
+Configuration is read from a file specified by the environment variable `HINKSKALLE_SETTINGS` or `conf/config.json` by default.
+
+## Frontend Config
+
+Make sure that these environment variables are to your taste:
+
+- `HINKSKALLE_BACKEND_URL`: should point to the (public) URL that your backend API can be reached at. 
+- `HINKSKALLE_ENABLE_REGISTER`: should the frontend allow "register new account" on the login page (default: off) (also switches off the signup routes in the backend)
+- `HINKSKALLE_SINGULARITY_COMMAND`: command to show in help or copy for pull, defaults to `singularity`, could of course also be `apptainer` in your environment
+
 ## Flask
 
 Refer to
@@ -107,6 +117,9 @@ hinkskalle finds them there, it will overwrite the values:
 - `HINKSKALLE_LDAP_BIND_PASSWORD`
 - `HINKSKALLE_LDAP_BASE_DN`
 - `HINKSKALLE_SECRET_KEY`
+- `HINKSKALLE_BACKEND_URL`
+- `HINKSKALLE_ENABLE_REGISTER`
+- `HINKSKALLE_SINGULARITY_COMMAND`
 
 This is superuseful for injecting configs and secrets when running Hinkskalle
 in a container (e.g. docker)

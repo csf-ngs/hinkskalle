@@ -20,7 +20,7 @@ def _get_attr(attr):
     return attr
 
 class LDAPService:
-  def __init__(self, host=None, port=389, bind_dn=None, bind_password=None, base_dn=None, filter="(&(cn={})(objectClass=person))", all_users_filter="(objectClass=person)", get_info=SCHEMA, client_strategy=SYNC):
+  def __init__(self, host=None, port=389, bind_dn=None, bind_password=None, base_dn=None, filter="(&(uid={})(objectClass=person))", all_users_filter="(objectClass=person)", get_info=SCHEMA, client_strategy=SYNC):
     self.host = host
     self.port = int(port) if port else None
     self.bind_dn = bind_dn
@@ -96,7 +96,7 @@ class LDAPUsers(PasswordCheckerBase):
 
     attrs = entry.get('attributes')
     try:
-      user = User.query.filter(User.username == _get_attr(attrs.get('cn'))).one()
+      user = User.query.filter(User.username == _get_attr(attrs.get('uid'))).one()
 
       if not user.is_active:
         raise UserDisabled()
@@ -109,7 +109,7 @@ class LDAPUsers(PasswordCheckerBase):
       user.is_admin = False
       user.is_active = True
 
-    user.username = slugify(_get_attr(attrs.get('cn')), separator='.')
+    user.username = slugify(_get_attr(attrs.get('uid')), separator='.')
     user.email = _get_attr(attrs.get('mail'))
     user.firstname = _get_attr(attrs.get('givenName'))
     user.lastname = _get_attr(attrs.get('sn'))

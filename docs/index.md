@@ -6,12 +6,10 @@ weight: 10
 
 On-Premises Container Registry for OCI/[docker](https://www.docker.com/) and [singularity](https://github.com/sylabs/singularity)/[apptainer](https://apptainer.org/)
 
-- Admin Documentation: [Setup](./deployment.md) | [Configuration](./configuration.md) | [Clients](./clients.md) 
+- [Admin Documentation](./index.md): [Setup](./deployment.md) / [Configuration](./configuration.md) / [Clients](./clients.md) 
 - [User Documentation](./user-docs/)
 
 <!--more-->
-
-![light](./images/bunny-dark.svg)
 
 ## What Am I
 

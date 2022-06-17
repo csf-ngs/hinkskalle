@@ -5,7 +5,7 @@ Title: 'Hinkskalle User Documentation'
 Instructions for Users
 
 - [Admin Documentation](../index.md)
-- User Documentation: [Library Structure](./structure.md) | [Container Types](./container-types.md) | [Permissions](./permissions.md)
+- [User Documentation](./index.md): [Library Structure](./structure.md) / [Container Types](./container-types.md) / [Permissions](./permissions.md)
 
 <!--more-->
 

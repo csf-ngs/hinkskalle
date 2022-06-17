@@ -76,6 +76,8 @@ class Collection(db.Model): # type: ignore
       return True
     elif self.owner == user:
       return True
+    elif self.private == False:
+      return True
     else:
       return self.entity_ref.check_access(user)
   

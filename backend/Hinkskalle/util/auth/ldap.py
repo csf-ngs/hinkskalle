@@ -31,16 +31,20 @@ class LDAPService:
 
     self.server = Server(host=self.host, port=self.port, get_info=get_info)
     self.connection = Connection(self.server, self.bind_dn, self.bind_password, raise_exceptions=True, client_strategy=client_strategy)
-  
+
   def connect(self):
     self.connection.rebind(user=self.bind_dn, password=self.bind_password)
-  
+
   def close(self):
     self.connection.unbind()
-  
+
   def search_user(self, username: str):
     try:
-      self.connection.search(search_base=self.base_dn, search_filter=self.filter.format(escape_filter_chars(username)), search_scope=SUBTREE, attributes='*')
+      self.connection.search(
+        search_base=self.base_dn,
+        search_filter=self.filter.format(escape_filter_chars(username)),
+        search_scope=SUBTREE,
+        attributes='*')
     except LDAPNoSuchObjectResult:
       raise UserNotFound()
     if self.connection.response is None:
@@ -48,9 +52,13 @@ class LDAPService:
     elif len(self.connection.response) == 0:
       raise UserNotFound()
     return self.connection.response[0]
-  
+
   def list_users(self):
-    self.connection.search(search_base=self.base_dn, search_filter=self.all_users_filter, search_scope=SUBTREE, attributes='*')
+    self.connection.search(
+      search_base=self.base_dn,
+      search_filter=self.all_users_filter,
+      search_scope=SUBTREE,
+      attributes='*')
     #current_app.logger.debug(len(self.connection.response))
     if self.connection.response is None:
       raise Exception(f"no response received")
@@ -72,10 +80,15 @@ class LDAPUsers(PasswordCheckerBase):
 
     if svc is None:
       self.app.logger.debug(f"initializing ldap service with host {self.config.get('HOST', '')}")
-      self.ldap = LDAPService(host=self.config.get('HOST', ''), port=self.config.get('PORT', 389), bind_dn=self.config.get('BIND_DN'), bind_password=self.config.get('BIND_PASSWORD'), base_dn=self.config.get('BASE_DN'))
+      self.ldap = LDAPService(
+        host=self.config.get('HOST', ''),
+        port=self.config.get('PORT', 389),
+        bind_dn=self.config.get('BIND_DN'),
+        bind_password=self.config.get('BIND_PASSWORD'),
+        base_dn=self.config.get('BASE_DN'))
     else:
       self.ldap = svc
-  
+
   def sync_user(self, entry):
     from Hinkskalle.models.User import User
     from Hinkskalle.models.Entity import Entity
@@ -95,7 +108,7 @@ class LDAPUsers(PasswordCheckerBase):
       user = User()
       user.is_admin = False
       user.is_active = True
-    
+
     user.username = slugify(_get_attr(attrs.get('cn')), separator='.')
     user.email = _get_attr(attrs.get('mail'))
     user.firstname = _get_attr(attrs.get('givenName'))
@@ -125,5 +138,5 @@ class LDAPUsers(PasswordCheckerBase):
     db_user = self.sync_user(ldap_user)
     g.authenticated_user = db_user
     return db_user
-    
+
 

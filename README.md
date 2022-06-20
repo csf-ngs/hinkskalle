@@ -16,7 +16,7 @@ Compatible with/re-implementation of the [singularity library protocol](https://
 
 Installation + Usage instructions can be found here:
 
-[https://testha.se/projects/hinkskalle/](https://testha.se/projects/hinkskalle/)
+[https://csf-ngs.github.io/hinkskalle/](https://csf-ngs.github.io/hinkskalle/)
 
 Continue to read here if you are interested in mucking around in the source
 code (and maybe helping out with the odd PR or two).

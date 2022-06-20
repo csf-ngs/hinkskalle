@@ -65,7 +65,7 @@
         <v-col class="d-flex justify-end align-center mr-4">
           <div v-if="manifest.type=='singularity'">
             <img src="/singularity-logo.png" style="height: 1.2rem;">
-            Singularity
+            Singularity / Apptainer
           </div>
           <div v-else-if="manifest.type=='docker'">
             <img src="/docker-logo.png" style="height: 1.2rem;">

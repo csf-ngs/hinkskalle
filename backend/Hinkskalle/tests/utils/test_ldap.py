@@ -20,13 +20,13 @@ class MockLDAP():
 
   def __init__(self):
     self.svc = LDAPService(host='dummy', port=None, bind_dn=self.dummy_root_cn, bind_password=self.dummy_password, base_dn='ou=test', get_info=OFFLINE_AD_2012_R2, client_strategy=MOCK_SYNC)
-    self.svc.connection.strategy.add_entry(self.dummy_root_cn, { 'cn': self.dummy_root, 'userPassword': self.dummy_password })
+    self.svc.connection.strategy.add_entry(self.dummy_root_cn, { 'cn': 'Root Hase', 'uid': self.dummy_root, 'userPassword': self.dummy_password })
 
     self.auth = LDAPUsers(svc=self.svc)
     self.auth.enabled = True
   
   def create_user(self, name='test.hase', password='supersecret', is_admin=False):
-    create_user = { 'cn': name, 'userPassword': password, 'mail': f"{name}@testha.se", 'sn': 'Oink', 'givenName': 'Grunz', 'objectClass': ['top', 'person'] }
+    create_user = { 'cn': 'Oink Hase', 'uid': name, 'userPassword': password, 'mail': f"{name}@testha.se", 'sn': 'Oink', 'givenName': 'Grunz', 'objectClass': ['top', 'person'] }
     # add_entry seems to mutate the dict (all values turn to lists)
     self.svc.connection.strategy.add_entry(f"cn={name},ou=test", create_user.copy())
     return create_user
@@ -59,7 +59,7 @@ class TestLdap(ModelBase):
     
   def test_sync(self):
     auth = self.mock.auth
-    db_user = auth.sync_user({ 'attributes': { 'cn': 'test.hase', 'mail': 'test@ha.se', 'givenName': 'Test', 'sn': 'Hase' }})
+    db_user = auth.sync_user({ 'attributes': { 'cn': 'Test Hase', 'uid': 'test.hase', 'mail': 'test@ha.se', 'givenName': 'Test', 'sn': 'Hase' }})
     self.assertEqual(db_user.username, 'test.hase')
     self.assertEqual(db_user.email, 'test@ha.se')
     self.assertEqual(db_user.firstname, 'Test')
@@ -72,7 +72,7 @@ class TestLdap(ModelBase):
   
   def test_sync_invalid_username(self):
     auth = self.mock.auth
-    db_user = auth.sync_user({ 'attributes': { 'cn': 'täst&.haße', 'mail': 'test@ha.se', 'givenName': 'Test', 'sn': 'Hase' }})
+    db_user = auth.sync_user({ 'attributes': { 'cn': 'Täst& Haße', 'uid': 'täst&.haße', 'mail': 'test@ha.se', 'givenName': 'Test', 'sn': 'Hase' }})
     self.assertEqual(db_user.username, 'tast.hasse')
 
 
@@ -83,7 +83,7 @@ class TestLdap(ModelBase):
     user.source = 'ldap'
     db.session.commit()
 
-    db_user = auth.sync_user({ 'attributes': { 'cn': user.username, 'mail': user.email, 'givenName': user.firstname, 'sn': user.lastname }})
+    db_user = auth.sync_user({ 'attributes': { 'cn': f'{user.firstname} f{user.lastname}', 'uid': user.username, 'mail': user.email, 'givenName': user.firstname, 'sn': user.lastname }})
     self.assertEqual(db_user.id, user.id)
     self.assertEqual(db_user.firstname, user.firstname)
   
@@ -95,7 +95,7 @@ class TestLdap(ModelBase):
     oldlast = user.lastname
     db.session.commit()
 
-    db_user = auth.sync_user({ 'attributes': { 'cn': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
+    db_user = auth.sync_user({ 'attributes': { 'cn': f'{user.firstname}oink {user.lastname}oink', 'uid': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
     self.assertEqual(db_user.id, user.id)
     self.assertEqual(db_user.firstname, oldfirst+'oink')
     self.assertEqual(db_user.lastname, oldlast+'oink')
@@ -108,7 +108,7 @@ class TestLdap(ModelBase):
     db.session.commit()
 
     with self.assertRaises(UserDisabled):
-      db_user = auth.sync_user({ 'attributes': { 'cn': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
+      db_user = auth.sync_user({ 'attributes': { 'cn': f'{user.firstname}oink {user.lastname}oink', 'uid': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
     
   def test_sync_local(self):
     auth = self.mock.auth
@@ -117,7 +117,7 @@ class TestLdap(ModelBase):
     db.session.commit()
 
     with self.assertRaises(UserConflict):
-      db_user = auth.sync_user({ 'attributes': { 'cn': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
+      db_user = auth.sync_user({ 'attributes': { 'cn': f'{user.firstname}oink {user.lastname}oink', 'uid': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
 
 
 
@@ -125,8 +125,8 @@ class TestLdap(ModelBase):
     auth = self.mock.auth
     user = self.mock.create_user()
 
-    check_user = auth.check_password(user.get('cn'), user.get('userPassword'))
-    self.assertEqual(check_user.username, user.get('cn'))
+    check_user = auth.check_password(user.get('uid'), user.get('userPassword'))
+    self.assertEqual(check_user.username, user.get('uid'))
 
   def test_check_existing(self):
     db_user = _create_user()
@@ -135,7 +135,7 @@ class TestLdap(ModelBase):
     auth = self.mock.auth
     user = self.mock.create_user(name=db_user.username, password='supersecret')
 
-    check_user = auth.check_password(user.get('cn'), user.get('userPassword'))
+    check_user = auth.check_password(user.get('uid'), user.get('userPassword'))
     self.assertEqual(check_user.id, db_user.id)
 
   def test_check_twice(self):
@@ -143,8 +143,8 @@ class TestLdap(ModelBase):
     user = self.mock.create_user()
     other_user = self.mock.create_user(name='oink.hase')
 
-    check_user = auth.check_password(user.get('cn'), user.get('userPassword'))
-    check_other_user = auth.check_password(other_user.get('cn'), other_user.get('userPassword'))
+    check_user = auth.check_password(user.get('uid'), user.get('userPassword'))
+    check_other_user = auth.check_password(other_user.get('uid'), other_user.get('userPassword'))
 
   def test_not_found(self):
     auth = self.mock.auth
@@ -158,27 +158,27 @@ class TestLdap(ModelBase):
     user = self.mock.create_user()
 
     with self.assertRaises(InvalidPassword):
-      check_user = auth.check_password(user.get('cn'), user.get('userPassword', '')+'oink')
+      check_user = auth.check_password(user.get('uid'), user.get('userPassword', '')+'oink')
 
   def test_invalid_password_recheck(self):
     auth = self.mock.auth
     user = self.mock.create_user()
 
     with self.assertRaises(InvalidPassword):
-      check_user = auth.check_password(user.get('cn'), user.get('userPassword', '')+'oink')
+      check_user = auth.check_password(user.get('uid'), user.get('userPassword', '')+'oink')
     
     # should work
-    check_user = auth.check_password(user.get('cn'), user.get('userPassword'))
+    check_user = auth.check_password(user.get('uid'), user.get('userPassword'))
   
   def test_none_password(self):
     auth = self.mock.auth
     user = self.mock.create_user()
 
     with self.assertRaises(InvalidPassword):
-      check_user = auth.check_password(user.get('cn'), None) # type:ignore
+      check_user = auth.check_password(user.get('uid'), None) # type:ignore
 
     with self.assertRaises(InvalidPassword):
-      check_user = auth.check_password(user.get('cn'), '')
+      check_user = auth.check_password(user.get('uid'), '')
 
   def test_inactive(self):
     auth = self.mock.auth
@@ -189,7 +189,7 @@ class TestLdap(ModelBase):
     user = self.mock.create_user(name=db_user.username, password='somesecret')
 
     with self.assertRaises(UserDisabled):
-      check_user = auth.check_password(user.get('cn'), user.get('userPassword'))
+      check_user = auth.check_password(user.get('uid'), user.get('userPassword'))
   
   def test_db_sync(self):
     auth = self.mock.auth
@@ -209,6 +209,6 @@ class TestLdap(ModelBase):
       'failed': []
     }, key.val)
 
-    db_user = User.query.filter(User.username==user['cn']).first()
+    db_user = User.query.filter(User.username==user['uid']).first()
     self.assertEqual(db_user.email, user['mail'])
     self.assertEqual(db_user.source, 'ldap')

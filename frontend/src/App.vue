@@ -1,6 +1,9 @@
 <template>
   <v-app>
-    <v-navigation-drawer app expand-on-hover dark class="green darken-3">
+    <v-navigation-drawer app 
+        mobile-breakpoint="0"
+        :mini-variant="showDrawer" 
+        bottom dark class="green darken-3">
       <v-list-item>
         <v-list-item-content>
           <v-list-item-title class="title text-uppercase">
@@ -174,6 +177,9 @@ export default Vue.extend({
     ldapStatus(): LdapStatus {
       return this.$store.getters['adm/ldapStatus'];
     },
+    showDrawer(): boolean {
+      return this.$store.getters.showDrawer;
+    }
   },
   methods: {
     hideSnackbar() {

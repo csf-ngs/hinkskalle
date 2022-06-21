@@ -25,6 +25,7 @@ interface State {
   authToken: string;
   authStatus: '' | 'loading' | 'failed' | 'success';
   currentUser: User | null;
+  showDrawer: boolean;
   snackbar?: SnackbarState;
   tokens?: TokensState;
   users?: UsersState;
@@ -50,6 +51,7 @@ const state: State = {
   authToken: token,
   authStatus: '',
   currentUser: currentUserObj,
+  showDrawer: true,
 };
 
 export default new Vuex.Store({
@@ -58,6 +60,7 @@ export default new Vuex.Store({
     authStatus: (state): string => state.authStatus,
     isLoggedIn: (state): boolean => state.currentUser !== null,
     currentUser: (state): User | null => state.currentUser,
+    showDrawer: (state): boolean => state.showDrawer,
   },
   mutations: {
     registerInterceptor(state: State, func: (err: any) => Promise<void>) {
@@ -89,6 +92,9 @@ export default new Vuex.Store({
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       delete(state.backend.defaults.headers.common['Authorization']);
+    },
+    toggleDrawer(state: State) {
+      state.showDrawer = !state.showDrawer;
     },
   },
   actions: {

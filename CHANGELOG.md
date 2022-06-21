@@ -1,3 +1,8 @@
+# v4.3.3 (2022-06-21)
+
+- toggle between apptainer and singularity environments (contributed by @grisuthedragon)
+- fix #37: always show side navigation drawer, manual toggle with burger menu (thanks @jonas-schulze for reporting)
+
 # v4.3.2 (2022-06-15)
 
 - `script/start.sh` no longer expects to be started from a particular directory

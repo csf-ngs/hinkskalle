@@ -13,7 +13,7 @@
             <v-tab-item>
               <v-card flat>
                 <v-card-subtitle>
-                  <h3>This is Hinkskalle!</h3>
+                  <h3>This is Hinkskalle {{frontendVersion}}!</h3>
                 </v-card-subtitle>
                 <v-card-text>
                   <p>Hinkskalle started out as a Singularity container registry compatible with the library 
@@ -21,7 +21,7 @@
                     into a general purpose registry supporting the 
                     <a href="https://github.com/opencontainers/distribution-spec">OCI distribution</a> 
                     protocol (docker, podman, ORAS) and arbitrary data.</p>
-                  <p>Read all about it: <a href="https://testha.se/projects/hinkskalle/user-docs/">User Documentation</a></p>
+                  <p>Read all about it: <a href="https://csf-ngs.github.io/hinkskalle/user-docs/">User Documentation</a></p>
                 </v-card-text>
               </v-card>
             </v-tab-item>
@@ -53,12 +53,16 @@
 
 </style>
 <script lang="ts">
+import { version } from '../../package.json';
 import { User } from '@/store/models';
 import { getEnv } from '@/util/env';
 import Vue from 'vue';
 
 export default Vue.extend({
   name: 'HskAbout',
+  data: () => ({
+    frontendVersion: version,
+  }),
   computed: {
     isLoggedIn() {
       return this.$store.getters.isLoggedIn;

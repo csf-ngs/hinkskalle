@@ -11,5 +11,16 @@
     "expire_images": "46 22 * * *",
     "check_quotas": "29 0 * * *",
     "ldap_sync_results": "1,11,21,31,41,51 * * * *"
+  },
+  "AUTH": {
+      "LDAP": {
+          "ENABLED": true,
+          "ATTRIBUTES": {
+              "username": "uid",
+              "email": "mail",
+              "firstname": "givenName",
+              "lastname": "sn"
+          }
+      }
   }
 }

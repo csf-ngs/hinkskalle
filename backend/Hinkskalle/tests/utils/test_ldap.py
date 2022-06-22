@@ -18,8 +18,18 @@ class MockLDAP():
   dummy_root_cn = f"cn={dummy_root},ou=test"
   dummy_password = 'dummy'
 
-  def __init__(self):
-    self.svc = LDAPService(host='dummy', port=None, bind_dn=self.dummy_root_cn, bind_password=self.dummy_password, base_dn='ou=test', get_info=OFFLINE_AD_2012_R2, client_strategy=MOCK_SYNC)
+  def __init__(self, filter=LDAPUsers.default_filter, all_users_filter=LDAPUsers.default_all_users_filter):
+    self.svc = LDAPService(
+      host='dummy', 
+      port=None, 
+      bind_dn=self.dummy_root_cn, 
+      bind_password=self.dummy_password, 
+      base_dn='ou=test', 
+      get_info=OFFLINE_AD_2012_R2, 
+      client_strategy=MOCK_SYNC,
+      filter=filter,
+      all_users_filter=all_users_filter,
+    )
     self.svc.connection.strategy.add_entry(self.dummy_root_cn, { 'cn': 'Root Hase', 'uid': self.dummy_root, 'userPassword': self.dummy_password })
 
     self.auth = LDAPUsers(svc=self.svc)
@@ -43,12 +53,14 @@ class TestLdap(ModelBase):
   
   def test_config(self):
     dummy_cfg = {
+      "ENABLED": True,
       'HOST': 'dummy.serv.er',
       'PORT': 461,
       'BIND_DN': 'cn=oink, ou=grunz',
       'BIND_PASSWORD': 'superS3cr3t',
       'BASE_DN': 'ou=grunz'
     }
+    saved = self.app.config.get('AUTH', {})
     self.app.config['AUTH'] = { 'LDAP': dummy_cfg }
     auth = LDAPUsers()
     self.assertEqual(auth.ldap.host, dummy_cfg.get('HOST'))
@@ -56,6 +68,30 @@ class TestLdap(ModelBase):
     self.assertEqual(auth.ldap.bind_dn, dummy_cfg.get('BIND_DN'))
     self.assertEqual(auth.ldap.bind_password, dummy_cfg.get('BIND_PASSWORD'))
     self.assertEqual(auth.ldap.base_dn, dummy_cfg.get('BASE_DN'))
+    self.assertTrue(auth.enabled)
+    self.app.config['AUTH']=saved
+
+  def test_config_additional(self):
+    dummy_cfg = {
+      "ENABLED": True,
+      "FILTERS": {
+         "user": "(hase={})",
+         "all_users": "(objectClass=ziege)"
+      },
+      "ATTRIBUTES": {
+        "username": "oink",
+        "email": "muh",
+        "firstname": "bär",
+        "lastname": "hase"
+      }
+    }
+    saved = self.app.config.get('AUTH', {})
+    self.app.config['AUTH'] = { 'LDAP': dummy_cfg }
+    auth = LDAPUsers()
+    self.assertDictEqual(auth.attrmap, dummy_cfg['ATTRIBUTES'])
+    self.assertEqual(auth.ldap.all_users_filter, dummy_cfg['FILTERS']['all_users'])
+    self.assertEqual(auth.ldap.filter, dummy_cfg['FILTERS']['user'])
+    self.app.config['AUTH']=saved
     
   def test_sync(self):
     auth = self.mock.auth
@@ -74,7 +110,21 @@ class TestLdap(ModelBase):
     auth = self.mock.auth
     db_user = auth.sync_user({ 'attributes': { 'cn': 'Täst& Haße', 'uid': 'täst&.haße', 'mail': 'test@ha.se', 'givenName': 'Test', 'sn': 'Hase' }})
     self.assertEqual(db_user.username, 'tast.hasse')
-
+  
+  def test_sync_custom_attrmap(self):
+    dummy_cfg = {
+      "ENABLED": True,
+      "ATTRIBUTES": {
+        'email': 'oink',
+      }
+    }
+    saved=self.app.config.get('AUTH', {})
+    self.app.config['AUTH'] = { 'LDAP': dummy_cfg }
+    auth = LDAPUsers()
+    self.assertDictContainsSubset({ 'email': 'oink'}, auth.attrmap)
+    db_user = auth.sync_user({ 'attributes': { 'cn': 'Test Hase', 'uid': 'test.hase', 'oink': 'test@ha.se', 'givenName': 'Test', 'sn': 'Hase' }})
+    self.assertEqual(db_user.email, 'test@ha.se')
+    self.app.config['AUTH']=saved
 
   
   def test_sync_existing(self):
@@ -126,6 +176,13 @@ class TestLdap(ModelBase):
     user = self.mock.create_user()
 
     check_user = auth.check_password(user.get('uid'), user.get('userPassword'))
+    self.assertEqual(check_user.username, user.get('uid'))
+  
+  def test_check_custom_filter(self):
+    mock = MockLDAP(filter='(mail={})')
+    user = mock.create_user()
+
+    check_user = mock.auth.check_password(user.get('mail'), user.get('userPassword'))
     self.assertEqual(check_user.username, user.get('uid'))
 
   def test_check_existing(self):

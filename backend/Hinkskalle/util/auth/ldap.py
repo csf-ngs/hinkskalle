@@ -20,7 +20,7 @@ def _get_attr(attr):
     return attr
 
 class LDAPService:
-  def __init__(self, host=None, port=389, bind_dn=None, bind_password=None, base_dn=None, filter="(&(uid={})(objectClass=person))", all_users_filter="(objectClass=person)", get_info=SCHEMA, client_strategy=SYNC):
+  def __init__(self, host=None, port=389, bind_dn=None, bind_password=None, base_dn=None, filter=None, all_users_filter=None, get_info=SCHEMA, client_strategy=SYNC):
     self.host = host
     self.port = int(port) if port else None
     self.bind_dn = bind_dn
@@ -66,6 +66,14 @@ class LDAPService:
 
 
 class LDAPUsers(PasswordCheckerBase):
+  default_attrmap = {
+    'username': 'uid',
+    'email': 'mail',
+    'firstname': 'givenName',
+    'lastname': 'sn',
+  }
+  default_filter = "(&(uid={})(objectClass=person))"
+  default_all_users_filter = "(objectClass=person)"
 
   def __init__(self, app=None, svc=None):
     if app:
@@ -73,7 +81,7 @@ class LDAPUsers(PasswordCheckerBase):
     else:
       self.app = current_app
     self.config = self.app.config.get('AUTH', {}).get('LDAP', {})
-    self.enabled = len(self.config) > 0
+    self.enabled = self.config.get('ENABLED', False)
     if not self.enabled and not svc:
       self.app.logger.debug(f'LDAP is not configured.')
       return
@@ -85,9 +93,20 @@ class LDAPUsers(PasswordCheckerBase):
         port=self.config.get('PORT', 389),
         bind_dn=self.config.get('BIND_DN'),
         bind_password=self.config.get('BIND_PASSWORD'),
-        base_dn=self.config.get('BASE_DN'))
+        base_dn=self.config.get('BASE_DN'),
+        filter=self.config.get('FILTERS', {}).get('user', self.default_filter),
+        all_users_filter=self.config.get('FILTERS', {}).get('all_users', self.default_all_users_filter),
+      )
     else:
       self.ldap = svc
+    
+    self.attrmap = self.config.get('ATTRIBUTES', {})
+    for (k, v) in self.default_attrmap.items():
+      if self.attrmap.get(k) is None:
+        self.attrmap[k]=v
+    
+    self.username_attr = self.attrmap.get('username')
+    self.attrmap.pop('username')
 
   def sync_user(self, entry):
     from Hinkskalle.models.User import User
@@ -96,7 +115,7 @@ class LDAPUsers(PasswordCheckerBase):
 
     attrs = entry.get('attributes')
     try:
-      user = User.query.filter(User.username == _get_attr(attrs.get('uid'))).one()
+      user = User.query.filter(User.username == _get_attr(attrs.get(self.username_attr))).one()
 
       if not user.is_active:
         raise UserDisabled()
@@ -109,10 +128,9 @@ class LDAPUsers(PasswordCheckerBase):
       user.is_admin = False
       user.is_active = True
 
-    user.username = slugify(_get_attr(attrs.get('uid')), separator='.')
-    user.email = _get_attr(attrs.get('mail'))
-    user.firstname = _get_attr(attrs.get('givenName'))
-    user.lastname = _get_attr(attrs.get('sn'))
+    user.username = slugify(_get_attr(attrs.get(self.username_attr)), separator='.')
+    for (k, v) in self.attrmap.items():
+      setattr(user, k, _get_attr(attrs.get(v)))
     user.source = 'ldap'
 
     db.session.add(user)

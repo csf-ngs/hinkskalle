@@ -80,6 +80,7 @@ try to keep these out of `config.json`!
 
 ## Auth/LDAP 
 
+- `AUTH.LDAP.ENABLED` - defaults to false, whether we should use LDAP or not
 - `AUTH.LDAP.HOST` - where to find the ldap server
 - `AUTH.LDAP.PORT` - which port (default: 389)
 - `AUTH.LDAP.BIND_DN` - initial bind - this DN must be able to look up user accounts by username/email
@@ -91,6 +92,7 @@ try to keep these out of `config.json`!
   ...
   "AUTH": {
     "LDAP": {
+      "ENABLED": true,
       "HOST": "ldap.testha.se",
       "PORT": 389,
       "BIND_DN": "cn=login,ou=Adm,dc=testha,dc=se",
@@ -100,6 +102,46 @@ try to keep these out of `config.json`!
   }
 }
 ```
+
+### Fine Tuning
+
+You should be fine if you've got a fairly standard LDAP setup. But since everybody's mileage varies:
+
+#### Custom Search Filters
+
+- `AUTH.LDAP.FILTERS` 
+
+How we look for users in your LDAP directory:
+
+```json
+          "FILTERS": {
+              "user": "(&(uid={})(objectClass=person))",
+              "all_users": "(objectClass=person)"
+          },
+```
+
+The `user` filter is used during login: we replace the `{}` with whatever comes from the username field of the login form (properly escaped, duh) and we try to authenticate to the LDAP server using the entry we found + the provided password (rebind auth).
+
+Be very careful what you put there, it determines who has access as who! You might want to have additional restrictions (e.g. memberOf=Somegroup) or different objectClass, ...
+
+`all_users` tells us which users we synchronise with the Hinkskalle database. All entries returned are added during sync.
+
+#### Attribute Mapping
+
+- `AUTH.LDAP.ATTRIBUTES`
+
+A map of hinkskalle user attributes to LDAP attributes, defaults to:
+
+```json
+          "ATTRIBUTES": {
+              "username": "uid",
+              "email": "mail",
+              "firstname": "givenName",
+              "lastname": "sn"
+          }
+```
+
+Most interesting maybe: The `username` mapping - it must be unique in Hinkskalle and it is also used as the name of the entity (namespace) of the user.
 
 ## Environment Overrides
 

@@ -15,6 +15,10 @@
   "AUTH": {
       "LDAP": {
           "ENABLED": true,
+          "FILTERS": {
+              "user": "(&(uid={})(objectClass=person))",
+              "all_users": "(objectClass=person)"
+          },
           "ATTRIBUTES": {
               "username": "uid",
               "email": "mail",

@@ -159,6 +159,7 @@ class TestAdm(RouteBase):
 
   def test_ldap_status_enabled(self):
     self.app.config['AUTH']['LDAP'] = {
+      'ENABLED': True,
       'HOST': 'dum.my',
       'BASE_DN': 'ou=test',
       'BIND_DN': 'cn=chef,ou=test',
@@ -171,6 +172,7 @@ class TestAdm(RouteBase):
     data = ret.get_json().get('data')
     self.assertEqual(data['status'], 'configured')
     self.assertDictEqual(data['config'], {
+      'ENABLED': True,
       'HOST': 'dum.my',
       'BASE_DN': 'ou=test',
       'BIND_DN': 'cn=chef,ou=test'

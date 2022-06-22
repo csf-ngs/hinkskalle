@@ -1,3 +1,12 @@
+# v4.4.0 (NEXT)
+
+**NOTE** if you're using ldap, you now have to either:
+
+- set the `HINKSKALLE_LDAP_ENABLED` environment variable to a true value (e.g. `1`)
+- put `"ENABLED": true` in the AUTH/LDAP section of your `config.json`
+
+- more flexible LDAP configuration: attribute mapping, filters
+
 # v4.3.3 (2022-06-21)
 
 - toggle between apptainer and singularity environments (contributed by @grisuthedragon)

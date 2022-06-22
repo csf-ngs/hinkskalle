@@ -17,7 +17,7 @@ class TestAuth(ModelBase):
     self.assertEqual(len(auth.checkers), 1)
     self.assertIsInstance(auth.checkers[0], LocalUsers)
 
-    self.app.config['AUTH']['LDAP']={'HOST': 'oi.nk'}
+    self.app.config['AUTH']['LDAP']={'HOST': 'oi.nk', 'ENABLED': True}
     auth.init_app(self.app)
     self.assertEqual(len(auth.checkers), 2)
     self.assertIsInstance(auth.checkers[0], LDAPUsers)
@@ -51,7 +51,7 @@ class TestAuth(ModelBase):
   def test_check_with_ldap(self):
     auth = PasswordAuthenticators()
     self.app.config['AUTH'] = {
-      'LDAP': { 'HOST': 'oi.nk' }
+      'LDAP': { 'ENABLED': True, 'HOST': 'oi.nk' }
     }
     auth.init_app(self.app)
 

@@ -93,9 +93,11 @@ def create_app():
   app.config['FRONTEND_PATH'] = app.config.get('FRONTEND_PATH', os.path.abspath('../frontend/dist'))
 
   ldap_conf = app.config['AUTH'].get('LDAP', {})
-  for key in ['HOST', 'PORT', 'BIND_DN', 'BIND_PASSWORD', 'BASE_DN']:
+  for key in ['ENABLED', 'HOST', 'PORT', 'BIND_DN', 'BIND_PASSWORD', 'BASE_DN']:
     if 'HINKSKALLE_LDAP_' + key in os.environ:
       ldap_conf[key]=os.environ.get('HINKSKALLE_LDAP_'+key)
+      if key == 'ENABLED':
+        ldap_conf[key]=bool(ldap_conf[key])
   if len(ldap_conf) > 0:
     app.config['AUTH']['LDAP'] = app.config['AUTH'].get('LDAP', {})
     for k, v in ldap_conf.items():

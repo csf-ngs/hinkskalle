@@ -175,12 +175,14 @@ class TestConfig(unittest.TestCase):
       'BASE_DN': 'base dn',
     })
 
+    os.environ['HINKSKALLE_LDAP_ENABLED']='1'
     os.environ['HINKSKALLE_LDAP_HOST']='eins'
     os.environ['HINKSKALLE_LDAP_PORT']='2'
     os.environ['HINKSKALLE_LDAP_BIND_DN']='drei'
 
     test_app = create_app()
     self.assertDictContainsSubset(test_app.config['AUTH']['LDAP'], {
+      'ENABLED': True,
       'HOST': 'eins',
       'PORT': '2',
       'BIND_DN': 'drei',

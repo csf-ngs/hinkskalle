@@ -1,5 +1,6 @@
 <template>
   <v-toolbar flat class="grey lighten-3">
+    <v-app-bar-nav-icon @click.stop="toggleDrawer()"></v-app-bar-nav-icon>
     <v-toolbar-title>{{title}}</v-toolbar-title>
     <slot></slot>
     <v-spacer></v-spacer>
@@ -125,6 +126,9 @@ export default Vue.extend({
           this.$router.push({ name: 'ContainerDetails', params: { entity: obj.entityName, collection: obj.collectionName, container: obj.containerName }})
           break;
       }
+    },
+    toggleDrawer() {
+      this.$store.commit('toggleDrawer');
     },
   },
 });

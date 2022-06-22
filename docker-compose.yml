@@ -78,6 +78,7 @@ services:
     environment:
       VUE_APP_BACKEND_URL: "http://localhost:$BACKEND_PORT/"
       VUE_APP_ENABLE_REGISTER: 'true'
+      VUE_APP_SINGULARITY_COMMAND: 'singularity'
     working_dir: '/srv/hinkskalle/src/frontend'
     depends_on: 
       - api

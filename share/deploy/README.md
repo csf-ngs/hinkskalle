@@ -3,5 +3,7 @@
 Configuration comes from [conf/config.json](conf/config.json). Please override
 values, in particular secrets, via your environment.
 
-More detals can be found at
-[https://testha.se/projects/hinkskalle/configuration](https://testha.se/projects/hinkskalle/configuration)
+LDAP authentication is switched off in this example. More details and
+additional options can be found at
+[https://csf-ngs.github.io/hinkskalle/configuration.html](https://csf-ngs.github.io/hinkskalle/configuration.html)
+

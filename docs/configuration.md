@@ -84,7 +84,7 @@ try to keep these out of `config.json`!
 - `AUTH.LDAP.HOST` - where to find the ldap server
 - `AUTH.LDAP.PORT` - which port (default: 389)
 - `AUTH.LDAP.BIND_DN` - initial bind - this DN must be able to look up user accounts by username/email
-- `AUTH.LDAP.BIND_PASSWORD` - should be in secrets.json
+- `AUTH.LDAP.BIND_PASSWORD` - should be in secrets.env as `HINKSKALLE_LDAP_BIND_PASSWORD`
 - `AUTH.LDAP.BASE_DN` - search base for user accounts
 
 ```json
@@ -97,7 +97,7 @@ try to keep these out of `config.json`!
       "PORT": 389,
       "BIND_DN": "cn=login,ou=Adm,dc=testha,dc=se",
       "BASE_DN": "ou=Accounts,dc=testha,dc=se",
-      "BIND_PASSWORD": "put me in secrets.json!"
+      "BIND_PASSWORD": "put me in secrets.env!"
     }
   }
 }

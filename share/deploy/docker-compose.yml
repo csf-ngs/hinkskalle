@@ -8,14 +8,14 @@ services:
   api:
     restart: always
     image: ghcr.io/csf-ngs/hinkskalle
-    env_file:
+    env_file: &ENV_FILES
       - "conf/secrets.env"
       - "conf/hinkskalle.env"
     environment:
       - PREFERRED_URL_SCHEME=https
     working_dir: '/srv/hinkskalle/backend'
-    volumes:
-      - ./conf/config.json:/srv/hinkskalle/conf/config.json
+    volumes: &VOLUMES
+      - ./conf/config.json:/srv/hinkskalle/conf/config.json:ro
       - images:/mnt/images
     ports:
       - '7600:5000'
@@ -35,18 +35,15 @@ services:
   rq_worker:
     image: ghcr.io/csf-ngs/hinkskalle
     command: 'script/start-worker.sh'
-    env_file:
-      - "conf/secrets.env"
-      - "conf/hinkskalle.env"
+    env_file: *ENV_FILES
+    volumes: *VOLUMES
     depends_on:
       - redis
       - hinkdb
   rq_scheduler:
     image: ghcr.io/csf-ngs/hinkskalle
     command: 'script/start-scheduler.sh'
-    env_file:
-      - "conf/secrets.env"
-      - "conf/hinkskalle.env"
+    env_file: *ENV_FILES
     depends_on:
       - redis
       - hinkdb

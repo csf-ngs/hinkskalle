@@ -15,7 +15,7 @@ flask db upgrade
 # causes the oci conformance tests to fail
 #flask run -h 0.0.0.0 --reload --no-debugger
 echo "starting dev server..."
-gunicorn -u hinkskalle \
+gunicorn \
   --access-logfile - \
   --error-logfile - \
   --chdir /srv/hinkskalle/src/backend \

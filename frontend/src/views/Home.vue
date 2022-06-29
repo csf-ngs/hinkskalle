@@ -28,7 +28,7 @@
                     Singularity Pull and Push:
                   </v-card-title>
                   <v-card-subtitle>
-                    Compatible with the <a href="https://sylabs.io/">Singularity</a> library protocol.  
+                    Compatible with the <a href="https://sylabs.io/">Singularity</a> library protocol.
                     <span v-if="!isLoggedIn">
                       Unauthenticated users can only pull!
                     </span>
@@ -64,7 +64,7 @@
                     Apptainer Pull and Push:
                   </v-card-title>
                   <v-card-subtitle>
-                    Compatible with the <a href="https://apptainer.org/">Apptainer</a> library protocol.  
+                    Compatible with the <a href="https://apptainer.org/">Apptainer</a> library protocol.
                     <span v-if="!isLoggedIn">
                       Unauthenticated users can only pull!
                     </span>
@@ -131,7 +131,7 @@
   oras login <span v-if="!hasHttps">--insecure</span> -u {{currentUser.username}} {{referenceBase}}
   oras push <span v-if="!hasHttps">--plain-http</span> {{referenceBase}}/{{currentUser.username}}/[collection]/[container]:[tag] \
     file1 file2 ...
-  oras pull <span v-if="!hasHttps">--plain-http</span> {{referenceBase}}/{{currentUser.username}}/[collection]/[container]:[tag] 
+  oras pull <span v-if="!hasHttps">--plain-http</span> {{referenceBase}}/{{currentUser.username}}/[collection]/[container]:[tag]
                     </pre>
                     <p v-else>
                       Only available for registered users.
@@ -202,7 +202,7 @@ export default Vue.extend({
   name: 'HskHome',
   data: (): { localState: State } => ({
     localState: {
-      usageTab: 0,
+      usageTab: (getEnv('VUE_APP_SINGULARITY_COMMAND') == "apptainer") ? 1 : 0,
     },
   }),
   computed: {

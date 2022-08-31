@@ -23,6 +23,7 @@ def upgrade():
     conn = op.get_bind()
     if conn.engine.name != 'sqlite':
       op.alter_column(table_name='image', column_name='size', type_=sa.BigInteger)
+      op.alter_column(table_name='image_upload_url', column_name='size', type_=sa.BigInteger)
     # ### end Alembic commands ###
 
 

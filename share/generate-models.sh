@@ -16,5 +16,6 @@ curl http://localhost:7660/swagger |
     -c LdapStatus \
     -c LdapPing \
     -c Manifest \
+    -c ConfigParams \
     -t backend/share/typescript-templates \
     -o frontend/src/store/models.ts

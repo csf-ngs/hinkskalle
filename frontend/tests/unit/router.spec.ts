@@ -1,9 +1,13 @@
 import router, { isAuthenticated, isAdmin } from '@/router';
 import store from '@/store';
-import { User } from '@/store/models';
+import { plainToConfigParams, User } from '@/store/models';
 import { Route } from 'vue-router';
 
 import { each as _each } from 'lodash';
+
+const config = plainToConfigParams({
+  enable_register: false,
+});
 
 describe('AuthGuard', () => {
   it('redirects when not logged in', () => {
@@ -58,6 +62,7 @@ describe('AuthGuard', () => {
     expect(nextFn).toHaveBeenCalledWith(Error('Admin privileges required'));
   });
 
+  store.state.config = config;
   _each([
         '/tokens', 
         '/account', 
@@ -90,6 +95,7 @@ describe('AuthGuard', () => {
         '/ldap',
     ], route => {
       it.skip(`requires admin for ${route}`, async () => {
+        store.state.config = config;
         await router.push('/').catch(err => {});
         store.state.currentUser = { isAdmin: false } as User;
         await router.push(route);

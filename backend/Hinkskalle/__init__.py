@@ -97,7 +97,7 @@ def create_app():
     if 'HINKSKALLE_LDAP_' + key in os.environ:
       ldap_conf[key]=os.environ.get('HINKSKALLE_LDAP_'+key)
       if key == 'ENABLED':
-        ldap_conf[key]=bool(ldap_conf[key])
+        ldap_conf[key]=ldap_conf[key] != "0" and ldap_conf[key] != ""
   if len(ldap_conf) > 0:
     app.config['AUTH']['LDAP'] = app.config['AUTH'].get('LDAP', {})
     for k, v in ldap_conf.items():

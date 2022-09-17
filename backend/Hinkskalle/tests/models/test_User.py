@@ -22,6 +22,30 @@ class TestUser(ModelBase):
     self.assertTrue(abs(read_user.createdAt - datetime.now()) < timedelta(seconds=2))
     self.assertFalse(read_user.is_admin)
   
+  def test_quota(self):
+    user = _create_user('test.hase')
+    user.quota = 999
+    db.session.add(user)
+    db.session.commit()
+
+    read_user = User.query.filter_by(username='test.hase').first()
+    self.assertEqual(read_user.quota, 999)
+  
+  def test_default_quota(self):
+    old_default = self.app.config['DEFAULT_USER_QUOTA']
+    self.app.config['DEFAULT_USER_QUOTA'] = 1234
+
+    user = _create_user('test.hase')
+    self.assertEqual(user.quota, self.app.config['DEFAULT_USER_QUOTA'])
+    db.session.add(user)
+    db.session.commit()
+
+    read_user = User.query.filter_by(username='test.hase').first()
+    self.assertEqual(user.quota, self.app.config['DEFAULT_USER_QUOTA'])
+
+    self.app.config['DEFAULT_USER_QUOTA'] = old_default
+
+  
   def test_username_check(self):
     with self.assertRaisesRegex(ValueError, r'name contains invalid'):
       User(username='bl^a&*.h@ase', email='test@testha.se', firstname='Bla', lastname='Hase')
@@ -57,6 +81,30 @@ class TestUser(ModelBase):
     read_group = Group.query.filter_by(name=group1.name).one()
     self.assertListEqual(read_user.groups, [])
     self.assertListEqual(read_group.users, [])
+  
+  def test_group_default_quota(self):
+    old_default = self.app.config['DEFAULT_USER_QUOTA']
+    self.app.config['DEFAULT_USER_QUOTA'] = 1234
+    group = _create_group('Testhase2')
+    self.assertEqual(group.quota, self.app.config['DEFAULT_USER_QUOTA'])
+    db.session.add(group)
+    db.session.commit()
+
+    read_group = Group.query.filter_by(name='Testhase2').one()
+    self.assertEqual(group.quota, self.app.config['DEFAULT_USER_QUOTA'])
+
+    self.app.config['DEFAULT_USER_QUOTA'] = old_default
+  
+  def test_group_quota(self):
+    group = _create_group('Testhase2')
+    group.quota = 666
+    db.session.add(group)
+    db.session.commit()
+
+    read_group = Group.query.filter_by(name='Testhase2').one()
+    self.assertEqual(read_group.quota, 666)
+
+
   
   def test_stars(self):
     user = _create_user()
@@ -112,6 +160,7 @@ class TestUser(ModelBase):
   def test_schema(self):
     schema = UserSchema()
     user = _create_user()
+    user.quota = 999
 
     serialized = typing.cast(dict, schema.dump(user))
     self.assertEqual(serialized['id'], str(user.id))
@@ -125,10 +174,29 @@ class TestUser(ModelBase):
     self.assertNotIn('tokens', serialized)
     self.assertNotIn('password', serialized)
 
+    self.assertEqual(serialized['quota'], user.quota)
+
     user.is_admin=True
     serialized = typing.cast(dict, schema.dump(user))
     self.assertTrue(serialized['isAdmin'])
     self.assertTrue(serialized['isActive'])
+
+  def test_group_schema(self):
+    schema = GroupSchema()
+    group = _create_group()
+    group.quota = 999
+
+    serialized = typing.cast(dict, schema.dump(group))
+    self.assertEqual(serialized['quota'], group.quota)
+  
+  def test_group_deserialize(self):
+    schema = GroupSchema()
+    deserialized = typing.cast(dict, schema.load({
+      'name': 'Testhasenstall',
+      'email': 'testhase@testha.se',
+      'quota': 666
+    }))
+    self.assertEqual(deserialized['quota'], 666)
 
   def test_deserialize(self):
     schema = UserSchema()
@@ -140,9 +208,11 @@ class TestUser(ModelBase):
       'lastname': 'Hase',
       'isAdmin': True,
       'isActive': True,
+      'quota': 999,
     }))
     self.assertTrue(deserialized['is_admin'])
     self.assertTrue(deserialized['is_active'])
+    self.assertEqual(deserialized['quota'], 999)
   
   def test_deserialize_username_check(self):
     schema = UserSchema()

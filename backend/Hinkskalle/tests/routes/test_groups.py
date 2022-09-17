@@ -6,6 +6,7 @@ from Hinkskalle.models.User import Group, GroupRoles, UserGroup, User
 from Hinkskalle.models.Entity import Entity
 from sqlalchemy.orm.exc import NoResultFound # type: ignore
 import datetime
+import typing
 
 class TestGroups(RouteBase):
   def test_list_noauth(self):
@@ -236,6 +237,55 @@ class TestGroups(RouteBase):
     db_entity = Entity.query.filter(Entity.name==ret_group['entityRef']).one()
     self.assertEqual(db_entity.createdBy, self.username)
   
+  def test_create_quota_default(self):
+    old_default = self.app.config['DEFAULT_USER_QUOTA']
+    self.app.config['DEFAULT_USER_QUOTA'] = 1234
+    group_data = {
+      'name': 'Testhasenstall',
+      'email': 'stall@testha.se',
+    }
+    with self.fake_admin_auth():
+      ret = self.client.post('/v1/groups', json=group_data)
+    self.assertEqual(ret.status_code, 200)
+    
+    ret_group = typing.cast(dict, ret.get_json().get('data'))
+    self.assertEqual(ret_group['quota'], self.app.config['DEFAULT_USER_QUOTA'])
+
+    self.app.config['DEFAULT_USER_QUOTA'] = old_default
+  
+  def test_create_quota(self):
+    group_data = {
+      'name': 'Testhasenstall',
+      'email': 'stall@testha.se',
+      'quota': 9876,
+    }
+    with self.fake_admin_auth():
+      ret = self.client.post('/v1/groups', json=group_data)
+    self.assertEqual(ret.status_code, 200)
+    
+    ret_group = typing.cast(dict, ret.get_json().get('data'))
+    self.assertEqual(ret_group['quota'], 9876)
+
+  def test_create_quota_user(self):
+    """ users cannot set quota of new group, use default """
+    old_default = self.app.config['DEFAULT_USER_QUOTA']
+    self.app.config['DEFAULT_USER_QUOTA'] = 1234
+
+    group_data = {
+      'name': 'Testhasenstall',
+      'email': 'stall@testha.se',
+      'quota': 9876,
+    }
+    with self.fake_auth():
+      ret = self.client.post('/v1/groups', json=group_data)
+    self.assertEqual(ret.status_code, 200)
+    
+    ret_group = typing.cast(dict, ret.get_json().get('data'))
+    self.assertEqual(ret_group['quota'], self.app.config['DEFAULT_USER_QUOTA'])
+
+    self.app.config['DEFAULT_USER_QUOTA'] = old_default
+
+  
   def test_update(self):
     group = _create_group('Updatestall')
     update_data = {
@@ -310,6 +360,36 @@ class TestGroups(RouteBase):
     self.assertTrue(ret.get_json().get('data')['canEdit']) # type: ignore
     db_group = Group.query.get(group.id)
     self.assertEqual(db_group.email, group_data['email'])
+  
+  def test_update_quota(self):
+    group = _create_group('Updatestall')
+    group.quota = 9876
+    db.session.commit()
+
+    group_data = {
+      'email': group.email,
+      'quota': 1234,
+    }
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/groups/{group.name}", json=group_data)
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.get_json().get('data')['quota'], 1234)
+
+  def test_update_quota_user(self):
+    group = _create_group('Updatestall')
+    group.quota = 9876
+    db.session.commit()
+    ug = _set_member(group=group, user=self.user, role=GroupRoles.admin)
+
+    group_data = {
+      'email': group.email,
+      'quota': 1234,
+    }
+    with self.fake_auth():
+      ret = self.client.put(f"/v1/groups/{group.name}", json=group_data)
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.get_json().get('data')['quota'], 9876)
+
   
   def test_update_user_denied(self):
     group = _create_group('Updatestall')

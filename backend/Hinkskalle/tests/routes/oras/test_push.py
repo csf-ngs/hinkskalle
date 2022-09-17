@@ -11,7 +11,7 @@ import os
 import json
 
 from Hinkskalle.tests.route_base import RouteBase
-from Hinkskalle.tests._util import _create_image, _create_container, _prepare_img_data
+from Hinkskalle.tests._util import _create_image, _create_container, _prepare_img_data, _create_user
 
 from Hinkskalle import db
 from Hinkskalle.models import Manifest, ImageUploadUrl, UploadStates, UploadTypes
@@ -336,7 +336,8 @@ class TestOrasPush(RouteBase):
     image, container, collection, entity = _create_image()
     img_data, digest = _prepare_img_data()
     image_id = image.id
-    entity.quota = len(img_data)-1
+    entity.owner = _create_user()
+    entity.owner.quota = len(img_data)-1
 
     _, temp_path = tempfile.mkstemp()
     upload = ImageUploadUrl(
@@ -488,7 +489,8 @@ class TestOrasPush(RouteBase):
     image, _, _, entity = _create_image()
     image_container_id = image.id
     img_data, digest = _prepare_img_data()
-    entity.quota = len(img_data)-1
+    entity.owner = _create_user()
+    entity.owner.quota = len(img_data)-1
     digest = digest.replace('sha256.', 'sha256:')
 
     with self.fake_admin_auth():

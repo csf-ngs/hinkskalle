@@ -65,6 +65,7 @@ class TestEntity(ModelBase):
     self.assertEqual(ent.calculate_used(), 0)
     self.assertEqual(ent.used_quota, 0)
 
+    # count one image
     image1 = _create_image(postfix='1')[0]
     image1.container_ref.collection_ref.entity_ref=ent
     image1.size=200
@@ -76,6 +77,7 @@ class TestEntity(ModelBase):
     self.assertEqual(image1.container_ref.used_quota, 200)
     self.assertEqual(image1.container_ref.collection_ref.used_quota, 200)
 
+    # add second image
     image2 = _create_image(postfix='2')[0]
     image2.container_ref.collection_ref.entity_ref=ent
     image2.size=300
@@ -86,6 +88,9 @@ class TestEntity(ModelBase):
     self.assertEqual(image2.container_ref.used_quota, 300)
     self.assertEqual(image2.container_ref.collection_ref.used_quota, 300)
 
+    # add reference to existing image to a different
+    # collection - entity usage stays same, collection
+    # usage counts normal
     image2_same = _create_image(postfix='2_same')[0]
     image2_same.container_ref.collection_ref.entity_ref=ent
     image2_same.size=400
@@ -96,6 +101,8 @@ class TestEntity(ModelBase):
     self.assertEqual(image2_same.container_ref.used_quota, 400)
     self.assertEqual(image2_same.container_ref.collection_ref.used_quota, 400)
 
+    # another reference, same collection, different container 
+    # should not add to entity nor collection, but to container
     image3 = _create_image(postfix='3')[0]
     image3.container_ref.collection_ref=image2_same.container_ref.collection_ref
     image3.size=600
@@ -106,7 +113,7 @@ class TestEntity(ModelBase):
     self.assertEqual(image3.container_ref.used_quota, 600)
     self.assertEqual(image3.container_ref.collection_ref.used_quota, 400)
 
-
+    # invalid upload state - do not count this image
     image4_upl = _create_image(postfix='4')[0]
     image4_upl.container_ref.collection_ref.entity_ref=ent
     image4_upl.size=300
@@ -189,26 +196,59 @@ class TestEntity(ModelBase):
     serialized = typing.cast(dict, schema.dump(entity))
     self.assertEqual(serialized['usedQuota'], 999)
   
+  def test_schema_user(self):
+    user = _create_user()
+    user.quota = 999
+    entity = Entity(name='Testhase', owner=user)
+    db.session.add(entity)
+    db.session.commit()
+
+    schema = EntitySchema()
+    serialized = typing.cast(dict, schema.dump(entity))
+    self.assertEqual(serialized['quota'], 999)
+  
   def test_schema_group(self):
     group = _create_group()
+    group.quota = 999
     entity = Entity(name='Test Hase', group=group)
     db.session.add(entity)
     db.session.commit()
+
     schema = EntitySchema()
     serialized = typing.cast(dict, schema.dump(entity))
     self.assertTrue(serialized['isGroup'])
     self.assertEqual(serialized['groupRef'], group.name)
+    self.assertEqual(serialized['quota'], 999)
 
-
-  def test_quota_default(self):
+  def test_quota_no_owner(self):
+    """ entities without owner get unlimited quota """
     entity = Entity(name='test1hase')
     db.session.add(entity)
     db.session.commit()
     self.assertEqual(entity.quota, 0)
-
-    self.app.config['DEFAULT_USER_QUOTA']=100
-    entity = Entity(name='test2hase')
+  
+  def test_quota(self):
+    user = _create_user('test.hase')
+    user.quota = 666
+    entity = Entity(name='testhase', owner=user)
     db.session.add(entity)
     db.session.commit()
-    self.assertEqual(entity.quota, 100)
-    self.app.config.pop('DEFAULT_USER_QUOTA')
+
+    self.assertEqual(entity.quota, 666)
+
+    user.quota = 999
+    self.assertEqual(entity.quota, 999)
+  
+  def test_quota_group(self):
+    group = _create_group('Testhasenstall')
+    group.quota = 777
+    entity = Entity(name='testhase', group=group)
+    db.session.add(entity)
+    db.session.commit()
+
+    self.assertEqual(entity.quota, 777)
+
+    group.quota = 888
+    self.assertEqual(entity.quota, 888)
+
+

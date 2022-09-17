@@ -101,6 +101,7 @@ class TestUsers(RouteBase):
       "deleted": False,
       "groups": [],
       "canEdit": True,
+      "quota": 0,
     })
   
   def test_get_invalid_username(self):
@@ -283,7 +284,10 @@ class TestUsers(RouteBase):
     self.assertEqual(ret.status_code, 403)
   
   def test_register(self):
+    old_quota = self.app.config['DEFAULT_USER_QUOTA']
+    self.app.config['DEFAULT_USER_QUOTA'] = 1234
     self.app.config['ENABLE_REGISTER']=True
+
     user_data = {
       'username': 'probier.hase',
       'email': 'probier@ha.se',
@@ -305,10 +309,13 @@ class TestUsers(RouteBase):
     self.assertFalse(db_user.is_admin)
     self.assertIsNone(db_user.createdBy)
     self.assertTrue(abs(db_user.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
+    self.assertEqual(db_user.quota, self.app.config['DEFAULT_USER_QUOTA'])
 
     db_entity = Entity.query.filter(Entity.name==user_data['username']).first()
     self.assertIsNotNone(db_entity)
     self.assertEqual(db_entity.createdBy, db_user.username)
+
+    self.app.config['DEFAULT_USER_QUOTA'] = old_quota
 
   def test_register_exists(self):
     self.app.config['ENABLE_REGISTER']=True
@@ -351,6 +358,7 @@ class TestUsers(RouteBase):
       'isAdmin': True,
       'isActive': False,
       'password': 'geheimhase',
+      'quota': 1234,
     }
     with self.fake_admin_auth():
       ret = self.client.post('/v1/users', json=user_data)
@@ -366,6 +374,7 @@ class TestUsers(RouteBase):
     self.assertTrue(db_user.check_password(user_data['password']))
     self.assertEqual(db_user.createdBy, self.admin_username)
     self.assertTrue(abs(db_user.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
+    self.assertEqual(db_user.quota, 1234)
   
   def test_create_entity(self):
     user_data = {
@@ -445,6 +454,7 @@ class TestUsers(RouteBase):
       "source": "Mars",
       "isAdmin": True,
       "isActive": False,
+      'quota': 1234,
     }
     with self.fake_admin_auth():
       ret = self.client.put(f"/v1/users/{user.username}", json=update_data)
@@ -453,7 +463,7 @@ class TestUsers(RouteBase):
     self.assertTrue(ret.get_json().get('data')['canEdit']) # type: ignore
 
     db_user = User.query.get(user.id)
-    for f in ['email', 'firstname', 'lastname', 'source', 'isAdmin', 'isActive']:
+    for f in ['email', 'firstname', 'lastname', 'source', 'isAdmin', 'isActive', 'quota']:
       uf = 'is_active' if f == 'isActive' else 'is_admin' if f == 'isAdmin' else f
       self.assertEqual(getattr(db_user, uf), update_data[f])
     self.assertTrue(abs(db_user.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
@@ -513,6 +523,21 @@ class TestUsers(RouteBase):
     self.assertNotEqual(db_user.lastname, 'aundashase')
     self.assertTrue(db_user.is_active)
     self.assertTrue(db_user.is_admin)
+
+  def test_update_nonlocal_quota(self):
+    user = _create_user('update.hase')
+    user.quota = 1234
+    user.source = 'thin air'
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/users/{user.username}", json={
+        'quota': 9876,
+      })
+    
+    self.assertEqual(ret.status_code, 200)
+    db_user = User.query.filter(User.username=='update.hase').one()
+    self.assertEqual(db_user.quota, 9876)
 
   
   def test_update_username_change(self):
@@ -600,6 +625,24 @@ class TestUsers(RouteBase):
     self.assertEqual(db_user.email, user_data['email'])
     self.assertEqual(db_user.firstname, user_data['firstname'])
     self.assertEqual(db_user.lastname, user_data['lastname'])
+  
+  def test_update_user_quota(self):
+    old_quota = self.user.quota
+    self.user.quota = 1234
+    db.session.commit()
+    user_data = {
+      'quota': 9876,
+    }
+    with self.fake_auth():
+      ret = self.client.put(f"/v1/users/{self.username}", json=user_data)
+    
+    self.assertEqual(ret.status_code, 200)
+    db_user = User.query.filter(User.username==self.username).one()
+    self.assertEqual(db_user.quota, 1234)
+
+    self.user.quota = old_quota
+    db.session.commit()
+
   
   def test_update_password_user(self):
     user_data = {

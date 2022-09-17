@@ -4,7 +4,7 @@ from tempfile import mkdtemp
 from datetime import datetime, timedelta
 
 from ..route_base import RouteBase
-from .._util import _create_image, _fake_img_file, _prepare_img_data
+from .._util import _create_image, _fake_img_file, _prepare_img_data, _create_user
 
 from Hinkskalle.models import Image, Tag, Container, UploadStates
 from Hinkskalle.models.Entity import Entity
@@ -385,7 +385,8 @@ class TestImagefiles(RouteBase):
     self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
     img_data, digest = _prepare_img_data()
     image.hash = digest
-    entity.quota = len(img_data)-1
+    entity.owner = _create_user()
+    entity.owner.quota = len(img_data)-1
     db.session.commit()
     image_id = image.id
     entity_id = entity.id

@@ -5,7 +5,7 @@ from Hinkskalle.models.Entity import Entity
 import os.path
 
 from Hinkskalle.tests.route_base import RouteBase
-from Hinkskalle.tests._util import _create_image, _create_container
+from Hinkskalle.tests._util import _create_image, _create_container, _create_user
 
 from Hinkskalle import db
 from Hinkskalle.models import ImageUploadUrl, UploadStates, UploadTypes
@@ -180,9 +180,11 @@ class TestOrasPushChunked(RouteBase):
   def test_push_chunk_finish_quota_check(self):
     self.app.config['IMAGE_PATH'] = tempfile.mkdtemp()
     test_data = b'grunz oink muh MUH'
+    user = _create_user()
     image, upload, last_chunk, complete_digest = _prepare_chunked_upload(test_data)
     entity = image.container_ref.collection_ref.entity_ref
-    entity.quota = len(test_data)-1
+    entity.owner = user
+    user.quota = len(test_data)-1
     db.session.commit()
     image_id = image.id
     upload_id = upload.id
@@ -194,6 +196,7 @@ class TestOrasPushChunked(RouteBase):
     self.assertNotEqual(image.uploadState, UploadStates.completed)
     upload = ImageUploadUrl.query.get(upload_id)
     self.assertEqual(upload.state, UploadStates.failed)
+
   def test_push_chunk_finish_checksum(self):
     self.app.config['IMAGE_PATH'] = tempfile.mkdtemp()
     test_data = b'grunz oink muh MUH'

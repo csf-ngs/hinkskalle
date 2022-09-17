@@ -8,7 +8,7 @@ import os.path
 
 
 from ..route_base import RouteBase
-from .._util import _create_image
+from .._util import _create_image, _create_user
 
 from Hinkskalle.models import Image, ImageUploadUrl, UploadStates, UploadTypes
 from Hinkskalle import db
@@ -262,7 +262,8 @@ class TestImagefilesV2(RouteBase):
     image, _, _, entity = _create_image()
     entity_id = entity.id
     img_data, digest = _prepare_img_data()
-    entity.quota = len(img_data)*2
+    entity.owner = _create_user()
+    entity.owner.quota = len(img_data)*2
     _, temp_path = tempfile.mkstemp()
     with open(temp_path, "wb") as temp_fh:
       temp_fh.write(img_data)
@@ -294,7 +295,8 @@ class TestImagefilesV2(RouteBase):
     image, _, _, entity = _create_image()
     image_id = image.id
     img_data, digest = _prepare_img_data()
-    entity.quota = len(img_data)-1
+    entity.owner = _create_user()
+    entity.owner.quota = len(img_data)-1
     _, temp_path = tempfile.mkstemp()
     with open(temp_path, "wb") as temp_fh:
       temp_fh.write(img_data)
@@ -838,7 +840,8 @@ class TestImagefilesV2(RouteBase):
   def test_push_v2_multi_complete_quota_signal(self):
     image, upload, parts, complete_data = self._setup_multi_upload()
     entity = image.container_ref.collection_ref.entity_ref
-    entity.quota = len(complete_data)*2
+    entity.owner = _create_user()
+    entity.owner.quota = len(complete_data)*2
     db.session.commit()
     entity_id = entity.id
 
@@ -862,7 +865,8 @@ class TestImagefilesV2(RouteBase):
   def test_push_v2_multi_complete_quota_check(self):
     image, upload, parts, complete_data = self._setup_multi_upload()
     entity = image.container_ref.collection_ref.entity_ref
-    entity.quota = len(complete_data)-1
+    entity.owner = _create_user()
+    entity.owner.quota = len(complete_data)-1
     db.session.commit()
     image_id = image.id
     upload_id = upload.id
@@ -881,6 +885,7 @@ class TestImagefilesV2(RouteBase):
     self.assertEqual(image.uploadState, UploadStates.failed)
     upload = ImageUploadUrl.query.get(upload_id)
     self.assertEqual(upload.state, UploadStates.failed)
+
   def test_push_v2_multi_complete_type_invalid(self):
     image, upload, parts, _ = self._setup_multi_upload()
     upload.type = UploadTypes.single

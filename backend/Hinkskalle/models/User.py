@@ -42,6 +42,7 @@ class GroupSchema(Schema):
   name = fields.String(required=True)
   email = fields.String(required=True)
   description = fields.String(allow_none=True)
+  quota = fields.Integer()
   entityRef = fields.String(dump_only=True, allow_none=True, attribute='entity_ref')
 
   users = fields.List(fields.Nested('GroupMemberSchema'), dump_only=True)
@@ -64,6 +65,7 @@ class UserSchema(BaseSchema):
   is_admin = fields.Boolean(data_key='isAdmin')
   is_active = fields.Boolean(data_key='isActive')
   source = fields.String()
+  quota = fields.Integer()
 
   groups = fields.List(fields.Nested('UserMemberSchema', allow_none=True), dump_only=True)
 
@@ -107,6 +109,7 @@ class User(db.Model): # type: ignore
   lastname = db.Column(db.String(), nullable=False)
   is_admin = db.Column(db.Boolean, default=False)
   is_active = db.Column(db.Boolean, default=True)
+  quota = db.Column(db.BigInteger, default=lambda: current_app.config.get('DEFAULT_USER_QUOTA', 0))
   source = db.Column(db.String(), default='local', nullable=False)
   _passkey_id = db.Column('passkey_id', db.LargeBinary(16), default=lambda: secrets.token_bytes(16), unique=True)
 
@@ -218,6 +221,7 @@ class Group(db.Model): # type: ignore
   name = db.Column(db.String(), unique=True, nullable=False)
   email = db.Column(db.String(), nullable=False)
   description = db.Column(db.String())
+  quota = db.Column(db.BigInteger, default=lambda: current_app.config.get('DEFAULT_USER_QUOTA', 0))
 
   users = db.relationship('UserGroup', back_populates='group', cascade='all, delete-orphan')
   users_sth = db.relationship('UserGroup', viewonly=True, lazy='dynamic')

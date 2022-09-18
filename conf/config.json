@@ -10,6 +10,7 @@
   "ENABLE_REGISTER": true,
   "SINGULARITY_FLAVOR": "apptainer",
   "DEFAULT_USER_QUOTA": 1073741824,
+  "DEFAULT_GROUP_QUOTA": 2147483648,
   "CRON": {
     "expire_images": "46 22 * * *",
     "check_quotas": "29 0 * * *",

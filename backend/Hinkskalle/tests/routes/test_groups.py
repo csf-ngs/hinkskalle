@@ -238,8 +238,8 @@ class TestGroups(RouteBase):
     self.assertEqual(db_entity.createdBy, self.username)
   
   def test_create_quota_default(self):
-    old_default = self.app.config['DEFAULT_USER_QUOTA']
-    self.app.config['DEFAULT_USER_QUOTA'] = 1234
+    old_default = self.app.config['DEFAULT_GROUP_QUOTA']
+    self.app.config['DEFAULT_GROUP_QUOTA'] = 1234
     group_data = {
       'name': 'Testhasenstall',
       'email': 'stall@testha.se',
@@ -249,9 +249,9 @@ class TestGroups(RouteBase):
     self.assertEqual(ret.status_code, 200)
     
     ret_group = typing.cast(dict, ret.get_json().get('data'))
-    self.assertEqual(ret_group['quota'], self.app.config['DEFAULT_USER_QUOTA'])
+    self.assertEqual(ret_group['quota'], self.app.config['DEFAULT_GROUP_QUOTA'])
 
-    self.app.config['DEFAULT_USER_QUOTA'] = old_default
+    self.app.config['DEFAULT_GROUP_QUOTA'] = old_default
   
   def test_create_quota(self):
     group_data = {
@@ -268,8 +268,8 @@ class TestGroups(RouteBase):
 
   def test_create_quota_user(self):
     """ users cannot set quota of new group, use default """
-    old_default = self.app.config['DEFAULT_USER_QUOTA']
-    self.app.config['DEFAULT_USER_QUOTA'] = 1234
+    old_default = self.app.config['DEFAULT_GROUP_QUOTA']
+    self.app.config['DEFAULT_GROUP_QUOTA'] = 1234
 
     group_data = {
       'name': 'Testhasenstall',
@@ -281,9 +281,9 @@ class TestGroups(RouteBase):
     self.assertEqual(ret.status_code, 200)
     
     ret_group = typing.cast(dict, ret.get_json().get('data'))
-    self.assertEqual(ret_group['quota'], self.app.config['DEFAULT_USER_QUOTA'])
+    self.assertEqual(ret_group['quota'], self.app.config['DEFAULT_GROUP_QUOTA'])
 
-    self.app.config['DEFAULT_USER_QUOTA'] = old_default
+    self.app.config['DEFAULT_GROUP_QUOTA'] = old_default
 
   
   def test_update(self):

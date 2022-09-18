@@ -184,6 +184,10 @@ class User(db.Model): # type: ignore
       return True
     else:
       return False
+  
+  @property
+  def image_count(self) -> int:
+    pass
 
   @property
   def canEdit(self) -> bool:
@@ -196,6 +200,7 @@ class User(db.Model): # type: ignore
       return True
     else:
       return False
+<<<<<<< HEAD
 
 class PassKey(db.Model): # type: ignore
   id = db.Column(db.LargeBinary(16), primary_key=True)
@@ -215,13 +220,16 @@ class PassKey(db.Model): # type: ignore
   def encoded_id(self):
     return base64.b64encode(self.id).decode('utf-8')
 
+=======
+  
+>>>>>>> d9fcef0 (separate user and group quota configuration)
 
 class Group(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String(), unique=True, nullable=False)
   email = db.Column(db.String(), nullable=False)
   description = db.Column(db.String())
-  quota = db.Column(db.BigInteger, default=lambda: current_app.config.get('DEFAULT_USER_QUOTA', 0))
+  quota = db.Column(db.BigInteger, default=lambda: current_app.config.get('DEFAULT_GROUP_QUOTA', 0))
 
   users = db.relationship('UserGroup', back_populates='group', cascade='all, delete-orphan')
   users_sth = db.relationship('UserGroup', viewonly=True, lazy='dynamic')

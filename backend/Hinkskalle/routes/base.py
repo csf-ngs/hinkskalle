@@ -35,6 +35,7 @@ class ConfigParamsSchema(Schema):
   enable_register = fields.Boolean()
   singularity_flavor = fields.String()
   default_user_quota = fields.Integer()
+  default_group_quota = fields.Integer()
 
 class ConfigResponseSchema(ResponseSchema):
   libraryAPI = fields.Dict()
@@ -80,6 +81,7 @@ def config():
       'enable_register': current_app.config.get('ENABLE_REGISTER'),
       'singularity_flavor': current_app.config.get('SINGULARITY_FLAVOR'),
       'default_user_quota': current_app.config.get('DEFAULT_USER_QUOTA'),
+      'default_group_quota': current_app.config.get('DEFAULT_GROUP_QUOTA'),
     }
   }
 

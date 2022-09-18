@@ -32,7 +32,8 @@ You might want to set these:
 ## Hinkskalle 
 
 - `DEFAULT_ARCH` - which archtitecture should we use for the default `latest` tag if no explicit tag is specified for a push (default `amd64`)
-- `DEFAULT_USER_QUOTA` - in bytes, how much space to allow for images per user or group entity. 0 to disable (= default)
+- `DEFAULT_USER_QUOTA` - in bytes, how much space to allow for images per user entity. 0 to disable (= default)
+- `DEFAULT_GROUP_QUOTA` - in bytes, how much space to allow for images per group entity. 0 to disable (= default)
 - `DOWNLOAD_TOKEN_EXPIRATION` - in seconds, how long should download links be valid. Each token grants access to images in specific manifests and should be handled with care.
 - `ENABLE_REGISTER` - allow new users to sign up (default: False). If false, a user has to either be a valid LDAP user (if active) or created by an admin
 - `FRONTEND_PATH` - where can we find `index.html` and the js bundles for the frontend, usually `../frontend/dist/`

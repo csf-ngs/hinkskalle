@@ -83,17 +83,17 @@ class TestUser(ModelBase):
     self.assertListEqual(read_group.users, [])
   
   def test_group_default_quota(self):
-    old_default = self.app.config['DEFAULT_USER_QUOTA']
-    self.app.config['DEFAULT_USER_QUOTA'] = 1234
+    old_default = self.app.config['DEFAULT_GROUP_QUOTA']
+    self.app.config['DEFAULT_GROUP_QUOTA'] = 1234
     group = _create_group('Testhase2')
-    self.assertEqual(group.quota, self.app.config['DEFAULT_USER_QUOTA'])
+    self.assertEqual(group.quota, self.app.config['DEFAULT_GROUP_QUOTA'])
     db.session.add(group)
     db.session.commit()
 
     read_group = Group.query.filter_by(name='Testhase2').one()
-    self.assertEqual(group.quota, self.app.config['DEFAULT_USER_QUOTA'])
+    self.assertEqual(group.quota, self.app.config['DEFAULT_GROUP_QUOTA'])
 
-    self.app.config['DEFAULT_USER_QUOTA'] = old_default
+    self.app.config['DEFAULT_GROUP_QUOTA'] = old_default
   
   def test_group_quota(self):
     group = _create_group('Testhase2')

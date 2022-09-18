@@ -102,6 +102,8 @@ class TestUsers(RouteBase):
       "groups": [],
       "canEdit": True,
       "quota": 0,
+      "used_quota": 0,
+      "image_count": 0,
     })
   
   def test_get_invalid_username(self):

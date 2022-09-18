@@ -4,9 +4,9 @@ import typing
 
 from marshmallow import ValidationError
 from ..model_base import ModelBase
-from .._util import _create_group, _create_user, _create_container
+from .._util import _create_group, _create_user, _create_container, _create_image
 
-from Hinkskalle.models import User, UserSchema, Group, GroupSchema, Container, UserGroup, GroupRoles
+from Hinkskalle.models import User, UserSchema, Group, GroupSchema, Container, UserGroup, GroupRoles, UploadStates
 
 from Hinkskalle import db
 
@@ -21,7 +21,7 @@ class TestUser(ModelBase):
     self.assertEqual(read_user.id, user.id)
     self.assertTrue(abs(read_user.createdAt - datetime.now()) < timedelta(seconds=2))
     self.assertFalse(read_user.is_admin)
-  
+
   def test_quota(self):
     user = _create_user('test.hase')
     user.quota = 999
@@ -30,7 +30,7 @@ class TestUser(ModelBase):
 
     read_user = User.query.filter_by(username='test.hase').first()
     self.assertEqual(read_user.quota, 999)
-  
+
   def test_default_quota(self):
     old_default = self.app.config['DEFAULT_USER_QUOTA']
     self.app.config['DEFAULT_USER_QUOTA'] = 1234
@@ -45,12 +45,12 @@ class TestUser(ModelBase):
 
     self.app.config['DEFAULT_USER_QUOTA'] = old_default
 
-  
+
   def test_username_check(self):
     with self.assertRaisesRegex(ValueError, r'name contains invalid'):
       User(username='bl^a&*.h@ase', email='test@testha.se', firstname='Bla', lastname='Hase')
 
-  
+
   def test_user_case(self):
     user = _create_user('tEst.Hase')
     user.email = 'tEst@hA.Se'
@@ -60,52 +60,78 @@ class TestUser(ModelBase):
     dbUser = User.query.get(user.id)
     self.assertEqual(dbUser.username, 'test.hase')
     self.assertEqual(dbUser.email, 'test@ha.se')
-  
-  def test_group(self):
+
+
+  def test_user_count(self):
     user = _create_user()
-    group1 = _create_group('Testhase1')
-    group1_opt = UserGroup(group=group1, user=user, role=GroupRoles.contributor)
-
+    db.session.add(user)
     db.session.commit()
 
-    read_user = User.query.filter_by(username=user.username).one()
-    read_group = Group.query.filter_by(name=group1.name).one()
+    self.assertEqual(user.image_count, 0)
 
-    self.assertListEqual([ m.group for m in read_user.groups], [read_group])
-    self.assertListEqual([ m.user for m in read_group.users], [read_user])
+    image1 = _create_image(postfix='1', uploadState=UploadStates.completed, owner=user)
+    self.assertEqual(user.image_count, 1)
 
-    db.session.delete(group1_opt)
-    db.session.commit()
+    # only completed counts!
+    image2 = _create_image(postfix='2', uploadState=UploadStates.broken, owner=user)
+    self.assertEqual(user.image_count, 1)
 
-    read_user = User.query.filter_by(username=user.username).one()
-    read_group = Group.query.filter_by(name=group1.name).one()
-    self.assertListEqual(read_user.groups, [])
-    self.assertListEqual(read_group.users, [])
-  
-  def test_group_default_quota(self):
-    old_default = self.app.config['DEFAULT_GROUP_QUOTA']
-    self.app.config['DEFAULT_GROUP_QUOTA'] = 1234
-    group = _create_group('Testhase2')
-    self.assertEqual(group.quota, self.app.config['DEFAULT_GROUP_QUOTA'])
-    db.session.add(group)
-    db.session.commit()
+    image3 = _create_image(postfix='3', uploadState=UploadStates.completed, owner=user)
+    self.assertEqual(user.image_count, 2)
 
-    read_group = Group.query.filter_by(name='Testhase2').one()
-    self.assertEqual(group.quota, self.app.config['DEFAULT_GROUP_QUOTA'])
+  def test_user_used_quota_null(self):
+    user = _create_user()
+    self.assertEqual(user.calculate_used(), 0)
+    self.assertEqual(user.used_quota, 0)
 
-    self.app.config['DEFAULT_GROUP_QUOTA'] = old_default
-  
-  def test_group_quota(self):
-    group = _create_group('Testhase2')
-    group.quota = 666
-    db.session.add(group)
-    db.session.commit()
+    image1 = _create_image(postfix='1', owner=user)[0]
+    image1.size = None
+    image1.uploadState = UploadStates.completed
+    self.assertEqual(user.calculate_used(), 0)
 
-    read_group = Group.query.filter_by(name='Testhase2').one()
-    self.assertEqual(read_group.quota, 666)
+  def test_user_used_quota(self):
+    user = _create_user()
+    self.assertEqual(user.calculate_used(), 0)
+    self.assertEqual(user.used_quota, 0)
 
+    # count one image
+    image1 = _create_image(postfix='1', owner=user)[0]
+    image1.size = 200
+    image1.location = '/da/ham1'
+    image1.uploadState = UploadStates.completed
 
-  
+    self.assertEqual(user.calculate_used(), 200)
+    self.assertEqual(user.used_quota, 200)
+
+    # add second image
+    image2 = _create_image(postfix='2', owner=user)[0]
+    image2.size = 300
+    image2.location = '/da/ham2'
+    image2.uploadState = UploadStates.completed
+
+    self.assertEqual(user.calculate_used(), 500)
+    self.assertEqual(user.used_quota, 500)
+
+    # add reference to existing image
+    # does not count towards quota
+    image2_same = _create_image(postfix='2_same', owner=user)[0]
+    image2_same.size = 400
+    image2_same.location = '/da/ham2'
+    image2_same.uploadState = UploadStates.completed
+
+    self.assertEqual(user.calculate_used(), 500)
+    self.assertEqual(user.used_quota, 500)
+
+    # invalid upload state
+    # does not count towards quota
+    image3_invalid = _create_image(postfix='3_invalid', owner=user)[0]
+    image3_invalid.size = 500
+    image3_invalid.location = '/da/ham3'
+    image3_invalid.uploadState = UploadStates.broken
+
+    self.assertEqual(user.calculate_used(), 500)
+    self.assertEqual(user.used_quota, 500)
+
   def test_stars(self):
     user = _create_user()
     container = _create_container()[0]
@@ -136,7 +162,7 @@ class TestUser(ModelBase):
     self.assertListEqual(read_container.starred, [])
     self.assertEqual(read_container.stars, 0)
 
-  
+
   def test_password(self):
     user = _create_user()
     user.set_password('geheimhase')
@@ -147,7 +173,7 @@ class TestUser(ModelBase):
 
     self.assertTrue(read_user.check_password('geheimhase'))
     self.assertFalse(read_user.check_password('Falscher Hase'))
-  
+
   def test_password_none(self):
     user = _create_user()
     self.assertFalse(user.check_password('irgendwas'))
@@ -155,8 +181,8 @@ class TestUser(ModelBase):
     user.password = 'something'
     db.session.commit()
     self.assertFalse(user.check_password('something'))
-  
-  
+
+
   def test_schema(self):
     schema = UserSchema()
     user = _create_user()
@@ -181,23 +207,6 @@ class TestUser(ModelBase):
     self.assertTrue(serialized['isAdmin'])
     self.assertTrue(serialized['isActive'])
 
-  def test_group_schema(self):
-    schema = GroupSchema()
-    group = _create_group()
-    group.quota = 999
-
-    serialized = typing.cast(dict, schema.dump(group))
-    self.assertEqual(serialized['quota'], group.quota)
-  
-  def test_group_deserialize(self):
-    schema = GroupSchema()
-    deserialized = typing.cast(dict, schema.load({
-      'name': 'Testhasenstall',
-      'email': 'testhase@testha.se',
-      'quota': 666
-    }))
-    self.assertEqual(deserialized['quota'], 666)
-
   def test_deserialize(self):
     schema = UserSchema()
 
@@ -213,7 +222,7 @@ class TestUser(ModelBase):
     self.assertTrue(deserialized['is_admin'])
     self.assertTrue(deserialized['is_active'])
     self.assertEqual(deserialized['quota'], 999)
-  
+
   def test_deserialize_username_check(self):
     schema = UserSchema()
     with self.assertRaisesRegex(ValidationError, r'username'):
@@ -244,7 +253,7 @@ class TestUser(ModelBase):
     self.assertTrue(subject.check_sub_access(try_admin))
     self.assertFalse(subject.check_sub_access(try_normal))
     self.assertTrue(subject.check_sub_access(subject))
-  
+
   def test_update_access(self):
     subject = _create_user()
 
@@ -254,8 +263,74 @@ class TestUser(ModelBase):
     self.assertTrue(subject.check_update_access(try_admin))
     self.assertFalse(subject.check_update_access(try_normal))
     self.assertTrue(subject.check_update_access(subject))
-  
-  def test_schema_groups(self):
+
+
+
+
+
+class TestGroup(ModelBase):
+  def test_group(self):
+    user = _create_user()
+    group1 = _create_group('Testhase1')
+    group1_opt = UserGroup(group=group1, user=user, role=GroupRoles.contributor)
+
+    db.session.commit()
+
+    read_user = User.query.filter_by(username=user.username).one()
+    read_group = Group.query.filter_by(name=group1.name).one()
+
+    self.assertListEqual([ m.group for m in read_user.groups], [read_group])
+    self.assertListEqual([ m.user for m in read_group.users], [read_user])
+
+    db.session.delete(group1_opt)
+    db.session.commit()
+
+    read_user = User.query.filter_by(username=user.username).one()
+    read_group = Group.query.filter_by(name=group1.name).one()
+    self.assertListEqual(read_user.groups, [])
+    self.assertListEqual(read_group.users, [])
+
+  def test_default_quota(self):
+    old_default = self.app.config['DEFAULT_GROUP_QUOTA']
+    self.app.config['DEFAULT_GROUP_QUOTA'] = 1234
+    group = _create_group('Testhase2')
+    self.assertEqual(group.quota, self.app.config['DEFAULT_GROUP_QUOTA'])
+    db.session.add(group)
+    db.session.commit()
+
+    read_group = Group.query.filter_by(name='Testhase2').one()
+    self.assertEqual(group.quota, self.app.config['DEFAULT_GROUP_QUOTA'])
+
+    self.app.config['DEFAULT_GROUP_QUOTA'] = old_default
+
+  def test_quota(self):
+    group = _create_group('Testhase2')
+    group.quota = 666
+    db.session.add(group)
+    db.session.commit()
+
+    read_group = Group.query.filter_by(name='Testhase2').one()
+    self.assertEqual(read_group.quota, 666)
+
+
+  def test_schema(self):
+    schema = GroupSchema()
+    group = _create_group()
+    group.quota = 999
+
+    serialized = typing.cast(dict, schema.dump(group))
+    self.assertEqual(serialized['quota'], group.quota)
+
+  def test_deserialize(self):
+    schema = GroupSchema()
+    deserialized = typing.cast(dict, schema.load({
+      'name': 'Testhasenstall',
+      'email': 'testhase@testha.se',
+      'quota': 666
+    }))
+    self.assertEqual(deserialized['quota'], 666)
+
+  def test_schema_members(self):
     schema = UserSchema()
     group_schema = GroupSchema()
     user = _create_user()
@@ -269,4 +344,3 @@ class TestUser(ModelBase):
 
     serialized = typing.cast(dict, group_schema.dump(group))
     self.assertEqual(serialized['users'][0]['user']['id'], str(user.id))
-  

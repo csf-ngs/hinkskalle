@@ -122,7 +122,7 @@ def update_quotas() -> typing.Optional[str]:
       Image.location
     ).subquery()
     row = db.session.query(func.sum(subq.c.size).label('total_size')).first()
-    result['total_space'] = int(row.total_size)
+    result['total_space'] = int(row.total_size) if row.total_size is not None else 0
 
     _finish_job(job, result, AdmKeys.check_quotas)
   except Exception as exc:

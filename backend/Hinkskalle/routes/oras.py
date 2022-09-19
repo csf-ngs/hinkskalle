@@ -17,6 +17,7 @@ import os.path
 from datetime import datetime, timedelta
 import re
 import base64
+import time
 
 from werkzeug.exceptions import BadRequest
 
@@ -423,7 +424,7 @@ def oras_start_upload_session(name):
         owner = entity_user
 
     # XXX superhack-altert
-    # singularity starts two uploads immediately (config + container)
+    # singularity and oras start two uploads immediately (config + container)
     # this causes a race condition if container/... did not exist
     # one upload creates, the other one tries too and crashes
     try:
@@ -468,6 +469,9 @@ def oras_start_upload_session(name):
     except IntegrityError:
       db.session.rollback()
       current_app.logger.debug(f"race condition alert")
+      # give the other upload a little time to create the collection
+      time.sleep(0.5)
+
       container = _get_container(name)
 
   if not container.check_update_access(g.authenticated_user):

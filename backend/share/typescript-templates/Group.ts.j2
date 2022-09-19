@@ -18,6 +18,13 @@ class {{classname}} {
     return !member ? null : member.role;
   }
 
+  public get prettyQuota(): string {
+    return prettyBytes(this.quota);
+  }
+  public set prettyQuota(quota: string) {
+    this.quota = unPrettyBytes(quota);
+  }
+
 }
 
 export function plainTo{{classname}}(json: any): {{classname}} {

@@ -247,7 +247,6 @@ export function serializeEntity(obj: Entity, unroll=false): any {
       json['defaultPrivate'] = obj.defaultPrivate;
       json['description'] = obj.description;
       json['name'] = obj.name;
-      json['quota'] = obj.quota;
       
   return json;
 }
@@ -374,11 +373,14 @@ class User {
   public email!: string
   public firstname!: string
   public id!: string
+  public image_count!: number
   public isActive!: boolean
   public isAdmin!: boolean
   public lastname!: string
+  public quota!: number
   public source!: string
   public updatedAt!: Date | null
+  public used_quota!: number
   public username!: string
   
 
@@ -406,12 +408,15 @@ export function plainToUser(json: any): User {
       obj.email = json['email'];
     obj.firstname = json['firstname'];
     obj.id = json['id'];
+    obj.image_count = json['image_count'];
     obj.isActive = json['isActive'];
     obj.isAdmin = json['isAdmin'];
     obj.lastname = json['lastname'];
+    obj.quota = json['quota'];
     obj.source = json['source'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
-      obj.username = json['username'];
+      obj.used_quota = json['used_quota'];
+    obj.username = json['username'];
     
   return obj;
 }
@@ -423,6 +428,7 @@ export function serializeUser(obj: User, unroll=false): any {
       json['isActive'] = obj.isActive;
       json['isAdmin'] = obj.isAdmin;
       json['lastname'] = obj.lastname;
+      json['quota'] = obj.quota;
       json['source'] = obj.source;
       json['username'] = obj.username;
       
@@ -456,8 +462,11 @@ class Group {
   public email!: string
   public entityRef!: string
   public id!: string
+  public image_count!: number
   public name!: string
+  public quota!: number
   public updatedAt!: Date | null
+  public used_quota!: number
   public users!: GroupMember[]
   
 
@@ -483,9 +492,12 @@ export function plainToGroup(json: any): Group {
     obj.email = json['email'];
     obj.entityRef = json['entityRef'];
     obj.id = json['id'];
+    obj.image_count = json['image_count'];
     obj.name = json['name'];
+    obj.quota = json['quota'];
     obj.updatedAt = _isNil(json['updatedAt']) ? null : new Date(json['updatedAt']);
-      if (!_isNil(json['users'])) obj.users = _map(json['users'], plainToGroupMember);
+      obj.used_quota = json['used_quota'];
+    if (!_isNil(json['users'])) obj.users = _map(json['users'], plainToGroupMember);
       
   return obj;
 }
@@ -496,6 +508,7 @@ export function serializeGroup(obj: Group, unroll=false): any {
       json['description'] = obj.description;
       json['email'] = obj.email;
       json['name'] = obj.name;
+      json['quota'] = obj.quota;
       
   return json;
 }
@@ -764,6 +777,7 @@ export { Manifest };
 
 
 class ConfigParams {
+  public default_group_quota!: number
   public default_user_quota!: number
   public enable_register!: boolean
   public frontend_url!: string
@@ -773,7 +787,8 @@ class ConfigParams {
 
 export function plainToConfigParams(json: any): ConfigParams {
   const obj = new ConfigParams();
-  obj.default_user_quota = json['default_user_quota'];
+  obj.default_group_quota = json['default_group_quota'];
+    obj.default_user_quota = json['default_user_quota'];
     obj.enable_register = json['enable_register'];
     obj.frontend_url = json['frontend_url'];
     obj.singularity_flavor = json['singularity_flavor'];
@@ -783,7 +798,8 @@ export function plainToConfigParams(json: any): ConfigParams {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function serializeConfigParams(obj: ConfigParams, unroll=false): any {
   const json: any = {};
-  json['default_user_quota'] = obj.default_user_quota;
+  json['default_group_quota'] = obj.default_group_quota;
+      json['default_user_quota'] = obj.default_user_quota;
       json['enable_register'] = obj.enable_register;
       json['frontend_url'] = obj.frontend_url;
       json['singularity_flavor'] = obj.singularity_flavor;

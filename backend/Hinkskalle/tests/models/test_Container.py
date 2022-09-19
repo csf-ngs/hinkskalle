@@ -10,7 +10,7 @@ from Hinkskalle.models import Collection, Container, ContainerSchema, Image, Tag
 from Hinkskalle.models.User import GroupRoles
 from .test_Image import _create_image
 from ..model_base import ModelBase
-from .._util import _create_user, _create_container, _create_image, _create_group, _set_member
+from .._util import _create_user, _create_container, _create_image, _create_group, _set_member, default_entity_name
 
 from Hinkskalle import db
 
@@ -398,7 +398,7 @@ class TestContainer(ModelBase):
 
 
   def test_schema(self):
-    entity = Entity(name='test-hase')
+    entity = Entity(name=default_entity_name)
     db.session.add(entity)
     db.session.commit()
 

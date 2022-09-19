@@ -7,16 +7,16 @@ from Hinkskalle import db
 from Hinkskalle.models.Image import UploadStates
 from Hinkskalle.models.User import GroupRoles
 from ..model_base import ModelBase
-from .._util import _create_user, _create_image, _create_group, _set_member
+from .._util import _create_user, _create_image, _create_group, _set_member, default_entity_name
 
 class TestEntity(ModelBase):
 
   def test_entity(self):
-    entity = Entity(name='test-hase')
+    entity = Entity(name=default_entity_name)
     db.session.add(entity)
     db.session.commit()
 
-    read_entity = Entity.query.filter_by(name='test-hase').first()
+    read_entity = Entity.query.filter_by(name=default_entity_name).first()
     self.assertEqual(read_entity.id, entity.id)
     self.assertTrue(abs(read_entity.createdAt - datetime.now()) < timedelta(seconds=2))
   
@@ -29,7 +29,7 @@ class TestEntity(ModelBase):
     self.assertEqual(read_entity.name, 'testhase')
   
   def test_count(self):
-    ent = Entity(name='test-hase')
+    ent = Entity(name=default_entity_name)
     self.assertEqual(ent.size, 0)
     db.session.add(ent)
     db.session.commit()
@@ -127,7 +127,7 @@ class TestEntity(ModelBase):
   def test_access(self):
     admin = _create_user(name='admin.oink', is_admin=True)
     user = _create_user(name='user.oink', is_admin=False)
-    entity = Entity(name='test-hase')
+    entity = Entity(name=default_entity_name)
     self.assertTrue(entity.check_access(admin))
     self.assertFalse(entity.check_access(user))
     entity.owner=user
@@ -139,7 +139,7 @@ class TestEntity(ModelBase):
   def test_update_access(self):
     admin = _create_user(name='admin.oink', is_admin=True)
     user = _create_user(name='user.oink', is_admin=False)
-    entity = Entity(name='test-hase')
+    entity = Entity(name=default_entity_name)
 
     self.assertTrue(entity.check_update_access(admin))
     self.assertFalse(entity.check_update_access(user))
@@ -153,7 +153,7 @@ class TestEntity(ModelBase):
   def test_group_access(self):
     user = _create_user(name='user.oink', is_admin=False)
     group = _create_group(name='Oinkhasenstall')
-    entity = Entity(name='test-hase', group=group)
+    entity = Entity(name=default_entity_name, group=group)
 
     self.assertFalse(entity.check_access(user))
     ug = _set_member(user, group)
@@ -164,7 +164,7 @@ class TestEntity(ModelBase):
   def test_group_update_access(self):
     user = _create_user(name='user.oink', is_admin=False)
     group = _create_group(name='Oinkhasenstall')
-    entity = Entity(name='test-hase', group=group)
+    entity = Entity(name=default_entity_name, group=group)
 
     self.assertFalse(entity.check_update_access(user))
 

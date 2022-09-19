@@ -2,13 +2,13 @@ import { prettyBytes, unPrettyBytes, prettyDateTime } from '@/util/pretty';
 
 describe('prettyBytes', () => {
   it('makes bytes pretty', () => {
-    const out = prettyBytes(1000);
+    const out = prettyBytes(1024);
     expect(out).toBe('1 kb');
   });
   it('rounds bytes', () => {
     const out = prettyBytes(12345);
-    expect(out).toBe('12.3 kb');
-    expect(prettyBytes(4567)).toBe('4.6 kb');
+    expect(out).toBe('12.1 kb');
+    expect(prettyBytes(4567)).toBe('4.5 kb');
   });
 
 });
@@ -24,13 +24,13 @@ describe('unPrettyBytes', () => {
   it('parses a simple suffix', () => {
     expect(unPrettyBytes('100 b')).toBe(100);
     expect(unPrettyBytes('100b')).toBe(100);
-    expect(unPrettyBytes('100 kb')).toBe(100000);
-    expect(unPrettyBytes('100 KB')).toBe(100000);
-    expect(unPrettyBytes('100 k')).toBe(100000);
-    expect(unPrettyBytes('100.2 kb')).toBe(100200);
-    expect(unPrettyBytes('-100 kb')).toBe(-100000);
-    expect(unPrettyBytes('100Gb')).toBe(100000000000);
-    expect(unPrettyBytes('100g')).toBe(100000000000);
+    expect(unPrettyBytes('100 kb')).toBe(102400);
+    expect(unPrettyBytes('100 KB')).toBe(102400);
+    expect(unPrettyBytes('100 k')).toBe(102400);
+    expect(unPrettyBytes('100.2 kb')).toBe(102604.8);
+    expect(unPrettyBytes('-100 kb')).toBe(-102400);
+    expect(unPrettyBytes('100Gb')).toBe(107374182400);
+    expect(unPrettyBytes('100g')).toBe(107374182400);
   });
 });
 

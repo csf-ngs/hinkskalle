@@ -25,3 +25,4 @@ backend/build
 backend/venv
 share/oci/conf/*secrets.env
 .*.sw[op]
+/remote.yaml

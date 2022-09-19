@@ -43,6 +43,8 @@ class GroupSchema(Schema):
   email = fields.String(required=True)
   description = fields.String(allow_none=True)
   quota = fields.Integer()
+  used_quota = fields.Integer(dump_only=True)
+  image_count = fields.Integer(dump_only=True)
   entityRef = fields.String(dump_only=True, allow_none=True, attribute='entity_ref')
 
   users = fields.List(fields.Nested('GroupMemberSchema'), dump_only=True)
@@ -297,6 +299,32 @@ class Group(db.Model): # type: ignore
       return True
     return False
 
+  @property
+  def used_quota(self) -> int:
+    if not self.entity:
+      return 0
+    return self.entity.used_quota
+
+  @property
+  def image_count(self) -> int:
+    if not self.entity:
+      return 0
+    return self._valid_images().count()
+    
+  def calculate_used(self) -> int:
+    if not self.entity:
+      return 0
+    return self.entity.calculate_used()
+  
+  def _valid_images(self):
+    from Hinkskalle.models import Image, UploadStates, Container, Collection, Entity
+    return Image.query.join(Container, Collection, Entity).filter(
+      Entity.group==self,
+      Image.uploadState==UploadStates.completed
+    )
+
+
+  
 
 
 class TokenSchema(BaseSchema):

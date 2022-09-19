@@ -73,6 +73,18 @@
                               required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
+                          <v-col cols="12" md="6">
+                            <hsk-text-input
+                              id="quota"
+                              label="Quota (0 = unlimited)" 
+                              field="prettyQuota" 
+                              :obj="localState.editItem" 
+                              :readonly="!currentUser.isAdmin"
+                              @updated="localState.editItem=$event"></hsk-text-input>
+                          </v-col>
+                          <v-col cols="12" md="6">
+                            <hsk-text-input label="Used Quota" :static-value="localState.editItem.used_quota | prettyBytes"></hsk-text-input>
+                          </v-col>
                         </v-row>
                         <v-row v-if="localState.editItem.id">
                           <v-col cols="12" md="4">
@@ -149,6 +161,11 @@
                               {{item.users.length}} {{item.users.length | pluralize('user')}}
                             </div>
                             <div>
+                              {{(item.used_quota ||0) | prettyBytes()}}
+                              <span v-if="item.quota === 0">/ &infin;</span>
+                              <span v-else>/ {{item.quota | prettyBytes()}}</span>
+                            </div>
+                            <div>
                               <router-link :to="{ name: 'EntityCollections', params: { entity: item.entityRef } }" class="text-decoration-none">
                                 <v-icon>mdi-folder-multiple</v-icon> {{item.collections}} {{item.collections | pluralize('collection')}}
                               </router-link>
@@ -202,6 +219,7 @@ import Vue from 'vue';
 import { checkName, Group, GroupRoles, User } from '../store/models';
 import { clone as _clone } from 'lodash';
 import UserInput from '@/components/UserInput.vue';
+import store from '@/store';
 
 interface State {
   editItem: Group;
@@ -216,6 +234,7 @@ interface State {
 function defaultItem(): Group {
   const item = new Group();
   item.createdAt = new Date();
+  item.quota = store.getters.config.default_group_quota;
   return item;
 }
 
@@ -237,6 +256,7 @@ export default Vue.extend({
     },
     sortKeys: [
       { key: 'name', desc: 'Name' },
+      { key: 'used_quota', desc: 'Size' },
       { key: 'createdAt', desc: 'Create Date' },
       { key: 'updatedAt', desc: 'Last Updated' },
     ]

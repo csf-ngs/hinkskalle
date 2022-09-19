@@ -224,7 +224,7 @@ function defaultItem(): User {
   user.isActive = true;
   user.isAdmin = false;
   user.source = 'local';
-  user.quota = store.getters.config.default_user_quota;
+  user.quota = store.getters.config?.default_user_quota;
   return user;
 }
 

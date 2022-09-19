@@ -234,7 +234,7 @@ interface State {
 function defaultItem(): Group {
   const item = new Group();
   item.createdAt = new Date();
-  item.quota = store.getters.config.default_group_quota;
+  item.quota = store.getters.config?.default_group_quota;
   return item;
 }
 

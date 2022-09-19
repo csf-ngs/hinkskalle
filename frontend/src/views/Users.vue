@@ -72,6 +72,17 @@
                               required
                               @updated="localState.editItem=$event"></hsk-text-input>
                           </v-col>
+                          <v-col cols="12" md="6">
+                            <hsk-text-input
+                              label="Quota (0 = unlimited)"
+                              field="prettyQuota"
+                              :obj="localState.editItem"
+                              :readonly="!currentUser.isAdmin"
+                              @updated="localState.editItem=$event"></hsk-text-input>
+                          </v-col>
+                          <v-col cols="12" md="6">
+                            <hsk-text-input label="Used Quota" :static-value="localState.editItem.used_quota | prettyBytes"></hsk-text-input>
+                          </v-col>
                           <v-col cols="12" md="6" v-if="localState.editItem.source=='local'">
                             <v-text-field
                               :type="localState.passwordVisible ? 'text' : 'password'"
@@ -141,6 +152,10 @@
               </v-toolbar>
             </template>
             <!-- eslint-disable-next-line vue/valid-v-slot --> 
+            <template v-slot:item.username="{ item }">
+              {{item.username}}<v-icon v-if="item.isAdmin" small>mdi-wizard-hat</v-icon>
+            </template>
+            <!-- eslint-disable-next-line vue/valid-v-slot --> 
             <template v-slot:item.lastname="{ item }">
               {{item.firstname}} {{item.lastname}}
             </template>
@@ -149,9 +164,14 @@
               <v-icon small>{{item.isActive ? 'mdi-check' : 'mdi-minus'}}</v-icon>
             </template>
             <!-- eslint-disable-next-line vue/valid-v-slot --> 
-            <template v-slot:item.isAdmin="{ item }">
-              <v-icon :small="!item.isAdmin">{{item.isAdmin ? 'mdi-wizard-hat' : 'mdi-minus'}}</v-icon>
+            <template v-slot:item.used_quota="{ item }">
+              {{ (item.used_quota || 0) | prettyBytes() }}
+              <span v-if="item.quota === 0">/ &infin;</span>
+              <span v-else>/ {{item.prettyQuota}}</span>
             </template>
+            <!--template v-slot:item.isAdmin="{ item }">
+              <v-icon :small="!item.isAdmin">{{item.isAdmin ? 'mdi-wizard-hat' : 'mdi-minus'}}</v-icon>
+            </template-->
             <!-- eslint-disable-next-line vue/valid-v-slot --> 
             <template v-slot:item.actions="{ item }">
               <v-icon
@@ -183,6 +203,7 @@ import { User } from '@/store/models';
 import Vue from 'vue';
 import { DataTableHeader } from 'vuetify';
 import { cloneDeep as _cloneDeep, find as _find } from 'lodash';
+import store from '@/store';
 
 interface State {
   search: string;
@@ -203,6 +224,7 @@ function defaultItem(): User {
   user.isActive = true;
   user.isAdmin = false;
   user.source = 'local';
+  user.quota = store.getters.config.default_user_quota;
   return user;
 }
 
@@ -213,13 +235,13 @@ export default Vue.extend({
   },
   data: (): { headers: DataTableHeader[]; localState: State } => ({
     headers: [
-      { text: 'id', value: 'id', sortable: true, filterable: false, width: '3%' },
+      { text: 'id', value: 'id', sortable: true, filterable: false, width: '5%' },
       { text: 'Username', value: 'username', sortable: true, filterable: true, width: '15%' },
       { text: 'Email', value: 'email', sortable: true, filterable: true, width: '15%' },
       { text: 'Name', value: 'lastname', sortable: true, filterable: true, width: '', },
-      { text: 'Admin', value: 'isAdmin', sortable: true, filterable: false, width: '5%' },
-      { text: 'Active', value: 'isActive', sortable: true, filterable: false, width: '5%' },
-      { text: 'Source', value: 'source', sortable: true, filterable: true, width: '5%' },
+      { text: 'Size', value: 'used_quota', sortable: true, filterable: false, width: '14%' }, 
+      { text: 'Active', value: 'isActive', sortable: true, filterable: false, width: '7%' },
+      { text: 'Source', value: 'source', sortable: true, filterable: true, width: '8%' },
       { text: 'Actions', value: 'actions', sortable: false, filterable: false, width: '9%' },
     ],
     localState: {
@@ -337,3 +359,8 @@ export default Vue.extend({
   },
 });
 </script>
+<style scoped>
+::v-deep .v-data-table th, ::v-deep .v-data-table td {
+  padding: 0 8px !important;
+}
+</style>

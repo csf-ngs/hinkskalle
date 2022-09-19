@@ -9,6 +9,8 @@ from Hinkskalle.models.Container import Container
 from Hinkskalle.models.Image import Image, UploadStates
 from Hinkskalle import db
 
+default_entity_name = 'test-hase'
+
 def _create_user(name='test.hase', is_admin=False) -> User:
   firstname, lastname = name.split('.')
   user = User(username=name, email=name+'@ha.se', firstname=firstname, lastname=lastname, is_admin=is_admin)
@@ -30,9 +32,9 @@ def _set_member(user: User, group: Group, role=GroupRoles.contributor) -> UserGr
 
 def _create_collection(name='test-collection') -> typing.Tuple[Collection, Entity]:
   try:
-    entity = Entity.query.filter_by(name='test-hase').one()
+    entity = Entity.query.filter_by(name=default_entity_name).one()
   except:
-    entity = Entity(name='test-hase')
+    entity = Entity(name=default_entity_name)
     db.session.add(entity)
     db.session.commit()
 

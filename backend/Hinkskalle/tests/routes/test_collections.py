@@ -5,7 +5,7 @@ from Hinkskalle.models.Container import Container
 from Hinkskalle import db
 
 from ..route_base import RouteBase
-from .._util import _create_collection
+from .._util import _create_collection, default_entity_name
 
 class TestCollections(RouteBase):
   def test_list_noauth(self):
@@ -203,7 +203,7 @@ class TestCollections(RouteBase):
     self.assertEqual(ret.status_code, 401)
 
   def test_create(self):
-    entity = Entity(name='test-hase')
+    entity = Entity(name=default_entity_name)
     db.session.add(entity)
     db.session.commit()
     with self.fake_admin_auth():
@@ -221,7 +221,7 @@ class TestCollections(RouteBase):
     self.assertTrue(abs(db_collection.createdAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
   
   def test_create_singularity(self):
-    entity = Entity(name='test-hase', owner=self.user)
+    entity = Entity(name=default_entity_name, owner=self.user)
     db.session.add(entity)
     db.session.commit()
     with self.fake_admin_auth():
@@ -243,7 +243,7 @@ class TestCollections(RouteBase):
     self.assertEqual(ret.status_code, 200)
 
   def test_create_behalf(self):
-    entity = Entity(name='test-hase', owner=self.user)
+    entity = Entity(name=default_entity_name, owner=self.user)
     db.session.add(entity)
     db.session.commit()
     with self.fake_admin_auth():
@@ -256,7 +256,7 @@ class TestCollections(RouteBase):
     self.assertEqual(db_collection.owner.username, self.username)
 
   def test_create_check_name(self):
-    entity  = Entity(name='test-hase')
+    entity  = Entity(name=default_entity_name)
     db.session.add(entity)
     db.session.commit()
 
@@ -269,7 +269,7 @@ class TestCollections(RouteBase):
       self.assertEqual(ret.status_code, 400)
   
   def test_create_defaultPrivate(self):
-    entity = Entity(name='test-hase')
+    entity = Entity(name=default_entity_name)
     entity.defaultPrivate = True
     db.session.add(entity)
     db.session.commit()
@@ -303,7 +303,7 @@ class TestCollections(RouteBase):
 
 
   def test_create_default(self):
-    entity = Entity(name='test-hase')
+    entity = Entity(name=default_entity_name)
     db.session.add(entity)
     db.session.commit()
     with self.fake_admin_auth():
@@ -343,7 +343,7 @@ class TestCollections(RouteBase):
     self.assertEqual(ret.status_code, 400)
 
   def test_create_user(self):
-    entity = Entity(name='test-hase', owner=self.user)
+    entity = Entity(name=default_entity_name, owner=self.user)
     db.session.add(entity)
     db.session.commit()
     with self.fake_auth():
@@ -366,7 +366,7 @@ class TestCollections(RouteBase):
     self.assertEqual(ret.status_code, 403)
 
   def test_create_user_default_no_name(self):
-    entity = Entity(name='test-hase', owner=self.user)
+    entity = Entity(name=default_entity_name, owner=self.user)
     db.session.add(entity)
     db.session.commit()
     with self.fake_auth():

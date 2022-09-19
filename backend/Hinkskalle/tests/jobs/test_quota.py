@@ -8,7 +8,7 @@ from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Image import UploadStates
 from Hinkskalle.models.User import User
 
-from .._util import _create_user, _create_image
+from .._util import _create_user, _create_image, default_entity_name
 
 class TestQuotaJob(JobBase):
   def test_job(self):
@@ -26,7 +26,7 @@ class TestQuotaJob(JobBase):
   def test_check(self, mock_user_calc: mock.MagicMock, mock_entity_calc: mock.MagicMock):
     user1 = _create_user('test.hase1')
     user2 = _create_user('test.hase2')
-    ent1 = Entity(name='test-hase')
+    ent1 = Entity(name=default_entity_name)
     ent2 = Entity(name='test.hase2')
     db.session.add(ent1)
     db.session.add(ent2)

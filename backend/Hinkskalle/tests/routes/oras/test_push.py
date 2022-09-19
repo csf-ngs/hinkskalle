@@ -14,7 +14,7 @@ from Hinkskalle.tests.route_base import RouteBase
 from Hinkskalle.tests._util import _create_image, _create_container, _prepare_img_data, _create_user
 
 from Hinkskalle import db
-from Hinkskalle.models import Manifest, ImageUploadUrl, UploadStates, UploadTypes
+from Hinkskalle.models import Manifest, ImageUploadUrl, UploadStates, UploadTypes, User
 
 
 class TestOrasPush(RouteBase):
@@ -311,8 +311,10 @@ class TestOrasPush(RouteBase):
       self.assertEqual(content, img_data)
 
   def test_push_monolith_do_quota(self):
-    image, container, collection, entity = _create_image()
+    user = _create_user()
+    image, container, collection, entity = _create_image(owner=user)
     entity_id = entity.id
+    user_id = user.id
     img_data, digest = _prepare_img_data()
 
     _, temp_path = tempfile.mkstemp()
@@ -331,13 +333,15 @@ class TestOrasPush(RouteBase):
 
     entity = Entity.query.get(entity_id)
     self.assertEqual(entity.used_quota, len(img_data))
+    user = User.query.get(user_id)
+    self.assertEqual(user.used_quota, len(img_data))
 
   def test_push_monolith_do_quota_check(self):
-    image, container, collection, entity = _create_image()
+    user = _create_user()
+    image, container, collection, entity = _create_image(owner=user)
     img_data, digest = _prepare_img_data()
     image_id = image.id
-    entity.owner = _create_user()
-    entity.owner.quota = len(img_data)-1
+    user.quota = len(img_data)-1
 
     _, temp_path = tempfile.mkstemp()
     upload = ImageUploadUrl(
@@ -476,6 +480,7 @@ class TestOrasPush(RouteBase):
   def test_push_single_post_quota(self):
     image, _, _, entity = _create_image()
     entity_id = entity.id
+    user_id = self.admin_user.id
     img_data, digest = _prepare_img_data()
     digest = digest.replace('sha256.', 'sha256:')
 
@@ -484,18 +489,20 @@ class TestOrasPush(RouteBase):
     self.assertEqual(ret.status_code, 201)
     entity = Entity.query.get(entity_id)
     self.assertEqual(entity.used_quota, len(img_data))
+    user = User.query.get(user_id)
+    self.assertEqual(user.used_quota, len(img_data))
 
   def test_push_single_post_quota_check(self):
-    image, _, _, entity = _create_image()
-    image_container_id = image.id
     img_data, digest = _prepare_img_data()
-    entity.owner = _create_user()
-    entity.owner.quota = len(img_data)-1
+    self.admin_user.quota = len(img_data)-1
+    image = _create_image(owner=self.admin_user)[0]
     digest = digest.replace('sha256.', 'sha256:')
 
     with self.fake_admin_auth():
       ret = self.client.post(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/blobs/uploads/?digest={digest}", data=img_data, content_type='application/octet-stream')
     self.assertEqual(ret.status_code, 413)
+    self.admin_user.quota = 0
+    db.session.commit()
 
   def test_push_single_post_user(self):
     image, container, collection, entity = _create_image()

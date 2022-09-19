@@ -486,7 +486,12 @@ def oras_start_upload_session(name):
   upload_tmp = os.path.join(current_app.config['IMAGE_PATH'], '_tmp')
   os.makedirs(upload_tmp, exist_ok=True)
 
-  image = Image(container_ref=container, owner=g.authenticated_user, media_type='unknown', uploadState=UploadStates.initialized)
+  image = Image(
+    container_ref=container, 
+    owner=g.authenticated_user, 
+    media_type='unknown', 
+    uploadState=UploadStates.initialized
+  )
   if args.get('expiresAt'):
     image.expiresAt = args.get('expiresAt')
   db.session.add(image)

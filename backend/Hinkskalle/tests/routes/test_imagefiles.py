@@ -4,10 +4,11 @@ from tempfile import mkdtemp
 from datetime import datetime, timedelta
 
 from ..route_base import RouteBase
-from .._util import _create_image, _fake_img_file, _prepare_img_data, _create_user
+from .._util import _create_image, _fake_img_file, _prepare_img_data, _create_user, _create_group
 
-from Hinkskalle.models import Image, Tag, Container, UploadStates
+from Hinkskalle.models import Image, Tag, Container, UploadStates, User
 from Hinkskalle.models.Entity import Entity
+from Hinkskalle.routes.imagefiles import _check_quota
 from Hinkskalle import db
 
 class TestImagefiles(RouteBase):
@@ -366,13 +367,84 @@ class TestImagefiles(RouteBase):
     db_image = Image.query.get(image_id)
     self.assertEqual(db_image.arch, 'amd64')
   
+  def test_check_quota(self):
+    user = _create_user()
+    user.quota = 1024
+    image, _, _, entity = _create_image(owner=user)
+
+    image.size = 512
+    self.assertTrue(_check_quota(image))
+    image.size = 2048
+    self.assertFalse(_check_quota(image))
+
+    user.quota = 0
+    image.size = 2048
+    self.assertTrue(_check_quota(image))
+  
+  def test_check_quota_add_size(self):
+    user = _create_user()
+    user.quota = 1024
+    image = _create_image(owner=user)[0]
+
+    self.assertTrue(_check_quota(image, 512))
+    self.assertFalse(_check_quota(image, 1024))
+
+
+  def test_check_quota_group(self):
+    group = _create_group()
+    group.quota = 1024
+    image, _, _, entity = _create_image()
+    entity.group = group
+
+    image.size = 512
+    self.assertTrue(_check_quota(image))
+    image.size = 2048
+    self.assertFalse(_check_quota(image))
+
+    group.quota = 0
+    self.assertTrue(_check_quota(image))
+  
+  def test_check_quota_group_user_override(self):
+    """user quota beats group quota"""
+    group = _create_group()
+    group.quota = 4096
+    user = _create_user()
+    user.quota = 1024
+
+    image, _, _, entity = _create_image(owner=user)
+    entity.group = group
+
+    image.size = 512
+    self.assertTrue(_check_quota(image))
+
+    image.size = 2048
+    self.assertFalse(_check_quota(image))
+
+    image.size = 8192
+    self.assertFalse(_check_quota(image))
+
+    # group quota exceeded, user quota not -> should fail
+
+    group.quota = 1024
+    user.quota = 4096
+    image.size = 2048
+    self.assertFalse(_check_quota(image))
+
+  def test_check_quota_no_owner(self):
+    image = _create_image()[0]
+    image.size = 1024
+    self.assertTrue(_check_quota(image))
+
+  
   def test_push_quota(self):
-    image, container, _, entity = _create_image()
+    user = _create_user()
+    image, container, _, entity = _create_image(owner=user)
     self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
     img_data, digest = _prepare_img_data()
     image.hash = digest
     db.session.commit()
     entity_id = entity.id
+    user_id = user.id
 
     with self.fake_admin_auth():
       ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)
@@ -380,16 +452,18 @@ class TestImagefiles(RouteBase):
     entity = Entity.query.get(entity_id)
     self.assertEqual(entity.used_quota, len(img_data))
 
+    user = User.query.get(user_id)
+    self.assertEqual(user.used_quota, len(img_data))
+
   def test_push_quota_check(self):
-    image, _, _, entity = _create_image()
-    self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
     img_data, digest = _prepare_img_data()
+    user = _create_user()
+    user.quota = len(img_data)-1
+    image = _create_image(owner=user)[0]
+    self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
     image.hash = digest
-    entity.owner = _create_user()
-    entity.owner.quota = len(img_data)-1
     db.session.commit()
     image_id = image.id
-    entity_id = entity.id
 
     with self.fake_admin_auth():
       ret = self.client.post(f"/v1/imagefile/{image.id}", data=img_data)

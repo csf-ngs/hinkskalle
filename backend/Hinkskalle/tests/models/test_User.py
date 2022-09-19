@@ -62,7 +62,7 @@ class TestUser(ModelBase):
     self.assertEqual(dbUser.email, 'test@ha.se')
 
 
-  def test_user_count(self):
+  def test_image_count(self):
     user = _create_user()
     db.session.add(user)
     db.session.commit()
@@ -73,13 +73,13 @@ class TestUser(ModelBase):
     self.assertEqual(user.image_count, 1)
 
     # only completed counts!
-    image2 = _create_image(postfix='2', uploadState=UploadStates.broken, owner=user)[0]
+    image2_broken = _create_image(postfix='2_broken', uploadState=UploadStates.broken, owner=user)[0]
     self.assertEqual(user.image_count, 1)
 
     image3 = _create_image(postfix='3', uploadState=UploadStates.completed, owner=user)[0]
     self.assertEqual(user.image_count, 2)
 
-  def test_user_used_quota_null(self):
+  def test_used_quota_null(self):
     user = _create_user()
     self.assertEqual(user.calculate_used(), 0)
     self.assertEqual(user.used_quota, 0)
@@ -89,7 +89,7 @@ class TestUser(ModelBase):
     image1.uploadState = UploadStates.completed
     self.assertEqual(user.calculate_used(), 0)
 
-  def test_user_used_quota(self):
+  def test_used_quota(self):
     user = _create_user()
     self.assertEqual(user.calculate_used(), 0)
     self.assertEqual(user.used_quota, 0)

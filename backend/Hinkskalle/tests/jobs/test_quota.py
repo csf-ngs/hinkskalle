@@ -17,6 +17,7 @@ class TestQuotaJob(JobBase):
     self.assertTrue(job.is_finished)
     self.assertEqual(job.meta['progress'], 'done')
     self.assertEqual(job.meta['result']['updated'], 0)
+    self.assertEqual(job.meta['result']['total_space'], 0)
 
     adm = Adm.query.filter(Adm.key == AdmKeys.check_quotas).first()
     self.assertDictEqual(adm.val, job.meta['result'])

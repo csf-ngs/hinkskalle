@@ -1,4 +1,3 @@
-from pprint import pprint
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.models.User import GroupRoles
 from Hinkskalle.routes import auth

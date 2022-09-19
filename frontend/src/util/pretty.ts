@@ -14,7 +14,8 @@ const units = ['b', 'kb', 'Mb', 'Gb', 'Tb', 'Pb', 'Eb', 'Zb', 'Yb'];
 export function prettyBytes(num: number): string {
   // jacked from: https://github.com/sindresorhus/pretty-bytes
   if (typeof num !== 'number' || isNaN(num)) {
-    throw new TypeError('Expected a number');
+    // throw new TypeError('Expected a number');
+    return "0";
   }
 
   const neg = num < 0;

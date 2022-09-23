@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
 from pprint import pprint
 import typing
+import secrets
 
 from marshmallow import ValidationError
 from ..model_base import ModelBase
 from .._util import _create_group, _create_user, _create_container
 
-from Hinkskalle.models import User, UserSchema, Group, GroupSchema, Container, UserGroup, GroupRoles
+from Hinkskalle.models import User, UserSchema, Group, GroupSchema, Container, UserGroup, GroupRoles, PassKey
 
 from Hinkskalle import db
 
@@ -200,3 +201,15 @@ class TestUser(ModelBase):
     serialized = typing.cast(dict, group_schema.dump(group))
     self.assertEqual(serialized['users'][0]['user']['id'], str(user.id))
   
+  
+  def test_passkeys(self):
+    user = _create_user()
+    self.assertIsNotNone(user.passkey_id)
+
+    key = PassKey(user=user, id=secrets.token_bytes(16))
+    db.session.add(key)
+    db.session.commit()
+
+    self.assertEqual(len(user.passkeys), 1)
+
+    

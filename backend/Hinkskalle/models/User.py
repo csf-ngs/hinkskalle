@@ -11,6 +11,7 @@ import enum
 
 from passlib.hash import sha512_crypt
 import secrets
+import base64
 
 from ..util.schema import BaseSchema, LocalDateTime
 
@@ -98,6 +99,7 @@ class User(db.Model): # type: ignore
   is_admin = db.Column(db.Boolean, default=False)
   is_active = db.Column(db.Boolean, default=True)
   source = db.Column(db.String(), default='local', nullable=False)
+  _passkey_id = db.Column('passkey_id', db.BLOB(16), default=lambda: secrets.token_bytes(16), unique=True)
 
   groups = db.relationship('UserGroup', back_populates='user', cascade='all, delete-orphan')
   tokens = db.relationship('Token', back_populates='user', cascade="all, delete-orphan")
@@ -115,6 +117,7 @@ class User(db.Model): # type: ignore
   images = db.relationship('Image', back_populates='owner')
   tags = db.relationship('Tag', back_populates='owner')
   uploads = db.relationship('ImageUploadUrl', back_populates='owner', cascade='all, delete-orphan')
+  passkeys = db.relationship('PassKey', back_populates='user', cascade='all, delete-orphan')
 
   @validates('email')
   def convert_lower(self, key, value):
@@ -145,6 +148,11 @@ class User(db.Model): # type: ignore
       current_app.logger.debug(f"User {self.username} hash check failed: {err}")
       return False
     return result
+
+  @property
+  def passkey_id(self) -> bytes:
+    return base64.b64encode(self._passkey_id)
+
 
   def check_access(self, user) -> bool:
     return True
@@ -177,6 +185,13 @@ class User(db.Model): # type: ignore
     else:
       return False
 
+class PassKey(db.Model):
+  id = db.Column(db.BLOB, primary_key=True)
+  user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+  public_key_spi = db.Column(db.BLOB)
+  backed_up = db.Column(db.Boolean, default=False)
+
+  user = db.relationship('User', back_populates='passkeys')
 
 class Group(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)

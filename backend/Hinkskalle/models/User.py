@@ -172,7 +172,6 @@ class User(db.Model): # type: ignore
   def passkey_id(self) -> str:
     return base64.b64encode(self._passkey_id).decode('utf-8')
 
-
   def check_access(self, user) -> bool:
     return True
   
@@ -223,7 +222,6 @@ class User(db.Model): # type: ignore
       return True
     else:
       return False
-<<<<<<< HEAD
 
 class PassKey(db.Model): # type: ignore
   id = db.Column(db.LargeBinary(16), primary_key=True)
@@ -243,9 +241,14 @@ class PassKey(db.Model): # type: ignore
   def encoded_id(self):
     return base64.b64encode(self.id).decode('utf-8')
 
-=======
-  
->>>>>>> d9fcef0 (separate user and group quota configuration)
+class PassKey(db.Model):
+  id = db.Column(db.BLOB, primary_key=True)
+  user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+  public_key_spi = db.Column(db.BLOB)
+  backed_up = db.Column(db.Boolean, default=False)
+
+  user = db.relationship('User', back_populates='passkeys')
+>>>>>>> ce19b00 (db passkey table+field)
 
 class Group(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)

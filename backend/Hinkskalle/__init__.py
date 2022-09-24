@@ -45,9 +45,8 @@ migrate = Migrate()
 
 # regex from https://github.com/opencontainers/distribution-spec/blob/main/spec.md#pull
 class OrasNameConverter(BaseConverter):
-  def __init__(self, url_map, *items):
-    super().__init__(url_map)
-    self.regex = '[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*(/[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*)*'
+  regex = '[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*(/[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*)*'
+  part_isolating = False
 
 
 def create_app():

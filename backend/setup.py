@@ -21,7 +21,8 @@ setup(
         'ldap3',
         'pyjwt',
         'humanize',
-        'python-slugify'
+        'python-slugify',
+        'cryptography',
     ],
     extras_require={
       'dev': ['nose2','fakeredis','psycopg2', 'nose2-html-report', 'nose2[coverage_plugin]'],

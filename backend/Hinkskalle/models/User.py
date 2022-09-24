@@ -99,7 +99,7 @@ class User(db.Model): # type: ignore
   is_admin = db.Column(db.Boolean, default=False)
   is_active = db.Column(db.Boolean, default=True)
   source = db.Column(db.String(), default='local', nullable=False)
-  _passkey_id = db.Column('passkey_id', db.BLOB(16), default=lambda: secrets.token_bytes(16), unique=True)
+  _passkey_id = db.Column('passkey_id', db.LargeBinary(16), default=lambda: secrets.token_bytes(16), unique=True)
 
   groups = db.relationship('UserGroup', back_populates='user', cascade='all, delete-orphan')
   tokens = db.relationship('Token', back_populates='user', cascade="all, delete-orphan")
@@ -186,9 +186,9 @@ class User(db.Model): # type: ignore
       return False
 
 class PassKey(db.Model):
-  id = db.Column(db.BLOB, primary_key=True)
+  id = db.Column(db.LargeBinary(16), primary_key=True)
   user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-  public_key_spi = db.Column(db.BLOB)
+  public_key_spi = db.Column(db.LargeBinary)
   backed_up = db.Column(db.Boolean, default=False)
 
   user = db.relationship('User', back_populates='passkeys')

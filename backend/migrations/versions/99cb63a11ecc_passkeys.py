@@ -42,9 +42,6 @@ def upgrade():
             users_table.update().where(users_table.c.id==row['id']).
                 values({ 'passkey_id': secrets.token_bytes(16) })
         )
-
-
-
     # ### end Alembic commands ###
 
 

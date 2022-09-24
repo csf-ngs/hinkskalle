@@ -242,9 +242,9 @@ class PassKey(db.Model): # type: ignore
     return base64.b64encode(self.id).decode('utf-8')
 
 class PassKey(db.Model):
-  id = db.Column(db.BLOB, primary_key=True)
+  id = db.Column(db.LargeBinary(16), primary_key=True)
   user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-  public_key_spi = db.Column(db.BLOB)
+  public_key_spi = db.Column(db.LargeBinary)
   backed_up = db.Column(db.Boolean, default=False)
 
   user = db.relationship('User', back_populates='passkeys')

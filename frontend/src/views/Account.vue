@@ -196,52 +196,23 @@ export default Vue.extend({
       this.localState.password2='';
     },
     createKey() {
-      // eslint-disable-next-line
-      const createOptions : CredentialCreationOptions = {
-        publicKey: {
-          rp: {
-            id: 'localhost',
-            name: "Hinkskalle",
-          },
+      this.$store.dispatch('getAuthnCreateOptions')
+        .then((createOptions: CredentialCreationOptions) => {
+          navigator.credentials.create(createOptions).then(
+            (cred) => {
+              console.log(cred);
+              if (!cred) return;
+              const cdj = JSON.parse(new TextDecoder().decode((cred as any).response.clientDataJSON));
+              console.log(cdj);
+              console.log(btoa(String.fromCharCode(...new Uint8Array((cred as any).response.getAuthenticatorData()))));
+              console.log(btoa(String.fromCharCode(...new Uint8Array((cred as any).response.getPublicKey()))));
 
-          user: {
-            id: Uint8Array.from(atob('Vg4vHxiHQnPapKRD4+EIcw=='), c => c.charCodeAt(0)),
-            name: 'test.hase',
-            displayName: "",
-          },
-          excludeCredentials: [], // XXX
-          pubKeyCredParams: [{
-            type: "public-key",
-            alg: -7
-          }, {
-            type: "public-key",
-            alg: -257
-          }],
-
-          challenge: new Uint8Array([0]),
-
-          authenticatorSelection: {
-            authenticatorAttachment: "cross-platform",
-            userVerification: "discouraged",
-            requireResidentKey: false,
-          },
-          timeout: 180000,
-        }
-      };
-      navigator.credentials.create(createOptions).then(
-        (cred) => {
-          console.log(cred);
-          if (!cred) return;
-          const cdj = JSON.parse(new TextDecoder().decode((cred as any).response.clientDataJSON));
-          console.log(cdj);
-          console.log(btoa(String.fromCharCode(...new Uint8Array((cred as any).response.getAuthenticatorData()))));
-          console.log(btoa(String.fromCharCode(...new Uint8Array((cred as any).response.getPublicKey()))));
-
-        },
-        (err: Error) => {
-          console.error(err);
-        }
-      );
+            },
+            (err: Error) => {
+              console.error(err);
+            }
+          );
+        });
     }
   }
 });

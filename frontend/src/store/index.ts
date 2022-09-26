@@ -126,6 +126,20 @@ export default new Vuex.Store({
         resolve();
       });
     },
+    getAuthnCreateOptions: ({ state }) => {
+      return new Promise<CredentialCreationOptions>((resolve) => {
+        state.backend.get('/v1/webauthn/create-options')
+          .then(response => {
+            const config = response.data.data;
+            config.publicKey.user.id = Uint8Array.from(atob(config.publicKey.user.id), c => c.charCodeAt(0));
+            config.publicKey.excludeCredentials = config.publicKey.excludeCredentials.map((cred: any) => {
+              cred.id = Uint8Array.from(atob(cred.id), c => c.charCodeAt(0));
+            });
+            config.publicKey.challenge = Uint8Array.from(atob(config.publicKey.challenge), c => c.charCodeAt(0));
+            resolve(config);
+        })
+      });
+    },
   },
   modules: {
     snackbar: snackbarModule,

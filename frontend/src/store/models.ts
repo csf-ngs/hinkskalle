@@ -766,6 +766,7 @@ export { Manifest };
 class ConfigParams {
   public default_user_quota!: number
   public enable_register!: boolean
+  public frontend_url!: string
   public singularity_flavor!: string
   
 }
@@ -774,6 +775,7 @@ export function plainToConfigParams(json: any): ConfigParams {
   const obj = new ConfigParams();
   obj.default_user_quota = json['default_user_quota'];
     obj.enable_register = json['enable_register'];
+    obj.frontend_url = json['frontend_url'];
     obj.singularity_flavor = json['singularity_flavor'];
     
   return obj;
@@ -783,12 +785,45 @@ export function serializeConfigParams(obj: ConfigParams, unroll=false): any {
   const json: any = {};
   json['default_user_quota'] = obj.default_user_quota;
       json['enable_register'] = obj.enable_register;
+      json['frontend_url'] = obj.frontend_url;
       json['singularity_flavor'] = obj.singularity_flavor;
       
   return json;
 }
 
 export { ConfigParams };
+
+
+class PassKey {
+  public backed_up!: boolean
+  public createdAt!: Date | null
+  public id!: string
+  public last_used!: Date | null
+  public login_count!: number
+  public name!: string
+  
+}
+
+export function plainToPassKey(json: any): PassKey {
+  const obj = new PassKey();
+  obj.backed_up = json['backed_up'];
+    obj.createdAt = _isNil(json['createdAt']) ? null : new Date(json['createdAt']);
+      obj.id = json['id'];
+    obj.last_used = _isNil(json['last_used']) ? null : new Date(json['last_used']);
+      obj.login_count = json['login_count'];
+    obj.name = json['name'];
+    
+  return obj;
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function serializePassKey(obj: PassKey, unroll=false): any {
+  const json: any = {};
+  json['name'] = obj.name;
+      
+  return json;
+}
+
+export { PassKey };
 
 
 interface AdmBase {

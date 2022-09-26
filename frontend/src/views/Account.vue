@@ -109,7 +109,13 @@
       </v-row>
       <v-row>
         <v-col>
-          <v-btn @click="createKey()">Test Credential!</v-btn>
+          <v-text-field
+            type="text"
+            outlined
+            v-model="localState.newCredentialName"
+            label="Name your Key"
+            ></v-text-field>
+          <v-btn @click="createKey()" :disabled="!newCredentialValid">Test Credential!</v-btn>
         </v-col>
       </v-row>
     </v-container>
@@ -118,7 +124,7 @@
 </template>
 <script lang="ts">
 import Vue from 'vue';
-import { User } from '../store/models';
+import { User, PassKey } from '../store/models';
 
 import { clone as _clone } from 'lodash';
 
@@ -130,6 +136,7 @@ interface State {
   password1: string;
   password2: string;
   pwChangeValid: boolean;
+  newCredentialName: string;
 }
 
 export default Vue.extend({
@@ -143,6 +150,7 @@ export default Vue.extend({
       password1: '',
       password2: '',
       pwChangeValid: true,
+      newCredentialName: '',
     },
   }),
   mounted: function() {
@@ -156,6 +164,9 @@ export default Vue.extend({
     oldPasswordMissing(): boolean {
       return !this.localState.oldPassword;
     },
+    newCredentialValid(): boolean {
+      return this.localState.newCredentialName != '';
+    }
   },
   watch: {
     'localState.showPwChange': function showPwChange(val) {
@@ -201,19 +212,42 @@ export default Vue.extend({
         .then((createOptions: CredentialCreationOptions) => {
           navigator.credentials.create(createOptions).then(
             (cred) => {
-              console.log(cred);
               if (!cred) return;
+              const validOrigin: string = this.$store.getters.config.frontend_url;
               const cdj = JSON.parse(new TextDecoder().decode((cred as any).response.clientDataJSON));
-              console.log(cdj);
-              console.log(btoa(String.fromCharCode(...new Uint8Array((cred as any).response.getAuthenticatorData()))));
-              console.log(btoa(String.fromCharCode(...new Uint8Array((cred as any).response.getPublicKey()))));
+              if (cdj.type != 'webauthn.create' || 
+                    (('crossOrigin' in cdj) && cdj.crossOrigin) ||
+                    !validOrigin.startsWith(cdj.origin)) {
 
+                console.log("cdj invalid", cdj);
+                this.$store.commit('snackbar/showError', 'Could not validate credentials.');
+                return;
+              }
+              const postData = {
+                name: this.localState.newCredentialName,
+                authenticator_data: btoa(String.fromCharCode(...new Uint8Array((cred as any).response.getAuthenticatorData()))),
+                public_key: btoa(String.fromCharCode(...new Uint8Array((cred as any).response.getPublicKey()))),
+                cdj: cdj,
+              };
+              console.log(postData);
+              this.$store.dispatch('registerCredential', postData)
+                .then((key: PassKey) => {
+                  console.log(key);
+                  this.$store.commit('snackbar/showSuccess', 'Key created');
+                })
+                .catch(err => {
+                  this.$store.commit('snackbar/showError', err);
+                })
             },
             (err: Error) => {
               console.error(err);
+              this.$store.commit('snackbar/showError', "Failed to get credentials.");
             }
           );
-        });
+        })
+      .catch(err => {
+        this.$store.commit('snackbar/showError', err);
+      });
     }
   }
 });

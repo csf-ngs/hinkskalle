@@ -7,7 +7,7 @@ import { getEnv } from '@/util/env'
 
 Vue.use(Vuex);
 
-import { ConfigParams, User, plainToUser, serializeUser, plainToConfigParams, } from './models';
+import { PassKey, ConfigParams, User, plainToUser, serializeUser, plainToConfigParams, plainToPassKey } from './models';
 import snackbarModule, { State as SnackbarState } from './modules/snackbar';
 import entitiesModule, { State as EntitiesState } from './modules/entities';
 import groupsModule, { State as GroupsState } from './modules/groups';
@@ -153,10 +153,22 @@ export default new Vuex.Store({
             config.publicKey.user.id = Uint8Array.from(atob(config.publicKey.user.id), c => c.charCodeAt(0));
             config.publicKey.excludeCredentials = config.publicKey.excludeCredentials.map((cred: any) => {
               cred.id = Uint8Array.from(atob(cred.id), c => c.charCodeAt(0));
+              return cred;
             });
             config.publicKey.challenge = Uint8Array.from(atob(config.publicKey.challenge), c => c.charCodeAt(0));
             resolve(config);
         })
+      });
+    },
+    registerCredential: ({ state }, cred) => {
+      return new Promise<PassKey>((resolve, reject) => {
+        state.backend.post('/v1/webauthn/register', cred)
+          .then(response => {
+            resolve(plainToPassKey(response.data.data));
+          })
+          .catch(err => {
+            reject(err);
+          });
       });
     },
   },

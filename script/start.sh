@@ -6,8 +6,6 @@ cd $BASE_PATH
 test -e frontend/dist/index.html.subs ||
   cp frontend/dist/index.html frontend/dist/index.html.subs
 sed -e "s^%VUE_APP_BACKEND_URL%^$HINKSKALLE_BACKEND_URL^" \
-    -e "s^%VUE_APP_ENABLE_REGISTER%^$HINKSKALLE_ENABLE_REGISTER^" \
-    -e "s^%VUE_APP_SINGULARITY_COMMAND%^$HINKSKALLE_SINGULARITY_COMMAND^" \
     frontend/dist/index.html.subs > frontend/dist/index.html
 
 SESSION=hink

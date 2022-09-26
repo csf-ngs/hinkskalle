@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta
 from pprint import pprint
 import typing
-import secrets
+import base64
 
 from marshmallow import ValidationError
 from ..model_base import ModelBase
 from .._util import _create_group, _create_user, _create_container
 
-from Hinkskalle.models import User, UserSchema, Group, GroupSchema, Container, UserGroup, GroupRoles, PassKey
+from Hinkskalle.models import User, UserSchema, Group, GroupSchema, Container, UserGroup, GroupRoles, PassKey, PassKeySchema
 from Hinkskalle.util.auth.webauthn import get_public_key, AuthenticatorData
 
 from Hinkskalle import db
@@ -207,7 +207,7 @@ class TestUser(ModelBase):
     user = _create_user()
     self.assertIsNotNone(user.passkey_id)
 
-    key = PassKey(user=user)
+    key = PassKey(user=user, name='testesel')
 
     import base64
     
@@ -222,3 +222,13 @@ class TestUser(ModelBase):
     db.session.commit()
 
     self.assertEqual(len(user.passkeys), 1)
+
+  def test_passkey_schema(self):
+    schema = PassKeySchema()
+    user = _create_user()
+
+    key = PassKey(id=b'oink', name='oink')
+    serialized = typing.cast(dict, schema.dump(key))
+    self.assertEqual(serialized['id'], 'b2luaw==')
+    decoded_id = base64.b64decode(serialized['id'])
+    self.assertEqual(decoded_id, b'oink')

@@ -197,6 +197,7 @@ export default Vue.extend({
     },
     createKey() {
       this.$store.dispatch('getAuthnCreateOptions')
+        // eslint-disable-next-line
         .then((createOptions: CredentialCreationOptions) => {
           navigator.credentials.create(createOptions).then(
             (cred) => {

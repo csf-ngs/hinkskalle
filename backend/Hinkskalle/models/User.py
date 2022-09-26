@@ -28,6 +28,15 @@ class GroupRoles(enum.Enum):
   def __str__(self):
     return self.value
 
+class PassKeySchema(Schema):
+  id = fields.String(required=True, dump_only=True, attribute='encoded_id')
+  name = fields.String(required=True)
+  createdAt = fields.DateTime(dump_only=True)
+  last_used = fields.DateTime(dump_only=True)
+  login_count = fields.Integer(dump_only=True)
+  backed_up = fields.Boolean(dump_only=True)
+
+
 class GroupSchema(Schema):
   id = fields.String(required=True, dump_only=True)
   name = fields.String(required=True)
@@ -150,7 +159,7 @@ class User(db.Model): # type: ignore
     return result
 
   @property
-  def passkey_id(self) -> bytes:
+  def passkey_id(self) -> str:
     return base64.b64encode(self._passkey_id).decode('utf-8')
 
 
@@ -185,13 +194,24 @@ class User(db.Model): # type: ignore
     else:
       return False
 
-class PassKey(db.Model):
+class PassKey(db.Model): # type: ignore
   id = db.Column(db.LargeBinary(16), primary_key=True)
+  name = db.Column(db.String, nullable=False)
   user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
   public_key_spi = db.Column(db.LargeBinary)
   backed_up = db.Column(db.Boolean, default=False)
+  createdAt = db.Column(db.DateTime, default=datetime.now)
+
+  last_used = db.Column(db.DateTime)
+  login_count = db.Column(db.Integer, default=0)
 
   user = db.relationship('User', back_populates='passkeys')
+  __table_args__ = (db.UniqueConstraint('user_id', 'name', name='pass_key_name_user_id_idx'), )
+
+  @property
+  def encoded_id(self):
+    return base64.b64encode(self.id).decode('utf-8')
+
 
 class Group(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)

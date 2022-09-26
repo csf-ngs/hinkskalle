@@ -7,6 +7,7 @@ Create Date: 2022-09-24 00:47:55.978382
 """
 from alembic import op
 import sqlalchemy as sa
+import secrets
 
 
 # revision identifiers, used by Alembic.
@@ -24,10 +25,25 @@ def upgrade():
     sa.Column('public_key_spi', sa.LargeBinary(), nullable=True),
     sa.Column('backed_up', sa.Boolean(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], name=op.f('fk_pass_key_user_id_user')),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_pass_key'))
-    )
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_pass_key')))
+
     op.add_column('user', sa.Column('passkey_id', sa.LargeBinary(length=16), nullable=True))
     op.create_unique_constraint(op.f('uq_user_passkey_id'), 'user', ['passkey_id'])
+
+    users_table = sa.sql.table('user', 
+        sa.sql.column('id', sa.Integer),
+        sa.sql.column('passkey_id', sa.LargeBinary(length=16))
+    )
+    conn = op.get_bind()
+    res = conn.execute(sa.sql.select([users_table]))
+    for row in res:
+        conn.execute(
+            users_table.update().where(users_table.c.id==row['id']).
+                values({ 'passkey_id': secrets.token_bytes(16) })
+        )
+
+
+
     # ### end Alembic commands ###
 
 

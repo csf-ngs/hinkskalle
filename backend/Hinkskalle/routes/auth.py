@@ -4,6 +4,7 @@ from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.User import TokenSchema, UserSchema
 from Hinkskalle.util.auth.token import Scopes
 from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword
+from Hinkskalle.routes.util import _get_service_url
 from .util import _get_service_url
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
@@ -112,10 +113,10 @@ def get_download_token():
   tags=['hinkskalle-ext']
 )
 def get_authn_create_options():
-  if current_app.config['BACKEND_URL']:
-    rp_id = urlparse(current_app.config['BACKEND_URL']).hostname
+  if current_app.config['FRONTEND_URL']:
+    rp_id = urlparse(current_app.config['FRONTEND_URL']).hostname
   else:
-    rp_id = re.sub(r':.*$', '', request.host)
+    rp_id = urlparse(_get_service_url()).hostname
 
   opts = {
     'publicKey': {

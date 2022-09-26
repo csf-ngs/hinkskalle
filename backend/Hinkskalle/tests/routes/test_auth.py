@@ -291,6 +291,18 @@ class TestWebAuthn(RouteBase):
     opts = ret.get_json().get('data')
     self.assertEqual(opts['publicKey']['rp']['id'], 'oi.nk')
     self.app.config['BACKEND_URL'] = old_backend_url
+
+  def test_create_options_hostname_override(self):
+    old_config = self.app.config['FRONTEND_URL']
+    self.app.config['FRONTEND_URL'] = 'https://gru.nzoi.nk:1234/'
+
+    with self.fake_auth():
+      ret = self.client.get('/v1/webauthn/create-options')
+    self.assertEqual(ret.status_code, 200)
+
+    opts = ret.get_json().get('data')
+    self.assertEqual(opts['publicKey']['rp']['id'], 'gru.nzoi.nk')
+    self.app.config['FRONTEND_URL'] = old_config
   
   def test_create_options_exclude(self):
     with self.fake_auth():

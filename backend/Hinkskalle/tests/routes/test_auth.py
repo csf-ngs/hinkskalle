@@ -99,7 +99,7 @@ class TestDownloadToken(RouteBase):
     self.assertTrue(location.endswith(data['location'])) # type: ignore
     temp_token = re.search(r'(.*)\?temp_token=(.*)', location)
     self.assertIsNotNone(temp_token)
-    temp_token = typing.cast(re.Match[str], temp_token)
+    temp_token = typing.cast(re.Match, temp_token)
     self.assertIsNotNone(temp_token[1])
     self.assertTrue(temp_token[1].endswith('/manifests/1/download'))
     self.assertIsNotNone(temp_token[2])
@@ -119,7 +119,7 @@ class TestDownloadToken(RouteBase):
     self.assertTrue(location.endswith(ret.get_json()['location']))  # type: ignore
     temp_token = re.search(r'(.*)\?temp_token=(.*)', location)
     self.assertIsNotNone(temp_token)
-    temp_token = typing.cast(re.Match[str], temp_token)
+    temp_token = typing.cast(re.Match, temp_token)
     decoded = jwt.decode(temp_token[2], self.app.config['SECRET_KEY'], algorithms=["HS256"])
 
     self.assertEqual(decoded.get('username'), self.username)

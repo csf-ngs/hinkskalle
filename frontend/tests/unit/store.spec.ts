@@ -169,4 +169,46 @@ describe('store actions', () => {
     });
   });
 
+  it('has getAuthnCreateOptions action', done => {
+    mockAxios.get.mockResolvedValue({
+      data: {
+        "data": authnCreateOptions(),
+      }
+    });
+    const promise = store.dispatch('getAuthnCreateOptions');
+    promise.then((config: CredentialCreationOptions) => {
+      expect(config.publicKey?.user.id).toBeInstanceOf(Uint8Array);
+      expect(config.publicKey?.challenge).toBeInstanceOf(Uint8Array);
+      done();
+
+    });
+  })
 });
+
+function authnCreateOptions() {
+  return {
+          "publicKey": {
+            "authenticatorSelection": {
+              "authenticatorAttachment":"cross-platform",
+              "requireResidentKey":false,
+              "userVerification":"discouraged"
+            },
+            "challenge":"AA==",
+            "excludeCredentials":[],
+            "pubKeyCredParams": [
+              {"alg":-7,"type":"public-key"},
+              {"alg":-257,"type":"public-key"}
+            ],
+            "rp":{
+              "id":"localhost",
+              "name":"Hinkskalle"
+            },
+            "timeout":180000,
+            "user": {
+              "displayName":"Test Hase",
+              "id":"T90IiRrV940+Hed8BFHP+Q==",
+              "name":"test.hase"
+            }
+          }
+        };
+}

@@ -102,7 +102,6 @@
 </template>
 <script lang="ts">
 import Vue from 'vue';
-import { getEnv } from '@/util/env';
 
 import { AxiosError } from 'axios';
 import { User } from '@/store/models';
@@ -186,7 +185,7 @@ export default Vue.extend({
       return this.$store.getters.authStatus === 'loading';
     },
     registerEnabled(): boolean {
-      return getEnv('VUE_APP_ENABLE_REGISTER') as boolean
+      return this.$store.getters.config.enable_register as boolean
     },
     passwordsMatching(): boolean {
       return this.localState.password1 != '' && this.localState.password2 != '' &&

@@ -6,7 +6,7 @@ import { makeTestUser, makeTestUserObj } from '../_data';
 import axios from 'axios';
 
 import { map as _map, clone as _clone, find as _find } from 'lodash';
-import {User} from '@/store/models';
+import {plainToConfigParams, User} from '@/store/models';
 
 jest.mock('axios');
 const mockAxios = axios as jest.Mocked<typeof axios>;
@@ -31,6 +31,17 @@ describe('store getters', () => {
 
     expect(store.getters.currentUser.fullname).toBe('Test Hase');
     expect(store.getters.currentUser.role).toBe('user');
+  });
+  it('has config getter', () => {
+    store.state.config = plainToConfigParams({
+      default_user_quota: 0,
+      enable_register: false,
+      singularity_flavor: 'apptainer',
+    })
+
+    expect(store.getters.config.default_user_quota).toBe(0);
+    expect(store.getters.config.enable_register).toBe(false);
+    expect(store.getters.config.singularity_flavor).toBe('apptainer');
   });
   
 });
@@ -82,10 +93,42 @@ describe('store mutations', () => {
     expect(store.state.authToken).toBe('');
     expect(store.state.backend.defaults.headers.common).not.toHaveProperty('Authorization');
   });
+
+  it('has setConfig mutation', () => {
+    store.state.config = null;
+    const testConfig = plainToConfigParams({
+      enable_register: false,
+      default_user_quota: 999,
+      singularity_flavor: 'apptainer',
+    });
+
+    store.commit('setConfig', testConfig);
+    expect(store.state.config).not.toBeNull();
+    expect(store.state.config!.default_user_quota).toBe(999);
+  });
 });
 
 describe('store actions', () => {
   const testUser = makeTestUser();
+  it('has getConfig', done => {
+    store.state.config = null;
+    mockAxios.get.mockResolvedValue({
+      data: {
+        params: {
+          default_user_quota: 999,
+          enable_register: false,
+          singularity_flavor: 'apptainer',
+        },
+      }
+    });
+    const promise = store.dispatch('getConfig');
+    expect(mockAxios.get).toHaveBeenLastCalledWith('/assets/config/config.prod.json');
+    promise.then(() => {
+      expect(store.state.config).not.toBe(null);
+      expect(store.state.config!.default_user_quota).toBe(999);
+      done();
+    });
+  });
   it('has requestAuth', done => {
     mockAxios.post.mockResolvedValue({
       data: { 

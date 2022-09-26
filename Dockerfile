@@ -30,7 +30,7 @@ WORKDIR /app
 COPY frontend/package*.json frontend/yarn.lock ./
 RUN yarn install
 COPY ./frontend/ .
-RUN JSON_STRING='window.configs = { "VUE_APP_BACKEND_URL":"%VUE_APP_BACKEND_URL%", "VUE_APP_ENABLE_REGISTER":%VUE_APP_ENABLE_REGISTER%, "VUE_APP_SINGULARITY_COMMAND":"%VUE_APP_SINGULARITY_COMMAND%" }' \
+RUN JSON_STRING='window.configs = { "VUE_APP_BACKEND_URL":"%VUE_APP_BACKEND_URL%" }' \
   && sed "s@// RUNTIME_CONFIG@${JSON_STRING}@" public/index.html.tpl > public/index.html
 RUN yarn build
 

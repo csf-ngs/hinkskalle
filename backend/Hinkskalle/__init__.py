@@ -115,7 +115,9 @@ def create_app():
     app.config['RQ_REDIS_URL'] = os.environ.get('HINKSKALLE_REDIS_URL')
   rq.init_app(app)
 
-  app.config['ENABLE_REGISTER'] = os.environ.get('HINKSKALLE_ENABLE_REGISTER', False)
+  app.config['ENABLE_REGISTER'] = os.environ.get('HINKSKALLE_ENABLE_REGISTER', app.config.get('ENABLE_REGISTER', False))
+  app.config['SINGULARITY_FLAVOR'] = os.environ.get('HINKSKALLE_SINGULARITY_COMMAND', app.config.get('SINGULARITY_FLAVOR', 'singularity'))
+  app.config['DEFAULT_USER_QUOTA'] = os.environ.get('HINKSKALLE_DEFAULT_USER_QUOTA', app.config.get('DEFAULT_USER_QUOTA', 0))
 
   app.url_map.converters['distname']=OrasNameConverter 
   generator.register_flask_converter_to_swagger_type('distname', 'path')

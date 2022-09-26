@@ -31,10 +31,16 @@ class VersionSchema(Schema):
 class VersionResponseSchema(ResponseSchema):
   data = fields.Nested(VersionSchema())
 
+class ConfigParamsSchema(Schema):
+  enable_register = fields.Boolean()
+  singularity_flavor = fields.String()
+  default_user_quota = fields.Integer()
+
 class ConfigResponseSchema(ResponseSchema):
   libraryAPI = fields.Dict()
   keystoreAPI = fields.Dict()
   tokenAPI = fields.Dict()
+  params = fields.Nested(ConfigParamsSchema())
 
 @registry.handles(
   rule='/version',
@@ -69,6 +75,11 @@ def config():
     },
     'tokenAPI': {
       'uri': service_url
+    },
+    'params': {
+      'enable_register': current_app.config.get('ENABLE_REGISTER'),
+      'singularity_flavor': current_app.config.get('SINGULARITY_FLAVOR'),
+      'default_user_quota': current_app.config.get('DEFAULT_USER_QUOTA'),
     }
   }
 

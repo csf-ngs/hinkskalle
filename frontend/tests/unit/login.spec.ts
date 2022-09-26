@@ -7,7 +7,12 @@ import Vue from 'vue';
 import Login from '@/views/Login.vue';
 
 import { localVue } from '../setup';
-import realStore from '@/store';
+
+import { plainToConfigParams } from '@/store/models';
+
+const configParams = plainToConfigParams({
+  enable_register: true,
+});
 
 describe('Login.vue', () => {
   let store: any;
@@ -15,7 +20,11 @@ describe('Login.vue', () => {
   let router: any;
 
   beforeEach(() => {
-    store = new Vuex.Store({});
+    store = new Vuex.Store({
+      getters: {
+        config: jest.fn().mockReturnValue(configParams),
+      },
+    });
     vuetify = new Vuetify();
     router = new VueRouter();
   });
@@ -43,6 +52,7 @@ describe('Login.vue', () => {
     const mockRouter = { push: jest.fn() };
     store = new Vuex.Store({
       getters: {
+        config: jest.fn().mockReturnValue(configParams),
         currentUser: jest.fn().mockReturnValue({ isAdmin: false }),
       },
       actions: {
@@ -61,6 +71,9 @@ describe('Login.vue', () => {
 
   it('shows error on failed login', async () => {
     store = new Vuex.Store({
+      getters: {
+        config: jest.fn().mockReturnValue(configParams),
+      },
       actions: {
         requestAuth: jest.fn().mockRejectedValue({ message: 'dummy' }),
       }

@@ -19,7 +19,7 @@ gunicorn \
   --access-logfile - \
   --error-logfile - \
   --chdir /srv/hinkskalle/src/backend \
-  -w 1 \
+  -w 2 \
   --bind 0.0.0.0:5000 \
   --reload \
   wsgi:app

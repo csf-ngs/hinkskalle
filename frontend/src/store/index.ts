@@ -7,7 +7,7 @@ import { getEnv } from '@/util/env'
 
 Vue.use(Vuex);
 
-import { User, plainToUser, serializeUser, } from './models';
+import { ConfigParams, User, plainToUser, serializeUser, plainToConfigParams, } from './models';
 import snackbarModule, { State as SnackbarState } from './modules/snackbar';
 import entitiesModule, { State as EntitiesState } from './modules/entities';
 import groupsModule, { State as GroupsState } from './modules/groups';
@@ -25,6 +25,7 @@ interface State {
   authToken: string;
   authStatus: '' | 'loading' | 'failed' | 'success';
   currentUser: User | null;
+  config: ConfigParams | null;
   showDrawer: boolean;
   snackbar?: SnackbarState;
   tokens?: TokensState;
@@ -51,6 +52,7 @@ const state: State = {
   authToken: token,
   authStatus: '',
   currentUser: currentUserObj,
+  config: null,
   showDrawer: true,
 };
 
@@ -61,6 +63,7 @@ export default new Vuex.Store({
     isLoggedIn: (state): boolean => state.currentUser !== null,
     currentUser: (state): User | null => state.currentUser,
     showDrawer: (state): boolean => state.showDrawer,
+    config: (state): ConfigParams | null => state.config,
   },
   mutations: {
     registerInterceptor(state: State, func: (err: any) => Promise<void>) {
@@ -96,8 +99,24 @@ export default new Vuex.Store({
     toggleDrawer(state: State) {
       state.showDrawer = !state.showDrawer;
     },
+    setConfig(state: State, config: ConfigParams) {
+      state.config = config;
+    },
   },
   actions: {
+    getConfig: ({state, commit }) => {
+      return new Promise((resolve, reject) => {
+        state.backend.get('/assets/config/config.prod.json')
+          .then(response => {
+            commit('setConfig', plainToConfigParams(response.data.params));
+            resolve(response);
+          })
+          .catch(err => {
+            commit('setConfig', null);
+            reject(err);
+          });
+      });
+    },
     requestAuth: ({state, commit }, user: {username: string; password: string}) => {
       return new Promise((resolve, reject) => {
         commit('authRequested');

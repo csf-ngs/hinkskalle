@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from pprint import pprint
 import typing
 import base64
-import secrets
 
 from marshmallow import ValidationError
 from ..model_base import ModelBase

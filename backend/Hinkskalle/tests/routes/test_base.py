@@ -76,7 +76,7 @@ class TestBase(RouteBase):
   
   def test_config_params(self):
     current_settings = {}
-    for k in ['ENABLE_REGISTER', 'DEFAULT_USER_QUOTA', 'SINGULARITY_FLAVOR']:
+    for k in ['ENABLE_REGISTER', 'DEFAULT_USER_QUOTA', 'SINGULARITY_FLAVOR', 'FRONTEND_URL']:
       current_settings[k] = self.app.config[k]
 
     ret = self.app.test_client().get('/assets/config/config.prod.json')
@@ -86,11 +86,13 @@ class TestBase(RouteBase):
       'enable_register': False,
       'default_user_quota': 0,
       'singularity_flavor': 'singularity',
+      'frontend_url': self.app.config['BACKEND_URL'],
     })
 
     self.app.config['DEFAULT_USER_QUOTA'] = 999
     self.app.config['ENABLE_REGISTER'] = True
     self.app.config['SINGULARITY_FLAVOR'] = 'apptainer'
+    self.app.config['FRONTEND_URL'] = 'https://oi.nk/'
 
     ret = self.app.test_client().get('/assets/config/config.prod.json')
     self.assertEqual(ret.status_code, 200)
@@ -99,6 +101,7 @@ class TestBase(RouteBase):
       'enable_register': True,
       'default_user_quota': 999,
       'singularity_flavor': 'apptainer',
+      'frontend_url': 'https://oi.nk/',
     })
 
     # make sure app singleton is reset

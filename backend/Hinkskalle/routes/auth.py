@@ -13,6 +13,7 @@ import jwt
 from calendar import timegm
 from urllib.parse import urlparse
 import base64
+import re
 
 from datetime import datetime
 
@@ -114,7 +115,7 @@ def get_authn_create_options():
   if current_app.config['BACKEND_URL']:
     rp_id = urlparse(current_app.config['BACKEND_URL']).hostname
   else:
-    rp_id = request.host
+    rp_id = re.sub(r':.*$', '', request.host)
 
   opts = {
     'publicKey': {

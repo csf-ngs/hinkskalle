@@ -1,15 +1,17 @@
 from flask.helpers import make_response
 from Hinkskalle import registry, password_checkers, authenticator, rebar, db
 from Hinkskalle.models.Entity import Entity
-from Hinkskalle.models.User import TokenSchema, UserSchema
+from Hinkskalle.models.User import TokenSchema, UserSchema, PassKey, PassKeySchema
 from Hinkskalle.util.auth.token import Scopes
 from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword
+from Hinkskalle.util.auth.webauthn import AuthenticatorData
 from Hinkskalle.routes.util import _get_service_url
 from .util import _get_service_url
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from flask import current_app, g, request
 from sqlalchemy.orm.exc import NoResultFound # type: ignore
+from sqlalchemy.exc import IntegrityError
 import jwt
 from calendar import timegm
 from urllib.parse import urlparse
@@ -29,11 +31,20 @@ class TokenStatusResponseSchema(ResponseSchema):
 class GetTokenResponseSchema(ResponseSchema):
   data = fields.Nested(TokenSchema)
 
+class RegisterCredentialResponseSchema(ResponseSchema):
+  data = fields.Nested(PassKeySchema)
+
 class GetDownloadTokenSchema(RequestSchema):
   type = fields.String(required=True)
   id = fields.String(required=True)
   username = fields.String(required=False)
   exp = fields.Integer(required=False)
+
+class RegisterCredentialSchema(RequestSchema):
+  name = fields.String(required=True)
+  public_key = fields.String(required=True)
+  authenticator_data = fields.String(required=True)
+  cdj = fields.Dict()
 
 @registry.handles(
   rule='/v1/token-status',
@@ -109,7 +120,7 @@ def get_download_token():
 @registry.handles(
   rule='/v1/webauthn/create-options',
   method='GET',
-  authenticators=authenticator.with_scope(Scopes.user),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
   tags=['hinkskalle-ext']
 )
 def get_authn_create_options():
@@ -151,3 +162,26 @@ def get_authn_create_options():
   }
   return { 'data': opts }
 
+@registry.handles(
+  rule='/v1/webauthn/register',
+  method='POST',
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  request_body_schema=RegisterCredentialSchema(),
+  response_body_schema=RegisterCredentialResponseSchema(),
+  tags=['hinkskalle-ext']
+)
+def authn_register():
+  data = rebar.validated_body
+  key = PassKey(user=g.authenticated_user, name=data['name'])
+
+  authData = AuthenticatorData(base64.b64decode(data['authenticator_data']))
+  key.id = authData.credential_id
+  key.public_key_spi = base64.b64decode(data['public_key'])
+
+  try:
+    db.session.add(key)
+    db.session.commit()
+  except IntegrityError:
+    raise errors.PreconditionFailed(f"key with name {key.name} already exists")
+
+  return { 'data': key }

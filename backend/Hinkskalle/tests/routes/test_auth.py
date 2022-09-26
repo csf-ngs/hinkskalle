@@ -1,10 +1,12 @@
 import datetime
+import typing
 from flask import g
 from ..route_base import RouteBase
 
 from .._util import _create_user
-from Hinkskalle.models.User import Token, PassKey
+from Hinkskalle.models.User import Token, PassKey, User
 from Hinkskalle.models.Entity import Entity
+from Hinkskalle.util.auth.webauthn import get_public_key
 from Hinkskalle import db
 import re
 import jwt
@@ -97,6 +99,7 @@ class TestDownloadToken(RouteBase):
     self.assertTrue(location.endswith(data['location'])) # type: ignore
     temp_token = re.search(r'(.*)\?temp_token=(.*)', location)
     self.assertIsNotNone(temp_token)
+    temp_token = typing.cast(re.Match[str], temp_token)
     self.assertIsNotNone(temp_token[1])
     self.assertTrue(temp_token[1].endswith('/manifests/1/download'))
     self.assertIsNotNone(temp_token[2])
@@ -104,8 +107,8 @@ class TestDownloadToken(RouteBase):
     self.assertEqual(decoded.get('id'), '1')
     self.assertEqual(decoded.get('type'), 'manifest')
     self.assertEqual(decoded.get('username'), self.admin_username)
-    self.assertLessEqual(decoded.get('exp'), int(datetime.datetime.now().timestamp()+self.app.config['DOWNLOAD_TOKEN_EXPIRATION']))
-    self.assertGreaterEqual(decoded.get('exp'), int(datetime.datetime.now().timestamp()+self.app.config['DOWNLOAD_TOKEN_EXPIRATION']))
+    self.assertLessEqual(decoded.get('exp'), int(datetime.datetime.now().timestamp()+self.app.config['DOWNLOAD_TOKEN_EXPIRATION'])) # type: ignore
+    self.assertGreaterEqual(decoded.get('exp'), int(datetime.datetime.now().timestamp()+self.app.config['DOWNLOAD_TOKEN_EXPIRATION'])) # type: ignore
   
   def test_get_handout_token(self):
     override_exp = datetime.datetime.now().timestamp()+120
@@ -115,6 +118,8 @@ class TestDownloadToken(RouteBase):
     location = ret.headers.get('Location', '')
     self.assertTrue(location.endswith(ret.get_json()['location']))  # type: ignore
     temp_token = re.search(r'(.*)\?temp_token=(.*)', location)
+    self.assertIsNotNone(temp_token)
+    temp_token = typing.cast(re.Match[str], temp_token)
     decoded = jwt.decode(temp_token[2], self.app.config['SECRET_KEY'], algorithms=["HS256"])
 
     self.assertEqual(decoded.get('username'), self.username)
@@ -274,7 +279,7 @@ class TestWebAuthn(RouteBase):
     with self.fake_auth():
       ret = self.client.get('/v1/webauthn/create-options')
     self.assertEqual(ret.status_code, 200)
-    opts = ret.get_json().get('data')
+    opts = ret.get_json().get('data') # type: ignore
     self.assertEqual(opts['publicKey']['user']['name'], self.username)
     self.assertEqual(opts['publicKey']['user']['id'], self.user.passkey_id)
 
@@ -288,7 +293,7 @@ class TestWebAuthn(RouteBase):
       ret = self.client.get('/v1/webauthn/create-options')
     self.assertEqual(ret.status_code, 200)
 
-    opts = ret.get_json().get('data')
+    opts = ret.get_json().get('data') # type: ignore
     self.assertEqual(opts['publicKey']['rp']['id'], 'oi.nk')
     self.app.config['BACKEND_URL'] = old_backend_url
 
@@ -300,7 +305,7 @@ class TestWebAuthn(RouteBase):
       ret = self.client.get('/v1/webauthn/create-options')
     self.assertEqual(ret.status_code, 200)
 
-    opts = ret.get_json().get('data')
+    opts = ret.get_json().get('data') # type: ignore 
     self.assertEqual(opts['publicKey']['rp']['id'], 'gru.nzoi.nk')
     self.app.config['FRONTEND_URL'] = old_config
   
@@ -309,21 +314,46 @@ class TestWebAuthn(RouteBase):
       ret = self.client.get('/v1/webauthn/create-options')
     self.assertEqual(ret.status_code, 200)
 
-    opts = ret.get_json().get('data')
+    opts = ret.get_json().get('data') # type: ignore
     self.assertListEqual(opts['publicKey']['excludeCredentials'], [])
   
   def test_create_options_exclude_has_key(self):
     passkey_id = b'4711'
     self.user.passkeys = [
-      PassKey(id=passkey_id)
+      PassKey(id=passkey_id, name='something')
     ]
     db.session.commit()
 
     with self.fake_auth():
       ret = self.client.get('/v1/webauthn/create-options')
     self.assertEqual(ret.status_code, 200)
-    opts = ret.get_json().get('data')
+    opts = ret.get_json().get('data') # type: ignore 
     self.assertListEqual(
       opts['publicKey']['excludeCredentials'], [ 
         { 'type': 'public-key', 'id': base64.b64encode(passkey_id).decode('utf-8') }
       ])
+
+  def test_register_credential(self):
+    test_credential = {
+      'name': 'testzebra',
+      'authenticator_data': 'SZYN5YgOjGh0NBcPZHZgW4/krrmihjLHmVzzuoMdl2NBAAAAAAAAAAAAAAAAAAAAAAAAAAAAQDMfDzd+EmXcFg7bSf7P+HgFBS6TCTC2P4/87fKYCN77ouV2E0+Lkh6gsMqTU1KJfvFcHPtiLd7Kpy9UAubHiT6lAQIDJiABIVggYNJJnxSByloM5BaVvCVWWX8beHk3OioapnxErpCxwPIiWCAHxTmW9DQXUb3weT+U+g/BbSSbnP64qus3j/XWlFgo+Q==',
+      'public_key': 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEYNJJnxSByloM5BaVvCVWWX8beHk3OioapnxErpCxwPIHxTmW9DQXUb3weT+U+g/BbSSbnP64qus3j/XWlFgo+Q==',
+      'cdj': {
+        'type': 'webauthn.create',
+        'challenge': 'AA',
+        'origin': 'http://localhost:7660',
+        'crossOrigin': False,
+      },
+    }
+
+    with self.fake_auth():
+      ret = self.client.post('/v1/webauthn/register', json=test_credential)
+    self.assertEqual(ret.status_code, 200)
+
+    db_user = User.query.filter(User.username==self.username).first()
+    self.assertEqual(len(db_user.passkeys), 1)
+    pubk = get_public_key(db_user.passkeys[0].public_key_spi)
+    self.assertEqual(pubk.key_size, 256)
+
+    data = ret.get_json().get('data') # type: ignore
+    self.assertEqual(data['name'], 'testzebra')

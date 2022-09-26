@@ -151,7 +151,7 @@ class User(db.Model): # type: ignore
 
   @property
   def passkey_id(self) -> bytes:
-    return base64.b64encode(self._passkey_id)
+    return base64.b64encode(self._passkey_id).decode('utf-8')
 
 
   def check_access(self, user) -> bool:

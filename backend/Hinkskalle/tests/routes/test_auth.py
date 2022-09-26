@@ -3,11 +3,12 @@ from flask import g
 from ..route_base import RouteBase
 
 from .._util import _create_user
-from Hinkskalle.models.User import Token
+from Hinkskalle.models.User import Token, PassKey
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle import db
 import re
 import jwt
+import base64
 
 class TestPasswordAuth(RouteBase):
   def test_password(self):
@@ -267,3 +268,50 @@ class TestTokenAuth(RouteBase):
 
     db_token = Token.query.get(token.id)
     self.assertEqual(db_token.expiresAt, expiration)
+
+class TestWebAuthn(RouteBase):
+  def test_create_options(self):
+    with self.fake_auth():
+      ret = self.client.get('/v1/webauthn/create-options')
+    self.assertEqual(ret.status_code, 200)
+    opts = ret.get_json().get('data')
+    self.assertEqual(opts['publicKey']['user']['name'], self.username)
+    self.assertEqual(opts['publicKey']['user']['id'], self.user.passkey_id)
+
+    self.assertEqual(opts['publicKey']['rp']['id'], 'localhost')
+  
+  def test_create_options_hostname(self):
+    old_backend_url = self.app.config['BACKEND_URL']
+    self.app.config['BACKEND_URL'] = 'https://oi.nk:1234/'
+
+    with self.fake_auth():
+      ret = self.client.get('/v1/webauthn/create-options')
+    self.assertEqual(ret.status_code, 200)
+
+    opts = ret.get_json().get('data')
+    self.assertEqual(opts['publicKey']['rp']['id'], 'oi.nk')
+    self.app.config['BACKEND_URL'] = old_backend_url
+  
+  def test_create_options_exclude(self):
+    with self.fake_auth():
+      ret = self.client.get('/v1/webauthn/create-options')
+    self.assertEqual(ret.status_code, 200)
+
+    opts = ret.get_json().get('data')
+    self.assertListEqual(opts['publicKey']['excludeCredentials'], [])
+  
+  def test_create_options_exclude_has_key(self):
+    passkey_id = b'4711'
+    self.user.passkeys = [
+      PassKey(id=passkey_id)
+    ]
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.get('/v1/webauthn/create-options')
+    self.assertEqual(ret.status_code, 200)
+    opts = ret.get_json().get('data')
+    self.assertListEqual(
+      opts['publicKey']['excludeCredentials'], [ 
+        { 'type': 'public-key', 'id': base64.b64encode(passkey_id).decode('utf-8') }
+      ])

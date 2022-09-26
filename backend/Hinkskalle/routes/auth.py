@@ -7,10 +7,12 @@ from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidP
 from .util import _get_service_url
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from flask import current_app, g
+from flask import current_app, g, request
 from sqlalchemy.orm.exc import NoResultFound # type: ignore
 import jwt
 from calendar import timegm
+from urllib.parse import urlparse
+import base64
 
 from datetime import datetime
 
@@ -101,4 +103,49 @@ def get_download_token():
   response.headers['Location']=target
   return response
   
+
+@registry.handles(
+  rule='/v1/webauthn/create-options',
+  method='GET',
+  authenticators=authenticator.with_scope(Scopes.user),
+  tags=['hinkskalle-ext']
+)
+def get_authn_create_options():
+  if current_app.config['BACKEND_URL']:
+    rp_id = urlparse(current_app.config['BACKEND_URL']).hostname
+  else:
+    rp_id = request.host
+
+  opts = {
+    'publicKey': {
+      'rp': {
+        'id': rp_id,
+        'name': "Hinkskalle",
+      },
+      'user': {
+        'id': g.authenticated_user.passkey_id, #Uint8Array.from(atob('Vg4vHxiHQnPapKRD4+EIcw=='), c => c.charCodeAt(0)),
+        'name': g.authenticated_user.username,
+        'displayName': f"{g.authenticated_user.firstname} {g.authenticated_user.lastname}",
+      },
+      'excludeCredentials': [
+        { 'type': 'public-key', 'id': base64.b64encode(key.id).decode('utf-8') } for key in g.authenticated_user.passkeys
+      ], # XXX
+      'pubKeyCredParams': [{
+          'type': "public-key",
+          'alg': -7
+        }, {
+          'type': "public-key",
+          'alg': -257
+        }
+      ],
+      'challenge': base64.b64encode(b'\0').decode('utf-8'), #,new Uint8Array([0]),
+      'authenticatorSelection': {
+        'authenticatorAttachment': "cross-platform",
+        'userVerification': "discouraged",
+        'requireResidentKey': False,
+      },
+      'timeout': 180000,
+    }
+  }
+  return { 'data': opts }
 

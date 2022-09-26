@@ -104,8 +104,8 @@ def create_app():
   
   app.config['DOWNLOAD_TOKEN_EXPIRATION'] = app.config.get('DOWNLOAD_TOKEN_EXPIRATION', 86400)
 
-  app.config['BACKEND_URL'] = app.config.get('BACKEND_URL', os.environ.get('HINSKALLE_BACKEND_URL', None))
-
+  app.config['BACKEND_URL'] = os.environ.get('HINKSKALLE_BACKEND_URL', app.config.get('BACKEND_URL', None))
+  app.config['FRONTEND_URL'] = os.environ.get('HINKSKALLE_FRONTEND_URL', app.config.get('FRONTEND_URL', app.config['BACKEND_URL']))
 
   db.init_app(app)
 

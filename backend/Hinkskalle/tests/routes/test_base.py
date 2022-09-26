@@ -87,7 +87,7 @@ class TestBase(RouteBase):
       'default_user_quota': 0,
       'default_group_quota': 0,
       'singularity_flavor': 'singularity',
-      'frontend_url': 'http://localhost',
+      'frontend_url': self.app.config['BACKEND_URL'],
     })
 
     self.app.config['DEFAULT_USER_QUOTA'] = 999

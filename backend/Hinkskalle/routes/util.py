@@ -11,6 +11,9 @@ class DownloadQuerySchema(RequestSchema):
   temp_token = fields.String(required=False)
 
 def _get_service_url():
+  if current_app.config.get('BACKEND_URL'):
+    return current_app.config.get('BACKEND_URL')
+
   service_url = request.url_root.rstrip('/')
   if current_app.config.get('PREFERRED_URL_SCHEME', 'http') == 'https':
     service_url = service_url.replace('http:', 'https:')

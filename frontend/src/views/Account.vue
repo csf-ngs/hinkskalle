@@ -108,7 +108,44 @@
         </v-col>
       </v-row>
       <v-row>
-        <v-col>
+        <v-col cols="12" md="8" offset-md="2">
+          <h4>Registered Security Keys</h4>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col v-for="passkey in passkeys" :key="passkey.id" cols="12" md="8" offset-md="2">
+          <v-card color="blue-grey lighten-5" hover raised>
+            <v-card-title class="text-h6">
+              {{passkey.name}}
+            </v-card-title>
+            <v-divider></v-divider>
+            <v-list dense>
+              <v-list-item two-line>
+                <v-list-item-content>
+                  <v-list-item-title class="d-flex justify-space-between">
+                    <div>
+                      {{passkey.createdAt | prettyDateTime}}
+                    </div>
+                    <div class="flex-grow-1 text-center">
+                      {{passkeys.last_used ? (passkey.last_used | prettyDateTime) : '-'}}
+                    </div>
+                    <div>
+                      {{passkey.login_count}}
+                    </div>
+                  </v-list-item-title>
+                  <v-list-item-subtitle class="d-flex justify-space-between">
+                    <div>Created</div>
+                    <div class="flex-grow-1 text-center">Last Used</div>
+                    <div># Used</div>
+                  </v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+            </v-list>
+          </v-card>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12" md="8" offset-md="2">
           <v-text-field
             type="text"
             outlined
@@ -155,6 +192,7 @@ export default Vue.extend({
   }),
   mounted: function() {
     this.localState.editUser = _clone(this.$store.getters.currentUser);
+    this.loadPasskeys();
   },
   computed: {
     passwordsMatching(): boolean {
@@ -166,7 +204,10 @@ export default Vue.extend({
     },
     newCredentialValid(): boolean {
       return this.localState.newCredentialName != '';
-    }
+    },
+    passkeys(): PassKey[] {
+      return this.$store.getters['passkeys/list'];
+    },
   },
   watch: {
     'localState.showPwChange': function showPwChange(val) {
@@ -205,6 +246,10 @@ export default Vue.extend({
       this.localState.oldPassword='';
       this.localState.password1='';
       this.localState.password2='';
+    },
+    loadPasskeys(): Promise<PassKey[]> {
+      return this.$store.dispatch('passkeys/list')
+        .catch(err => this.$store.commit('snackbar/showError', err));
     },
     createKey() {
       this.$store.dispatch('getAuthnCreateOptions')

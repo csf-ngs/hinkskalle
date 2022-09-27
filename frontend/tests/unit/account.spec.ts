@@ -26,12 +26,14 @@ describe('Account.vue', () => {
   let mutations: any;
   let mockUpdateUser: jest.Mock<any, any>;
   let mockDeleteUser: jest.Mock<any, any>;
+  let mockListPasskeys: jest.Mock<any, any>;
 
   beforeEach(() => {
     vuetify = new Vuetify();
     router = new VueRouter();
     mockUpdateUser = jest.fn();
     mockDeleteUser = jest.fn();
+    mockListPasskeys = jest.fn();
     getters = {
       currentUser: () => testUserObj,
     };
@@ -43,6 +45,7 @@ describe('Account.vue', () => {
     actions = {
       'users/update': mockUpdateUser,
       'users/delete': mockDeleteUser,
+      'passkeys/list': mockListPasskeys,
     };
     store = new Vuex.Store({ getters, actions, mutations });
   });

@@ -19,6 +19,7 @@ import usersModule, { State as UsersState } from './modules/users';
 import searchModule, { State as SearchState } from './modules/search';
 import admModule, { State as AdmState } from './modules/adm';
 import manifestsModule, { State as ManifestsState } from './modules/manifests';
+import passkeysModule, { State as PasskeysState } from './modules/passkeys';
 
 interface State {
   backend: AxiosInstance;
@@ -38,6 +39,7 @@ interface State {
   search?: SearchState;
   adm?: AdmState;
   manifests?: ManifestsState;
+  passkeys?: PasskeysState;
 }
 
 const token = localStorage.getItem('token') || '';
@@ -184,5 +186,6 @@ export default new Vuex.Store({
     search: searchModule,
     adm: admModule,
     manifests: manifestsModule,
+    passkeys: passkeysModule,
   }
 });

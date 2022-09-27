@@ -76,6 +76,8 @@ services:
       - '.:/srv/hinkskalle/src'
     command: '../script/start-dev-frontend.sh'
     working_dir: '/srv/hinkskalle/src/frontend'
+    env_file:
+      - "conf/hinkskalle.env"
     depends_on: 
       - api
   hockeypuck:

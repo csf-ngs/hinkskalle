@@ -3,7 +3,7 @@ from ..route_base import RouteBase
 from .._util import _create_user, _create_container
 
 from Hinkskalle.models.Entity import Entity
-from Hinkskalle.models.User import User
+from Hinkskalle.models.User import PassKey, User
 from Hinkskalle import db
 
 from unittest import mock
@@ -671,15 +671,42 @@ class TestUsers(RouteBase):
       ret = self.client.delete(f"/v1/users/{self.other_username}")
     self.assertEqual(ret.status_code, 403)
 
-
-
-
-
-
-    
-
-
-
-
-
+class TestPassKeys(RouteBase):
+  def test_list_noauth(self):
+    ret = self.client.get('/v1/users/test.hase/passkeys')
+    self.assertEqual(ret.status_code, 401)
   
+  def test_list_admin(self):
+    with self.fake_admin_auth():
+      ret = self.client.get(f'/v1/users/{self.username}/passkeys')
+    self.assertEqual(ret.status_code, 200)
+    self.assertListEqual(ret.get_json().get('data'), []) # type: ignore
+  
+  def test_list_not_found(self):
+    with self.fake_admin_auth():
+      ret = self.client.get('/v1/users/zwackelmann/passkeys')
+    self.assertEqual(ret.status_code, 404)
+  
+  def test_list_self(self):
+    with self.fake_auth():
+      ret = self.client.get(f'/v1/users/{self.username}/passkeys')
+    self.assertEqual(ret.status_code, 200)
+  
+  def test_list_other(self):
+    other_user = _create_user('zwackel.mann')
+    with self.fake_auth():
+      ret = self.client.get(f'/v1/users/{other_user.username}/passkeys')
+    self.assertEqual(ret.status_code, 403)
+  
+  def test_list_results(self):
+    pk1 = PassKey(id=b'1234', name='ans', user=self.user)
+    pk2 = PassKey(id=b'2234', name='zwa', user=self.user)
+    db.session.add(pk1)
+    db.session.add(pk2)
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.get(f'/v1/users/{self.username}/passkeys')
+    self.assertEqual(ret.status_code, 200)
+    data: list[dict] = ret.get_json().get('data') # type: ignore
+    self.assertCountEqual([ d['name'] for d in data ], [pk1.name, pk2.name])

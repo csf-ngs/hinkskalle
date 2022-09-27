@@ -1,3 +1,4 @@
+from ast import Pass
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 
@@ -7,7 +8,7 @@ from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from sqlalchemy.exc import IntegrityError
 from flask import current_app, g
 
-from Hinkskalle.models import UserSchema, User, ContainerSchema, Container, Entity
+from Hinkskalle.models import UserSchema, User, ContainerSchema, Container, Entity, PassKey, PassKeySchema
 
 import datetime
 
@@ -35,6 +36,9 @@ class UserStarsResponseSchema(ResponseSchema):
 
 class UserSearchQuerySchema(RequestSchema):
   username = fields.String(required=False)
+
+class PassKeyListResponseSchema(ResponseSchema):
+  data = fields.Nested(PassKeySchema, many=True)
 
 # taken from https://flask-rebar.readthedocs.io/en/latest/recipes.html#marshmallow-partial-schemas
 # to allow partial updates
@@ -244,7 +248,7 @@ def update_user(username):
   if new_password:
     user.set_password(new_password)
   
-  with db.session.no_autoflush:
+  with db.session.no_autoflush: # type: ignore
     if username != user.username:
       try:
         entity = Entity.query.filter(Entity.name==username).one()
@@ -279,3 +283,22 @@ def delete_user(username):
   db.session.commit()
 
   return { 'status': 'ok' }
+
+@registry.handles(
+  rule='/v1/users/<string:username>/passkeys',
+  method='GET',
+  response_body_schema=PassKeyListResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
+)
+def list_passkeys(username):
+  try:
+    user = User.query.filter(User.username == username).one()
+  except NoResultFound:
+    raise errors.NotFound(f"user {username} does not exist...")
+  
+  # reuse token access rules here
+  if not user.check_token_access(g.authenticated_user):
+    raise errors.Forbidden("Access denied to tokens.")
+
+  return { 'data': user.passkeys }

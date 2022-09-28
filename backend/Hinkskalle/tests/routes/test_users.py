@@ -1,3 +1,4 @@
+import base64
 from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from ..route_base import RouteBase
 from .._util import _create_user, _create_container
@@ -755,3 +756,43 @@ class TestPassKeys(RouteBase):
     self.assertEqual(ret.status_code, 200)
     data: list[dict] = ret.get_json().get('data') # type: ignore
     self.assertCountEqual([ d['name'] for d in data ], [pk1.name, pk2.name])
+
+  def test_delete_noauth(self):
+    ret = self.client.delete('/v1/users/test.hase/passkeys/something')
+    self.assertEqual(ret.status_code, 401)
+  
+  def test_delete_admin(self):
+    pk1 = PassKey(id=b'1234', name='ans', user=self.user)
+    db.session.add(pk1)
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f'/v1/users/{self.username}/passkeys/{pk1.encoded_id}')
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.get_json().get('status'), 'ok') # type: ignore
+  
+  def test_delete_not_found(self):
+    with self.fake_admin_auth():
+      ret = self.client.delete(f'/v1/users/{self.username}/passkeys/AA==')
+    self.assertEqual(ret.status_code, 404)
+  
+  def test_delete_self(self):
+    pk1 = PassKey(id=b'1234', name='ans', user=self.user)
+    db.session.add(pk1)
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.delete(f'/v1/users/{self.username}/passkeys/{pk1.encoded_id}')
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.get_json().get('status'), 'ok') # type: ignore
+  
+  def test_delete_other(self):
+    other_user = _create_user('zwackel.mann')
+    pk1 = PassKey(id=b'1234', name='ans', user=other_user)
+    db.session.add(pk1)
+    db.session.commit()
+
+    with self.fake_auth():
+      ret = self.client.delete(f'/v1/users/{other_user.username}/passkeys/{pk1.encoded_id}')
+    self.assertEqual(ret.status_code, 403)
+  

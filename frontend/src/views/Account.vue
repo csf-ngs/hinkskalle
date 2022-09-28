@@ -123,35 +123,42 @@
               <v-list-item two-line>
                 <v-list-item-content>
                   <v-list-item-title class="d-flex justify-space-between">
-                    <div>
+                    <div style="width:33%">
                       {{passkey.createdAt | prettyDateTime}}
                     </div>
-                    <div class="flex-grow-1 text-center">
+                    <div style="width:33%" class="text-center">
                       {{passkeys.last_used ? (passkey.last_used | prettyDateTime) : '-'}}
                     </div>
-                    <div>
+                    <div style="width:33%" class="text-right">
                       {{passkey.login_count}}
                     </div>
                   </v-list-item-title>
                   <v-list-item-subtitle class="d-flex justify-space-between">
-                    <div>Created</div>
-                    <div class="flex-grow-1 text-center">Last Used</div>
-                    <div># Used</div>
+                    <div style="width:33%">Created</div>
+                    <div style="width:33%" class="text-center">Last Used</div>
+                    <div style="width:33%" class="text-right"># Used</div>
                   </v-list-item-subtitle>
                 </v-list-item-content>
+                <v-list-item-action>
+                  <v-btn icon @click="deletePasskey(passkey)">
+                    <v-icon small color="red lighten-1">mdi-delete</v-icon>
+                  </v-btn>
+                </v-list-item-action>
               </v-list-item>
             </v-list>
           </v-card>
         </v-col>
       </v-row>
       <v-row>
-        <v-col cols="12" md="8" offset-md="2">
+        <v-col cols="8" md="5" offset-md="3">
           <v-text-field
             type="text"
             outlined
             v-model="localState.newCredentialName"
             label="Name your Key"
             ></v-text-field>
+        </v-col>
+        <v-col cols="4" md="1">
           <v-btn @click="createKey()" :disabled="!newCredentialValid">Test Credential!</v-btn>
         </v-col>
       </v-row>
@@ -250,6 +257,11 @@ export default Vue.extend({
     loadPasskeys(): Promise<PassKey[]> {
       return this.$store.dispatch('passkeys/list')
         .catch(err => this.$store.commit('snackbar/showError', err));
+    },
+    deletePasskey(key: PassKey): Promise<void> {
+      return this.$store.dispatch('passkeys/delete', key)
+        .then(() => this.$store.commit('snackbar/showSuccess', 'Is gone.') )
+        .catch(err => this.$store.commit('snackbar/showError', err))
     },
     createKey() {
       this.$store.dispatch('getAuthnCreateOptions')

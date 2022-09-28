@@ -1,4 +1,5 @@
 from ast import Pass
+import base64
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 
@@ -37,9 +38,6 @@ class UserStarsResponseSchema(ResponseSchema):
 class UserSearchQuerySchema(RequestSchema):
   username = fields.String(required=False)
 
-class PassKeyListResponseSchema(ResponseSchema):
-  data = fields.Nested(PassKeySchema, many=True)
-
 # taken from https://flask-rebar.readthedocs.io/en/latest/recipes.html#marshmallow-partial-schemas
 # to allow partial updates
 class UserUpdateSchema(UserSchema, RequestSchema):
@@ -51,6 +49,12 @@ class UserUpdateSchema(UserSchema, RequestSchema):
     super(UserUpdateSchema, self).__init__(partial=partial_arg, **super_kwargs)
 
 class UserDeleteResponseSchema(ResponseSchema):
+  status = fields.String()
+
+class PassKeyListResponseSchema(ResponseSchema):
+  data = fields.Nested(PassKeySchema, many=True)
+
+class PassKeyDeleteResponseSchema(ResponseSchema):
   status = fields.String()
 
 @registry.handles(
@@ -303,3 +307,28 @@ def list_passkeys(username):
     raise errors.Forbidden("Access denied to tokens.")
 
   return { 'data': user.passkeys }
+
+@registry.handles(
+  rule='/v1/users/<string:username>/passkeys/<path:passkey_id>',
+  method='DELETE',
+  response_body_schema=PassKeyDeleteResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext'],
+)
+def delete_passkey(username, passkey_id):
+  try:
+    user = User.query.filter(User.username == username).one()
+  except NoResultFound:
+    raise errors.NotFound(f"user {username} does not exist...")
+  
+  # reuse token access rules here
+  if not user.check_token_access(g.authenticated_user):
+    raise errors.Forbidden("Access denied to tokens.")
+  
+  passkey = PassKey.query.filter(PassKey.id==base64.b64decode(passkey_id), PassKey.user==user).first()
+  if not passkey:
+    raise errors.NotFound(f'Passkey with id {passkey_id} not found')
+  db.session.delete(passkey)
+  db.session.commit()
+  return { 'status': 'ok' }
+

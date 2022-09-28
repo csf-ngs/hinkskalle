@@ -4,9 +4,11 @@ import { map as _map } from 'lodash';
 
 import { PassKey, plainToPassKey, serializePassKey, User } from '../models';
 
+import { concat as _concat, filter as _filter } from 'lodash';
+
 export interface State {
   status: '' | 'loading' | 'failed' | 'success';
-  passkeys: PassKey[];
+  list: PassKey[];
   user: User | null;
 }
 
@@ -14,26 +16,32 @@ const passkeyModule: Module<State, any> = {
     namespaced: true,
     state: {
         status: '',
-        passkeys: [],
+        list: [],
         user: null,
     },
     getters: {
         status: (state): string => state.status,
-        list: (state): PassKey[] => state.passkeys,
+        list: (state): PassKey[] => state.list,
         user: (state, getters, rootState): User => state.user || rootState.currentUser,
     },
     mutations: {
-        passkeysLoading(state: State) {
-        state.status = 'loading';
+        loading(state: State) {
+            state.status = 'loading';
         },
-        passkeysLoadingFailed(state: State) {
-        state.status = 'failed';
+        loadingFailed(state: State) {
+            state.status = 'failed';
         },
-        passkeysLoadingSucceeded(state: State) {
-        state.status = 'success';
+        loadingSucceeded(state: State) {
+            state.status = 'success';
         },
         setList(state: State, passkeys: PassKey[]) {
-        state.passkeys = passkeys;
+            state.list = passkeys;
+        },
+        update(state: State, pk: PassKey) {
+            state.list = _concat(_filter(state.list, p => p.id !== pk.id), pk);
+        },
+        remove(state: State, id: string) {
+            state.list = _filter(state.list, p => p.id !== id);
         },
         setActiveUser(state: State, user: User | null) {
             state.user = user;
@@ -42,16 +50,31 @@ const passkeyModule: Module<State, any> = {
     actions: {
         list: ({ commit, rootState, getters }): Promise<PassKey[]> => {
             return new Promise((resolve, reject) => {
-                commit('passkeysLoading');
+                commit('loading');
                 rootState.backend.get(`/v1/users/${getters.user.username}/passkeys`)
                     .then((response: AxiosResponse) => {
                         const list = _map(response.data.data, plainToPassKey)
-                        commit('passkeysLoadingSucceeded');
+                        commit('loadingSucceeded');
                         commit('setList', list);
                         resolve(list);
                     })
                     .catch((err: AxiosError) => {
-                        commit('passkeysLoadingFailed');
+                        commit('loadingFailed');
+                        reject(err);
+                    });
+            });
+        },
+        delete: ({ commit, rootState, getters }, toDelete: PassKey): Promise<void> => {
+            return new Promise((resolve, reject) => {
+                commit('loading');
+                rootState.backend.delete(`/v1/users/${getters.user.username}/passkeys/${toDelete.id}`)
+                    .then((response: AxiosResponse) => {
+                        commit('remove', toDelete.id);
+                        commit('loadingSucceeded');
+                        resolve();
+                    })
+                    .catch((err: AxiosError) => {
+                        commit('loadingFailed');
                         reject(err);
                     });
             });

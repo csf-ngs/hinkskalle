@@ -98,6 +98,27 @@ class TestContainer(ModelBase):
 
     self.assertIsNone(container.get_tag('oink'))
 
+  def test_get_tag_default_arch(self):
+    container = _create_container()[0]
+    image1 = Image(hash='eins', description='test-image-1', container_ref=container)
+    tag1 = Tag(image_ref=image1, name='v1')
+    db.session.add(image1)
+    db.session.add(tag1)
+
+    self.assertEqual(container.get_tag('v1'), tag1)
+    self.assertEqual(container.get_tag('v1', self.app.config['DEFAULT_ARCH']), tag1)
+
+    tag1.arch=self.app.config['DEFAULT_ARCH']
+    db.session.commit()
+    self.assertEqual(container.get_tag('v1'), tag1)
+    self.assertEqual(container.get_tag('v1', self.app.config['DEFAULT_ARCH']), tag1)
+
+    tag1.arch='c64'
+    db.session.commit()
+    self.assertIsNone(container.get_tag('v1'))
+    self.assertIsNone(container.get_tag('v1', self.app.config['DEFAULT_ARCH']))
+
+
   
   def test_get_tag_duplicate(self):
     container = _create_container()[0]
@@ -147,6 +168,8 @@ class TestContainer(ModelBase):
     self.assertEqual(new_tag.image_ref.id, image1.id)
     self.assertTrue(abs(new_tag.createdAt - datetime.now()) < timedelta(seconds=2))
     self.assertIsNone(new_tag.updatedAt)
+    self.assertEqual(new_tag.arch, self.app.config['DEFAULT_ARCH'])
+
     tags = Tag.query.filter(Tag.image_id.in_([ c.id for c in container.images_ref ])).all()
     self.assertListEqual(
       [f"{tag.name}:{tag.image_ref.id}" for tag in tags ],
@@ -194,6 +217,56 @@ class TestContainer(ModelBase):
       [f"{tag.name}:{tag.image_ref.id}" for tag in tags ],
       [f"v1:{image1.id}", f"v1.1:{image2.id}", f"v2:{image2.id}"]
     )
+  
+  def test_tag_image_replace_no_arch(self):
+    container = _create_container()[0]
+    image = Image(hash='eins', description='test-image-1', container_id=container.id)
+    db.session.add(image)
+    db.session.commit()
+    latest_tag = Tag(name='oink', image_ref=image)
+    db.session.add(latest_tag)
+    db.session.commit()
+
+    new_tag = container.tag_image('oink', image.id)
+    self.assertEqual(new_tag.id, latest_tag.id)
+
+
+
+
+  def test_tag_image_default_arch(self):
+    container = _create_container()[0]
+    image1 = Image(hash='eins', description='test-image-1', container_id=container.id)
+    image1.arch = 'c64'
+    db.session.add(image1)
+    db.session.commit()
+
+    new_tag = container.tag_image('v1', image1.id)
+    self.assertEqual(new_tag.arch, image1.arch)
+
+    # image with no arch set also gets default arch
+    image2 = Image(hash='zwei', description='test-image-2', container_id=container.id)
+    image2.arch = None
+    db.session.add(image2)
+    db.session.commit()
+
+    new_tag = container.tag_image('v-default', image2.id)
+    self.assertEqual(new_tag.arch, self.app.config['DEFAULT_ARCH'])
+    self.assertEqual(image2.arch, self.app.config['DEFAULT_ARCH'])
+
+    # move tag for default arch
+    image3 = Image(hash='drei', description='test-image-3', container_id=container.id)
+    image3.arch = None
+    db.session.add(image3)
+    db.session.commit()
+
+    moved_tag = container.tag_image('v-default', image3.id)
+    self.assertEqual(moved_tag.arch, image3.arch)
+    self.assertEqual(new_tag.image_id, image3.id)
+
+
+
+
+
 
   def test_tag_image_case(self):
     container = _create_container()[0]
@@ -248,9 +321,6 @@ class TestContainer(ModelBase):
       'c64': { 'yesarch': str(image1.id) },
       self.app.config['DEFAULT_ARCH']: { 'noarch': str(image1.id) },
     })
-    print(container.archImageTags)
-
-    
 
 
 
@@ -272,25 +342,22 @@ class TestContainer(ModelBase):
     db.session.add(image2tag1)
     db.session.commit()
     self.assertDictEqual(container.imageTags, { 'v1': str(image1.id), 'v2': str(image2.id) })
-
-    #invalidTag = Tag(name='v2', image_id=image1.id)
-    #db.session.add(invalidTag)
-    #db.session.commit()
-    #with self.assertRaisesRegex(Exception, 'Tag v2.*already set'):
-    #  container.imageTags()
     
-  def test_get_tags_arch_required(self):
+  def test_get_tags_arch_only_default(self):
     container = _create_container()[0]
     image1 = Image(hash='test-image-1', container_ref=container)
     image2 = Image(hash='test-image-2', container_ref=container)
     db.session.add(image1)
     db.session.add(image2)
     db.session.commit()
-    container.tag_image('v1', image1.id, arch='c64')
-    container.tag_image('v1', image2.id, arch='apple')
+    t1 = container.tag_image('v1', image1.id, arch='c64')
+    t2 = container.tag_image('v1', image2.id, arch='apple')
 
-    with self.assertRaisesRegex(Exception, 'Tag v1 has multiple architectures'):
-      container.imageTags
+    self.assertDictEqual(container.imageTags, {})
+
+    t1.arch=self.app.config['DEFAULT_ARCH']
+    db.session.commit()
+    self.assertDictEqual(container.imageTags, { 'v1': str(image1.id) })
 
   def test_get_arch_tags(self):
     container = _create_container()[0]
@@ -445,6 +512,26 @@ class TestContainer(ModelBase):
     schema = ContainerSchema()
     serialized = typing.cast(dict, schema.dump(container))
     self.assertDictEqual(serialized['imageTags'], { 'v1': str(image1.id), 'v2': str(image2.id) })
+  
+  def test_schema_tags_multiple_arch(self):
+    container = _create_container()[0]
+
+    image1 = Image(hash='eins', description='test-image-1', container_id=container.id)
+    db.session.add(image1)
+    image2 = Image(hash='zwei', description='test-image-2', container_id=container.id)
+    db.session.add(image2)
+    db.session.commit()
+    tag2 = container.tag_image('v1', image2.id, arch=self.app.config['DEFAULT_ARCH'])
+    tag1 = container.tag_image('v1', image1.id, arch='c64')
+
+    schema = ContainerSchema()
+    serialized = typing.cast(dict, schema.dump(container))
+    self.assertDictEqual(serialized['archTags'], {
+      self.app.config['DEFAULT_ARCH']: { 'v1': str(image2.id) },
+      'c64': { 'v1': str(image1.id) },
+    })
+    self.assertDictEqual(serialized['imageTags'], {'v1': str(image2.id)})
+  
   
   def test_type(self):
     image = _create_image()[0]

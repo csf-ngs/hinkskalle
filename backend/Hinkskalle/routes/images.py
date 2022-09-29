@@ -96,14 +96,7 @@ def _get_image(entity_id: str, collection_id: str, tagged_container_id: str, arc
       raise errors.NotFound(f"Tag {tag} for architecture {arch} on container {container.entityName}/{container.collectionName}/{container.name} not found")
     image = Image.query.get(arch_tags[arch][tag])
   else:
-    try:
-      image_tags = container.imageTags
-    except Exception as err:
-      if str(err).find('multiple architectures') != -1:
-        current_app.logger.debug(f"container {container.id} tag {tagged_container_id} has multiple architectures with same tag")
-        raise errors.NotAcceptable(str(err))
-      else:
-        raise err
+    image_tags = container.imageTags
       
     if not tag in image_tags:
       current_app.logger.debug(f"tag {tag} on container {container.entityName}/{container.collectionName}/{container.name} not found")

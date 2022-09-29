@@ -3,7 +3,7 @@ from flask import current_app, g
 from Hinkskalle import db
 from datetime import datetime
 from sqlalchemy.orm import validates
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound # type: ignore
 import enum
 
@@ -50,7 +50,7 @@ class ContainerSchema(BaseSchema):
   entity = fields.String(dump_only=True)
   entityName = fields.String(dump_only=True)
   imageTags = fields.Dict(dump_only=True, allow_none=True)
-  archTags = fields.Dict(dump_only=True, allow_none=True)
+  archTags = fields.Dict(dump_only=True, allow_none=True, attribute='archImageTags')
 
   canEdit = fields.Boolean(dump_only=True, default=False)
 
@@ -132,9 +132,11 @@ class Container(db.Model): # type: ignore
   def entityName(self) -> str:
     return self.collection_ref.entity_ref.name
 
-  def get_tag(self, tag: str, arch=None) -> Tag:
+  def get_tag(self, tag: str, arch: typing.Optional[str]=None) -> Tag:
     cur_tags = Tag.query.filter(Tag.name == tag, Tag.container_id == self.id)
-    if arch:
+    if not arch or arch == current_app.config['DEFAULT_ARCH']:
+      cur_tags = cur_tags.filter(or_(Tag.arch == current_app.config['DEFAULT_ARCH'], Tag.arch == None))
+    else:
       cur_tags = cur_tags.filter(Tag.arch == arch)
 
     if cur_tags.count() > 1:
@@ -151,10 +153,12 @@ class Container(db.Model): # type: ignore
     image = Image.query.get(image_id)
     if not image:
       raise NoResultFound()
-    if arch:
-      image.arch=arch
+
+    if not arch:
+      arch = image.arch or current_app.config.get('DEFAULT_ARCH')
+    image.arch=arch
     
-    cur_tag = self.get_tag(tag, arch)
+    cur_tag = self.get_tag(tag, arch) 
 
     if cur_tag:
       cur_tag.image_ref=image
@@ -169,11 +173,9 @@ class Container(db.Model): # type: ignore
   @property
   def imageTags(self) -> dict:
     tags = {}
-    for tag in self.tags_ref:
-      if tag.name in tags and tag.arch != tags[tag.name].arch:
-        raise Exception(f"Tag {tag.name} has multiple architectures")
-      tags[tag.name] = tag
-    return { n: str(t.image_id) for n, t in tags.items() }
+    for tag in Tag.query.filter(Tag.container_ref==self, or_(Tag.arch==None, Tag.arch==current_app.config['DEFAULT_ARCH'])).all():
+      tags[tag.name] = str(tag.image_id)
+    return tags
 
   @property
   def archImageTags(self) -> dict:

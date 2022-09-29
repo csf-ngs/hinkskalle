@@ -1,3 +1,9 @@
+# v4.4.1 (2022-09-30)
+
+- fix multiple/arch-specific tag handling:
+- old (non-arch-specific) tags treated like `DEFAULT_ARCH`
+- `imageTags` of container only returns tags from `DEFAULT_ARCH`
+
 # v4.4.0 (2022-06-24)
 
 **NOTE** if you're using ldap, you now have to either:

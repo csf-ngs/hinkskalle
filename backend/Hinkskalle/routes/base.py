@@ -21,7 +21,7 @@ def frontend(path):
   if path=="" or not os.path.exists(safe_join(current_app.config.get('FRONTEND_PATH'), path)):  # type: ignore
     path="index.html"
   current_app.logger.debug(f"frontend route to {path} from {orig_path}")
-  return send_from_directory(current_app.config.get('FRONTEND_PATH'), path)
+  return send_from_directory(current_app.config.get('FRONTEND_PATH'), path) # type: ignore
 
 
 class VersionSchema(Schema):

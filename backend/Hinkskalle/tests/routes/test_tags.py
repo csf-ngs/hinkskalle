@@ -194,7 +194,7 @@ class TestTags(RouteBase):
     self.assertEqual(ret.status_code, 200)
     
     db_image = Image.query.get(image_id)
-    link_location = os.path.join(self.app.config['IMAGE_PATH'], db_image.entityName, db_image.collectionName, f"{db_image.containerName}_v1.0.sif")
+    link_location = os.path.join(self.app.config['IMAGE_PATH'], self.app.config['DEFAULT_ARCH'], db_image.entityName, db_image.collectionName, f"{db_image.containerName}_v1.0.sif")
     self.assertTrue(os.path.exists(link_location))
     self.assertTrue(os.path.samefile(link_location, db_image.location))
   
@@ -204,7 +204,7 @@ class TestTags(RouteBase):
     container_id = container.id
     self._fake_uploaded_image(image)
 
-    link_location = os.path.join(self.app.config['IMAGE_PATH'], image.entityName, image.collectionName, f"{image.containerName}_v1.0.sif")
+    link_location = os.path.join(self.app.config['IMAGE_PATH'], self.app.config['DEFAULT_ARCH'], image.entityName, image.collectionName, f"{image.containerName}_v1.0.sif")
     os.makedirs(os.path.dirname(link_location), exist_ok=True)
     with open(link_location, 'w') as outfh:
       outfh.write('muh')
@@ -230,7 +230,7 @@ class TestTags(RouteBase):
     entity.name='default'
     db.session.commit()
 
-    link_location = os.path.join(self.app.config['IMAGE_PATH'], image.collectionName, f"{image.containerName}_v1.0.sif")
+    link_location = os.path.join(self.app.config['IMAGE_PATH'], self.app.config['DEFAULT_ARCH'], image.collectionName, f"{image.containerName}_v1.0.sif")
     
     with self.fake_admin_auth():
       ret = self.client.post(f"/v1/tags/{container.id}", json={'v1.0': str(image.id)})

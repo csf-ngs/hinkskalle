@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy.orm import validates
 from Hinkskalle.models.Manifest import Manifest
 
-class Tag(db.Model):
+class Tag(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String(), nullable=False)
   arch = db.Column(db.String())

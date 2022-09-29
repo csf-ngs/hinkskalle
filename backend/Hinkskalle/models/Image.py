@@ -181,7 +181,7 @@ class Image(db.Model): # type: ignore
         }
       }]
     }
-    with db.session.no_autoflush:
+    with db.session.no_autoflush: # type: ignore
       manifest = Manifest(content=data)
       existing = Manifest.query.filter(Manifest.hash == manifest.hash).first()
       if existing:

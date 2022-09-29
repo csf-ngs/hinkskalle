@@ -304,9 +304,27 @@ class TestImages(RouteBase):
     db.session.commit()
 
     ret = self.client.get(f"/v1/images/{image1.entityName}/{image1.collectionName}/{image1.containerName}:{image1_tag.name}")
-    self.assertEqual(ret.status_code, 406)
+    self.assertEqual(ret.status_code, 404)
 
     ret = self.client.get(f"/v1/images/{image1.entityName}/{image1.collectionName}/{image1.containerName}:{image1_tag.name}?arch=c64")
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data') # type: ignore
+    self.assertEqual(data['id'], str(image1.id))
+    self.assertListEqual(data['tags'], ['v1'])
+
+  def test_get_default_arch(self):
+    image1 = _create_image()[0]
+    image1.arch = self.app.config['DEFAULT_ARCH']
+    image1_tag = Tag(name='v1', image_ref=image1)
+    db.session.add(image1_tag)
+
+    image2 = Image(arch='amige', hash='sha256.moo', container_ref=image1.container_ref)
+    image2_tag = Tag(name='v1', image_ref=image2)
+    db.session.add(image2_tag)
+    db.session.commit()
+
+    ret = self.client.get(f"/v1/images/{image1.entityName}/{image1.collectionName}/{image1.containerName}:{image1_tag.name}")
+
     self.assertEqual(ret.status_code, 200)
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['id'], str(image1.id))
@@ -759,10 +777,27 @@ class TestImages(RouteBase):
 
     with self.fake_admin_auth():
       ret = self.client.delete(f"/v1/images/{image1.entityName}/{image1.collectionName}/{image1.containerName}:v1")
-    self.assertEqual(ret.status_code, 406)
+    self.assertEqual(ret.status_code, 404)
 
     with self.fake_admin_auth():
       ret = self.client.delete(f"/v1/images/{image1.entityName}/{image1.collectionName}/{image1.containerName}:v1?arch=c64")
+
+    self.assertEqual(ret.status_code, 200)
+    self.assertIsNone(Image.query.get(image1_id))
+    self.assertIsNotNone(Image.query.get(image2_id))
+
+  def test_delete_default_arch(self):
+    image1, container, _, _ = _create_image()
+    container.tag_image('v1', image1.id, arch=self.app.config['DEFAULT_ARCH'])
+    image2 = Image(hash='other-image-2', container_ref=container)
+    db.session.add(image2)
+    db.session.commit()
+    image2_id=image2.id
+    image1_id=image1.id
+    container.tag_image('v1', image2.id, arch='amiga')
+
+    with self.fake_admin_auth():
+      ret = self.client.delete(f"/v1/images/{image1.entityName}/{image1.collectionName}/{image1.containerName}:v1")
 
     self.assertEqual(ret.status_code, 200)
     self.assertIsNone(Image.query.get(image1_id))

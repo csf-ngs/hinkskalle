@@ -91,8 +91,7 @@ class TestImagefiles(RouteBase):
   
   def test_pull_no_sif(self):
     image = _create_image(media_type='something')[0]
-    image_tag = Tag(name='v1', image_ref=image, arch='c64')
-    image.arch='c64'
+    image_tag = Tag(name='v1', image_ref=image)
     db.session.add(image_tag)
     tmpf1 = _fake_img_file(image, data=b"oink c64/v1")
 

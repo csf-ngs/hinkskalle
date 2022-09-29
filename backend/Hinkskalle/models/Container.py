@@ -3,7 +3,7 @@ from flask import current_app, g
 from Hinkskalle import db
 from datetime import datetime
 from sqlalchemy.orm import validates
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound # type: ignore
 import enum
 
@@ -169,11 +169,9 @@ class Container(db.Model): # type: ignore
   @property
   def imageTags(self) -> dict:
     tags = {}
-    for tag in self.tags_ref:
-      if tag.name in tags and tag.arch != tags[tag.name].arch:
-        raise Exception(f"Tag {tag.name} has multiple architectures")
-      tags[tag.name] = tag
-    return { n: str(t.image_id) for n, t in tags.items() }
+    for tag in Tag.query.filter(Tag.container_ref==self, or_(Tag.arch==None, Tag.arch==current_app.config['DEFAULT_ARCH'])).all():
+      tags[tag.name] = str(tag.image_id)
+    return tags
 
   @property
   def archImageTags(self) -> dict:

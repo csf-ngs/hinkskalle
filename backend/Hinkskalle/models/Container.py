@@ -50,7 +50,7 @@ class ContainerSchema(BaseSchema):
   entity = fields.String(dump_only=True)
   entityName = fields.String(dump_only=True)
   imageTags = fields.Dict(dump_only=True, allow_none=True)
-  archTags = fields.Dict(dump_only=True, allow_none=True)
+  archTags = fields.Dict(dump_only=True, allow_none=True, attribute='archImageTags')
 
   canEdit = fields.Boolean(dump_only=True, default=False)
 

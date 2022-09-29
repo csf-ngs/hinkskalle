@@ -455,7 +455,7 @@ def _make_filename(image: Image) -> str:
   imghash = image.hash.replace('sha256.', '').replace('md5.', '')
   for i in range(0, min(len(imghash), current_app.config.get('IMAGE_PATH_HASH_LEVEL',0))):
     hash_subs = os.path.join(hash_subs, imghash[i])
-  outfn = safe_join(os.path.abspath(current_app.config.get('IMAGE_PATH')), '_imgs', hash_subs, image.make_filename())
+  outfn = safe_join(os.path.abspath(current_app.config['IMAGE_PATH']), '_imgs', hash_subs, image.make_filename())
   if outfn is None:
     raise Exception(f"could not generate safe path for {image.make_filename()}")
   os.makedirs(os.path.dirname(outfn), exist_ok=True)
@@ -529,7 +529,7 @@ def _rebuild_chunks(upload: ImageUploadUrl):
     raise errors.NotAcceptable(f"Received only {len(chunks)}/{upload.totalParts}")
 
   current_app.logger.debug(f"rebuild from {len(chunks)} chunks")
-  upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
+  upload_tmp = os.path.join(current_app.config['IMAGE_PATH'], '_tmp')
   os.makedirs(upload_tmp, exist_ok=True)
 
   m = hashlib.sha256()

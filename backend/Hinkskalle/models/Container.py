@@ -132,9 +132,11 @@ class Container(db.Model): # type: ignore
   def entityName(self) -> str:
     return self.collection_ref.entity_ref.name
 
-  def get_tag(self, tag: str, arch=None) -> Tag:
+  def get_tag(self, tag: str, arch: typing.Optional[str]=None) -> Tag:
     cur_tags = Tag.query.filter(Tag.name == tag, Tag.container_id == self.id)
-    if arch:
+    if not arch or arch == current_app.config['DEFAULT_ARCH']:
+      cur_tags = cur_tags.filter(or_(Tag.arch == current_app.config['DEFAULT_ARCH'], Tag.arch == None))
+    else:
       cur_tags = cur_tags.filter(Tag.arch == arch)
 
     if cur_tags.count() > 1:
@@ -151,10 +153,12 @@ class Container(db.Model): # type: ignore
     image = Image.query.get(image_id)
     if not image:
       raise NoResultFound()
-    if arch:
-      image.arch=arch
+
+    if not arch:
+      arch = image.arch or current_app.config.get('DEFAULT_ARCH')
+    image.arch=arch
     
-    cur_tag = self.get_tag(tag, arch)
+    cur_tag = self.get_tag(tag, arch) 
 
     if cur_tag:
       cur_tag.image_ref=image

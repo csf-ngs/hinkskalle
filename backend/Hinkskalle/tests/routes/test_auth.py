@@ -281,7 +281,7 @@ class TestWebAuthn(RouteBase):
     self.assertEqual(ret.status_code, 200)
     opts = ret.get_json().get('data') # type: ignore
     self.assertEqual(opts['publicKey']['user']['name'], self.username)
-    self.assertEqual(opts['publicKey']['user']['id'], self.user.passkey_id)
+    self.assertEqual(opts['publicKey']['user']['id'], base64.urlsafe_b64encode(self.user.passkey_id.encode('utf-8')).decode('utf-8'))
 
     self.assertEqual(opts['publicKey']['rp']['id'], 'localhost')
   
@@ -330,14 +330,14 @@ class TestWebAuthn(RouteBase):
     opts = ret.get_json().get('data') # type: ignore 
     self.assertListEqual(
       opts['publicKey']['excludeCredentials'], [ 
-        { 'type': 'public-key', 'id': base64.b64encode(passkey_id).decode('utf-8') }
+        { 'type': 'public-key', 'id': base64.urlsafe_b64encode(passkey_id).decode('utf-8').replace('=', '') }
       ])
 
   def test_register_credential(self):
     test_credential = {
       'name': 'testzebra',
-      'authenticator_data': 'SZYN5YgOjGh0NBcPZHZgW4/krrmihjLHmVzzuoMdl2NBAAAAAAAAAAAAAAAAAAAAAAAAAAAAQDMfDzd+EmXcFg7bSf7P+HgFBS6TCTC2P4/87fKYCN77ouV2E0+Lkh6gsMqTU1KJfvFcHPtiLd7Kpy9UAubHiT6lAQIDJiABIVggYNJJnxSByloM5BaVvCVWWX8beHk3OioapnxErpCxwPIiWCAHxTmW9DQXUb3weT+U+g/BbSSbnP64qus3j/XWlFgo+Q==',
-      'public_key': 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEYNJJnxSByloM5BaVvCVWWX8beHk3OioapnxErpCxwPIHxTmW9DQXUb3weT+U+g/BbSSbnP64qus3j/XWlFgo+Q==',
+      'authenticator_data': 'SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NFAAAABC_AV5-BE0fqsRa7Wo25ICoAQBLJPWz9mUDOx8HRcno28xqYqIxIRWzrrrnceDN3obMbP9SiH9LajyyvKgwesITc_bcAoHPpd5EcnJiTUy31edqlAQIDJiABIVggrfN4SLBEzdbpX8j4a-oQL_CGCW7GfRR356Sme3-2eJoiWCCiSZHqc1oP8InsghrzWgKcSlB-74HtmKNm60NFhY3KIg',
+      'public_key': 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErfN4SLBEzdbpX8j4a-oQL_CGCW7GfRR356Sme3-2eJqiSZHqc1oP8InsghrzWgKcSlB-74HtmKNm60NFhY3KIg',
       'cdj': {
         'type': 'webauthn.create',
         'challenge': 'AA',

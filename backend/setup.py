@@ -23,6 +23,7 @@ setup(
         'humanize',
         'python-slugify',
         'cryptography',
+        'webauthn',
     ],
     extras_require={
       'dev': ['nose2','fakeredis','psycopg2', 'nose2-html-report', 'nose2[coverage_plugin]'],

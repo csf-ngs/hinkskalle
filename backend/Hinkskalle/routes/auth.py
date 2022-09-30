@@ -15,8 +15,14 @@ from sqlalchemy.exc import IntegrityError
 import jwt
 from calendar import timegm
 from urllib.parse import urlparse
+import json
 import base64
-import re
+
+from webauthn.registration.generate_registration_options import generate_registration_options
+from webauthn.registration.verify_registration_response import verify_registration_response
+from webauthn.helpers.options_to_json import options_to_json
+from webauthn.helpers.base64url_to_bytes import base64url_to_bytes
+from webauthn.helpers.structs import PublicKeyCredentialDescriptor
 
 from datetime import datetime
 
@@ -128,39 +134,51 @@ def get_authn_create_options():
     rp_id = urlparse(current_app.config['FRONTEND_URL']).hostname
   else:
     rp_id = urlparse(_get_service_url()).hostname
+  
+  opts = generate_registration_options(
+    rp_id=rp_id, # type: ignore
+    rp_name='Hinkskalle',
+    user_id=g.authenticated_user.passkey_id,
+    user_name=g.authenticated_user.username,
+    user_display_name=f"{g.authenticated_user.firstname} {g.authenticated_user.lastname}",
+    exclude_credentials=[
+      PublicKeyCredentialDescriptor(id=key.id) for key in g.authenticated_user.passkeys
+    ],
+    timeout=180000,
+  )
 
-  opts = {
-    'publicKey': {
-      'rp': {
-        'id': rp_id,
-        'name': "Hinkskalle",
-      },
-      'user': {
-        'id': g.authenticated_user.passkey_id, #Uint8Array.from(atob('Vg4vHxiHQnPapKRD4+EIcw=='), c => c.charCodeAt(0)),
-        'name': g.authenticated_user.username,
-        'displayName': f"{g.authenticated_user.firstname} {g.authenticated_user.lastname}",
-      },
-      'excludeCredentials': [
-        { 'type': 'public-key', 'id': base64.b64encode(key.id).decode('utf-8') } for key in g.authenticated_user.passkeys
-      ], # XXX
-      'pubKeyCredParams': [{
-          'type': "public-key",
-          'alg': -7
-        }, {
-          'type': "public-key",
-          'alg': -257
-        }
-      ],
-      'challenge': base64.b64encode(b'\0').decode('utf-8'), #,new Uint8Array([0]),
-      'authenticatorSelection': {
-        'authenticatorAttachment': "cross-platform",
-        'userVerification': "discouraged",
-        'requireResidentKey': False,
-      },
-      'timeout': 180000,
-    }
-  }
-  return { 'data': opts }
+##  opts = {
+##    'publicKey': {
+##      'rp': {
+##        'id': rp_id,
+##        'name': "Hinkskalle",
+##      },
+##      'user': {
+##        'id': g.authenticated_user.passkey_id, #Uint8Array.from(atob('Vg4vHxiHQnPapKRD4+EIcw=='), c => c.charCodeAt(0)),
+##        'name': g.authenticated_user.username,
+##        'displayName': f"{g.authenticated_user.firstname} {g.authenticated_user.lastname}",
+##      },
+##      'excludeCredentials': [
+##        { 'type': 'public-key', 'id': base64.b64encode(key.id).decode('utf-8') } for key in g.authenticated_user.passkeys
+##      ], # XXX
+##      'pubKeyCredParams': [{
+##          'type': "public-key",
+##          'alg': -7
+##        }, {
+##          'type': "public-key",
+##          'alg': -257
+##        }
+##      ],
+##      'challenge': base64.b64encode(b'\0').decode('utf-8'), #,new Uint8Array([0]),
+##      'authenticatorSelection': {
+##        'authenticatorAttachment': "cross-platform",
+##        'userVerification': "discouraged",
+##        'requireResidentKey': False,
+##      },
+##      'timeout': 180000,
+##    }
+##  }
+  return { 'data': { 'publicKey': json.loads(options_to_json(opts)) }}
 
 @registry.handles(
   rule='/v1/webauthn/register',
@@ -174,9 +192,9 @@ def authn_register():
   data = rebar.validated_body
   key = PassKey(user=g.authenticated_user, name=data['name'])
 
-  authData = AuthenticatorData(base64.b64decode(data['authenticator_data']))
+  authData = AuthenticatorData(base64url_to_bytes(data['authenticator_data']))
   key.id = authData.credential_id
-  key.public_key_spi = base64.b64decode(data['public_key'])
+  key.public_key_spi = base64url_to_bytes(data['public_key'])
 
   try:
     db.session.add(key)

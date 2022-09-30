@@ -241,15 +241,6 @@ class PassKey(db.Model): # type: ignore
   def encoded_id(self):
     return base64.b64encode(self.id).decode('utf-8')
 
-class PassKey(db.Model):
-  id = db.Column(db.LargeBinary(16), primary_key=True)
-  user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-  public_key_spi = db.Column(db.LargeBinary)
-  backed_up = db.Column(db.Boolean, default=False)
-
-  user = db.relationship('User', back_populates='passkeys')
->>>>>>> ce19b00 (db passkey table+field)
-
 class Group(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String(), unique=True, nullable=False)

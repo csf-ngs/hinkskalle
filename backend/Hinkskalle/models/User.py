@@ -32,6 +32,9 @@ class GroupSchema(Schema):
   name = fields.String(required=True)
   email = fields.String(required=True)
   description = fields.String(allow_none=True)
+  quota = fields.Integer()
+  used_quota = fields.Integer(dump_only=True)
+  image_count = fields.Integer(dump_only=True)
   entityRef = fields.String(dump_only=True, allow_none=True, attribute='entity_ref')
 
   users = fields.List(fields.Nested('GroupMemberSchema'), dump_only=True)
@@ -54,6 +57,9 @@ class UserSchema(BaseSchema):
   is_admin = fields.Boolean(data_key='isAdmin')
   is_active = fields.Boolean(data_key='isActive')
   source = fields.String()
+  quota = fields.Integer()
+  used_quota = fields.Integer(dump_only=True)
+  image_count = fields.Integer(dump_only=True)
 
   groups = fields.List(fields.Nested('UserMemberSchema', allow_none=True), dump_only=True)
 
@@ -97,6 +103,9 @@ class User(db.Model): # type: ignore
   lastname = db.Column(db.String(), nullable=False)
   is_admin = db.Column(db.Boolean, default=False)
   is_active = db.Column(db.Boolean, default=True)
+  quota = db.Column(db.BigInteger, default=lambda: current_app.config.get('DEFAULT_USER_QUOTA', 0))
+  used_quota = db.Column(db.BigInteger, default=0)
+
   source = db.Column(db.String(), default='local', nullable=False)
 
   groups = db.relationship('UserGroup', back_populates='user', cascade='all, delete-orphan')
@@ -113,6 +122,7 @@ class User(db.Model): # type: ignore
   collections = db.relationship('Collection', back_populates='owner')
   containers = db.relationship('Container', back_populates='owner')
   images = db.relationship('Image', back_populates='owner')
+  images_ref = db.relationship('Image', lazy='dynamic', viewonly=True)
   tags = db.relationship('Tag', back_populates='owner')
   uploads = db.relationship('ImageUploadUrl', back_populates='owner', cascade='all, delete-orphan')
 
@@ -164,6 +174,26 @@ class User(db.Model): # type: ignore
       return True
     else:
       return False
+  
+  @property
+  def image_count(self) -> int:
+    return self._valid_images().count()
+
+  def calculate_used(self) -> int:
+    counted = {}
+    total = 0
+    for img in self._valid_images():
+      if img.size is None:
+        continue
+      if not counted.get(img.location):
+        counted[img.location] = True
+        total += img.size
+    self.used_quota = total
+    return total
+
+  def _valid_images(self):
+    from Hinkskalle.models.Image import UploadStates
+    return self.images_ref.filter_by(uploadState=UploadStates.completed)
 
   @property
   def canEdit(self) -> bool:
@@ -176,13 +206,14 @@ class User(db.Model): # type: ignore
       return True
     else:
       return False
-
+  
 
 class Group(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String(), unique=True, nullable=False)
   email = db.Column(db.String(), nullable=False)
   description = db.Column(db.String())
+  quota = db.Column(db.BigInteger, default=lambda: current_app.config.get('DEFAULT_GROUP_QUOTA', 0))
 
   users = db.relationship('UserGroup', back_populates='group', cascade='all, delete-orphan')
   users_sth = db.relationship('UserGroup', viewonly=True, lazy='dynamic')
@@ -229,6 +260,32 @@ class Group(db.Model): # type: ignore
       return True
     return False
 
+  @property
+  def used_quota(self) -> int:
+    if not self.entity:
+      return 0
+    return self.entity.used_quota
+
+  @property
+  def image_count(self) -> int:
+    if not self.entity:
+      return 0
+    return self._valid_images().count()
+    
+  def calculate_used(self) -> int:
+    if not self.entity:
+      return 0
+    return self.entity.calculate_used()
+  
+  def _valid_images(self):
+    from Hinkskalle.models import Image, UploadStates, Container, Collection, Entity
+    return Image.query.join(Container, Collection, Entity).filter(
+      Entity.group==self,
+      Image.uploadState==UploadStates.completed
+    )
+
+
+  
 
 
 class TokenSchema(BaseSchema):

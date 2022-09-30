@@ -5,9 +5,9 @@ import typing
 from sqlalchemy.exc import IntegrityError
 
 from ..model_base import ModelBase
-from .._util import _create_group, _create_user
+from .._util import _create_group, _create_user, _create_image, default_entity_name
 
-from Hinkskalle.models import Group, GroupSchema, GroupRoles, UserGroup, Entity
+from Hinkskalle.models import Group, GroupSchema, GroupRoles, UserGroup, Entity, UploadStates
 
 from Hinkskalle import db
 
@@ -98,9 +98,13 @@ class TestGroup(ModelBase):
   def test_schema(self):
     schema = GroupSchema()
     group = _create_group()
+    group.quota = 999
 
     serialized = typing.cast(dict, schema.dump(group))
     self.assertEqual(serialized['id'], str(group.id))
+    self.assertEqual(serialized['quota'], group.quota)
+    self.assertEqual(serialized['used_quota'], 0)
+    self.assertEqual(serialized['image_count'], 0)
 
     self.assertIsNone(serialized['entityRef'])
 
@@ -117,8 +121,6 @@ class TestGroup(ModelBase):
     serialized = typing.cast(dict, schema.dump(group))
     self.assertEqual(serialized['entityRef'], entity.name)
 
-
-  
   def test_schema_users(self):
     schema = GroupSchema()
     user = _create_user()
@@ -137,6 +139,112 @@ class TestGroup(ModelBase):
     deserialized = typing.cast(dict, schema.load({
       'name': 'Testhasenstall',
       'email': 'test@ha.se',
+      'quota': 666,
     }))
     self.assertEqual(deserialized['name'], 'Testhasenstall')
+    self.assertEqual(deserialized['quota'], 666)
   
+  def test_default_quota(self):
+    old_default = self.app.config['DEFAULT_GROUP_QUOTA']
+    self.app.config['DEFAULT_GROUP_QUOTA'] = 1234
+    group = _create_group('Testhase2')
+    self.assertEqual(group.quota, self.app.config['DEFAULT_GROUP_QUOTA'])
+    db.session.add(group)
+    db.session.commit()
+
+    read_group = Group.query.filter_by(name='Testhase2').one()
+    self.assertEqual(group.quota, self.app.config['DEFAULT_GROUP_QUOTA'])
+
+    self.app.config['DEFAULT_GROUP_QUOTA'] = old_default
+
+  def test_quota(self):
+    group = _create_group('Testhase2')
+    group.quota = 666
+    db.session.add(group)
+    db.session.commit()
+
+    read_group = Group.query.filter_by(name='Testhase2').one()
+    self.assertEqual(read_group.quota, 666)
+
+
+  def test_image_count(self):
+    group = _create_group()
+    db.session.add(group)
+    db.session.commit()
+
+    # no entity
+    self.assertEqual(group.image_count, 0)
+
+    entity = Entity(name=default_entity_name, group=group)
+    self.assertEqual(group.image_count, 0)
+
+    image1 = _create_image(postfix='1', uploadState=UploadStates.completed)[0]
+    self.assertEqual(group.image_count, 1)
+
+    # only completed counts
+    image2_broken = _create_image(postfix='2_broken', uploadState=UploadStates.broken)[0]
+    self.assertEqual(group.image_count, 1)
+
+    image3 = _create_image(postfix='3', uploadState=UploadStates.completed)
+    self.assertEqual(group.image_count, 2)
+  
+  def test_used_quota_null(self):
+    group = _create_group()
+    self.assertEqual(group.calculate_used(), 0)
+    self.assertEqual(group.used_quota, 0)
+
+    entity = Entity(name=default_entity_name, group=group)
+
+    image1 = _create_image(postfix='1')[0]
+    image1.size = None
+    image1.uploadState = UploadStates.completed
+    self.assertEqual(group.calculate_used(), 0)
+
+  
+  def test_used_quota(self):
+    # quota calc is forwarded to entity, test
+    # here nevertheless
+    group = _create_group()
+    entity = Entity(name=default_entity_name, group=group)
+
+    image1 = _create_image(postfix='1')[0]
+    image1.size = 200
+    image1.location = '/da/ham1'
+    image1.uploadState = UploadStates.completed
+
+    self.assertEqual(group.calculate_used(), 200)
+    self.assertEqual(group.used_quota, 200)
+    self.assertEqual(entity.used_quota, 200)
+
+    # add second image
+    image2 = _create_image(postfix='2')[0]
+    image2.size = 300
+    image2.location = '/da/ham2'
+    image2.uploadState = UploadStates.completed
+
+    self.assertEqual(group.calculate_used(), 500)
+    self.assertEqual(group.used_quota, 500)
+
+    # add reference to existing image
+    # does not count towards quota
+    image2_same = _create_image(postfix='2_same')[0]
+    image2_same.size = 400
+    image2_same.location = '/da/ham2'
+    image2_same.uploadState = UploadStates.completed
+
+    self.assertEqual(group.calculate_used(), 500)
+    self.assertEqual(group.used_quota, 500)
+
+    # invalid upload state
+    # does not count towards quota
+    image3_invalid = _create_image(postfix='3_invalid')[0]
+    image3_invalid.size = 500
+    image3_invalid.location = '/da/ham3'
+    image3_invalid.uploadState = UploadStates.broken
+
+    self.assertEqual(group.calculate_used(), 500)
+    self.assertEqual(group.used_quota, 500)
+
+
+
+    

@@ -1,4 +1,3 @@
-from pprint import pprint
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.models.User import GroupRoles
 from Hinkskalle.routes import auth
@@ -95,6 +94,11 @@ def get_group(name):
 def create_group():
   body = rebar.validated_body
   body.pop('id', None)
+
+  # users cannot set group quotas
+  if not g.authenticated_user.is_admin:
+    body.pop('quota', None)
+
   new_group = Group(**body)
 
   new_group.createdBy=g.authenticated_user.username
@@ -129,6 +133,9 @@ def update_group(name: str):
   
   if not group.check_update_access(g.authenticated_user):
     raise errors.Forbidden(f"no access to group {name}")
+  
+  if not g.authenticated_user.is_admin:
+    body.pop('quota', None)
   
   for key in body:
     setattr(group, key, body[key])

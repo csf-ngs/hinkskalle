@@ -19,7 +19,7 @@ class EntitySchema(BaseSchema):
   deletedAt = LocalDateTime(dump_only=True, default=None)
   deleted = fields.Boolean(dump_only=True, default=False)
   size = fields.Integer(dump_only=True)
-  quota = fields.Integer()
+  quota = fields.Integer(dump_only=True)
   usedQuota = fields.Integer(dump_only=True, attribute='used_quota')
   defaultPrivate = fields.Boolean()
   customData = fields.String(allow_none=True)
@@ -45,7 +45,6 @@ class Entity(db.Model): # type: ignore
   customData = db.Column(db.String())
 
   defaultPrivate = db.Column(db.Boolean, default=False)
-  quota= db.Column(db.BigInteger, default=lambda: current_app.config.get('DEFAULT_USER_QUOTA', 0))
   used_quota= db.Column(db.BigInteger, default=0)
 
   createdAt = db.Column(db.DateTime, default=datetime.now)
@@ -75,6 +74,16 @@ class Entity(db.Model): # type: ignore
   @property
   def group_ref(self) -> typing.Optional[str]:
     return self.group.name if self.group else None
+  
+  @property
+  def quota(self) -> int:
+    if self.group:
+      return self.group.quota
+    elif self.owner:
+      return self.owner.quota
+    else:
+      return 0
+
 
   def calculate_used(self) -> int:
     entity_size = 0

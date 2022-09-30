@@ -1,6 +1,6 @@
 import datetime
 from ..route_base import RouteBase
-from .._util import _create_group, _set_member
+from .._util import _create_group, _set_member, default_entity_name
 
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Collection import Collection
@@ -200,7 +200,7 @@ class TestEntities(RouteBase):
             'name': fail
           })
       self.assertEqual(ret.status_code, 400, f"check {fail}")
-    for good in ['test_hase', 'test.hase', 'test-hase', 'Test-Kuh']:
+    for good in ['test_hase', 'test.hase', default_entity_name, 'Test-Kuh']:
       with self.fake_admin_auth():
         ret = self.client.post('/v1/entities', json={
           'name': good

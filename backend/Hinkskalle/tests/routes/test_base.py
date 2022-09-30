@@ -76,7 +76,7 @@ class TestBase(RouteBase):
   
   def test_config_params(self):
     current_settings = {}
-    for k in ['ENABLE_REGISTER', 'DEFAULT_USER_QUOTA', 'SINGULARITY_FLAVOR']:
+    for k in ['ENABLE_REGISTER', 'DEFAULT_USER_QUOTA', 'DEFAULT_GROUP_QUOTA', 'SINGULARITY_FLAVOR']:
       current_settings[k] = self.app.config[k]
 
     ret = self.app.test_client().get('/assets/config/config.prod.json')
@@ -85,10 +85,12 @@ class TestBase(RouteBase):
     self.assertDictEqual(json['params'], {
       'enable_register': False,
       'default_user_quota': 0,
+      'default_group_quota': 0,
       'singularity_flavor': 'singularity',
     })
 
     self.app.config['DEFAULT_USER_QUOTA'] = 999
+    self.app.config['DEFAULT_GROUP_QUOTA'] = 888
     self.app.config['ENABLE_REGISTER'] = True
     self.app.config['SINGULARITY_FLAVOR'] = 'apptainer'
 
@@ -98,6 +100,7 @@ class TestBase(RouteBase):
     self.assertDictEqual(json['params'], {
       'enable_register': True,
       'default_user_quota': 999,
+      'default_group_quota': 888,
       'singularity_flavor': 'apptainer',
     })
 

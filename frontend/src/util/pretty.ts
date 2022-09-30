@@ -14,7 +14,8 @@ const units = ['b', 'kb', 'Mb', 'Gb', 'Tb', 'Pb', 'Eb', 'Zb', 'Yb'];
 export function prettyBytes(num: number): string {
   // jacked from: https://github.com/sindresorhus/pretty-bytes
   if (typeof num !== 'number' || isNaN(num)) {
-    throw new TypeError('Expected a number');
+    // throw new TypeError('Expected a number');
+    return "0";
   }
 
   const neg = num < 0;
@@ -27,8 +28,8 @@ export function prettyBytes(num: number): string {
     return (neg ? '-' : '') + num + ' b';
   }
 
-  const exponent = Math.min(Math.floor(Math.log(num) / Math.log(1000)), units.length - 1);
-  const outNum = _round(num / Math.pow(1000, exponent), 1);
+  const exponent = Math.min(Math.floor(Math.log(num) / Math.log(1024)), units.length - 1);
+  const outNum = _round(num / Math.pow(1024, exponent), 1);
   const unit = units[exponent];
 
   return `${neg ? '-' : ''}${outNum} ${unit}`;
@@ -49,7 +50,7 @@ export function unPrettyBytes(pretty: string): number {
   if (exp == -1) {
     throw new Error(`Invalid exp ${match[3]}`);
   }
-  return num * Math.pow(1000, exp) * (neg ? -1 : 1);
+  return num * Math.pow(1024, exp) * (neg ? -1 : 1);
 }
 
 export function prettyDateTime(dt: Date | null): string {

@@ -9,7 +9,7 @@ from werkzeug.security import safe_join
 from typing import IO, Tuple
 from .images import _get_image
 from .util import _get_service_url
-from Hinkskalle.models import Image, Container, ImageUploadUrl, UploadStates, UploadTypes
+from Hinkskalle.models import Entity, Image, Container, ImageUploadUrl, UploadStates, UploadTypes
 
 import os
 import os.path
@@ -169,6 +169,9 @@ def push_image_v2_init(image_id):
   """https://singularityhub.github.io/library-api/#/spec/main?id=post-v2imagefile"""
   image = _get_image_id(image_id)
   body = rebar.validated_body
+
+  if not _check_quota(image, add_size=body.get('filesize')):
+    raise errors.RequestEntityTooLarge(f"quota exceeded")
 
   upload_tmp = os.path.join(current_app.config['IMAGE_PATH'], '_tmp')
   os.makedirs(upload_tmp, exist_ok=True)
@@ -353,8 +356,8 @@ def push_image_v2_complete(image_id):
   return {
     'data': {
       'quota': {
-        'quotaTotal': image.container_ref.collection_ref.entity_ref.quota,
-        'quotaUsage': image.container_ref.collection_ref.entity_ref.used_quota,
+        'quotaTotal': image.owner.quota if image.owner else 0,
+        'quotaUsage': image.owner.used_quota if image.owner else 0,
       },
       'containerUrl': f"entities/{image.container_ref.entityName}/collections/{image.container_ref.collectionName}/containers/{image.container_ref.name}"
     }
@@ -394,8 +397,8 @@ def push_image_v2_multi_complete(image_id):
   return {
     'data': {
       'quota': {
-        'quotaTotal': image.container_ref.collection_ref.entity_ref.quota,
-        'quotaUsage': image.container_ref.collection_ref.entity_ref.used_quota,
+        'quotaTotal': image.owner.quota if image.owner else 0,
+        'quotaUsage': image.owner.used_quota if image.owner else 0,
       },
       'containerUrl': f"entities/{image.container_ref.entityName}/collections/{image.container_ref.collectionName}/containers/{image.container_ref.name}"
     }
@@ -465,8 +468,7 @@ def _move_image(tmpf: str, image: Image) -> Image:
   outfn = _make_filename(image)
 
   new_size = os.path.getsize(tmpf)
-  entity = image.container_ref.collection_ref.entity_ref
-  if entity.quota != 0 and entity.used_quota + new_size > entity.quota:
+  if not _check_quota(image, add_size=new_size):
     raise errors.RequestEntityTooLarge(f'quota exceeded')
 
   current_app.logger.debug(f"moving image from {tmpf} to {outfn}")
@@ -474,7 +476,10 @@ def _move_image(tmpf: str, image: Image) -> Image:
   image.location=outfn
   image.size=os.path.getsize(image.location)
   image.uploadState=UploadStates.completed
-  entity.calculate_used()
+
+  image.container_ref.collection_ref.entity_ref.calculate_used()
+  if image.owner:
+    image.owner.calculate_used()
   db.session.commit()
 
   try:
@@ -555,3 +560,17 @@ def _rebuild_chunks(upload: ImageUploadUrl):
   _move_image(tmpf.name, upload.image_ref)
   upload.state = UploadStates.completed
   db.session.commit()
+
+def _check_quota(image: Image, add_size=None) -> bool:
+  entity: Entity = image.container_ref.collection_ref.entity_ref
+  check_size = add_size if add_size is not None else image.size
+  if image.owner and image.owner.quota > 0 and \
+      image.owner.used_quota + check_size >= image.owner.quota:
+    return False
+  elif entity.group and entity.group.quota > 0 and \
+      entity.used_quota + check_size >= entity.group.quota:
+    return False
+  else:
+    return True
+
+

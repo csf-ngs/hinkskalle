@@ -50,7 +50,7 @@
             </v-list-item-content>
           </v-list-item>
           <v-list-item link :to="'/ldap'" id="ldap-admin" v-if="ldapStatus && ldapStatus.status=='configured'">
-            <v-list-item-icon><v-icon>mdi-account-search-outline</v-icon></v-list-item-icon>
+            <v-list-item-icon><v-icon>mdi-contacts</v-icon></v-list-item-icon>
             <v-list-item-content>
               <v-list-item-title>LDAP Administration</v-list-item-title>
             </v-list-item-content>

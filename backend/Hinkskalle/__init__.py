@@ -97,7 +97,7 @@ def create_app():
     if 'HINKSKALLE_LDAP_' + key in os.environ:
       ldap_conf[key]=os.environ.get('HINKSKALLE_LDAP_'+key)
       if key == 'ENABLED':
-        ldap_conf[key]=bool(ldap_conf[key])
+        ldap_conf[key]=ldap_conf[key] != "0" and ldap_conf[key] != ""
   if len(ldap_conf) > 0:
     app.config['AUTH']['LDAP'] = app.config['AUTH'].get('LDAP', {})
     for k, v in ldap_conf.items():
@@ -117,6 +117,7 @@ def create_app():
   app.config['ENABLE_REGISTER'] = os.environ.get('HINKSKALLE_ENABLE_REGISTER', app.config.get('ENABLE_REGISTER', False))
   app.config['SINGULARITY_FLAVOR'] = os.environ.get('HINKSKALLE_SINGULARITY_COMMAND', app.config.get('SINGULARITY_FLAVOR', 'singularity'))
   app.config['DEFAULT_USER_QUOTA'] = os.environ.get('HINKSKALLE_DEFAULT_USER_QUOTA', app.config.get('DEFAULT_USER_QUOTA', 0))
+  app.config['DEFAULT_GROUP_QUOTA'] = os.environ.get('HINKSKALLE_DEFAULT_GROUP_QUOTA', app.config.get('DEFAULT_GROUP_QUOTA', 0))
 
   app.url_map.converters['distname']=OrasNameConverter 
   generator.register_flask_converter_to_swagger_type('distname', 'path')

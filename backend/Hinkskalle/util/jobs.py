@@ -7,12 +7,14 @@ from rq import get_current_job
 from flask import current_app
 from flask_rq2.job import Job
 from datetime import datetime, timezone
+from sqlalchemy import func
 import traceback
 import time
 
 from Hinkskalle.models.Adm import Adm, AdmKeys
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Image import Image, UploadStates
+from Hinkskalle.models.User import User
 from .auth.ldap import LDAPUsers, _get_attr
 from .auth.exceptions import UserConflict
 import os
@@ -103,14 +105,25 @@ def update_quotas() -> typing.Optional[str]:
   job.meta['progress']='starting'
   job.save_meta()
   try:
-    total_entites = Entity.query.count()
-    for entity in Entity.query.all():
-      size = entity.calculate_used()
+    total = Entity.query.count() + User.query.count()
+    for obj in Entity.query.all() + User.query.all():
+      size = obj.calculate_used()
       db.session.commit()
-      result['total_space'] += size
       result['updated'] += 1
-      job.meta['progress']=f"{result['updated']}/{total_entites}"
+      job.meta['progress']=f"{result['updated']}/{total}"
       job.save_meta()
+
+    subq = db.session.query(
+      Image.location,
+      func.max(Image.size).label('size')
+    ).filter(
+      Image.uploadState==UploadStates.completed
+    ).group_by(
+      Image.location
+    ).subquery()
+    row = db.session.query(func.sum(subq.c.size).label('total_size')).first()
+    result['total_space'] = int(row.total_size) if row.total_size is not None else 0
+
     _finish_job(job, result, AdmKeys.check_quotas)
   except Exception as exc:
     db.session.rollback()
@@ -141,8 +154,8 @@ def __update_adm(key: AdmKeys, result):
 def _fail_job(job: Job, result, key: AdmKeys, exc: Exception):
   result['success']=False
   job.meta['progress']='failed'
-  current_app.logger.error(exc)
   result['exception'] = job.exc_info or "".join(traceback.format_exception(value=exc, etype=None, tb=exc.__traceback__))
+  current_app.logger.error(result)
   job.save_meta()
   __update_adm(key, result)
 

@@ -18,12 +18,12 @@ from Hinkskalle.tests.models.test_Collection import _create_collection
 
 from Hinkskalle import db
 from ..model_base import ModelBase
-from .._util import _create_user, _create_image, _create_group, _set_member
+from .._util import _create_user, _create_image, _create_group, _set_member, default_entity_name
 
 class TestImage(ModelBase):
 
   def test_image(self):
-    entity = Entity(name='test-hase')
+    entity = Entity(name=default_entity_name)
     db.session.add(entity)
     db.session.commit()
 

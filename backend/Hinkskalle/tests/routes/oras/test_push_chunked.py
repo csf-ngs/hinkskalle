@@ -5,10 +5,10 @@ from Hinkskalle.models.Entity import Entity
 import os.path
 
 from Hinkskalle.tests.route_base import RouteBase
-from Hinkskalle.tests._util import _create_image, _create_container
+from Hinkskalle.tests._util import _create_image, _create_container, _create_user
 
 from Hinkskalle import db
-from Hinkskalle.models import ImageUploadUrl, UploadStates, UploadTypes
+from Hinkskalle.models import ImageUploadUrl, UploadStates, UploadTypes, User
 from ..test_imagefiles import _prepare_img_data
 
 
@@ -168,21 +168,26 @@ class TestOrasPushChunked(RouteBase):
     self.app.config['IMAGE_PATH'] = tempfile.mkdtemp()
     test_data = b'grunz oink muh MUH'
     image, upload, last_chunk, complete_digest = _prepare_chunked_upload(test_data)
+    image.owner = _create_user()
     entity = image.container_ref.collection_ref.entity_ref
     entity_id = entity.id
+    user_id = image.owner.id
 
     with self.fake_admin_auth():
       ret = self.client.put(f"/v2/__uploads/{upload.id}/{last_chunk.id}?digest={complete_digest.replace('sha256.', 'sha256:')}")
     self.assertEqual(ret.status_code, 201)
     entity = Entity.query.get(entity_id)
     self.assertEqual(entity.used_quota, len(test_data))
+    user = User.query.get(user_id)
+    self.assertEqual(user.used_quota, len(test_data))
 
   def test_push_chunk_finish_quota_check(self):
     self.app.config['IMAGE_PATH'] = tempfile.mkdtemp()
     test_data = b'grunz oink muh MUH'
+    user = _create_user()
     image, upload, last_chunk, complete_digest = _prepare_chunked_upload(test_data)
-    entity = image.container_ref.collection_ref.entity_ref
-    entity.quota = len(test_data)-1
+    image.owner = user
+    user.quota = len(test_data)-1
     db.session.commit()
     image_id = image.id
     upload_id = upload.id
@@ -194,6 +199,7 @@ class TestOrasPushChunked(RouteBase):
     self.assertNotEqual(image.uploadState, UploadStates.completed)
     upload = ImageUploadUrl.query.get(upload_id)
     self.assertEqual(upload.state, UploadStates.failed)
+
   def test_push_chunk_finish_checksum(self):
     self.app.config['IMAGE_PATH'] = tempfile.mkdtemp()
     test_data = b'grunz oink muh MUH'

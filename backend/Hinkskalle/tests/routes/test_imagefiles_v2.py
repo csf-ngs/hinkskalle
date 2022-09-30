@@ -8,9 +8,9 @@ import os.path
 
 
 from ..route_base import RouteBase
-from .._util import _create_image
+from .._util import _create_image, _create_user
 
-from Hinkskalle.models import Image, ImageUploadUrl, UploadStates, UploadTypes
+from Hinkskalle.models import Image, ImageUploadUrl, UploadStates, UploadTypes, User
 from Hinkskalle import db
 
 
@@ -46,6 +46,20 @@ class TestImagefilesV2(RouteBase):
     self.assertEqual(db_upload.md5sum, img_data['md5sum'])
     self.assertTrue(abs(db_upload.expiresAt - (datetime.datetime.now()+datetime.timedelta(minutes=5))) < datetime.timedelta(minutes=1))
     self.assertTrue(os.path.exists(db_upload.path))
+
+  def test_push_v2_single_quota_check(self):
+    user = _create_user()
+    user.quota = 1024
+    image = _create_image(owner=user)[0]
+    img_data = {
+      'filesize': 2048,
+      'sha256sum': 'something',
+      'md5sum': 'also something'
+    }
+
+    with self.fake_admin_auth():
+      ret = self.client.post(f"/v2/imagefile/{image.id}", json=img_data)
+    self.assertEqual(ret.status_code, 413)
   
   def test_push_v2_single_readonly(self):
     image = _create_image()[0]
@@ -61,7 +75,8 @@ class TestImagefilesV2(RouteBase):
     self.assertEqual(ret.status_code, 406)
   
   def test_push_v2_single_do(self):
-    image = _create_image()[0]
+    user = _create_user()
+    image = _create_image(owner=user)[0]
     img_data, digest = _prepare_img_data()
 
     _, temp_path = tempfile.mkstemp()
@@ -185,7 +200,7 @@ class TestImagefilesV2(RouteBase):
 
     ret = self.client.put(f"/v2/imagefile/_upload/"+upload.id, data=img_data)
     self.assertEqual(ret.status_code, 406)
-  
+
   def test_push_v2_complete(self):
     self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
     image = _create_image()[0]
@@ -226,8 +241,10 @@ class TestImagefilesV2(RouteBase):
 
   def test_push_v2_complete_quota(self):
     self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
-    image, _, _, entity = _create_image()
+    user = _create_user()
+    image, _, _, entity = _create_image(owner=user)
     entity_id = entity.id
+    user_id = user.id
     img_data, digest = _prepare_img_data()
     _, temp_path = tempfile.mkstemp()
     with open(temp_path, "wb") as temp_fh:
@@ -249,7 +266,9 @@ class TestImagefilesV2(RouteBase):
       ret = self.client.put(f"/v2/imagefile/{image.id}/_complete", json={})
     self.assertEqual(ret.status_code, 200)
     entity = Entity.query.get(entity_id)
+    user = User.query.get(user_id)
     self.assertEqual(entity.used_quota, len(img_data))
+    self.assertEqual(user.used_quota, len(img_data))
 
     data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data.get('quota'), {
@@ -259,10 +278,10 @@ class TestImagefilesV2(RouteBase):
 
   def test_push_v2_complete_quota_signal(self):
     self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
-    image, _, _, entity = _create_image()
-    entity_id = entity.id
     img_data, digest = _prepare_img_data()
-    entity.quota = len(img_data)*2
+    user = _create_user()
+    user.quota = len(img_data)*2
+    image  = _create_image(owner=user)[0]
     _, temp_path = tempfile.mkstemp()
     with open(temp_path, "wb") as temp_fh:
       temp_fh.write(img_data)
@@ -291,10 +310,11 @@ class TestImagefilesV2(RouteBase):
 
   def test_push_v2_complete_quota_check(self):
     self.app.config['IMAGE_PATH']=tempfile.mkdtemp()
-    image, _, _, entity = _create_image()
-    image_id = image.id
     img_data, digest = _prepare_img_data()
-    entity.quota = len(img_data)-1
+    user = _create_user()
+    user.quota = len(img_data)-1
+    image = _create_image(owner=user)[0]
+    image_id = image.id
     _, temp_path = tempfile.mkstemp()
     with open(temp_path, "wb") as temp_fh:
       temp_fh.write(img_data)
@@ -814,7 +834,9 @@ class TestImagefilesV2(RouteBase):
   
   def test_push_v2_multi_complete_quota(self):
     image, upload, parts, complete_data = self._setup_multi_upload()
+    image.owner = _create_user()
     entity_id = image.container_ref.collection_ref.entity_id
+    user_id = image.owner.id
 
     complete_json = {
       'uploadID': upload.id,
@@ -828,6 +850,8 @@ class TestImagefilesV2(RouteBase):
     self.assertEqual(ret.status_code, 200)
     entity = Entity.query.get(entity_id)
     self.assertEqual(entity.used_quota, len(complete_data))
+    user = User.query.get(user_id)
+    self.assertEqual(user.used_quota, len(complete_data))
 
     data = ret.get_json().get('data') # type: ignore
     self.assertDictEqual(data.get('quota'), {
@@ -837,10 +861,12 @@ class TestImagefilesV2(RouteBase):
 
   def test_push_v2_multi_complete_quota_signal(self):
     image, upload, parts, complete_data = self._setup_multi_upload()
+    image.owner = _create_user()
+    image.owner.quota = len(complete_data)*2
     entity = image.container_ref.collection_ref.entity_ref
-    entity.quota = len(complete_data)*2
     db.session.commit()
     entity_id = entity.id
+    user_id = image.owner.id
 
     complete_json = {
       'uploadID': upload.id,
@@ -859,10 +885,15 @@ class TestImagefilesV2(RouteBase):
       'quotaUsage': len(complete_data)
     })
 
+    read_user = User.query.get(user_id)
+    self.assertEqual(read_user.used_quota, len(complete_data))
+    read_entity = Entity.query.get(entity_id)
+    self.assertEqual(read_entity.used_quota, len(complete_data))
+
   def test_push_v2_multi_complete_quota_check(self):
     image, upload, parts, complete_data = self._setup_multi_upload()
-    entity = image.container_ref.collection_ref.entity_ref
-    entity.quota = len(complete_data)-1
+    image.owner = _create_user()
+    image.owner.quota = len(complete_data)-1
     db.session.commit()
     image_id = image.id
     upload_id = upload.id
@@ -881,6 +912,7 @@ class TestImagefilesV2(RouteBase):
     self.assertEqual(image.uploadState, UploadStates.failed)
     upload = ImageUploadUrl.query.get(upload_id)
     self.assertEqual(upload.state, UploadStates.failed)
+
   def test_push_v2_multi_complete_type_invalid(self):
     image, upload, parts, _ = self._setup_multi_upload()
     upload.type = UploadTypes.single

@@ -36,10 +36,19 @@
           </v-row>
           <v-row dense>
             <v-col>
-              <hsk-text-input label="Collections" :static-value="localState.group.collections"></hsk-text-input>
+              <hsk-text-input 
+                label="Quota (0 = unlimited)" 
+                field="prettyQuota" 
+                :obj="localState.group" 
+                :readonly="!currentUser.isAdmin"
+                action="groups/update"
+                @updated="localState.group=$event"></hsk-text-input>
             </v-col>
             <v-col>
-              <hsk-text-input v-if="localState.entity" label="Used Quota" :static-value="localState.entity.usedQuota | prettyBytes"></hsk-text-input>
+              <hsk-text-input label="Used Quota" :static-value="localState.group.used_quota | prettyBytes"></hsk-text-input>
+            </v-col>
+            <v-col>
+              <hsk-text-input label="Images" :static-value="localState.group.image_count"></hsk-text-input>
             </v-col>
           </v-row>
           <v-row dense>

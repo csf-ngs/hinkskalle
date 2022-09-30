@@ -172,6 +172,8 @@ import { User, PassKey } from '../store/models';
 
 import { clone as _clone } from 'lodash';
 
+import { b64url_encode } from '@/util/b64url';
+
 interface State {
   editUser: User | null;
   editValid: boolean;
@@ -282,8 +284,8 @@ export default Vue.extend({
               }
               const postData = {
                 name: this.localState.newCredentialName,
-                authenticator_data: btoa(String.fromCharCode(...new Uint8Array((cred as any).response.getAuthenticatorData()))),
-                public_key: btoa(String.fromCharCode(...new Uint8Array((cred as any).response.getPublicKey()))),
+                authenticator_data: b64url_encode((cred as any).response.getAuthenticatorData()),
+                public_key: b64url_encode((cred as any).response.getPublicKey()),
                 cdj: cdj,
               };
               console.log(postData);

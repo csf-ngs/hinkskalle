@@ -21,6 +21,8 @@ import admModule, { State as AdmState } from './modules/adm';
 import manifestsModule, { State as ManifestsState } from './modules/manifests';
 import passkeysModule, { State as PasskeysState } from './modules/passkeys';
 
+import { b64url_decode } from '@/util/b64url';
+
 interface State {
   backend: AxiosInstance;
   authToken: string;
@@ -152,12 +154,12 @@ export default new Vuex.Store({
         state.backend.get('/v1/webauthn/create-options')
           .then(response => {
             const config = response.data.data;
-            config.publicKey.user.id = Uint8Array.from(atob(config.publicKey.user.id), c => c.charCodeAt(0));
+            config.publicKey.user.id = b64url_decode(config.publicKey.user.id);
             config.publicKey.excludeCredentials = config.publicKey.excludeCredentials.map((cred: any) => {
-              cred.id = Uint8Array.from(atob(cred.id), c => c.charCodeAt(0));
+              cred.id = b64url_decode(cred.id); 
               return cred;
             });
-            config.publicKey.challenge = Uint8Array.from(atob(config.publicKey.challenge), c => c.charCodeAt(0));
+            config.publicKey.challenge = b64url_decode(config.publicKey.challenge);
             resolve(config);
         })
       });

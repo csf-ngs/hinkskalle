@@ -13,6 +13,9 @@ class ModelBase(unittest.TestCase):
   def setUp(self):
     self.app = app
     self.app.config['TESTING']=True
+    self.app.config['DEFAULT_USER_QUOTA'] = 0
+    self.app.config['SINGULARITY_FLAVOR'] = 'singularity'
+    self.app.config['ENABLE_REGISTER'] = False
     self.app.app_context().push()
     db.create_all()
   

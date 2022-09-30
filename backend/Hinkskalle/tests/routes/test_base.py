@@ -53,7 +53,8 @@ class TestBase(RouteBase):
     self.app.config['KEYSERVER_URL']='http://key.serv.er'
     ret = self.client.get('/assets/config/config.prod.json')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json()
+    json: dict = ret.get_json()
+    json.pop('params')
     self.assertDictEqual(json, {
       'keystoreAPI': { 'uri': 'http://key.serv.er'},
       'libraryAPI': { 'uri': 'http://localhost'},
@@ -64,13 +65,47 @@ class TestBase(RouteBase):
     self.app.config['PREFERRED_URL_SCHEME']='https'
     ret = self.app.test_client().get('/assets/config/config.prod.json')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json()
+    json: dict = ret.get_json()
+    json.pop('params')
     self.assertDictEqual(json, {
       'keystoreAPI': { 'uri': 'http://key.serv.er'},
       'libraryAPI': { 'uri': 'https://localhost'},
       'tokenAPI': { 'uri': 'https://localhost'},
     })
     self.app.config['PREFERRED_URL_SCHEME']=old_setting
+  
+  def test_config_params(self):
+    current_settings = {}
+    for k in ['ENABLE_REGISTER', 'DEFAULT_USER_QUOTA', 'SINGULARITY_FLAVOR']:
+      current_settings[k] = self.app.config[k]
+
+    ret = self.app.test_client().get('/assets/config/config.prod.json')
+    self.assertEqual(ret.status_code, 200)
+    json: dict = ret.get_json()
+    self.assertDictEqual(json['params'], {
+      'enable_register': False,
+      'default_user_quota': 0,
+      'singularity_flavor': 'singularity',
+    })
+
+    self.app.config['DEFAULT_USER_QUOTA'] = 999
+    self.app.config['ENABLE_REGISTER'] = True
+    self.app.config['SINGULARITY_FLAVOR'] = 'apptainer'
+
+    ret = self.app.test_client().get('/assets/config/config.prod.json')
+    self.assertEqual(ret.status_code, 200)
+    json: dict = ret.get_json()
+    self.assertDictEqual(json['params'], {
+      'enable_register': True,
+      'default_user_quota': 999,
+      'singularity_flavor': 'apptainer',
+    })
+
+    # make sure app singleton is reset
+    for k in current_settings.keys():
+      self.app.config[k] = current_settings[k]
+
+
 
   def test_latest(self):
     image1, container1, _, _ = _create_image()

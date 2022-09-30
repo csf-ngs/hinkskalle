@@ -27,6 +27,9 @@ class RouteBase(unittest.TestCase):
     self.app = app
     self.app.config['TESTING'] = True
     self.app.config['DEBUG'] = True
+    self.app.config['DEFAULT_USER_QUOTA'] = 0
+    self.app.config['SINGULARITY_FLAVOR'] = 'singularity'
+    self.app.config['ENABLE_REGISTER'] = False
     self.app.testing = True
     self.client = self.app.test_client()
 

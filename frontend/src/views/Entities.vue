@@ -80,7 +80,7 @@
                             <hsk-text-input
                               id="usedQuota"
                               label="Space Used"
-                              :static-value="localState.editItem.usedQuota || 0 | prettyBytes()"></hsk-text-input>
+                              :static-value="(localState.editItem.usedQuota || 0) | prettyBytes()"></hsk-text-input>
                           </v-col>
                         </v-row>
                         <v-row>
@@ -163,7 +163,7 @@
                               {{item.size}} {{item.size | pluralize('collection')}}
                             </div>
                             <div>
-                              {{item.usedQuota | prettyBytes()}}
+                              {{(item.usedQuota || 0) | prettyBytes()}}
                               <span v-if="item.quota === 0">/ &infin;</span>
                               <span v-else>/ {{item.quota | prettyBytes()}}</span>
                             </div>

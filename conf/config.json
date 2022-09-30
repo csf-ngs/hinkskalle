@@ -7,6 +7,9 @@
   "STAGING_PATH": "../tmp/_stage",
   "UPLOAD_CHUNK_SIZE": 16384,
   "SQLALCHEMY_TRACK_MODIFICATIONS": false,
+  "ENABLE_REGISTER": true,
+  "SINGULARITY_FLAVOR": "apptainer",
+  "DEFAULT_USER_QUOTA": 1073741824,
   "CRON": {
     "expire_images": "46 22 * * *",
     "check_quotas": "29 0 * * *",

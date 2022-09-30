@@ -6,6 +6,7 @@ import VueRouter from 'vue-router';
 import Home from '@/views/Home.vue';
 
 import { localVue } from '../setup';
+import { plainToConfigParams } from '@/store/models';
 
 describe('Home.vue', () => {
   let vuetify: any;
@@ -15,12 +16,17 @@ describe('Home.vue', () => {
   let isLoggedIn = true;
   let router: any;
 
+  const config = plainToConfigParams({
+    singularity_flavor: 'singularity',
+  });
+
   const OLDENV = process.env;
   beforeEach(() => {
     process.env = { ...OLDENV  };
     process.env['VUE_APP_BACKEND_URL']='http://testha.se/'
     vuetify = new Vuetify();
     getters = {
+      config: () => jest.fn().mockReturnValue(config),
       isLoggedIn: () => isLoggedIn,
       currentUser: () => jest.fn().mockReturnValue({ username: 'test.hase' }),
     };

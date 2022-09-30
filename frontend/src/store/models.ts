@@ -763,6 +763,34 @@ export function serializeManifest(obj: Manifest, unroll=false): any {
 export { Manifest };
 
 
+class ConfigParams {
+  public default_user_quota!: number
+  public enable_register!: boolean
+  public singularity_flavor!: string
+  
+}
+
+export function plainToConfigParams(json: any): ConfigParams {
+  const obj = new ConfigParams();
+  obj.default_user_quota = json['default_user_quota'];
+    obj.enable_register = json['enable_register'];
+    obj.singularity_flavor = json['singularity_flavor'];
+    
+  return obj;
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function serializeConfigParams(obj: ConfigParams, unroll=false): any {
+  const json: any = {};
+  json['default_user_quota'] = obj.default_user_quota;
+      json['enable_register'] = obj.enable_register;
+      json['singularity_flavor'] = obj.singularity_flavor;
+      
+  return json;
+}
+
+export { ConfigParams };
+
+
 interface AdmBase {
   job: number;
   started: Date | null;

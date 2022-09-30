@@ -6,9 +6,7 @@ if [ "$1" = "--rebuild" -o ! -e "node_modules" ]; then
 fi
 
 JSON_STRING='window.configs = { \
-  "VUE_APP_BACKEND_URL": "'$VUE_APP_BACKEND_URL'", \
-  "VUE_APP_ENABLE_REGISTER": '$VUE_APP_ENABLE_REGISTER', \
-  "VUE_APP_SINGULARITY_COMMAND": "'$VUE_APP_SINGULARITY_COMMAND'" \
+  "VUE_APP_BACKEND_URL": "'$VUE_APP_BACKEND_URL'" \
 }'
 
 sed "s@// RUNTIME_CONFIG@${JSON_STRING}@" public/index.html.tpl > public/index.html

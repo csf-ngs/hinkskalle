@@ -143,7 +143,10 @@ const router = new VueRouter({
 
 const DEFAULT_TITLE = 'Hinkskalle';
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
+  if (!store.getters.config) {
+    await store.dispatch('getConfig');
+  }
   if (to.matched.some(record => record.meta.requiresAuth)) {
     return isAuthenticated(to, from, next);
   }

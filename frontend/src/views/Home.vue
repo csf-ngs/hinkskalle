@@ -11,8 +11,8 @@
         <v-row>
           <v-col cols="12">
             <v-tabs v-model="localState.usageTab" light centered>
-              <v-tab>Singularity</v-tab>
-              <v-tab>Apptainer</v-tab>
+              <v-tab v-if="singularityFlavor=='singularity'">Singularity</v-tab>
+              <v-tab v-if="singularityFlavor=='apptainer'">Apptainer</v-tab>
               <v-tab>Docker</v-tab>
               <v-tab>ORAS</v-tab>
               <v-tab>CLI</v-tab>
@@ -20,7 +20,7 @@
           </v-col>
         </v-row>
         <v-tabs-items class="pb-4" v-model="localState.usageTab">
-          <v-tab-item>
+          <v-tab-item v-if="singularityFlavor=='singularity'">
             <v-row>
               <v-col cols="12" md="8" offset-md="2">
                 <v-card tile height="100%">
@@ -56,7 +56,7 @@
               </v-col>
             </v-row>
           </v-tab-item>
-          <v-tab-item>
+          <v-tab-item v-if="singularityFlavor=='apptainer'">
             <v-row>
               <v-col cols="12" md="8" offset-md="2">
                 <v-card tile height="100%">
@@ -202,7 +202,7 @@ export default Vue.extend({
   name: 'HskHome',
   data: (): { localState: State } => ({
     localState: {
-      usageTab: (getEnv('VUE_APP_SINGULARITY_COMMAND') == "apptainer") ? 1 : 0,
+      usageTab: 0,
     },
   }),
   computed: {
@@ -220,6 +220,9 @@ export default Vue.extend({
     },
     referenceBase(): string {
       return this.backendUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    },
+    singularityFlavor(): string {
+      return this.$store.getters.config.singularity_flavor;
     },
   },
   components: {

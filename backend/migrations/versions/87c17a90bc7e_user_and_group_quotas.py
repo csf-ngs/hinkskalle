@@ -21,10 +21,10 @@ def upgrade():
     op.add_column('group', sa.Column('quota', sa.BigInteger(), nullable=True))
     op.add_column('user', sa.Column('quota', sa.BigInteger(), nullable=True))
     op.get_bind().execute("""
-        UPDATE "user" SET quota=COALESCE((SELECT quota FROM entity WHERE "createdBy"="user".username), 0)
+        UPDATE "user" SET quota=COALESCE((SELECT max(quota) FROM entity WHERE "createdBy"="user".username), 0)
     """)
     op.get_bind().execute("""
-        UPDATE "group" SET quota=COALESCE((SELECT quota FROM entity WHERE group_id="group".id), 0)
+        UPDATE "group" SET quota=COALESCE((SELECT max(quota) FROM entity WHERE group_id="group".id), 0)
     """)
 
     op.drop_column('entity', 'quota')

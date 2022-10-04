@@ -62,6 +62,7 @@ def create_app():
     app.config['SECRET_KEY'] = os.getenv('HINKSKALLE_SECRET_KEY')
   if app.config.get('SECRET_KEY') is None:
     raise Exception('please configure SECRET_KEY in config.json or HINKSKALLE_SECRET_KEY as environment variable')
+  app.secret_key = app.config['SECRET_KEY']
   if 'DB_PASSWORD' in os.environ:
     app.config['DB_PASSWORD'] = os.getenv('DB_PASSWORD')
   if 'SQLALCHEMY_DATABASE_URI' in os.environ:
@@ -122,6 +123,7 @@ def create_app():
 
   app.url_map.converters['distname']=OrasNameConverter 
   generator.register_flask_converter_to_swagger_type('distname', 'path')
+
 
 
   with app.app_context():

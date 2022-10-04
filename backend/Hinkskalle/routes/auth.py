@@ -9,20 +9,19 @@ from Hinkskalle.routes.util import _get_service_url
 from .util import _get_service_url
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from flask import current_app, g, request
+from flask import current_app, g, session
 from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from sqlalchemy.exc import IntegrityError
 import jwt
 from calendar import timegm
 from urllib.parse import urlparse
 import json
-import base64
 
 from webauthn.registration.generate_registration_options import generate_registration_options
 from webauthn.registration.verify_registration_response import verify_registration_response
 from webauthn.helpers.options_to_json import options_to_json
 from webauthn.helpers.base64url_to_bytes import base64url_to_bytes
-from webauthn.helpers.structs import PublicKeyCredentialDescriptor
+from webauthn.helpers.structs import PublicKeyCredentialDescriptor, RegistrationCredential
 
 from datetime import datetime
 
@@ -48,9 +47,8 @@ class GetDownloadTokenSchema(RequestSchema):
 
 class RegisterCredentialSchema(RequestSchema):
   name = fields.String(required=True)
-  public_key = fields.String(required=True)
-  authenticator_data = fields.String(required=True)
-  cdj = fields.Dict()
+  credential = fields.Dict()
+  public_key = fields.String()
 
 @registry.handles(
   rule='/v1/token-status',
@@ -130,10 +128,7 @@ def get_download_token():
   tags=['hinkskalle-ext']
 )
 def get_authn_create_options():
-  if current_app.config['FRONTEND_URL']:
-    rp_id = urlparse(current_app.config['FRONTEND_URL']).hostname
-  else:
-    rp_id = urlparse(_get_service_url()).hostname
+  rp_id = _get_rp_id()
   
   opts = generate_registration_options(
     rp_id=rp_id, # type: ignore
@@ -146,38 +141,9 @@ def get_authn_create_options():
     ],
     timeout=180000,
   )
+  session['expected_challenge'] = opts.challenge
+  current_app.logger.debug(session)
 
-##  opts = {
-##    'publicKey': {
-##      'rp': {
-##        'id': rp_id,
-##        'name': "Hinkskalle",
-##      },
-##      'user': {
-##        'id': g.authenticated_user.passkey_id, #Uint8Array.from(atob('Vg4vHxiHQnPapKRD4+EIcw=='), c => c.charCodeAt(0)),
-##        'name': g.authenticated_user.username,
-##        'displayName': f"{g.authenticated_user.firstname} {g.authenticated_user.lastname}",
-##      },
-##      'excludeCredentials': [
-##        { 'type': 'public-key', 'id': base64.b64encode(key.id).decode('utf-8') } for key in g.authenticated_user.passkeys
-##      ], # XXX
-##      'pubKeyCredParams': [{
-##          'type': "public-key",
-##          'alg': -7
-##        }, {
-##          'type': "public-key",
-##          'alg': -257
-##        }
-##      ],
-##      'challenge': base64.b64encode(b'\0').decode('utf-8'), #,new Uint8Array([0]),
-##      'authenticatorSelection': {
-##        'authenticatorAttachment': "cross-platform",
-##        'userVerification': "discouraged",
-##        'requireResidentKey': False,
-##      },
-##      'timeout': 180000,
-##    }
-##  }
   return { 'data': { 'publicKey': json.loads(options_to_json(opts)) }}
 
 @registry.handles(
@@ -191,10 +157,19 @@ def get_authn_create_options():
 def authn_register():
   data = rebar.validated_body
   key = PassKey(user=g.authenticated_user, name=data['name'])
+  credential = RegistrationCredential.parse_raw(json.dumps(data['credential']))
 
-  authData = AuthenticatorData(base64url_to_bytes(data['authenticator_data']))
-  key.id = authData.credential_id
+  verify_results = verify_registration_response(
+    credential=credential,
+    expected_challenge=session.pop('expected_challenge', None),
+    expected_rp_id=_get_rp_id(),
+    expected_origin=_get_origin(),
+  )
+  key.id = verify_results.credential_id
   key.public_key_spi = base64url_to_bytes(data['public_key'])
+
+  #authData = AuthenticatorData(base64url_to_bytes(data['authenticator_data']))
+  #key.id = authData.credential_id
 
   try:
     db.session.add(key)
@@ -202,4 +177,23 @@ def authn_register():
   except IntegrityError:
     raise errors.PreconditionFailed(f"key with name {key.name} already exists")
 
+
   return { 'data': key }
+
+
+def _get_rp_id() -> str:
+  if current_app.config['FRONTEND_URL']:
+    rp_id = urlparse(current_app.config['FRONTEND_URL']).hostname
+  else:
+    rp_id = urlparse(_get_service_url()).hostname
+  if not rp_id:
+    raise errors.InternalError("could not determine rp_id")
+  return rp_id
+
+def _get_origin() -> str:
+  if current_app.config['FRONTEND_URL']:
+    origin = urlparse(current_app.config['FRONTEND_URL'])
+  else:
+    origin = urlparse(_get_service_url())
+  return origin.geturl()
+  

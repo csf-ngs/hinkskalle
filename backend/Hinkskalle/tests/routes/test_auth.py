@@ -1,6 +1,6 @@
 import datetime
 import typing
-from flask import g
+from flask import g, session
 from ..route_base import RouteBase
 
 from .._util import _create_user
@@ -276,8 +276,9 @@ class TestTokenAuth(RouteBase):
 
 class TestWebAuthn(RouteBase):
   def test_create_options(self):
-    with self.fake_auth():
+    with self.fake_auth(), self.client:
       ret = self.client.get('/v1/webauthn/create-options')
+      self.assertIsNotNone(session.get('expected_challenge'))
     self.assertEqual(ret.status_code, 200)
     opts = ret.get_json().get('data') # type: ignore
     self.assertEqual(opts['publicKey']['user']['name'], self.username)
@@ -334,17 +335,26 @@ class TestWebAuthn(RouteBase):
       ])
 
   def test_register_credential(self):
+    from webauthn.helpers.base64url_to_bytes import base64url_to_bytes
+    old_backend_url = self.app.config.get('BACKEND_URL')
+    self.app.config['BACKEND_URL'] = 'http://localhost:7660'
+    
     test_credential = {
       'name': 'testzebra',
-      'authenticator_data': 'SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NFAAAABC_AV5-BE0fqsRa7Wo25ICoAQBLJPWz9mUDOx8HRcno28xqYqIxIRWzrrrnceDN3obMbP9SiH9LajyyvKgwesITc_bcAoHPpd5EcnJiTUy31edqlAQIDJiABIVggrfN4SLBEzdbpX8j4a-oQL_CGCW7GfRR356Sme3-2eJoiWCCiSZHqc1oP8InsghrzWgKcSlB-74HtmKNm60NFhY3KIg',
-      'public_key': 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErfN4SLBEzdbpX8j4a-oQL_CGCW7GfRR356Sme3-2eJqiSZHqc1oP8InsghrzWgKcSlB-74HtmKNm60NFhY3KIg',
-      'cdj': {
-        'type': 'webauthn.create',
-        'challenge': 'AA',
-        'origin': 'http://localhost:7660',
-        'crossOrigin': False,
+      'credential': {
+        'id': 'hSU-pKCEtqz64nhuy2o1czwZaB0Vm1h4LY94LaHvO89Q8RhHwjQrXq8g7PQP7pN6gYDw8ufKlpqRwucvSjswgw',
+        'rawId': 'hSU-pKCEtqz64nhuy2o1czwZaB0Vm1h4LY94LaHvO89Q8RhHwjQrXq8g7PQP7pN6gYDw8ufKlpqRwucvSjswgw',
+        'response': {
+          'attestationObject': 'o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjESZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NFAAAAAgAAAAAAAAAAAAAAAAAAAAAAQIUlPqSghLas-uJ4bstqNXM8GWgdFZtYeC2PeC2h7zvPUPEYR8I0K16vIOz0D-6TeoGA8PLnypaakcLnL0o7MIOlAQIDJiABIVggVo43kymX5V8J70y8cGGOBRs5hX8mi3PGsCI_oIxldmIiWCDOQFHalRl1KrWzpZCZBK_quEU_FCQ0aeGMoZzIDMCUHg',
+          'clientDataJSON': 'eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiMDFMWU1IQUNRR19DVldfT3FoNldzMndtbGZJNFAtY0NQOVptTW9URjllOEx2alpnemdUSHc1Z1h1RFQtcEpsUkFTZ2plVWRxeGxnaDJfakx1RWJMRnciLCJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0Ojc2NjAiLCJjcm9zc09yaWdpbiI6ZmFsc2V9',
+        },
+        'type': 'public-key',
       },
+      'public_key': "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAETysBuXQA2iA-ig7_PKPB2fZ6KViUgcGlfYp2l9-ePtEC8b0MrHpLHvvnFyh4OcYGOpBNlUYutBzGu0CP7GhOMg",
     }
+
+    with self.client.session_transaction() as session:
+      session['expected_challenge'] = base64url_to_bytes('01LYMHACQG_CVW_Oqh6Ws2wmlfI4P-cCP9ZmMoTF9e8LvjZgzgTHw5gXuDT-pJlRASgjeUdqxlgh2_jLuEbLFw')
 
     with self.fake_auth():
       ret = self.client.post('/v1/webauthn/register', json=test_credential)
@@ -357,3 +367,4 @@ class TestWebAuthn(RouteBase):
 
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['name'], 'testzebra')
+    self.app.config['BACKEND_URL'] = old_backend_url

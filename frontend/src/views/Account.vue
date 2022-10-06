@@ -273,35 +273,7 @@ export default Vue.extend({
             (cred: any) => {
               if (!cred) return;
               console.log(cred);
-              /*
-              const validOrigin: string = this.$store.getters.config.frontend_url;
-              const cdj = JSON.parse(new TextDecoder().decode((cred as any).response.clientDataJSON));
-              if (cdj.type != 'webauthn.create' || 
-                    (('crossOrigin' in cdj) && cdj.crossOrigin) ||
-                    !validOrigin.startsWith(cdj.origin)) {
-
-                console.log("cdj invalid", cdj);
-                this.$store.commit('snackbar/showError', 'Could not validate credentials.');
-                return;
-              }
-              */
-              const postData = {
-                name: this.localState.newCredentialName,
-                credential: {
-                  id: cred.id,
-                  rawId: b64url_encode(cred.rawId),
-                  response: {
-                    attestationObject: b64url_encode(cred.response.attestationObject),
-                    clientDataJSON: b64url_encode(cred.response.clientDataJSON),
-                  },
-                  type: cred.type,
-                  transports: cred.transports,
-                  clientExtensionResults: cred.clientExtensionResults,
-                },
-                public_key: b64url_encode(cred.response.getPublicKey()),
-              };
-              console.log(postData);
-              this.$store.dispatch('registerCredential', postData)
+              this.$store.dispatch('registerCredential', { name: this.localState.newCredentialName, cred: cred })
                 .then((key: PassKey) => {
                   console.log(key);
                   this.$store.commit('snackbar/showSuccess', 'Key created');

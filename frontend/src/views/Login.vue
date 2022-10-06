@@ -14,8 +14,29 @@
                   (use your Forskalle account)
                 </v-card-subtitle>
                 <v-form v-model="localState.canSubmit" @submit.prevent="doLogin()">
-                  <v-text-field outlined id="username" v-model="localState.user.username" :rules="rules" prepend-icon="mdi-account" name="Username" label="Username" required></v-text-field>
-                  <v-text-field outlined id="password" v-model="localState.user.password" :rules="rules" prepend-icon="mdi-lock" name="Password" label="Password" type="password" required></v-text-field>
+                  <v-text-field outlined 
+                    id="username" 
+                    @blur="requestSignin()" 
+                    v-model="localState.user.username" 
+                    :rules="rules" 
+                    prepend-icon="mdi-account" 
+                    name="Username" 
+                    label="Username" 
+                    required></v-text-field>
+                  <v-text-field v-if="!localState.webauthnAvailable" outlined 
+                    id="password" 
+                    v-model="localState.user.password" 
+                    :rules="rules" 
+                    prepend-icon="mdi-lock" 
+                    name="Password" 
+                    label="Password" 
+                    type="password" 
+                    required></v-text-field>
+                  <v-text-field v-else disabled 
+                    label="Please use your security key"
+                    prepend-icon="mdi-lock"
+                    ></v-text-field>
+                  
                   <v-alert v-if="localState.loginError" type="error" text>
                     {{localState.loginError}}
                   </v-alert>
@@ -122,6 +143,7 @@ interface State {
   password2: string;
   registerSuccess: boolean;
   registerError: string;
+  webauthnAvailable: boolean;
 }
 
 interface Data {
@@ -147,6 +169,7 @@ export default Vue.extend({
       canRegister: false,
       registerSuccess: false,
       registerError: '',
+      webauthnAvailable: false,
     },
     rules: [
       (v: string): boolean | string => !!v || 'Required!',
@@ -177,6 +200,19 @@ export default Vue.extend({
         })
         .catch((err: AxiosError) => {
           this.localState.loginError = generateMsg(err);
+        });
+    },
+    requestSignin() {
+      if (!this.localState.user.username) return;
+      this.$store.dispatch('requestSignin', this.localState.user.username)
+        .then((opts) => {
+          this.localState.webauthnAvailable = opts.allowCredentials !== undefined && opts.allowCredentials.length > 0;
+          if (this.localState.webauthnAvailable) {
+            navigator.credentials.get({ publicKey: opts })
+              .then(creds => {
+                this.$store.dispatch('doSignin', creds);
+              });
+          }
         });
     }
   },

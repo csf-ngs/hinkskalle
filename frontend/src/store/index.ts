@@ -21,7 +21,7 @@ import admModule, { State as AdmState } from './modules/adm';
 import manifestsModule, { State as ManifestsState } from './modules/manifests';
 import passkeysModule, { State as PasskeysState } from './modules/passkeys';
 
-import { b64url_decode } from '@/util/b64url';
+import { b64url_decode, b64url_encode } from '@/util/b64url';
 
 interface State {
   backend: AxiosInstance;
@@ -149,6 +149,36 @@ export default new Vuex.Store({
         resolve();
       });
     },
+    requestSignin: ({ state }, username: string) => {
+      return new Promise<PublicKeyCredentialRequestOptions>((resolve) => {
+        state.backend.post('/v1/webauthn/signin-request', { username: username })
+          .then(response => {
+            const opts: PublicKeyCredentialRequestOptions = response.data.data;
+            opts.allowCredentials = opts.allowCredentials!.map((cred: any) => {
+              cred.id = b64url_decode(cred.id);
+              return cred;
+            });
+            opts.challenge = b64url_decode(opts.challenge as unknown as string);
+            resolve(opts);
+          })
+      });
+    },
+    doSignin: ({ state }, cred) => {
+      const postData = {
+        id: cred.id,
+        rawId: b64url_encode(cred.rawId),
+        response: {
+          authenticatorData: b64url_encode(cred.response.authenticatorData),
+          clientDataJSON: b64url_encode(cred.response.clientDataJSON),
+          signature: b64url_encode(cred.response.signature),
+          userHandle: b64url_encode(cred.response.userHandle),
+        },
+        type: cred.type,
+        clientExtensionResults: {},
+        authenticatorAttachment: cred.authenticatorAttachment, 
+      };
+      console.log(postData);
+    },
     getAuthnCreateOptions: ({ state }) => {
       return new Promise<CredentialCreationOptions>((resolve) => {
         state.backend.get('/v1/webauthn/create-options')
@@ -164,9 +194,24 @@ export default new Vuex.Store({
         })
       });
     },
-    registerCredential: ({ state }, cred) => {
+    registerCredential: ({ state }, data: { name: string, cred: any }) => {
+      const postData = {
+        name: data.name,
+        credential: {
+          id: data.cred.id,
+          rawId: b64url_encode(data.cred.rawId),
+          response: {
+            attestationObject: b64url_encode(data.cred.response.attestationObject),
+            clientDataJSON: b64url_encode(data.cred.response.clientDataJSON),
+          },
+          type: data.cred.type,
+          transports: data.cred.transports,
+          clientExtensionResults: data.cred.clientExtensionResults,
+        },
+        public_key: b64url_encode(data.cred.response.getPublicKey()),
+      };
       return new Promise<PassKey>((resolve, reject) => {
-        state.backend.post('/v1/webauthn/register', cred)
+        state.backend.post('/v1/webauthn/register', postData)
           .then(response => {
             resolve(plainToPassKey(response.data.data));
           })

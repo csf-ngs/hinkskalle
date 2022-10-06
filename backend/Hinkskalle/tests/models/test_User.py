@@ -8,7 +8,6 @@ from ..model_base import ModelBase
 from .._util import _create_group, _create_user, _create_container, _create_image
 
 from Hinkskalle.models import User, UserSchema, Group, GroupSchema, Container, UserGroup, GroupRoles, PassKey, PassKeySchema, UploadStates
-from Hinkskalle.util.auth.webauthn import get_public_key, AuthenticatorData
 
 from Hinkskalle import db
 
@@ -309,16 +308,8 @@ class TestUser(ModelBase):
     self.assertIsNotNone(user.passkey_id)
 
     key = PassKey(user=user, name='testesel')
-
-    import base64
-    
-    key.public_key_spi = base64.b64decode("""MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+j1SmFvHkty4OzzEjmSyx53yIevEEj3XVM/GO4+WJHpQ8eFSulnoHM+6i5Me/UpiwFS7AzvKOpf5qReaP6wpYA==""")
-    pubk = get_public_key(key.public_key_spi)
-
-    authData = base64.b64decode("""SZYN5YgOjGh0NBcPZHZgW4/krrmihjLHmVzzuoMdl2NBAAAAAAAAAAAAAAAAAAAAAAAAAAAAQPhy7NxEO69c527lfgAwwO4SmvGW3u0yZNTZRnvjfHgqU4jMk4y0vg+3/dD4fAsLuEmVx66WrmMjHYpzgHBDSdulAQIDJiABIVggStDnaNNGkO9tqVLNkCB/7k/BFjnoTPopFA2mJ1ZZtxAiWCD1puj2kxxl//CtU2V+yzY6QRvgTCpRN20iUdvEOanN7Q==""")
-    obj = AuthenticatorData(authData)
-
-    key.id = obj.credential_id
+    key.public_key = b'something'
+    key.id = b'oink'
     db.session.add(key)
     db.session.commit()
 

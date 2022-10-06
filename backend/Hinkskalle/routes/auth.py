@@ -1,15 +1,16 @@
+from click import option
 from flask.helpers import make_response
+from itsdangerous import base64_encode
 from Hinkskalle import registry, password_checkers, authenticator, rebar, db
 from Hinkskalle.models.Entity import Entity
-from Hinkskalle.models.User import TokenSchema, UserSchema, PassKey, PassKeySchema
+from Hinkskalle.models.User import TokenSchema, User, UserSchema, PassKey, PassKeySchema
 from Hinkskalle.util.auth.token import Scopes
 from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword
-from Hinkskalle.util.auth.webauthn import AuthenticatorData
 from Hinkskalle.routes.util import _get_service_url
 from .util import _get_service_url
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from flask import current_app, g, session
+from flask import current_app, g, session, request
 from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from sqlalchemy.exc import IntegrityError
 import jwt
@@ -17,11 +18,13 @@ from calendar import timegm
 from urllib.parse import urlparse
 import json
 
+from webauthn.authentication.generate_authentication_options import generate_authentication_options
+from webauthn.authentication.verify_authentication_response import verify_authentication_response
 from webauthn.registration.generate_registration_options import generate_registration_options
 from webauthn.registration.verify_registration_response import verify_registration_response
 from webauthn.helpers.options_to_json import options_to_json
 from webauthn.helpers.base64url_to_bytes import base64url_to_bytes
-from webauthn.helpers.structs import PublicKeyCredentialDescriptor, RegistrationCredential
+from webauthn.helpers.structs import PublicKeyCredentialDescriptor, RegistrationCredential, AuthenticationCredential
 
 from datetime import datetime
 
@@ -49,6 +52,9 @@ class RegisterCredentialSchema(RequestSchema):
   name = fields.String(required=True)
   credential = fields.Dict()
   public_key = fields.String()
+
+class SigninRequestSchema(RequestSchema):
+  username = fields.String(required=True)
 
 @registry.handles(
   rule='/v1/token-status',
@@ -166,10 +172,8 @@ def authn_register():
     expected_origin=_get_origin(),
   )
   key.id = verify_results.credential_id
-  key.public_key_spi = base64url_to_bytes(data['public_key'])
-
-  #authData = AuthenticatorData(base64url_to_bytes(data['authenticator_data']))
-  #key.id = authData.credential_id
+  key.login_count = verify_results.sign_count
+  key.public_key = verify_results.credential_public_key
 
   try:
     db.session.add(key)
@@ -177,8 +181,64 @@ def authn_register():
   except IntegrityError:
     raise errors.PreconditionFailed(f"key with name {key.name} already exists")
 
-
   return { 'data': key }
+
+@registry.handles(
+  rule='/v1/webauthn/signin-request',
+  method='POST',
+  request_body_schema=SigninRequestSchema(),
+  tags=['hinkskalle-ext'],
+)
+def authn_signin_request():
+  data = rebar.validated_body
+  user: User = User.query.filter(User.username==data['username']).first()
+
+  opts = generate_authentication_options(
+    rp_id=_get_rp_id(), 
+    timeout=180000,
+    allow_credentials=[ 
+      PublicKeyCredentialDescriptor(id=key.id) for key in (user.passkeys if user else [])
+    ],
+  )
+  session['expected_challenge']=opts.challenge
+  session['username']=user.username if user else None
+  return { 'data': json.loads(options_to_json(opts)) }
+
+@registry.handles(
+  rule='/v1/webauthn/signin',
+  method='POST',
+  tags=['hinkskalle-ext']
+)
+def authn_signin():
+  username = session.pop('username', None)
+  challenge = session.pop('expected_challenge', None)
+  if not username or not challenge:
+    raise errors.NotAcceptable("invalid state, request options first")
+
+  user: User = User.query.filter(User.username == username).first()
+
+  cred = AuthenticationCredential.parse_raw(request.data)
+
+  success = False
+  key = PassKey.query.filter(PassKey.id==cred.raw_id and PassKey.user==user).first()
+  if not key:
+    raise errors.Forbidden(f"passkey not found")
+
+  verified = verify_authentication_response(
+    credential = cred,
+    expected_challenge = challenge,
+    expected_rp_id = _get_rp_id(),
+    expected_origin = _get_origin(),
+    credential_public_key=key.public_key, 
+    require_user_verification=True,
+    credential_current_sign_count=key.login_count,
+  )
+  success=True
+  current_app.logger.debug(verified.json())
+
+  if not success:
+    raise errors.Forbidden(f"invalid passkey")
+  return { 'data': { 'some': 'thing' } }
 
 
 def _get_rp_id() -> str:

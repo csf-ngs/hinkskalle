@@ -69,7 +69,7 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 
   if app.config.get('DB_PASSWORD'):
-    app.config['SQLALCHEMY_DATABASE_URI']=app.config.get('SQLALCHEMY_DATABASE_URI', '').replace('%PASSWORD%', app.config.get('DB_PASSWORD'))
+    app.config['SQLALCHEMY_DATABASE_URI']=app.config.get('SQLALCHEMY_DATABASE_URI', '').replace('%PASSWORD%', app.config['DB_PASSWORD'])
   app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=app.config.get('SQLALCHEMY_TRACK_MODIFICATIONS', False)
 
   if not 'AUTH' in app.config:
@@ -121,7 +121,7 @@ def create_app():
   app.config['DEFAULT_USER_QUOTA'] = os.environ.get('HINKSKALLE_DEFAULT_USER_QUOTA', app.config.get('DEFAULT_USER_QUOTA', 0))
   app.config['DEFAULT_GROUP_QUOTA'] = os.environ.get('HINKSKALLE_DEFAULT_GROUP_QUOTA', app.config.get('DEFAULT_GROUP_QUOTA', 0))
 
-  app.url_map.converters['distname']=OrasNameConverter 
+  app.url_map.converters['distname']=OrasNameConverter  # type: ignore
   generator.register_flask_converter_to_swagger_type('distname', 'path')
 
 

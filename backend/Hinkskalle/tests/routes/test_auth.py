@@ -6,8 +6,8 @@ from ..route_base import RouteBase
 from .._util import _create_user
 from Hinkskalle.models.User import Token, PassKey, User
 from Hinkskalle.models.Entity import Entity
-from Hinkskalle.util.auth.webauthn import get_public_key
 from Hinkskalle import db
+from webauthn.helpers.base64url_to_bytes import base64url_to_bytes
 import re
 import jwt
 import base64
@@ -275,6 +275,74 @@ class TestTokenAuth(RouteBase):
     self.assertEqual(db_token.expiresAt, expiration)
 
 class TestWebAuthn(RouteBase):
+  def test_signin_request(self):
+    with self.client:
+      ret = self.client.post('/v1/webauthn/signin-request', json={ 'username': self.username })
+      self.assertIsNotNone(session.get('expected_challenge'))
+      self.assertEqual(session.get('username'), self.username)
+    self.assertEqual(ret.status_code, 200)
+    opts = ret.get_json().get('data') # type:ignore
+    self.assertEqual(opts['rpId'], 'localhost')
+    self.assertIsNotNone(opts['challenge'])
+    self.assertListEqual(opts['allowCredentials'], [])
+  
+  def test_signin_request_with_keys(self):
+    passkey_id = b'4711'
+    self.user.passkeys = [
+      PassKey(id=passkey_id, name='something')
+    ]
+    db.session.commit()
+
+    ret = self.client.post('/v1/webauthn/signin-request', json={ 'username': self.username })
+    self.assertEqual(ret.status_code, 200)
+    opts = ret.get_json().get('data') # type:ignore
+    self.assertListEqual(
+      opts['allowCredentials'], [
+        { 'type': 'public-key', 'id': base64.urlsafe_b64encode(passkey_id).decode('utf-8').replace('=', '') }
+      ])
+  
+  def test_signin_request_invalid_username(self):
+    ret = self.client.post('/v1/webauthn/signin-request', json={ 'username': 'spektrophilious dackelschwanz' })
+    self.assertEqual(ret.status_code, 200)
+    opts = ret.get_json().get('data') # type:ignore
+    self.assertEqual(opts['rpId'], 'localhost')
+    self.assertListEqual(opts['allowCredentials'], [])
+
+  def test_signin(self):
+    old_backend_url = self.app.config.get('BACKEND_URL')
+    self.app.config['BACKEND_URL'] = 'http://localhost:7660'
+
+    self.user.passkeys = [
+      PassKey(
+        id=base64url_to_bytes('uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw'),
+        name='testhase',
+        public_key=base64url_to_bytes('pQECAyYgASFYIC9xK9phz-T0Ls3r5coIy1wPk-TBFuPjKjTHD3ttKKU_Ilggp-l4S1SEgoUVQyyyxNc80iRnJ10YA3A50LoPsawEP18='),
+        login_count=3,
+      )
+    ]
+
+    test_credential = {
+      "authenticatorAttachment": "cross-platform",
+      "clientExtensionResults": {},
+      "id": "uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw",
+      "rawId": "uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw",
+      "response": {
+        "authenticatorData": "SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAABg",
+        "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiNWNCT2FMOHhQUllTSEU2a3cyVllhd2JXRG9tZ2oyeUxwcEJ2ekU3NndCQmNkOGZyeWY1bFF6aHhQaXYxcGJPWDB5QmxmX3VUbGRLLTNLOW11UHkwY0EiLCJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0Ojc2NjAiLCJjcm9zc09yaWdpbiI6ZmFsc2V9",
+        "signature": "MEYCIQDzOkUVKPYLkI1h-aCd9575HJ8t1PMfeWF_dm_cscU8zAIhAOV07U2yHfkB0oQvSXrpPLnynHn79GySRA5Sa350v6RW",
+        "userHandle": "",
+      },
+      "type": "public-key",
+    }
+    with self.client.session_transaction() as session:
+      session['expected_challenge'] = base64url_to_bytes('5cBOaL8xPRYSHE6kw2VYawbWDomgj2yLppBvzE76wBBcd8fryf5lQzhxPiv1pbOX0yBlf_uTldK-3K9muPy0cA')
+      session['username'] = self.username
+    ret = self.client.post('/v1/webauthn/signin', json=test_credential)
+    self.assertEqual(ret.status_code, 200)
+
+    self.app.config['BACKEND_URL']=old_backend_url
+
+
   def test_create_options(self):
     with self.fake_auth(), self.client:
       ret = self.client.get('/v1/webauthn/create-options')
@@ -285,6 +353,7 @@ class TestWebAuthn(RouteBase):
     self.assertEqual(opts['publicKey']['user']['id'], base64.urlsafe_b64encode(self.user.passkey_id.encode('utf-8')).decode('utf-8'))
 
     self.assertEqual(opts['publicKey']['rp']['id'], 'localhost')
+    
   
   def test_create_options_hostname(self):
     old_backend_url = self.app.config['BACKEND_URL']
@@ -335,26 +404,25 @@ class TestWebAuthn(RouteBase):
       ])
 
   def test_register_credential(self):
-    from webauthn.helpers.base64url_to_bytes import base64url_to_bytes
     old_backend_url = self.app.config.get('BACKEND_URL')
     self.app.config['BACKEND_URL'] = 'http://localhost:7660'
     
     test_credential = {
-      'name': 'testzebra',
-      'credential': {
-        'id': 'hSU-pKCEtqz64nhuy2o1czwZaB0Vm1h4LY94LaHvO89Q8RhHwjQrXq8g7PQP7pN6gYDw8ufKlpqRwucvSjswgw',
-        'rawId': 'hSU-pKCEtqz64nhuy2o1czwZaB0Vm1h4LY94LaHvO89Q8RhHwjQrXq8g7PQP7pN6gYDw8ufKlpqRwucvSjswgw',
-        'response': {
-          'attestationObject': 'o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjESZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NFAAAAAgAAAAAAAAAAAAAAAAAAAAAAQIUlPqSghLas-uJ4bstqNXM8GWgdFZtYeC2PeC2h7zvPUPEYR8I0K16vIOz0D-6TeoGA8PLnypaakcLnL0o7MIOlAQIDJiABIVggVo43kymX5V8J70y8cGGOBRs5hX8mi3PGsCI_oIxldmIiWCDOQFHalRl1KrWzpZCZBK_quEU_FCQ0aeGMoZzIDMCUHg',
-          'clientDataJSON': 'eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiMDFMWU1IQUNRR19DVldfT3FoNldzMndtbGZJNFAtY0NQOVptTW9URjllOEx2alpnemdUSHc1Z1h1RFQtcEpsUkFTZ2plVWRxeGxnaDJfakx1RWJMRnciLCJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0Ojc2NjAiLCJjcm9zc09yaWdpbiI6ZmFsc2V9',
+      "name":"yubioink",
+      "credential": {
+        "id": "uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw",
+        "rawId": "uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw",
+        "response": {
+          "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjESZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NFAAAAAwAAAAAAAAAAAAAAAAAAAAAAQLg--8xYA3pm3qc2bZX34Frx7iST5v2wgQ4oJ8BoQWOr7ONiLqT15RgClckoX5HR_hQF3L_EA4mfzFtmeZmuBwOlAQIDJiABIVggL3Er2mHP5PQuzevlygjLXA-T5MEW4-MqNMcPe20opT8iWCCn6XhLVISChRVDLLLE1zzSJGcnXRgDcDnQug-xrAQ_Xw",
+          "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiLTM1MzRycWN0VVZ5SUpIUDlCMVZPQVBJY3JpVXFzUlRidjc0bTV5WHlTaFZwbWFQQzVjTURWT19KdDd1X3R5NXJPQ0tlRnZKT3pRMk9wSW85dHp4SkEiLCJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0Ojc2NjAiLCJjcm9zc09yaWdpbiI6ZmFsc2V9"
         },
-        'type': 'public-key',
+        "type": "public-key"
       },
-      'public_key': "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAETysBuXQA2iA-ig7_PKPB2fZ6KViUgcGlfYp2l9-ePtEC8b0MrHpLHvvnFyh4OcYGOpBNlUYutBzGu0CP7GhOMg",
+      "public_key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEL3Er2mHP5PQuzevlygjLXA-T5MEW4-MqNMcPe20opT-n6XhLVISChRVDLLLE1zzSJGcnXRgDcDnQug-xrAQ_Xw"
     }
 
     with self.client.session_transaction() as session:
-      session['expected_challenge'] = base64url_to_bytes('01LYMHACQG_CVW_Oqh6Ws2wmlfI4P-cCP9ZmMoTF9e8LvjZgzgTHw5gXuDT-pJlRASgjeUdqxlgh2_jLuEbLFw')
+      session['expected_challenge'] = base64url_to_bytes('-3534rqctUVyIJHP9B1VOAPIcriUqsRTbv74m5yXyShVpmaPC5cMDVO_Jt7u_ty5rOCKeFvJOzQ2OpIo9tzxJA')
 
     with self.fake_auth():
       ret = self.client.post('/v1/webauthn/register', json=test_credential)
@@ -362,9 +430,9 @@ class TestWebAuthn(RouteBase):
 
     db_user = User.query.filter(User.username==self.username).first()
     self.assertEqual(len(db_user.passkeys), 1)
-    pubk = get_public_key(db_user.passkeys[0].public_key_spi)
-    self.assertEqual(pubk.key_size, 256)
+    self.assertIsNotNone(db_user.passkeys[0].public_key)
+    self.assertEqual(db_user.passkeys[0].login_count, 3)
 
     data = ret.get_json().get('data') # type: ignore
-    self.assertEqual(data['name'], 'testzebra')
+    self.assertEqual(data['name'], 'yubioink')
     self.app.config['BACKEND_URL'] = old_backend_url

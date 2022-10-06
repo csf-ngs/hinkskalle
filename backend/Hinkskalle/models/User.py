@@ -227,7 +227,7 @@ class PassKey(db.Model): # type: ignore
   id = db.Column(db.LargeBinary(16), primary_key=True)
   name = db.Column(db.String, nullable=False)
   user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-  public_key_spi = db.Column(db.LargeBinary)
+  public_key = db.Column(db.LargeBinary)
   backed_up = db.Column(db.Boolean, default=False)
   createdAt = db.Column(db.DateTime, default=datetime.now)
 

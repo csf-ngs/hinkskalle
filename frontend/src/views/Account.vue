@@ -175,7 +175,7 @@
           </v-card>
         </v-col>
       </v-row>
-      <v-row>
+      <v-row v-if="canWebAuthn">
         <v-col cols="8" md="5" offset-md="3">
           <v-text-field
             type="text"
@@ -186,6 +186,13 @@
         </v-col>
         <v-col cols="4" md="1">
           <v-btn @click="createKey()" :disabled="!newCredentialValid">Add Credential</v-btn>
+        </v-col>
+      </v-row>
+      <v-row v-else>
+        <v-col cols="12" md="8" offset="2">
+          <v-alert type="error">
+            WebAuthn feature not detected, browser too old?
+          </v-alert>
         </v-col>
       </v-row>
     </v-container>
@@ -245,6 +252,9 @@ export default Vue.extend({
     passkeys(): PassKey[] {
       return this.$store.getters['passkeys/list'];
     },
+    canWebAuthn(): boolean {
+      return this.$store.getters.canWebAuthn;
+    }
   },
   watch: {
     'localState.showPwChange': function showPwChange(val) {
@@ -300,11 +310,10 @@ export default Vue.extend({
           navigator.credentials.create(createOptions).then(
             (cred: any) => {
               if (!cred) return;
-              console.log(cred);
               this.$store.dispatch('registerCredential', { name: this.localState.newCredentialName, cred: cred })
                 .then((key: PassKey) => {
-                  console.log(key);
                   this.$store.commit('snackbar/showSuccess', 'Key created');
+                  this.$store.commit('passkeys/update', key);
                 })
                 .catch(err => {
                   this.$store.commit('snackbar/showError', err);

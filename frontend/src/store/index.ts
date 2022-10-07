@@ -29,6 +29,7 @@ interface State {
   authStatus: '' | 'loading' | 'failed' | 'success';
   currentUser: User | null;
   config: ConfigParams | null;
+  canWebAuthn: boolean;
   showDrawer: boolean;
   snackbar?: SnackbarState;
   tokens?: TokensState;
@@ -58,6 +59,7 @@ const state: State = {
   currentUser: currentUserObj,
   config: null,
   showDrawer: true,
+  canWebAuthn: !!navigator.credentials && !!window.PublicKeyCredential,
 };
 
 export default new Vuex.Store({
@@ -68,6 +70,7 @@ export default new Vuex.Store({
     currentUser: (state): User | null => state.currentUser,
     showDrawer: (state): boolean => state.showDrawer,
     config: (state): ConfigParams | null => state.config,
+    canWebAuthn: (state): boolean => state.canWebAuthn,
   },
   mutations: {
     registerInterceptor(state: State, func: (err: any) => Promise<void>) {

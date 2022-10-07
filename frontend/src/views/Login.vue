@@ -205,7 +205,7 @@ export default Vue.extend({
         });
     },
     async requestSignin() {
-      if (!this.localState.user.username) return;
+      if (!this.$store.getters.canWebAuthn || !this.localState.user.username) return;
       const opts = await this.$store.dispatch('requestSignin', this.localState.user.username)
       if (opts.allowCredentials !== undefined && opts.allowCredentials.length > 0) {
         this.localState.webauthnAvailable = true;

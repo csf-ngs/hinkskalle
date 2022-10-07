@@ -3,7 +3,7 @@ from flask.helpers import make_response
 from itsdangerous import base64_encode
 from Hinkskalle import registry, password_checkers, authenticator, rebar, db
 from Hinkskalle.models.Entity import Entity
-from Hinkskalle.models.User import TokenSchema, User, UserSchema, PassKey, PassKeySchema
+from Hinkskalle.models.User import TokenSchema, User, UserSchema, PassKey, PassKeySchema, Token
 from Hinkskalle.util.auth.token import Scopes
 from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword
 from Hinkskalle.routes.util import _get_service_url
@@ -83,19 +83,8 @@ def get_token():
     user = password_checkers.check_password(body['username'], body['password'])
   except (UserNotFound, UserDisabled, InvalidPassword) as err:
     raise errors.Unauthorized(err.message)
-
   
-  try:
-    user_entity = Entity.query.filter(Entity.name==user.username).one()
-  except NoResultFound:
-    user_entity = Entity(name=user.username, createdBy=user.username)
-    db.session.add(user_entity)
-
-  token = user.create_token()
-  token.refresh()
-  token.source = 'auto'
-  db.session.add(token)
-  db.session.commit()
+  token = _handle_login(user)
   return { 'data': token }
 
 
@@ -148,7 +137,6 @@ def get_authn_create_options():
     timeout=180000,
   )
   session['expected_challenge'] = opts.challenge
-  current_app.logger.debug(session)
 
   return { 'data': { 'publicKey': json.loads(options_to_json(opts)) }}
 
@@ -207,6 +195,7 @@ def authn_signin_request():
 @registry.handles(
   rule='/v1/webauthn/signin',
   method='POST',
+  response_body_schema=GetTokenResponseSchema(),
   tags=['hinkskalle-ext']
 )
 def authn_signin():
@@ -218,27 +207,30 @@ def authn_signin():
   user: User = User.query.filter(User.username == username).first()
 
   cred = AuthenticationCredential.parse_raw(request.data)
-
-  success = False
-  key = PassKey.query.filter(PassKey.id==cred.raw_id and PassKey.user==user).first()
+  key = PassKey.query.filter(PassKey.id==cred.raw_id, PassKey.user==user).first()
   if not key:
-    raise errors.Forbidden(f"passkey not found")
+    raise errors.Unauthorized(f"passkey not found")
 
-  verified = verify_authentication_response(
-    credential = cred,
-    expected_challenge = challenge,
-    expected_rp_id = _get_rp_id(),
-    expected_origin = _get_origin(),
-    credential_public_key=key.public_key, 
-    require_user_verification=True,
-    credential_current_sign_count=key.login_count,
-  )
-  success=True
-  current_app.logger.debug(verified.json())
-
-  if not success:
-    raise errors.Forbidden(f"invalid passkey")
-  return { 'data': { 'some': 'thing' } }
+  try:
+    verified = verify_authentication_response(
+      credential = cred,
+      expected_challenge = challenge,
+      expected_rp_id = _get_rp_id(),
+      expected_origin = _get_origin(),
+      credential_public_key=key.public_key, 
+      require_user_verification=True,
+      credential_current_sign_count=key.current_sign_count,
+    )
+  except Exception as e:
+    current_app.logger.warning(e)
+    raise errors.Unauthorized(f"invalid passkey")
+  
+  token = _handle_login(user)
+  key.login_count = key.login_count + 1
+  key.last_used = datetime.now()
+  db.session.commit()
+  g.authenticated_user = user
+  return { 'data': token }
 
 
 def _get_rp_id() -> str:
@@ -257,3 +249,16 @@ def _get_origin() -> str:
     origin = urlparse(_get_service_url())
   return origin.geturl()
   
+def _handle_login(user: User) -> Token:
+  try:
+    user_entity = Entity.query.filter(Entity.name==user.username).one()
+  except NoResultFound:
+    user_entity = Entity(name=user.username, createdBy=user.username)
+    db.session.add(user_entity)
+
+  token = user.create_token()
+  token.refresh()
+  token.source = 'auto'
+  db.session.add(token)
+  db.session.commit()
+  return token

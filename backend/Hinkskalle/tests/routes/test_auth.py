@@ -1,3 +1,4 @@
+from ast import Pass
 import datetime
 import typing
 from flask import g, session
@@ -312,12 +313,13 @@ class TestWebAuthn(RouteBase):
     old_backend_url = self.app.config.get('BACKEND_URL')
     self.app.config['BACKEND_URL'] = 'http://localhost:7660'
 
+    key_id = base64url_to_bytes('uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw')
     self.user.passkeys = [
       PassKey(
-        id=base64url_to_bytes('uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw'),
+        id=key_id,
         name='testhase',
         public_key=base64url_to_bytes('pQECAyYgASFYIC9xK9phz-T0Ls3r5coIy1wPk-TBFuPjKjTHD3ttKKU_Ilggp-l4S1SEgoUVQyyyxNc80iRnJ10YA3A50LoPsawEP18='),
-        login_count=3,
+        current_sign_count=3,
       )
     ]
 
@@ -337,8 +339,29 @@ class TestWebAuthn(RouteBase):
     with self.client.session_transaction() as session:
       session['expected_challenge'] = base64url_to_bytes('5cBOaL8xPRYSHE6kw2VYawbWDomgj2yLppBvzE76wBBcd8fryf5lQzhxPiv1pbOX0yBlf_uTldK-3K9muPy0cA')
       session['username'] = self.username
-    ret = self.client.post('/v1/webauthn/signin', json=test_credential)
-    self.assertEqual(ret.status_code, 200)
+    
+    with self.app.test_client() as c:
+      ret = self.client.post('/v1/webauthn/signin', json=test_credential)
+      self.assertEqual(ret.status_code, 200)
+      self.assertIn('authenticated_user', g)
+      self.assertEqual(g.authenticated_user, self.user)
+    
+    data = ret.get_json().get('data') # type: ignore
+    self.assertIn('id', data)
+    self.assertIn('generatedToken', data)
+    self.assertIn('expiresAt', data)
+
+    self.assertEqual(len(self.user.tokens), 1)
+    db_token = Token.query.filter(Token.id==data['id']).first()
+    self.assertIsNotNone(db_token)
+    self.assertEqual(db_token.source, 'auto')
+    self.assertTrue(abs(db_token.expiresAt - (datetime.datetime.now()+Token.defaultExpiration)) < datetime.timedelta(minutes=1))
+
+    db_key = PassKey.query.filter(PassKey.id == key_id).one()
+    self.assertEqual(db_key.login_count, 1)
+    self.assertTrue(db_key.last_used > (datetime.datetime.now() - datetime.timedelta(minutes=1)))
+
+
 
     self.app.config['BACKEND_URL']=old_backend_url
 
@@ -431,7 +454,7 @@ class TestWebAuthn(RouteBase):
     db_user = User.query.filter(User.username==self.username).first()
     self.assertEqual(len(db_user.passkeys), 1)
     self.assertIsNotNone(db_user.passkeys[0].public_key)
-    self.assertEqual(db_user.passkeys[0].login_count, 3)
+    self.assertEqual(db_user.passkeys[0].current_sign_count, 3)
 
     data = ret.get_json().get('data') # type: ignore
     self.assertEqual(data['name'], 'yubioink')

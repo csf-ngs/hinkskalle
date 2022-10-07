@@ -33,6 +33,7 @@ class PassKeySchema(Schema):
   name = fields.String(required=True)
   createdAt = fields.DateTime(dump_only=True)
   last_used = fields.DateTime(dump_only=True)
+  current_sign_count = fields.Integer(dump_only=True)
   login_count = fields.Integer(dump_only=True)
   backed_up = fields.Boolean(dump_only=True)
 
@@ -229,6 +230,7 @@ class PassKey(db.Model): # type: ignore
   user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
   public_key = db.Column(db.LargeBinary)
   backed_up = db.Column(db.Boolean, default=False)
+  current_sign_count = db.Column(db.Integer, default=0, nullable=False)
   createdAt = db.Column(db.DateTime, default=datetime.now)
 
   last_used = db.Column(db.DateTime)

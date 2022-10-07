@@ -172,7 +172,7 @@ def authn_register():
     expected_origin=_get_origin(),
   )
   key.id = verify_results.credential_id
-  key.login_count = verify_results.sign_count
+  key.current_sign_count = verify_results.sign_count
   key.public_key = verify_results.credential_public_key
 
   try:

@@ -361,9 +361,77 @@ class TestWebAuthn(RouteBase):
     self.assertEqual(db_key.login_count, 1)
     self.assertTrue(db_key.last_used > (datetime.datetime.now() - datetime.timedelta(minutes=1)))
 
-
-
     self.app.config['BACKEND_URL']=old_backend_url
+
+  def test_signin_bad_challenge(self):
+    old_backend_url = self.app.config.get('BACKEND_URL')
+    self.app.config['BACKEND_URL'] = 'http://localhost:7660'
+
+    key_id = base64url_to_bytes('uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw')
+    self.user.passkeys = [
+      PassKey(
+        id=key_id,
+        name='testhase',
+        public_key=base64url_to_bytes('pQECAyYgASFYIC9xK9phz-T0Ls3r5coIy1wPk-TBFuPjKjTHD3ttKKU_Ilggp-l4S1SEgoUVQyyyxNc80iRnJ10YA3A50LoPsawEP18='),
+        current_sign_count=3,
+      )
+    ]
+
+    test_credential = {
+      "authenticatorAttachment": "cross-platform",
+      "clientExtensionResults": {},
+      "id": "uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw",
+      "rawId": "uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw",
+      "response": {
+        "authenticatorData": "SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAABg",
+        "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiNWNCT2FMOHhQUllTSEU2a3cyVllhd2JXRG9tZ2oyeUxwcEJ2ekU3NndCQmNkOGZyeWY1bFF6aHhQaXYxcGJPWDB5QmxmX3VUbGRLLTNLOW11UHkwY0EiLCJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0Ojc2NjAiLCJjcm9zc09yaWdpbiI6ZmFsc2V9",
+        "signature": "MEYCIQDzOkUVKPYLkI1h-aCd9575HJ8t1PMfeWF_dm_cscU8zAIhAOV07U2yHfkB0oQvSXrpPLnynHn79GySRA5Sa350v6RW",
+        "userHandle": "",
+      },
+      "type": "public-key",
+    }
+    with self.client.session_transaction() as session:
+      session['expected_challenge'] = b'oink'
+      session['username'] = self.username
+    
+    ret = self.client.post('/v1/webauthn/signin', json=test_credential)
+    self.assertEqual(ret.status_code, 401)
+
+  def test_signin_passkey_not_found(self):
+    old_backend_url = self.app.config.get('BACKEND_URL')
+    self.app.config['BACKEND_URL'] = 'http://localhost:7660'
+
+    other_user = _create_user(name='oink.hase')
+    key_id = base64url_to_bytes('uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw')
+    other_user.passkeys = [
+      PassKey(
+        id=key_id,
+        name='testhase',
+        public_key=base64url_to_bytes('pQECAyYgASFYIC9xK9phz-T0Ls3r5coIy1wPk-TBFuPjKjTHD3ttKKU_Ilggp-l4S1SEgoUVQyyyxNc80iRnJ10YA3A50LoPsawEP18='),
+        current_sign_count=3,
+      )
+    ]
+    db.session.commit()
+
+    test_credential = {
+      "authenticatorAttachment": "cross-platform",
+      "clientExtensionResults": {},
+      "id": "uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw",
+      "rawId": "uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw",
+      "response": {
+        "authenticatorData": "SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAABg",
+        "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiNWNCT2FMOHhQUllTSEU2a3cyVllhd2JXRG9tZ2oyeUxwcEJ2ekU3NndCQmNkOGZyeWY1bFF6aHhQaXYxcGJPWDB5QmxmX3VUbGRLLTNLOW11UHkwY0EiLCJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0Ojc2NjAiLCJjcm9zc09yaWdpbiI6ZmFsc2V9",
+        "signature": "MEYCIQDzOkUVKPYLkI1h-aCd9575HJ8t1PMfeWF_dm_cscU8zAIhAOV07U2yHfkB0oQvSXrpPLnynHn79GySRA5Sa350v6RW",
+        "userHandle": "",
+      },
+      "type": "public-key",
+    }
+    with self.client.session_transaction() as session:
+      session['expected_challenge'] = b'oink'
+      session['username'] = self.username
+    
+    ret = self.client.post('/v1/webauthn/signin', json=test_credential)
+    self.assertEqual(ret.status_code, 401)
 
 
   def test_create_options(self):

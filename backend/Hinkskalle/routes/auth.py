@@ -209,6 +209,7 @@ def authn_signin():
   cred = AuthenticationCredential.parse_raw(request.data)
   key = PassKey.query.filter(PassKey.id==cred.raw_id, PassKey.user==user).first()
   if not key:
+    current_app.logger.warning(f"passkey not found for {user.username}")
     raise errors.Unauthorized(f"passkey not found")
 
   try:
@@ -222,7 +223,7 @@ def authn_signin():
       credential_current_sign_count=key.current_sign_count,
     )
   except Exception as e:
-    current_app.logger.warning(e)
+    current_app.logger.warning(f"passkey verification failed for {user.username}: {e}")
     raise errors.Unauthorized(f"invalid passkey")
   
   token = _handle_login(user)

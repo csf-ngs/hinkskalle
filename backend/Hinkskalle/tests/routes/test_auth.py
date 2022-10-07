@@ -397,6 +397,8 @@ class TestWebAuthn(RouteBase):
     ret = self.client.post('/v1/webauthn/signin', json=test_credential)
     self.assertEqual(ret.status_code, 401)
 
+    self.app.config['BACKEND_URL']=old_backend_url
+
   def test_signin_passkey_not_found(self):
     old_backend_url = self.app.config.get('BACKEND_URL')
     self.app.config['BACKEND_URL'] = 'http://localhost:7660'
@@ -432,6 +434,8 @@ class TestWebAuthn(RouteBase):
     
     ret = self.client.post('/v1/webauthn/signin', json=test_credential)
     self.assertEqual(ret.status_code, 401)
+
+    self.app.config['BACKEND_URL']=old_backend_url
 
 
   def test_create_options(self):

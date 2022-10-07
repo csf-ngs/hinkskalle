@@ -163,21 +163,39 @@ export default new Vuex.Store({
           })
       });
     },
-    doSignin: ({ state }, cred) => {
-      const postData = {
-        id: cred.id,
-        rawId: b64url_encode(cred.rawId),
-        response: {
-          authenticatorData: b64url_encode(cred.response.authenticatorData),
-          clientDataJSON: b64url_encode(cred.response.clientDataJSON),
-          signature: b64url_encode(cred.response.signature),
-          userHandle: b64url_encode(cred.response.userHandle),
-        },
-        type: cred.type,
-        clientExtensionResults: {},
-        authenticatorAttachment: cred.authenticatorAttachment, 
-      };
-      console.log(postData);
+    doSignin: ({ state, commit }, cred) => {
+      return new Promise((resolve, reject) => {
+        const postData = {
+          id: cred.id,
+          rawId: b64url_encode(cred.rawId),
+          response: {
+            authenticatorData: b64url_encode(cred.response.authenticatorData),
+            clientDataJSON: b64url_encode(cred.response.clientDataJSON),
+            signature: b64url_encode(cred.response.signature),
+            userHandle: b64url_encode(cred.response.userHandle),
+          },
+          type: cred.type,
+          clientExtensionResults: {},
+          authenticatorAttachment: cred.authenticatorAttachment, 
+        };
+        commit('authRequested');
+        state.backend.post('/v1/webauthn/signin', postData)
+          .then(response => {
+            const token = response.data.data.generatedToken;
+            localStorage.setItem('token', token);
+            const user = plainToUser(response.data.data.user);
+            localStorage.setItem('user', JSON.stringify(response.data.data.user));
+            commit('authSuccess', { token, user });
+            commit('users/reset');
+            resolve(response);
+          })
+          .catch(err => {
+            commit('authFailed', err);
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            reject(err);
+          });
+      });
     },
     getAuthnCreateOptions: ({ state }) => {
       return new Promise<CredentialCreationOptions>((resolve) => {

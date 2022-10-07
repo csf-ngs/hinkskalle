@@ -23,7 +23,7 @@
                     name="Username" 
                     label="Username" 
                     required></v-text-field>
-                  <v-text-field v-if="!localState.webauthnAvailable" outlined 
+                  <v-text-field v-if="localState.passwordAvailable" outlined 
                     id="password" 
                     v-model="localState.user.password" 
                     :rules="rules" 
@@ -144,6 +144,7 @@ interface State {
   registerSuccess: boolean;
   registerError: string;
   webauthnAvailable: boolean;
+  passwordAvailable: boolean;
 }
 
 interface Data {
@@ -170,6 +171,7 @@ export default Vue.extend({
       registerSuccess: false,
       registerError: '',
       webauthnAvailable: false,
+      passwordAvailable: true,
     },
     rules: [
       (v: string): boolean | string => !!v || 'Required!',
@@ -202,18 +204,20 @@ export default Vue.extend({
           this.localState.loginError = generateMsg(err);
         });
     },
-    requestSignin() {
+    async requestSignin() {
       if (!this.localState.user.username) return;
-      this.$store.dispatch('requestSignin', this.localState.user.username)
-        .then((opts) => {
-          this.localState.webauthnAvailable = opts.allowCredentials !== undefined && opts.allowCredentials.length > 0;
-          if (this.localState.webauthnAvailable) {
-            navigator.credentials.get({ publicKey: opts })
-              .then(creds => {
-                this.$store.dispatch('doSignin', creds);
-              });
-          }
-        });
+      const opts = await this.$store.dispatch('requestSignin', this.localState.user.username)
+      if (opts.allowCredentials !== undefined && opts.allowCredentials.length > 0) {
+        this.localState.webauthnAvailable = true;
+        const creds = await navigator.credentials.get({ publicKey: opts })
+        this.$store.dispatch('doSignin', creds)
+          .then(() => {
+            this.$router.push('/');
+          })
+          .catch((err: AxiosError) => {
+            this.localState.loginError = generateMsg(err);
+          });
+      }
     }
   },
   computed: {

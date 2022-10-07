@@ -109,7 +109,33 @@
       </v-row>
       <v-row>
         <v-col cols="12" md="8" offset-md="2">
-          <h4>Registered Security Keys</h4>
+          <h4>
+            Registered Security Keys 
+            <v-btn icon color="blue-grey" @click="localState.showInfo=!localState.showInfo">
+              <v-icon>mdi-help-circle-outline</v-icon>
+            </v-btn>
+          </h4>
+        </v-col>
+      </v-row>
+      <v-row v-if="localState.showInfo">
+        <v-col cols="12" md="8" offset-md="2">
+          <v-alert 
+            border="left"
+            dismissible
+            colored-border
+            icon="mdi-help-circle"
+            color="blue-grey">
+              <p>Register a security key for <a href="https://webauthn.guide">logging in without a password</a>! (<i>not</i> two-factor)</p>
+              <p>You can use a USB dongle (like a YubiKey), your phone or your computer for storing your secret key and share
+                a public key with Hinkskalle. We know you are you because you:
+                <ol>
+                  <li>Posess your device</li>
+                  <li>And can unlock it (Touch ID, Yubikey PIN, ...)</li>
+                </ol>
+                Your browser then sends us a signed login request and we can verify this against
+                the public key that you have registered. No more passwords, no more phishing!
+              </p>
+          </v-alert>
         </v-col>
       </v-row>
       <v-row>
@@ -127,7 +153,7 @@
                       {{passkey.createdAt | prettyDateTime}}
                     </div>
                     <div style="width:33%" class="text-center">
-                      {{passkeys.last_used ? (passkey.last_used | prettyDateTime) : '-'}}
+                      {{passkey.last_used | prettyDateTime}}
                     </div>
                     <div style="width:33%" class="text-right">
                       {{passkey.login_count}}
@@ -159,7 +185,7 @@
             ></v-text-field>
         </v-col>
         <v-col cols="4" md="1">
-          <v-btn @click="createKey()" :disabled="!newCredentialValid">Test Credential!</v-btn>
+          <v-btn @click="createKey()" :disabled="!newCredentialValid">Add Credential</v-btn>
         </v-col>
       </v-row>
     </v-container>
@@ -183,6 +209,7 @@ interface State {
   password2: string;
   pwChangeValid: boolean;
   newCredentialName: string;
+  showInfo: boolean;
 }
 
 export default Vue.extend({
@@ -197,6 +224,7 @@ export default Vue.extend({
       password2: '',
       pwChangeValid: true,
       newCredentialName: '',
+      showInfo: false,
     },
   }),
   mounted: function() {

@@ -16,11 +16,7 @@ class LocalUsers(PasswordCheckerBase):
     except NoResultFound:
       raise UserNotFound()
       
-    if not user.is_active:
-      raise UserDisabled()
-
     if not user.check_password(password):
       raise InvalidPassword()
 
-    g.authenticated_user = user
     return user

@@ -5,7 +5,7 @@ from Hinkskalle import registry, password_checkers, authenticator, rebar, db
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.User import TokenSchema, User, UserSchema, PassKey, PassKeySchema, Token
 from Hinkskalle.util.auth.token import Scopes
-from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword
+from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword, PasswordAuthDisabled
 from Hinkskalle.routes.util import _get_service_url
 from .util import _get_service_url
 from flask_rebar import RequestSchema, ResponseSchema, errors
@@ -81,9 +81,15 @@ def get_token():
   body = rebar.validated_body
   try:
     user = password_checkers.check_password(body['username'], body['password'])
-  except (UserNotFound, UserDisabled, InvalidPassword) as err:
+    if not user.is_active:
+      raise UserDisabled()
+    if user.password_disabled:
+      raise PasswordAuthDisabled()
+  except (UserNotFound, UserDisabled, PasswordAuthDisabled, InvalidPassword) as err:
     raise errors.Unauthorized(err.message)
-  
+
+  g.authenticated_user = user
+
   token = _handle_login(user)
   return { 'data': token }
 
@@ -185,11 +191,12 @@ def authn_signin_request():
     rp_id=_get_rp_id(), 
     timeout=180000,
     allow_credentials=[ 
-      PublicKeyCredentialDescriptor(id=key.id) for key in (user.passkeys if user else [])
+      PublicKeyCredentialDescriptor(id=key.id) for key in (user.passkeys if user and user.is_active else [])
     ],
   )
-  session['expected_challenge']=opts.challenge
-  session['username']=user.username if user else None
+  if user and user.is_active:
+    session['expected_challenge']=opts.challenge
+    session['username']=user.username
   return { 'data': json.loads(options_to_json(opts)) }
 
 @registry.handles(
@@ -205,6 +212,8 @@ def authn_signin():
     raise errors.NotAcceptable("invalid state, request options first")
 
   user: User = User.query.filter(User.username == username).first()
+  if not user.is_active:
+    raise errors.Unauthorized(f"User disabled")
 
   cred = AuthenticationCredential.parse_raw(request.data)
   key = PassKey.query.filter(PassKey.id==cred.raw_id, PassKey.user==user).first()

@@ -117,9 +117,6 @@ class LDAPUsers(PasswordCheckerBase):
     try:
       user = User.query.filter(User.username == _get_attr(attrs.get(self.username_attr))).one()
 
-      if not user.is_active:
-        raise UserDisabled()
-
       if not user.source == 'ldap':
         raise UserConflict(username=user.username)
 
@@ -154,7 +151,6 @@ class LDAPUsers(PasswordCheckerBase):
     self.ldap.close()
 
     db_user = self.sync_user(ldap_user)
-    g.authenticated_user = db_user
     return db_user
 
 

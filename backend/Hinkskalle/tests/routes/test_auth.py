@@ -36,6 +36,17 @@ class TestPasswordAuth(RouteBase):
     self.assertEqual(db_token.source, 'auto')
     self.assertTrue(abs(db_token.expiresAt - (datetime.datetime.now()+Token.defaultExpiration)) < datetime.timedelta(minutes=1))
   
+  def test_password_disabled(self):
+    user = _create_user(name='oink.hase')
+    user.set_password('supergeheim')
+    user.password_disabled = True
+    db.session.commit()
+
+    with self.app.test_client() as c:
+      ret = c.post('/v1/get-token', json={ 'username': user.username, 'password': 'supergeheim' } )
+      self.assertEqual(ret.status_code, 401)
+      self.assertIsNone(g.get('authenticated_user'))
+  
   def test_login_entity_create(self):
     user = _create_user(name='oink.hase')
     user.set_password('supergeheim')
@@ -303,11 +314,33 @@ class TestWebAuthn(RouteBase):
       ])
   
   def test_signin_request_invalid_username(self):
-    ret = self.client.post('/v1/webauthn/signin-request', json={ 'username': 'spektrophilious dackelschwanz' })
-    self.assertEqual(ret.status_code, 200)
+    with self.client:
+      ret = self.client.post('/v1/webauthn/signin-request', json={ 'username': 'spektrophilious dackelschwanz' })
+      self.assertEqual(ret.status_code, 200)
+      self.assertIsNone(session.get('expected_challenge'))
+      self.assertIsNone(session.get('username'))
     opts = ret.get_json().get('data') # type:ignore
     self.assertEqual(opts['rpId'], 'localhost')
     self.assertListEqual(opts['allowCredentials'], [])
+
+  def test_signin_request_disabled(self):
+    passkey_id = b'4711'
+    self.user.passkeys = [
+      PassKey(id=passkey_id, name='something')
+    ]
+    self.user.is_active=False
+    db.session.commit()
+
+    with self.client:
+      ret = self.client.post('/v1/webauthn/signin-request', json={ 'username': self.username })
+      self.assertEqual(ret.status_code, 200)
+      self.assertIsNone(session.get('expected_challenge'))
+      self.assertIsNone(session.get('username'))
+
+    opts = ret.get_json().get('data') # type:ignore
+    self.assertListEqual(
+      opts['allowCredentials'], [])
+  
 
   def test_signin(self):
     old_backend_url = self.app.config.get('BACKEND_URL')
@@ -436,6 +469,45 @@ class TestWebAuthn(RouteBase):
     self.assertEqual(ret.status_code, 401)
 
     self.app.config['BACKEND_URL']=old_backend_url
+
+  def test_signin_disabled(self):
+    old_backend_url = self.app.config.get('BACKEND_URL')
+    self.app.config['BACKEND_URL'] = 'http://localhost:7660'
+
+    key_id = base64url_to_bytes('uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw')
+    self.user.passkeys = [
+      PassKey(
+        id=key_id,
+        name='testhase',
+        public_key=base64url_to_bytes('pQECAyYgASFYIC9xK9phz-T0Ls3r5coIy1wPk-TBFuPjKjTHD3ttKKU_Ilggp-l4S1SEgoUVQyyyxNc80iRnJ10YA3A50LoPsawEP18='),
+        current_sign_count=3,
+      )
+    ]
+
+    test_credential = {
+      "authenticatorAttachment": "cross-platform",
+      "clientExtensionResults": {},
+      "id": "uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw",
+      "rawId": "uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw",
+      "response": {
+        "authenticatorData": "SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAABg",
+        "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiNWNCT2FMOHhQUllTSEU2a3cyVllhd2JXRG9tZ2oyeUxwcEJ2ekU3NndCQmNkOGZyeWY1bFF6aHhQaXYxcGJPWDB5QmxmX3VUbGRLLTNLOW11UHkwY0EiLCJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0Ojc2NjAiLCJjcm9zc09yaWdpbiI6ZmFsc2V9",
+        "signature": "MEYCIQDzOkUVKPYLkI1h-aCd9575HJ8t1PMfeWF_dm_cscU8zAIhAOV07U2yHfkB0oQvSXrpPLnynHn79GySRA5Sa350v6RW",
+        "userHandle": "",
+      },
+      "type": "public-key",
+    }
+    with self.client.session_transaction() as session:
+      session['expected_challenge'] = base64url_to_bytes('5cBOaL8xPRYSHE6kw2VYawbWDomgj2yLppBvzE76wBBcd8fryf5lQzhxPiv1pbOX0yBlf_uTldK-3K9muPy0cA')
+      session['username'] = self.username
+    
+    self.user.is_active=False
+    db.session.commit()
+
+    with self.app.test_client() as c:
+      ret = self.client.post('/v1/webauthn/signin', json=test_credential)
+      self.assertEqual(ret.status_code, 401)
+      self.assertIsNone(g.get('authenticated_user'))
 
 
   def test_create_options(self):

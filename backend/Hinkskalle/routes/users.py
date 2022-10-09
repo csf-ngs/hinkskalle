@@ -227,7 +227,7 @@ def update_user(username):
     raise errors.Forbidden("Access denied to user")
 
   if user.source != 'local':
-    body = {k:v for k, v in body.items() if k in ['is_admin', 'is_active', 'source', 'quota']}
+    body = {k:v for k, v in body.items() if k in ['is_admin', 'is_active', 'source', 'quota', 'password_disabled']}
 
   if not g.authenticated_user.is_admin:
     body.pop('quota', None)

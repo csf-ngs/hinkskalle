@@ -22,6 +22,7 @@ class TestUser(ModelBase):
     self.assertEqual(read_user.id, user.id)
     self.assertTrue(abs(read_user.createdAt - datetime.now()) < timedelta(seconds=2))
     self.assertFalse(read_user.is_admin)
+    self.assertFalse(read_user.password_disabled)
 
   def test_quota(self):
     user = _create_user('test.hase')
@@ -202,6 +203,7 @@ class TestUser(ModelBase):
     self.assertNotIn('password', serialized)
 
     self.assertEqual(serialized['quota'], user.quota)
+    self.assertFalse(serialized['passwordDisabled'])
 
     user.is_admin=True
     serialized = typing.cast(dict, schema.dump(user))
@@ -219,9 +221,11 @@ class TestUser(ModelBase):
       'isAdmin': True,
       'isActive': True,
       'quota': 999,
+      'passwordDisabled': False,
     }))
     self.assertTrue(deserialized['is_admin'])
     self.assertTrue(deserialized['is_active'])
+    self.assertFalse(deserialized['password_disabled'])
     self.assertEqual(deserialized['quota'], 999)
 
   def test_deserialize_username_check(self):

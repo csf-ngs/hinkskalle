@@ -1,3 +1,4 @@
+from distutils import bcppcompiler
 import typing
 from Hinkskalle import db
 import Hinkskalle.util.name_check
@@ -67,6 +68,7 @@ class UserSchema(BaseSchema):
   lastname = fields.String(required=True)
   is_admin = fields.Boolean(data_key='isAdmin')
   is_active = fields.Boolean(data_key='isActive')
+  password_disabled = fields.Boolean(data_key='passwordDisabled')
   source = fields.String()
   quota = fields.Integer()
   used_quota = fields.Integer(dump_only=True)
@@ -119,6 +121,7 @@ class User(db.Model): # type: ignore
 
   source = db.Column(db.String(), default='local', nullable=False)
   _passkey_id = db.Column('passkey_id', db.LargeBinary(16), default=lambda: secrets.token_bytes(16), unique=True)
+  password_disabled = db.Column(db.Boolean, default=False, nullable=False)
 
   groups = db.relationship('UserGroup', back_populates='user', cascade='all, delete-orphan')
   tokens = db.relationship('Token', back_populates='user', cascade="all, delete-orphan")

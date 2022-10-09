@@ -105,6 +105,7 @@ class TestUsers(RouteBase):
       "quota": 0,
       "used_quota": 0,
       "image_count": 0,
+      "passwordDisabled": False,
     })
   
   def test_get_invalid_username(self):
@@ -458,6 +459,7 @@ class TestUsers(RouteBase):
       "isAdmin": True,
       "isActive": False,
       'quota': 1234,
+      'passwordDisabled': True,
     }
     with self.fake_admin_auth():
       ret = self.client.put(f"/v1/users/{user.username}", json=update_data)
@@ -469,6 +471,7 @@ class TestUsers(RouteBase):
     for f in ['email', 'firstname', 'lastname', 'source', 'isAdmin', 'isActive', 'quota']:
       uf = 'is_active' if f == 'isActive' else 'is_admin' if f == 'isAdmin' else f
       self.assertEqual(getattr(db_user, uf), update_data[f])
+    self.assertEqual(db_user.password_disabled, update_data['passwordDisabled'])
     self.assertTrue(abs(db_user.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
   
   def test_update_username(self):
@@ -517,6 +520,7 @@ class TestUsers(RouteBase):
         'lastname': 'aundashase',
         'isActive': True,
         'isAdmin': True,
+        'passwordDisabled': True,
       })
     
     self.assertEqual(ret.status_code, 200)
@@ -526,6 +530,7 @@ class TestUsers(RouteBase):
     self.assertNotEqual(db_user.lastname, 'aundashase')
     self.assertTrue(db_user.is_active)
     self.assertTrue(db_user.is_admin)
+    self.assertTrue(db_user.password_disabled)
 
   def test_update_nonlocal_quota(self):
     user = _create_user('update.hase')
@@ -617,6 +622,7 @@ class TestUsers(RouteBase):
       "email": "wo@ande.rs",
       "firstname": "Zwerg",
       "lastname": "Nase",
+      "passwordDisabled": True,
     }
     with self.fake_auth():
       ret = self.client.put(f"/v1/users/{self.username}", json=user_data)
@@ -628,6 +634,7 @@ class TestUsers(RouteBase):
     self.assertEqual(db_user.email, user_data['email'])
     self.assertEqual(db_user.firstname, user_data['firstname'])
     self.assertEqual(db_user.lastname, user_data['lastname'])
+    self.assertEqual(db_user.password_disabled, user_data['passwordDisabled'])
   
   def test_update_user_quota(self):
     old_quota = self.user.quota

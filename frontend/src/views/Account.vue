@@ -108,6 +108,17 @@
         </v-col>
       </v-row>
       <v-row>
+        <v-col cols="12" md="4" offset-md="4">
+          <v-alert v-if="canDisablePassword"
+            border="left"
+            colored-border
+            icon="mdi-shield-key"
+            color="blue-grey">
+            Disable Password Auth
+          </v-alert>
+        </v-col>
+      </v-row>
+      <v-row>
         <v-col cols="12" md="8" offset-md="2">
           <h4>
             Registered Security Keys 
@@ -125,7 +136,7 @@
             colored-border
             icon="mdi-help-circle"
             color="blue-grey">
-              <p>Register a security key for <a href="https://webauthn.guide">logging in without a password</a>! (<i>not</i> two-factor)</p>
+              <p>Register a security key for <a href="https://webauthn.guide">logging in without a password</a>!
               <p>You can use a USB dongle (like a YubiKey), your phone or your computer for storing your secret key and share
                 a public key with Hinkskalle. We know you are you because you:
                 <ol>
@@ -133,7 +144,12 @@
                   <li>And can unlock it (Touch ID, Yubikey PIN, ...)</li>
                 </ol>
                 Your browser then sends us a signed login request and we can verify this against
-                the public key that you have registered. No more passwords, no more phishing!
+                the public key that you have registered.
+              </p>
+              <p>
+                When you have registered two or more security keys you can disable password
+                authentication for your account. No more passwords, no more phishing! And you
+                can still access your account in case you lose on of your keys.
               </p>
           </v-alert>
         </v-col>
@@ -205,8 +221,6 @@ import { User, PassKey } from '../store/models';
 
 import { clone as _clone } from 'lodash';
 
-import { b64url_encode } from '@/util/b64url';
-
 interface State {
   editUser: User | null;
   editValid: boolean;
@@ -254,7 +268,10 @@ export default Vue.extend({
     },
     canWebAuthn(): boolean {
       return this.$store.getters.canWebAuthn;
-    }
+    },
+    canDisablePassword(): boolean {
+      return this.passkeys && this.passkeys.length >= 2;
+    },
   },
   watch: {
     'localState.showPwChange': function showPwChange(val) {
@@ -296,6 +313,10 @@ export default Vue.extend({
     },
     loadPasskeys(): Promise<PassKey[]> {
       return this.$store.dispatch('passkeys/list')
+        .then(keys => {
+          this.localState.showInfo = keys.length === 0;
+          return keys;
+        })
         .catch(err => this.$store.commit('snackbar/showError', err));
     },
     deletePasskey(key: PassKey): Promise<void> {

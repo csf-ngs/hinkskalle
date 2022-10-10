@@ -157,7 +157,7 @@ export default new Vuex.Store({
         state.backend.post('/v1/webauthn/signin-request', { username: username })
           .then(response => {
             const opts: PublicKeyCredentialRequestOptions = response.data.data;
-            opts.allowCredentials = opts.allowCredentials!.map((cred: any) => {
+            opts.allowCredentials = opts.allowCredentials?.map((cred: any) => {
               cred.id = b64url_decode(cred.id);
               return cred;
             });

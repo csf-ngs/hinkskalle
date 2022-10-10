@@ -2,7 +2,7 @@ import { AxiosError, AxiosResponse } from 'axios';
 import { Module } from 'vuex';
 import { map as _map } from 'lodash';
 
-import { PassKey, plainToPassKey, serializePassKey, User } from '../models';
+import { PassKey, plainToPassKey, User } from '../models';
 
 import { concat as _concat, filter as _filter } from 'lodash';
 
@@ -68,7 +68,7 @@ const passkeyModule: Module<State, any> = {
             return new Promise((resolve, reject) => {
                 commit('loading');
                 rootState.backend.delete(`/v1/users/${getters.user.username}/passkeys/${toDelete.id}`)
-                    .then((response: AxiosResponse) => {
+                    .then(() => {
                         commit('remove', toDelete.id);
                         commit('loadingSucceeded');
                         resolve();

@@ -803,3 +803,34 @@ class TestPassKeys(RouteBase):
       ret = self.client.delete(f'/v1/users/{other_user.username}/passkeys/{pk1.encoded_id}')
     self.assertEqual(ret.status_code, 403)
   
+  def test_disable_password(self):
+    pk1 = PassKey(id=b'1234', name='ans', user=self.user)
+    pk2 = PassKey(id=b'2234', name='zwa', user=self.user)
+    pk3 = PassKey(id=b'3234', name='drei', user=self.user)
+    db.session.add(pk1)
+    db.session.add(pk2)
+    db.session.add(pk3)
+    self.user.password_disabled = True
+    db.session.commit()
+
+    pk1_id = pk1.encoded_id
+    pk2_id = pk2.encoded_id
+    user_id = self.user.id
+
+    with self.fake_auth():
+      ret = self.client.delete(f'/v1/users/{self.username}/passkeys/{pk1_id}')
+    self.assertEqual(ret.status_code, 200)
+
+    read_user = User.query.get(user_id)
+    self.assertTrue(read_user.password_disabled)
+
+    # only one key left, should disable disable
+    with self.fake_auth():
+      ret = self.client.delete(f'/v1/users/{self.username}/passkeys/{pk2_id}')
+    self.assertEqual(ret.status_code, 200)
+
+    read_user = User.query.get(user_id)
+    self.assertFalse(read_user.password_disabled)
+
+
+  

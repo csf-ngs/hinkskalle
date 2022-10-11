@@ -329,6 +329,8 @@ def delete_passkey(username, passkey_id):
   if not passkey:
     raise errors.NotFound(f'Passkey with id {passkey_id} not found')
   db.session.delete(passkey)
+  if len(user.passkeys) < 2:
+    user.password_disabled = False
   db.session.commit()
   return { 'status': 'ok' }
 

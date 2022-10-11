@@ -41,6 +41,17 @@
                 </v-col>
               </v-row>
               <v-row>
+                <v-col cols="12" md="6" offset-md="3">
+                  <hsk-text-input id="disable-password"
+                    type="yesno"
+                    label="Disable Password Auth"
+                    field="passwordDisabled"
+                    :obj="localState.editUser"
+                    :readonly="!canDisablePassword"
+                    @updated="localState.editUser=$event"></hsk-text-input>
+                </v-col>
+              </v-row>
+              <v-row>
                 <v-col cols="12">
                   <v-spacer></v-spacer>
                   <v-dialog v-model="localState.showPwChange" max-width="500px">
@@ -105,17 +116,6 @@
               </v-row>
             </v-container>
           </v-form>
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col cols="12" md="4" offset-md="4">
-          <v-alert v-if="canDisablePassword"
-            border="left"
-            colored-border
-            icon="mdi-shield-key"
-            color="blue-grey">
-            Disable Password Auth
-          </v-alert>
         </v-col>
       </v-row>
       <v-row>

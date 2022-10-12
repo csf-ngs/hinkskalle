@@ -397,7 +397,7 @@ class TestWebAuthn(RouteBase):
       self.assertIn('authenticated_user', g)
       self.assertEqual(g.authenticated_user, self.user)
     
-    data = ret.get_json().get('data') # type: ignore
+    data = typing.cast(dict, ret.get_json()).get('data', {})
     self.assertIn('id', data)
     self.assertIn('generatedToken', data)
     self.assertIn('expiresAt', data)
@@ -533,7 +533,7 @@ class TestWebAuthn(RouteBase):
       ret = self.client.get('/v1/webauthn/create-options')
       self.assertIsNotNone(session.get('expected_challenge'))
     self.assertEqual(ret.status_code, 200)
-    opts = ret.get_json().get('data') # type: ignore
+    opts = typing.cast(dict, ret.get_json()).get('data', {})
     self.assertEqual(opts['publicKey']['user']['name'], self.username)
     self.assertEqual(opts['publicKey']['user']['id'], base64.urlsafe_b64encode(self.user.passkey_id.encode('utf-8')).decode('utf-8'))
 
@@ -548,7 +548,7 @@ class TestWebAuthn(RouteBase):
       ret = self.client.get('/v1/webauthn/create-options')
     self.assertEqual(ret.status_code, 200)
 
-    opts = ret.get_json().get('data') # type: ignore
+    opts = typing.cast(dict, ret.get_json()).get('data', {})
     self.assertEqual(opts['publicKey']['rp']['id'], 'oi.nk')
     self.app.config['BACKEND_URL'] = old_backend_url
 
@@ -560,7 +560,7 @@ class TestWebAuthn(RouteBase):
       ret = self.client.get('/v1/webauthn/create-options')
     self.assertEqual(ret.status_code, 200)
 
-    opts = ret.get_json().get('data') # type: ignore 
+    opts = typing.cast(dict, ret.get_json()).get('data', {})
     self.assertEqual(opts['publicKey']['rp']['id'], 'gru.nzoi.nk')
     self.app.config['FRONTEND_URL'] = old_config
   
@@ -569,7 +569,7 @@ class TestWebAuthn(RouteBase):
       ret = self.client.get('/v1/webauthn/create-options')
     self.assertEqual(ret.status_code, 200)
 
-    opts = ret.get_json().get('data') # type: ignore
+    opts = typing.cast(dict, ret.get_json()).get('data', {})
     self.assertListEqual(opts['publicKey']['excludeCredentials'], [])
   
   def test_create_options_exclude_has_key(self):
@@ -582,7 +582,7 @@ class TestWebAuthn(RouteBase):
     with self.fake_auth():
       ret = self.client.get('/v1/webauthn/create-options')
     self.assertEqual(ret.status_code, 200)
-    opts = ret.get_json().get('data') # type: ignore 
+    opts = typing.cast(dict, ret.get_json()).get('data', {})
     self.assertListEqual(
       opts['publicKey']['excludeCredentials'], [ 
         { 'type': 'public-key', 'id': base64.urlsafe_b64encode(passkey_id).decode('utf-8').replace('=', '') }
@@ -618,6 +618,6 @@ class TestWebAuthn(RouteBase):
     self.assertIsNotNone(db_user.passkeys[0].public_key)
     self.assertEqual(db_user.passkeys[0].current_sign_count, 3)
 
-    data = ret.get_json().get('data') # type: ignore
+    data = typing.cast(dict, ret.get_json()).get('data', {})
     self.assertEqual(data['name'], 'yubioink')
     self.app.config['BACKEND_URL'] = old_backend_url

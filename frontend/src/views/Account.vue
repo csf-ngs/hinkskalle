@@ -149,7 +149,7 @@
               <p>
                 When you have registered two or more security keys you can disable password
                 authentication for your account. No more passwords, no more phishing! And you
-                can still access your account in case you lose on of your keys.
+                can still access your account in case you lose one of your keys.
               </p>
           </v-alert>
         </v-col>

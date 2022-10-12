@@ -50,6 +50,12 @@
                     :readonly="!canDisablePassword"
                     @updated="localState.editUser=$event"></hsk-text-input>
                 </v-col>
+                <v-alert v-if="localState.editUser.passwordDisabled" outlined type="info">
+                  For docker/OCI auth: paste a valid token instead of your
+                  password when running <code>docker login</code>. 
+                  <router-link to="Tokens">Generate a token here</router-link>
+                  and treat it like a family secret!
+                </v-alert>
               </v-row>
               <v-row>
                 <v-col cols="12">
@@ -132,7 +138,6 @@
         <v-col cols="12" md="8" offset-md="2">
           <v-alert 
             border="left"
-            dismissible
             colored-border
             icon="mdi-help-circle"
             color="blue-grey">

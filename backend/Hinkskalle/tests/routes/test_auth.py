@@ -527,6 +527,8 @@ class TestWebAuthn(RouteBase):
       self.assertEqual(ret.status_code, 401)
       self.assertIsNone(g.get('authenticated_user'))
 
+    self.app.config['BACKEND_URL'] = old_backend_url
+
 
   def test_create_options(self):
     with self.fake_auth(), self.client:

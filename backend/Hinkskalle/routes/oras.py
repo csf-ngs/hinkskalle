@@ -155,6 +155,7 @@ def authenticate_check():
     if len(parts) != 2 or parts[0].lower()!='basic':
       raise OrasUnauthorized()
     decoded = base64.b64decode(parts[1]).decode('utf8')
+
     try:
       username, password = decoded.split(':')
     except ValueError:
@@ -162,11 +163,31 @@ def authenticate_check():
     if not username or not password:
       current_app.logger.debug(f"Invalid basic auth data {decoded}")
       raise OrasUnauthorized()
+
     try:
-      user = password_checkers.check_password(username, password)
-    except (UserNotFound, UserDisabled, InvalidPassword) as err:
-      current_app.logger.debug(f"password check fail {err}")
+      user: User = User.query.filter(User.username==username).one()
+    except:
       raise OrasUnauthorized()
+    
+    if not user.is_active:
+      raise OrasUnauthorized()
+
+    auth_valid = False
+    for token in user.manual_tokens:
+      if token.check_token(password):
+        auth_valid = True
+        break
+
+    if not auth_valid:
+      if not user.password_disabled: 
+        try:
+          _user = password_checkers.check_password(username, password)
+        except (UserNotFound, InvalidPassword) as err:
+          current_app.logger.debug(f"password check fail {err}")
+          raise OrasUnauthorized()
+      else:
+        raise OrasUnauthorized()
+    
     token = user.create_token()
     token.refresh()
     token.source = 'auto'
@@ -362,7 +383,7 @@ def oras_push_manifest(name, reference):
     tag = Tag(name=reference)
     db.session.add(tag)
 
-  with db.session.no_autoflush:
+  with db.session.no_autoflush: # type: ignore
     for layer in manifest_data.get('layers', []) + [ manifest_data.get('config', {})]:
       if not 'digest' in layer or not 'mediaType' in layer:
         continue
@@ -375,7 +396,7 @@ def oras_push_manifest(name, reference):
         current_app.logger.debug(f"Blob hash {layer.get('digest')} not found in container {container.id}")
         raise OrasBlobUnknwon(f"Blob hash {layer.get('digest')} not found in container {container.id}")
 
-  with db.session.no_autoflush:
+  with db.session.no_autoflush: # type: ignore
     manifest = tag.manifest_ref or Manifest()
     manifest.content = request.data.decode('utf8') # type: ignore
     existing = Manifest.query.filter(Manifest.hash == manifest.hash, Manifest.container_ref==container).first()
@@ -600,7 +621,7 @@ def oras_push_chunk_init(upload_id):
     raise OrasBlobUploadInvalid(f"Upload already expired. Please to be faster.")
   upload.state = UploadStates.uploading
 
-  upload_tmp = os.path.join(current_app.config.get('IMAGE_PATH'), '_tmp')
+  upload_tmp = os.path.join(current_app.config['IMAGE_PATH'], '_tmp')
   os.makedirs(upload_tmp, exist_ok=True)
   upload.path = tempfile.mkdtemp(dir=upload_tmp)
 

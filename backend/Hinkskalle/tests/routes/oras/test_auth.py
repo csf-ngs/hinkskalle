@@ -139,7 +139,7 @@ class TestOrasAuth(RouteBase):
 
   def test_post_base(self):
     user = _create_user('oink.hase')
-    token = Token(token='oinkoinkoinkoink', user_id=user.id)
+    token = Token(token='oinkoinkoinkoink', user_id=user.id, source='manual')
     db.session.add(token)
     db.session.commit()
     db.session.expunge_all()

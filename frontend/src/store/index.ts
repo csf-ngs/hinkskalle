@@ -153,16 +153,16 @@ export default new Vuex.Store({
       });
     },
     requestSignin: ({ state }, username: string) => {
-      return new Promise<PublicKeyCredentialRequestOptions>((resolve) => {
+      return new Promise<{ options: PublicKeyCredentialRequestOptions, passwordDisabled: boolean}>((resolve) => {
         state.backend.post('/v1/webauthn/signin-request', { username: username })
           .then(response => {
-            const opts: PublicKeyCredentialRequestOptions = response.data.data;
+            const opts: PublicKeyCredentialRequestOptions = response.data.data.options;
             opts.allowCredentials = opts.allowCredentials?.map((cred: any) => {
               cred.id = b64url_decode(cred.id);
               return cred;
             });
             opts.challenge = b64url_decode(opts.challenge as unknown as string);
-            resolve(opts);
+            resolve({ options: opts, passwordDisabled: !!response.data.data.passwordDisabled });
           })
       });
     },

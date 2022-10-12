@@ -56,6 +56,13 @@ class RegisterCredentialSchema(RequestSchema):
 class SigninRequestSchema(RequestSchema):
   username = fields.String(required=True)
 
+class SigninRequestOptionsSchema(Schema):
+  passwordDisabled = fields.Bool(default=False)
+  options = fields.Dict()
+
+class SigninRequestResponseSchema(ResponseSchema):
+  data = fields.Nested(SigninRequestOptionsSchema)
+
 @registry.handles(
   rule='/v1/token-status',
   method='GET',
@@ -181,6 +188,7 @@ def authn_register():
   rule='/v1/webauthn/signin-request',
   method='POST',
   request_body_schema=SigninRequestSchema(),
+  response_body_schema=SigninRequestResponseSchema(),
   tags=['hinkskalle-ext'],
 )
 def authn_signin_request():
@@ -194,10 +202,16 @@ def authn_signin_request():
       PublicKeyCredentialDescriptor(id=key.id) for key in (user.passkeys if user and user.is_active else [])
     ],
   )
+
+  ret = {
+    'options': json.loads(options_to_json(opts)),
+    'passwordDisabled': False,
+  }
   if user and user.is_active:
     session['expected_challenge']=opts.challenge
     session['username']=user.username
-  return { 'data': json.loads(options_to_json(opts)) }
+    ret['passwordDisabled']=user.password_disabled
+  return { 'data': ret }
 
 @registry.handles(
   rule='/v1/webauthn/signin',

@@ -206,10 +206,11 @@ export default Vue.extend({
     },
     async requestSignin() {
       if (!this.$store.getters.canWebAuthn || !this.localState.user.username) return;
-      const opts = await this.$store.dispatch('requestSignin', this.localState.user.username)
-      if (opts.allowCredentials !== undefined && opts.allowCredentials.length > 0) {
+      const {options, passwordDisabled} = await this.$store.dispatch('requestSignin', this.localState.user.username)
+      if (options.allowCredentials !== undefined && options.allowCredentials.length > 0) {
+        this.localState.passwordAvailable = !passwordDisabled;
         this.localState.webauthnAvailable = true;
-        const creds = await navigator.credentials.get({ publicKey: opts })
+        const creds = await navigator.credentials.get({ publicKey: options })
         this.$store.dispatch('doSignin', creds)
           .then(() => {
             this.$router.push('/');

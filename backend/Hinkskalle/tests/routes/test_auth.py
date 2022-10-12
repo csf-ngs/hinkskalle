@@ -293,10 +293,26 @@ class TestWebAuthn(RouteBase):
       self.assertIsNotNone(session.get('expected_challenge'))
       self.assertEqual(session.get('username'), self.username)
     self.assertEqual(ret.status_code, 200)
-    opts = ret.get_json().get('data') # type:ignore
-    self.assertEqual(opts['rpId'], 'localhost')
-    self.assertIsNotNone(opts['challenge'])
-    self.assertListEqual(opts['allowCredentials'], [])
+    data = ret.get_json().get('data') # type:ignore
+    self.assertFalse(data['passwordDisabled'])
+    self.assertEqual(data['options']['rpId'], 'localhost')
+    self.assertIsNotNone(data['options']['challenge'])
+    self.assertListEqual(data['options']['allowCredentials'], [])
+
+  def test_signin_request_password_disabled(self):
+    self.user.password_disabled = True
+    db.session.commit()
+
+    with self.client:
+      ret = self.client.post('/v1/webauthn/signin-request', json={ 'username': self.username })
+      self.assertIsNotNone(session.get('expected_challenge'))
+      self.assertEqual(session.get('username'), self.username)
+    self.assertEqual(ret.status_code, 200)
+    data = ret.get_json().get('data') # type:ignore
+    self.assertTrue(data['passwordDisabled'])
+    self.assertEqual(data['options']['rpId'], 'localhost')
+    self.assertIsNotNone(data['options']['challenge'])
+    self.assertListEqual(data['options']['allowCredentials'], [])
   
   def test_signin_request_with_keys(self):
     passkey_id = b'4711'
@@ -307,9 +323,9 @@ class TestWebAuthn(RouteBase):
 
     ret = self.client.post('/v1/webauthn/signin-request', json={ 'username': self.username })
     self.assertEqual(ret.status_code, 200)
-    opts = ret.get_json().get('data') # type:ignore
+    data = ret.get_json().get('data') # type:ignore
     self.assertListEqual(
-      opts['allowCredentials'], [
+      data['options']['allowCredentials'], [
         { 'type': 'public-key', 'id': base64.urlsafe_b64encode(passkey_id).decode('utf-8').replace('=', '') }
       ])
   
@@ -319,11 +335,12 @@ class TestWebAuthn(RouteBase):
       self.assertEqual(ret.status_code, 200)
       self.assertIsNone(session.get('expected_challenge'))
       self.assertIsNone(session.get('username'))
-    opts = ret.get_json().get('data') # type:ignore
-    self.assertEqual(opts['rpId'], 'localhost')
-    self.assertListEqual(opts['allowCredentials'], [])
+    data = ret.get_json().get('data') # type:ignore
+    self.assertFalse(data['passwordDisabled'])
+    self.assertEqual(data['options']['rpId'], 'localhost')
+    self.assertListEqual(data['options']['allowCredentials'], [])
 
-  def test_signin_request_disabled(self):
+  def test_signin_request_user_disabled(self):
     passkey_id = b'4711'
     self.user.passkeys = [
       PassKey(id=passkey_id, name='something')
@@ -337,9 +354,10 @@ class TestWebAuthn(RouteBase):
       self.assertIsNone(session.get('expected_challenge'))
       self.assertIsNone(session.get('username'))
 
-    opts = ret.get_json().get('data') # type:ignore
-    self.assertListEqual(
-      opts['allowCredentials'], [])
+    data = ret.get_json().get('data') # type: ignore
+
+    self.assertFalse(data['passwordDisabled'])
+    self.assertListEqual(data['options']['allowCredentials'], [])
   
 
   def test_signin(self):

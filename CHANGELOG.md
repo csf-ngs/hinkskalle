@@ -1,3 +1,17 @@
+# v4.5.0 (2022-10-14)
+
+- #45: default quota for new users. 
+
+This is actually a major change to the way quotas are handled.
+Make sure you read the [documentation](https://csf-ngs.github.io/hinkskalle/quotas.html)!
+
+### Updating
+
+New config option `DEFAULT_GROUP_QUOTA`: if unset (or `0`) groups
+have unlimited quota (but are still subject to individual user quotas)
+
+`DEFAULT_USER_QUOTA` existed before and defaults to `0` = unlimited.
+
 # v4.4.1 (2022-09-30)
 
 - fix multiple/arch-specific tag handling:

@@ -1,16 +1,30 @@
+from click import option
 from flask.helpers import make_response
+from itsdangerous import base64_encode
 from Hinkskalle import registry, password_checkers, authenticator, rebar, db
 from Hinkskalle.models.Entity import Entity
-from Hinkskalle.models.User import TokenSchema, UserSchema
+from Hinkskalle.models.User import TokenSchema, User, UserSchema, PassKey, PassKeySchema, Token
 from Hinkskalle.util.auth.token import Scopes
-from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword
+from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword, PasswordAuthDisabled
+from Hinkskalle.routes.util import _get_service_url
 from .util import _get_service_url
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from flask import current_app, g
+from flask import current_app, g, session, request
 from sqlalchemy.orm.exc import NoResultFound # type: ignore
+from sqlalchemy.exc import IntegrityError
 import jwt
 from calendar import timegm
+from urllib.parse import urlparse
+import json
+
+from webauthn.authentication.generate_authentication_options import generate_authentication_options
+from webauthn.authentication.verify_authentication_response import verify_authentication_response
+from webauthn.registration.generate_registration_options import generate_registration_options
+from webauthn.registration.verify_registration_response import verify_registration_response
+from webauthn.helpers.options_to_json import options_to_json
+from webauthn.helpers.base64url_to_bytes import base64url_to_bytes
+from webauthn.helpers.structs import PublicKeyCredentialDescriptor, RegistrationCredential, AuthenticationCredential
 
 from datetime import datetime
 
@@ -25,11 +39,29 @@ class TokenStatusResponseSchema(ResponseSchema):
 class GetTokenResponseSchema(ResponseSchema):
   data = fields.Nested(TokenSchema)
 
+class RegisterCredentialResponseSchema(ResponseSchema):
+  data = fields.Nested(PassKeySchema)
+
 class GetDownloadTokenSchema(RequestSchema):
   type = fields.String(required=True)
   id = fields.String(required=True)
   username = fields.String(required=False)
   exp = fields.Integer(required=False)
+
+class RegisterCredentialSchema(RequestSchema):
+  name = fields.String(required=True)
+  credential = fields.Dict()
+  public_key = fields.String()
+
+class SigninRequestSchema(RequestSchema):
+  username = fields.String(required=True)
+
+class SigninRequestOptionsSchema(Schema):
+  passwordDisabled = fields.Bool(default=False)
+  options = fields.Dict()
+
+class SigninRequestResponseSchema(ResponseSchema):
+  data = fields.Nested(SigninRequestOptionsSchema)
 
 @registry.handles(
   rule='/v1/token-status',
@@ -56,21 +88,16 @@ def get_token():
   body = rebar.validated_body
   try:
     user = password_checkers.check_password(body['username'], body['password'])
-  except (UserNotFound, UserDisabled, InvalidPassword) as err:
+    if not user.is_active:
+      raise UserDisabled()
+    if user.password_disabled:
+      raise PasswordAuthDisabled()
+  except (UserNotFound, UserDisabled, PasswordAuthDisabled, InvalidPassword) as err:
     raise errors.Unauthorized(err.message)
 
-  
-  try:
-    user_entity = Entity.query.filter(Entity.name==user.username).one()
-  except NoResultFound:
-    user_entity = Entity(name=user.username, createdBy=user.username)
-    db.session.add(user_entity)
+  g.authenticated_user = user
 
-  token = user.create_token()
-  token.refresh()
-  token.source = 'auto'
-  db.session.add(token)
-  db.session.commit()
+  token = _handle_login(user)
   return { 'data': token }
 
 
@@ -102,3 +129,160 @@ def get_download_token():
   return response
   
 
+@registry.handles(
+  rule='/v1/webauthn/create-options',
+  method='GET',
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
+)
+def get_authn_create_options():
+  rp_id = _get_rp_id()
+  
+  opts = generate_registration_options(
+    rp_id=rp_id, # type: ignore
+    rp_name='Hinkskalle',
+    user_id=g.authenticated_user.passkey_id,
+    user_name=g.authenticated_user.username,
+    user_display_name=f"{g.authenticated_user.firstname} {g.authenticated_user.lastname}",
+    exclude_credentials=[
+      PublicKeyCredentialDescriptor(id=key.id) for key in g.authenticated_user.passkeys
+    ],
+    timeout=180000,
+  )
+  session['expected_challenge'] = opts.challenge
+
+  return { 'data': { 'publicKey': json.loads(options_to_json(opts)) }}
+
+@registry.handles(
+  rule='/v1/webauthn/register',
+  method='POST',
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  request_body_schema=RegisterCredentialSchema(),
+  response_body_schema=RegisterCredentialResponseSchema(),
+  tags=['hinkskalle-ext']
+)
+def authn_register():
+  data = rebar.validated_body
+  key = PassKey(user=g.authenticated_user, name=data['name'])
+  credential = RegistrationCredential.parse_raw(json.dumps(data['credential']))
+
+  verify_results = verify_registration_response(
+    credential=credential,
+    expected_challenge=session.pop('expected_challenge', None),
+    expected_rp_id=_get_rp_id(),
+    expected_origin=_get_origin(),
+  )
+  key.id = verify_results.credential_id
+  key.current_sign_count = verify_results.sign_count
+  key.public_key = verify_results.credential_public_key
+
+  try:
+    db.session.add(key)
+    db.session.commit()
+  except IntegrityError:
+    raise errors.PreconditionFailed(f"key with name {key.name} already exists")
+
+  return { 'data': key }
+
+@registry.handles(
+  rule='/v1/webauthn/signin-request',
+  method='POST',
+  request_body_schema=SigninRequestSchema(),
+  response_body_schema=SigninRequestResponseSchema(),
+  tags=['hinkskalle-ext'],
+)
+def authn_signin_request():
+  data = rebar.validated_body
+  user: User = User.query.filter(User.username==data['username']).first()
+
+  opts = generate_authentication_options(
+    rp_id=_get_rp_id(), 
+    timeout=180000,
+    allow_credentials=[ 
+      PublicKeyCredentialDescriptor(id=key.id) for key in (user.passkeys if user and user.is_active else [])
+    ],
+  )
+
+  ret = {
+    'options': json.loads(options_to_json(opts)),
+    'passwordDisabled': False,
+  }
+  if user and user.is_active:
+    session['expected_challenge']=opts.challenge
+    session['username']=user.username
+    ret['passwordDisabled']=user.password_disabled
+  return { 'data': ret }
+
+@registry.handles(
+  rule='/v1/webauthn/signin',
+  method='POST',
+  response_body_schema=GetTokenResponseSchema(),
+  tags=['hinkskalle-ext']
+)
+def authn_signin():
+  username = session.pop('username', None)
+  challenge = session.pop('expected_challenge', None)
+  if not username or not challenge:
+    raise errors.NotAcceptable("invalid state, request options first")
+
+  user: User = User.query.filter(User.username == username).first()
+  if not user.is_active:
+    raise errors.Unauthorized(f"User disabled")
+
+  cred = AuthenticationCredential.parse_raw(request.data)
+  key = PassKey.query.filter(PassKey.id==cred.raw_id, PassKey.user==user).first()
+  if not key:
+    current_app.logger.warning(f"passkey not found for {user.username}")
+    raise errors.Unauthorized(f"passkey not found")
+
+  try:
+    verified = verify_authentication_response(
+      credential = cred,
+      expected_challenge = challenge,
+      expected_rp_id = _get_rp_id(),
+      expected_origin = _get_origin(),
+      credential_public_key=key.public_key, 
+      require_user_verification=True,
+      credential_current_sign_count=key.current_sign_count,
+    )
+  except Exception as e:
+    current_app.logger.warning(f"passkey verification failed for {user.username}: {e}")
+    raise errors.Unauthorized(f"invalid passkey")
+  
+  token = _handle_login(user)
+  key.login_count = key.login_count + 1
+  key.last_used = datetime.now()
+  db.session.commit()
+  g.authenticated_user = user
+  return { 'data': token }
+
+
+def _get_rp_id() -> str:
+  if current_app.config['FRONTEND_URL']:
+    rp_id = urlparse(current_app.config['FRONTEND_URL']).hostname
+  else:
+    rp_id = urlparse(_get_service_url()).hostname
+  if not rp_id:
+    raise errors.InternalError("could not determine rp_id")
+  return rp_id
+
+def _get_origin() -> str:
+  if current_app.config['FRONTEND_URL']:
+    origin = urlparse(current_app.config['FRONTEND_URL'])
+  else:
+    origin = urlparse(_get_service_url())
+  return origin.geturl()
+  
+def _handle_login(user: User) -> Token:
+  try:
+    user_entity = Entity.query.filter(Entity.name==user.username).one()
+  except NoResultFound:
+    user_entity = Entity(name=user.username, createdBy=user.username)
+    db.session.add(user_entity)
+
+  token = user.create_token()
+  token.refresh()
+  token.source = 'auto'
+  db.session.add(token)
+  db.session.commit()
+  return token

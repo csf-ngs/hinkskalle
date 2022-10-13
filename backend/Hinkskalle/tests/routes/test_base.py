@@ -45,7 +45,7 @@ class TestBase(RouteBase):
   def test_version(self):
     ret = self.client.get('/version')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertIn("apiVersion", json)
     self.assertIn("version", json)
   
@@ -53,7 +53,7 @@ class TestBase(RouteBase):
     self.app.config['KEYSERVER_URL']='http://key.serv.er'
     ret = self.client.get('/assets/config/config.prod.json')
     self.assertEqual(ret.status_code, 200)
-    json: dict = ret.get_json()
+    json: dict = ret.get_json() # type: ignore
     json.pop('params')
     self.assertDictEqual(json, {
       'keystoreAPI': { 'uri': 'http://key.serv.er'},
@@ -65,7 +65,7 @@ class TestBase(RouteBase):
     self.app.config['PREFERRED_URL_SCHEME']='https'
     ret = self.app.test_client().get('/assets/config/config.prod.json')
     self.assertEqual(ret.status_code, 200)
-    json: dict = ret.get_json()
+    json: dict = ret.get_json() # type: ignore
     json.pop('params')
     self.assertDictEqual(json, {
       'keystoreAPI': { 'uri': 'http://key.serv.er'},
@@ -76,32 +76,35 @@ class TestBase(RouteBase):
   
   def test_config_params(self):
     current_settings = {}
-    for k in ['ENABLE_REGISTER', 'DEFAULT_USER_QUOTA', 'DEFAULT_GROUP_QUOTA', 'SINGULARITY_FLAVOR']:
+    for k in ['ENABLE_REGISTER', 'DEFAULT_USER_QUOTA', 'DEFAULT_GROUP_QUOTA', 'SINGULARITY_FLAVOR', 'FRONTEND_URL']:
       current_settings[k] = self.app.config[k]
 
     ret = self.app.test_client().get('/assets/config/config.prod.json')
     self.assertEqual(ret.status_code, 200)
-    json: dict = ret.get_json()
+    json: dict = ret.get_json() # type: ignore
     self.assertDictEqual(json['params'], {
       'enable_register': False,
       'default_user_quota': 0,
       'default_group_quota': 0,
       'singularity_flavor': 'singularity',
+      'frontend_url': 'http://localhost',
     })
 
     self.app.config['DEFAULT_USER_QUOTA'] = 999
     self.app.config['DEFAULT_GROUP_QUOTA'] = 888
     self.app.config['ENABLE_REGISTER'] = True
     self.app.config['SINGULARITY_FLAVOR'] = 'apptainer'
+    self.app.config['FRONTEND_URL'] = 'https://oi.nk/'
 
     ret = self.app.test_client().get('/assets/config/config.prod.json')
     self.assertEqual(ret.status_code, 200)
-    json: dict = ret.get_json()
+    json: dict = ret.get_json() # type: ignore
     self.assertDictEqual(json['params'], {
       'enable_register': True,
       'default_user_quota': 999,
       'default_group_quota': 888,
       'singularity_flavor': 'apptainer',
+      'frontend_url': 'https://oi.nk/',
     })
 
     # make sure app singleton is reset
@@ -118,7 +121,7 @@ class TestBase(RouteBase):
     with self.fake_auth():
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
 
     image1 = Image.query.get(image1_id)
     self.assertListEqual([ c['container']['id'] for c in json ], [ str(image1.container_ref.id), ] )
@@ -135,7 +138,7 @@ class TestBase(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
 
     self.assertListEqual([ c['container']['id'] for c in json ], expected)
   
@@ -145,7 +148,7 @@ class TestBase(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertListEqual([ c['container']['id'] for c in json ], [ str(container.id) ])
   
   def test_latest_collect_images(self):
@@ -163,7 +166,7 @@ class TestBase(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
 
     self.assertCountEqual([ c['container']['id'] for c in json ], [ str(container.id) for container in [container1, container3]])
 
@@ -176,7 +179,7 @@ class TestBase(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertCountEqual([ t['name'] for t in json[0]['tags'] ], [ 'v1.0', 'oink'])
 
   def test_latest_user(self):
@@ -186,7 +189,7 @@ class TestBase(RouteBase):
     with self.fake_auth():
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertCountEqual([ t['name'] for t in json[0]['tags'] ], [ 'oink' ])
 
   def test_latest_private(self):
@@ -198,7 +201,7 @@ class TestBase(RouteBase):
     with self.fake_auth():
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertCountEqual(json, [])
 
   def test_latest_own_private(self):
@@ -211,7 +214,7 @@ class TestBase(RouteBase):
     with self.fake_auth():
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertCountEqual([ t['name'] for t in json[0]['tags'] ], [ 'oink' ])
 
   def test_latest_admin_private(self):
@@ -223,5 +226,5 @@ class TestBase(RouteBase):
     with self.fake_admin_auth():
       ret = self.client.get('/v1/latest')
     self.assertEqual(ret.status_code, 200)
-    json = ret.get_json().get('data')
+    json = ret.get_json().get('data') # type: ignore
     self.assertCountEqual([ t['name'] for t in json[0]['tags'] ], [ 'oink' ])

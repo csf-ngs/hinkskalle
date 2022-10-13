@@ -157,8 +157,9 @@ class TestLdap(ModelBase):
     user.is_active = False
     db.session.commit()
 
-    with self.assertRaises(UserDisabled):
-      db_user = auth.sync_user({ 'attributes': { 'cn': f'{user.firstname}oink {user.lastname}oink', 'uid': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
+    db_user = auth.sync_user({ 'attributes': { 'cn': f'{user.firstname}oink {user.lastname}oink', 'uid': user.username, 'mail': user.email, 'givenName': user.firstname+'oink', 'sn': user.lastname+'oink' }})
+    db.session.refresh(db_user)
+    self.assertFalse(db_user.is_active)
     
   def test_sync_local(self):
     auth = self.mock.auth
@@ -237,17 +238,6 @@ class TestLdap(ModelBase):
     with self.assertRaises(InvalidPassword):
       check_user = auth.check_password(user.get('uid'), '')
 
-  def test_inactive(self):
-    auth = self.mock.auth
-    db_user = _create_user()
-    db_user.source = 'ldap'
-    db_user.is_active = False
-
-    user = self.mock.create_user(name=db_user.username, password='somesecret')
-
-    with self.assertRaises(UserDisabled):
-      check_user = auth.check_password(user.get('uid'), user.get('userPassword'))
-  
   def test_db_sync(self):
     auth = self.mock.auth
     user = self.mock.create_user()

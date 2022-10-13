@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
 from pprint import pprint
 import typing
+import base64
 
 from marshmallow import ValidationError
 from ..model_base import ModelBase
 from .._util import _create_group, _create_user, _create_container, _create_image
 
-from Hinkskalle.models import User, UserSchema, Group, GroupSchema, Container, UserGroup, GroupRoles, UploadStates
+from Hinkskalle.models import User, UserSchema, Group, GroupSchema, Container, UserGroup, GroupRoles, PassKey, PassKeySchema, UploadStates
 
 from Hinkskalle import db
 
@@ -21,6 +22,7 @@ class TestUser(ModelBase):
     self.assertEqual(read_user.id, user.id)
     self.assertTrue(abs(read_user.createdAt - datetime.now()) < timedelta(seconds=2))
     self.assertFalse(read_user.is_admin)
+    self.assertFalse(read_user.password_disabled)
 
   def test_quota(self):
     user = _create_user('test.hase')
@@ -201,6 +203,7 @@ class TestUser(ModelBase):
     self.assertNotIn('password', serialized)
 
     self.assertEqual(serialized['quota'], user.quota)
+    self.assertFalse(serialized['passwordDisabled'])
 
     user.is_admin=True
     serialized = typing.cast(dict, schema.dump(user))
@@ -218,9 +221,11 @@ class TestUser(ModelBase):
       'isAdmin': True,
       'isActive': True,
       'quota': 999,
+      'passwordDisabled': False,
     }))
     self.assertTrue(deserialized['is_admin'])
     self.assertTrue(deserialized['is_active'])
+    self.assertFalse(deserialized['password_disabled'])
     self.assertEqual(deserialized['quota'], 999)
 
   def test_deserialize_username_check(self):
@@ -300,3 +305,26 @@ class TestUser(ModelBase):
 
     serialized = typing.cast(dict, group_schema.dump(group))
     self.assertEqual(serialized['users'][0]['user']['id'], str(user.id))
+  
+  
+  def test_passkeys(self):
+    user = _create_user()
+    self.assertIsNotNone(user.passkey_id)
+
+    key = PassKey(user=user, name='testesel')
+    key.public_key = b'something'
+    key.id = b'oink'
+    db.session.add(key)
+    db.session.commit()
+
+    self.assertEqual(len(user.passkeys), 1)
+
+  def test_passkey_schema(self):
+    schema = PassKeySchema()
+    user = _create_user()
+
+    key = PassKey(id=b'oink', name='oink')
+    serialized = typing.cast(dict, schema.dump(key))
+    self.assertEqual(serialized['id'], 'b2luaw==')
+    decoded_id = base64.b64decode(serialized['id'])
+    self.assertEqual(decoded_id, b'oink')

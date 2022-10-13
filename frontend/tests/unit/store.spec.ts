@@ -37,11 +37,13 @@ describe('store getters', () => {
       default_user_quota: 0,
       enable_register: false,
       singularity_flavor: 'apptainer',
+      frontend_url: 'http://localhost:7660',
     })
 
     expect(store.getters.config.default_user_quota).toBe(0);
     expect(store.getters.config.enable_register).toBe(false);
     expect(store.getters.config.singularity_flavor).toBe('apptainer');
+    expect(store.getters.config.frontend_url).toBe('http://localhost:7660');
   });
   
 });
@@ -100,6 +102,7 @@ describe('store mutations', () => {
       enable_register: false,
       default_user_quota: 999,
       singularity_flavor: 'apptainer',
+      frontend_url: 'http://localhost:7660',
     });
 
     store.commit('setConfig', testConfig);
@@ -118,6 +121,7 @@ describe('store actions', () => {
           default_user_quota: 999,
           enable_register: false,
           singularity_flavor: 'apptainer',
+          frontend_url: 'http://localhost:7660',
         },
       }
     });
@@ -126,6 +130,7 @@ describe('store actions', () => {
     promise.then(() => {
       expect(store.state.config).not.toBe(null);
       expect(store.state.config!.default_user_quota).toBe(999);
+      expect(store.state.config?.frontend_url).toBe('http://localhost:7660')
       done();
     });
   });
@@ -169,4 +174,46 @@ describe('store actions', () => {
     });
   });
 
+  it('has getAuthnCreateOptions action', done => {
+    mockAxios.get.mockResolvedValue({
+      data: {
+        "data": authnCreateOptions(),
+      }
+    });
+    const promise = store.dispatch('getAuthnCreateOptions');
+    promise.then((config: CredentialCreationOptions) => {
+      expect(config.publicKey?.user.id).toBeInstanceOf(Uint8Array);
+      expect(config.publicKey?.challenge).toBeInstanceOf(Uint8Array);
+      done();
+
+    });
+  })
 });
+
+function authnCreateOptions() {
+  return {
+          "publicKey": {
+            "authenticatorSelection": {
+              "authenticatorAttachment":"cross-platform",
+              "requireResidentKey":false,
+              "userVerification":"discouraged"
+            },
+            "challenge":"AA==",
+            "excludeCredentials":[],
+            "pubKeyCredParams": [
+              {"alg":-7,"type":"public-key"},
+              {"alg":-257,"type":"public-key"}
+            ],
+            "rp":{
+              "id":"localhost",
+              "name":"Hinkskalle"
+            },
+            "timeout":180000,
+            "user": {
+              "displayName":"Test Hase",
+              "id":"T90IiRrV940+Hed8BFHP+Q==",
+              "name":"test.hase"
+            }
+          }
+        };
+}

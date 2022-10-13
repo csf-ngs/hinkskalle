@@ -9,7 +9,7 @@ import Account from '@/views/Account.vue';
 import { localVue } from '../setup';
 
 import { makeTestUserObj } from '../_data';
-import {User} from '@/store/models';
+import {PassKey, User} from '@/store/models';
 
 let testUserObj: User;
 beforeAll(() => {
@@ -26,14 +26,19 @@ describe('Account.vue', () => {
   let mutations: any;
   let mockUpdateUser: jest.Mock<any, any>;
   let mockDeleteUser: jest.Mock<any, any>;
+  let mockListPasskeys: jest.Mock<any, any>;
+  let testPasskeys: PassKey[];
 
   beforeEach(() => {
     vuetify = new Vuetify();
     router = new VueRouter();
     mockUpdateUser = jest.fn();
     mockDeleteUser = jest.fn();
+    mockListPasskeys = jest.fn();
+    testPasskeys = [];
     getters = {
       currentUser: () => testUserObj,
+      'passkeys/list': () => testPasskeys,
     };
     mutations = {
       setUser: jest.fn(),
@@ -43,6 +48,7 @@ describe('Account.vue', () => {
     actions = {
       'users/update': mockUpdateUser,
       'users/delete': mockDeleteUser,
+      'passkeys/list': mockListPasskeys,
     };
     store = new Vuex.Store({ getters, actions, mutations });
   });
@@ -86,6 +92,41 @@ describe('Account.vue', () => {
     await Vue.nextTick();
     await Vue.nextTick();
     expect(mutations['snackbar/showSuccess']).toBeCalled();
+  });
+
+  it('can disable password when >=2 passkeys', async() => {
+    testPasskeys = [new PassKey(),new PassKey()];
+    const wrapper = mount(Account, { localVue, store, vuetify, router });
+    await Vue.nextTick();
+
+    expect((wrapper.vm as any).canDisablePassword).toBe(true);
+  });
+  it('can not disable password when >=2 passkeys', async() => {
+    testPasskeys = [];
+    const wrapper = mount(Account, { localVue, store, vuetify, router });
+    await Vue.nextTick();
+
+    expect((wrapper.vm as any).canDisablePassword).toBe(false);
+  });
+
+  it('shows info when passkeys empty', async() => {
+    mockListPasskeys.mockResolvedValueOnce([]);
+    const wrapper = mount(Account, { localVue, store, vuetify, router });
+    await Vue.nextTick();
+
+    expect(mockListPasskeys).toHaveBeenCalledTimes(1);
+    await Vue.nextTick();
+    expect(wrapper.vm.$data.localState.showInfo).toBe(true);
+  });
+
+  it('hides info when passkeys not empty', async() => {
+    mockListPasskeys.mockResolvedValueOnce([ 1, 2 ]);
+    const wrapper = mount(Account, { localVue, store, vuetify, router });
+    await Vue.nextTick();
+
+    expect(mockListPasskeys).toHaveBeenCalledTimes(1);
+    await Vue.nextTick();
+    expect(wrapper.vm.$data.localState.showInfo).toBe(false);
   });
 
   /*

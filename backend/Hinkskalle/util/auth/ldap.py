@@ -20,7 +20,7 @@ def _get_attr(attr):
     return attr
 
 class LDAPService:
-  def __init__(self, host=None, port=389, bind_dn=None, bind_password=None, base_dn=None, filter=None, all_users_filter=None, get_info=SCHEMA, client_strategy=SYNC):
+  def __init__(self, host, base_dn, filter, all_users_filter, port=389, bind_dn=None, bind_password=None, get_info=SCHEMA, client_strategy=SYNC):
     self.host = host
     self.port = int(port) if port else None
     self.bind_dn = bind_dn
@@ -29,8 +29,8 @@ class LDAPService:
     self.filter = filter
     self.all_users_filter = all_users_filter
 
-    self.server = Server(host=self.host, port=self.port, get_info=get_info)
-    self.connection = Connection(self.server, self.bind_dn, self.bind_password, raise_exceptions=True, client_strategy=client_strategy)
+    self.server = Server(host=self.host, port=self.port, get_info=get_info) # type: ignore
+    self.connection = Connection(self.server, self.bind_dn, self.bind_password, raise_exceptions=True, client_strategy=client_strategy) # type: ignore
 
   def connect(self):
     self.connection.rebind(user=self.bind_dn, password=self.bind_password)
@@ -117,9 +117,6 @@ class LDAPUsers(PasswordCheckerBase):
     try:
       user = User.query.filter(User.username == _get_attr(attrs.get(self.username_attr))).one()
 
-      if not user.is_active:
-        raise UserDisabled()
-
       if not user.source == 'ldap':
         raise UserConflict(username=user.username)
 
@@ -154,7 +151,6 @@ class LDAPUsers(PasswordCheckerBase):
     self.ldap.close()
 
     db_user = self.sync_user(ldap_user)
-    g.authenticated_user = db_user
     return db_user
 
 

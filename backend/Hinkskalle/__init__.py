@@ -45,9 +45,8 @@ migrate = Migrate()
 
 # regex from https://github.com/opencontainers/distribution-spec/blob/main/spec.md#pull
 class OrasNameConverter(BaseConverter):
-  def __init__(self, url_map, *items):
-    super().__init__(url_map)
-    self.regex = '[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*(/[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*)*'
+  regex = '[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*(/[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*)*'
+  part_isolating = False
 
 
 def create_app():
@@ -63,13 +62,14 @@ def create_app():
     app.config['SECRET_KEY'] = os.getenv('HINKSKALLE_SECRET_KEY')
   if app.config.get('SECRET_KEY') is None:
     raise Exception('please configure SECRET_KEY in config.json or HINKSKALLE_SECRET_KEY as environment variable')
+  app.secret_key = app.config['SECRET_KEY']
   if 'DB_PASSWORD' in os.environ:
     app.config['DB_PASSWORD'] = os.getenv('DB_PASSWORD')
   if 'SQLALCHEMY_DATABASE_URI' in os.environ:
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 
   if app.config.get('DB_PASSWORD'):
-    app.config['SQLALCHEMY_DATABASE_URI']=app.config.get('SQLALCHEMY_DATABASE_URI', '').replace('%PASSWORD%', app.config.get('DB_PASSWORD'))
+    app.config['SQLALCHEMY_DATABASE_URI']=app.config.get('SQLALCHEMY_DATABASE_URI', '').replace('%PASSWORD%', app.config['DB_PASSWORD'])
   app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=app.config.get('SQLALCHEMY_TRACK_MODIFICATIONS', False)
 
   if not 'AUTH' in app.config:
@@ -105,6 +105,8 @@ def create_app():
   
   app.config['DOWNLOAD_TOKEN_EXPIRATION'] = app.config.get('DOWNLOAD_TOKEN_EXPIRATION', 86400)
 
+  app.config['BACKEND_URL'] = os.environ.get('HINKSKALLE_BACKEND_URL', app.config.get('BACKEND_URL', None))
+  app.config['FRONTEND_URL'] = os.environ.get('HINKSKALLE_FRONTEND_URL', app.config.get('FRONTEND_URL', app.config['BACKEND_URL']))
 
   db.init_app(app)
 
@@ -119,8 +121,9 @@ def create_app():
   app.config['DEFAULT_USER_QUOTA'] = os.environ.get('HINKSKALLE_DEFAULT_USER_QUOTA', app.config.get('DEFAULT_USER_QUOTA', 0))
   app.config['DEFAULT_GROUP_QUOTA'] = os.environ.get('HINKSKALLE_DEFAULT_GROUP_QUOTA', app.config.get('DEFAULT_GROUP_QUOTA', 0))
 
-  app.url_map.converters['distname']=OrasNameConverter 
+  app.url_map.converters['distname']=OrasNameConverter  # type: ignore
   generator.register_flask_converter_to_swagger_type('distname', 'path')
+
 
 
   with app.app_context():

@@ -1,9 +1,10 @@
+import base64
 from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from ..route_base import RouteBase
 from .._util import _create_user, _create_container
 
 from Hinkskalle.models.Entity import Entity
-from Hinkskalle.models.User import User
+from Hinkskalle.models.User import PassKey, User
 from Hinkskalle import db
 
 from unittest import mock
@@ -104,6 +105,7 @@ class TestUsers(RouteBase):
       "quota": 0,
       "used_quota": 0,
       "image_count": 0,
+      "passwordDisabled": False,
     })
   
   def test_get_invalid_username(self):
@@ -457,6 +459,7 @@ class TestUsers(RouteBase):
       "isAdmin": True,
       "isActive": False,
       'quota': 1234,
+      'passwordDisabled': True,
     }
     with self.fake_admin_auth():
       ret = self.client.put(f"/v1/users/{user.username}", json=update_data)
@@ -468,6 +471,7 @@ class TestUsers(RouteBase):
     for f in ['email', 'firstname', 'lastname', 'source', 'isAdmin', 'isActive', 'quota']:
       uf = 'is_active' if f == 'isActive' else 'is_admin' if f == 'isAdmin' else f
       self.assertEqual(getattr(db_user, uf), update_data[f])
+    self.assertEqual(db_user.password_disabled, update_data['passwordDisabled'])
     self.assertTrue(abs(db_user.updatedAt - datetime.datetime.now()) < datetime.timedelta(seconds=2))
   
   def test_update_username(self):
@@ -516,6 +520,7 @@ class TestUsers(RouteBase):
         'lastname': 'aundashase',
         'isActive': True,
         'isAdmin': True,
+        'passwordDisabled': True,
       })
     
     self.assertEqual(ret.status_code, 200)
@@ -525,6 +530,22 @@ class TestUsers(RouteBase):
     self.assertNotEqual(db_user.lastname, 'aundashase')
     self.assertTrue(db_user.is_active)
     self.assertTrue(db_user.is_admin)
+    self.assertTrue(db_user.password_disabled)
+
+  def test_update_nonlocal_quota(self):
+    user = _create_user('update.hase')
+    user.quota = 1234
+    user.source = 'thin air'
+    db.session.commit()
+
+    with self.fake_admin_auth():
+      ret = self.client.put(f"/v1/users/{user.username}", json={
+        'quota': 9876,
+      })
+    
+    self.assertEqual(ret.status_code, 200)
+    db_user = User.query.filter(User.username=='update.hase').one()
+    self.assertEqual(db_user.quota, 9876)
 
   def test_update_nonlocal_quota(self):
     user = _create_user('update.hase')
@@ -616,6 +637,7 @@ class TestUsers(RouteBase):
       "email": "wo@ande.rs",
       "firstname": "Zwerg",
       "lastname": "Nase",
+      "passwordDisabled": True,
     }
     with self.fake_auth():
       ret = self.client.put(f"/v1/users/{self.username}", json=user_data)
@@ -627,6 +649,25 @@ class TestUsers(RouteBase):
     self.assertEqual(db_user.email, user_data['email'])
     self.assertEqual(db_user.firstname, user_data['firstname'])
     self.assertEqual(db_user.lastname, user_data['lastname'])
+    self.assertEqual(db_user.password_disabled, user_data['passwordDisabled'])
+  
+  def test_update_user_quota(self):
+    old_quota = self.user.quota
+    self.user.quota = 1234
+    db.session.commit()
+    user_data = {
+      'quota': 9876,
+    }
+    with self.fake_auth():
+      ret = self.client.put(f"/v1/users/{self.username}", json=user_data)
+    
+    self.assertEqual(ret.status_code, 200)
+    db_user = User.query.filter(User.username==self.username).one()
+    self.assertEqual(db_user.quota, 1234)
+
+    self.user.quota = old_quota
+    db.session.commit()
+
   
   def test_update_user_quota(self):
     old_quota = self.user.quota
@@ -716,15 +757,113 @@ class TestUsers(RouteBase):
       ret = self.client.delete(f"/v1/users/{self.other_username}")
     self.assertEqual(ret.status_code, 403)
 
+class TestPassKeys(RouteBase):
+  def test_list_noauth(self):
+    ret = self.client.get('/v1/users/test.hase/passkeys')
+    self.assertEqual(ret.status_code, 401)
+  
+  def test_list_admin(self):
+    with self.fake_admin_auth():
+      ret = self.client.get(f'/v1/users/{self.username}/passkeys')
+    self.assertEqual(ret.status_code, 200)
+    self.assertListEqual(ret.get_json().get('data'), []) # type: ignore
+  
+  def test_list_not_found(self):
+    with self.fake_admin_auth():
+      ret = self.client.get('/v1/users/zwackelmann/passkeys')
+    self.assertEqual(ret.status_code, 404)
+  
+  def test_list_self(self):
+    with self.fake_auth():
+      ret = self.client.get(f'/v1/users/{self.username}/passkeys')
+    self.assertEqual(ret.status_code, 200)
+  
+  def test_list_other(self):
+    other_user = _create_user('zwackel.mann')
+    with self.fake_auth():
+      ret = self.client.get(f'/v1/users/{other_user.username}/passkeys')
+    self.assertEqual(ret.status_code, 403)
+  
+  def test_list_results(self):
+    pk1 = PassKey(id=b'1234', name='ans', user=self.user)
+    pk2 = PassKey(id=b'2234', name='zwa', user=self.user)
+    db.session.add(pk1)
+    db.session.add(pk2)
+    db.session.commit()
 
+    with self.fake_auth():
+      ret = self.client.get(f'/v1/users/{self.username}/passkeys')
+    self.assertEqual(ret.status_code, 200)
+    data: list[dict] = ret.get_json().get('data') # type: ignore
+    self.assertCountEqual([ d['name'] for d in data ], [pk1.name, pk2.name])
 
+  def test_delete_noauth(self):
+    ret = self.client.delete('/v1/users/test.hase/passkeys/something')
+    self.assertEqual(ret.status_code, 401)
+  
+  def test_delete_admin(self):
+    pk1 = PassKey(id=b'1234', name='ans', user=self.user)
+    db.session.add(pk1)
+    db.session.commit()
 
+    with self.fake_admin_auth():
+      ret = self.client.delete(f'/v1/users/{self.username}/passkeys/{pk1.encoded_id}')
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.get_json().get('status'), 'ok') # type: ignore
+  
+  def test_delete_not_found(self):
+    with self.fake_admin_auth():
+      ret = self.client.delete(f'/v1/users/{self.username}/passkeys/AA==')
+    self.assertEqual(ret.status_code, 404)
+  
+  def test_delete_self(self):
+    pk1 = PassKey(id=b'1234', name='ans', user=self.user)
+    db.session.add(pk1)
+    db.session.commit()
 
+    with self.fake_auth():
+      ret = self.client.delete(f'/v1/users/{self.username}/passkeys/{pk1.encoded_id}')
+    self.assertEqual(ret.status_code, 200)
+    self.assertEqual(ret.get_json().get('status'), 'ok') # type: ignore
+  
+  def test_delete_other(self):
+    other_user = _create_user('zwackel.mann')
+    pk1 = PassKey(id=b'1234', name='ans', user=other_user)
+    db.session.add(pk1)
+    db.session.commit()
 
-    
+    with self.fake_auth():
+      ret = self.client.delete(f'/v1/users/{other_user.username}/passkeys/{pk1.encoded_id}')
+    self.assertEqual(ret.status_code, 403)
+  
+  def test_disable_password(self):
+    pk1 = PassKey(id=b'1234', name='ans', user=self.user)
+    pk2 = PassKey(id=b'2234', name='zwa', user=self.user)
+    pk3 = PassKey(id=b'3234', name='drei', user=self.user)
+    db.session.add(pk1)
+    db.session.add(pk2)
+    db.session.add(pk3)
+    self.user.password_disabled = True
+    db.session.commit()
 
+    pk1_id = pk1.encoded_id
+    pk2_id = pk2.encoded_id
+    user_id = self.user.id
 
+    with self.fake_auth():
+      ret = self.client.delete(f'/v1/users/{self.username}/passkeys/{pk1_id}')
+    self.assertEqual(ret.status_code, 200)
 
+    read_user = User.query.get(user_id)
+    self.assertTrue(read_user.password_disabled)
+
+    # only one key left, should disable disable
+    with self.fake_auth():
+      ret = self.client.delete(f'/v1/users/{self.username}/passkeys/{pk2_id}')
+    self.assertEqual(ret.status_code, 200)
+
+    read_user = User.query.get(user_id)
+    self.assertFalse(read_user.password_disabled)
 
 
   

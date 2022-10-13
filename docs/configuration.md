@@ -31,12 +31,14 @@ You might want to set these:
 
 ## Hinkskalle 
 
+- `BACKEND_URL` - use the `HINKSKALLE_FRONTEND_URL` environment variable!
 - `DEFAULT_ARCH` - which archtitecture should we use for the default `latest` tag if no explicit tag is specified for a push (default `amd64`)
 - `DEFAULT_USER_QUOTA` - in bytes, how much space to allow for images per user entity. 0 to disable (= default)
 - `DEFAULT_GROUP_QUOTA` - in bytes, how much space to allow for images per group entity. 0 to disable (= default)
 - `DOWNLOAD_TOKEN_EXPIRATION` - in seconds, how long should download links be valid. Each token grants access to images in specific manifests and should be handled with care.
 - `ENABLE_REGISTER` - allow new users to sign up (default: False). If false, a user has to either be a valid LDAP user (if active) or created by an admin
 - `FRONTEND_PATH` - where can we find `index.html` and the js bundles for the frontend, usually `../frontend/dist/`
+- `FRONTEND_URL` - where can you reach the web frontend? usually this is the same as `BACKEND_URL` (which it defaults to). Only needed to set correct parameters for WebAuthn support (passwordless login)
 - `IMAGE_PATH` - where should we store the uploaded images?
 - `IMAGE_PATH_HASH_LEVEL` - how many subdirectories should be created below IMAGE_PATH using the image has. Eg. the default: `2` would produce `IMAGE_PATH/a/b/sha256.abxxxxx`. Some file system types don't like directories with too many files in them. Applies only to new uploads.
 - `KEYSERVER_URL` - public key storage/search. Hinkskalle does not come with its own keyserver. Point this to a compatible GnuPG keyserver (see [https://sks-keyservers.net/](https://sks-keyservers.net/) for a list). You can also run your own: [https://github.com/hockeypuck/hockeypuck](https://github.com/hockeypuck/hockeypuck)
@@ -164,6 +166,7 @@ hinkskalle finds them there, it will overwrite values from config.json:
 - `HINKSKALLE_LDAP_BASE_DN`
 - `HINKSKALLE_SECRET_KEY`
 - `HINKSKALLE_BACKEND_URL`
+- `HINKSKALLE_FRONTEND_URL`
 - `HINKSKALLE_ENABLE_REGISTER`
 - `HINKSKALLE_SINGULARITY_COMMAND` (overrides `SINGULARITY_FLAVOR`, keep name for backwards compat)
 

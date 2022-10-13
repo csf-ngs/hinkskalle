@@ -3,6 +3,7 @@ from ..route_base import RouteBase
 from .._util import _create_user
 
 from flask_rebar import errors
+from flask import g
 
 from Hinkskalle.util.auth.token import TokenAuthenticator, Scopes
 from Hinkskalle.models import Token
@@ -114,7 +115,7 @@ class TestTokenAuth(RouteBase):
     token_auth = TokenAuthenticator()
     with self.app.test_request_context('', headers={'Authorization': 'Bearer schoko-banane'}) as ctx:
       token_auth.authenticate()
-      self.assertEqual(ctx.g.authenticated_user.username, test_user.username)
+      self.assertEqual(g.authenticated_user.username, test_user.username)
 
   def test_scoped_authenticator(self):
     scoped = TokenAuthenticator().with_scope(Scopes.admin)
@@ -137,7 +138,7 @@ class TestTokenAuth(RouteBase):
     scoped = TokenAuthenticator().with_scope(Scopes.optional)
     with self.app.test_request_context('') as ctx:
       scoped.authenticate()
-      self.assertIsNone(ctx.g.authenticated_user)
+      self.assertIsNone(g.authenticated_user)
     
     with self.app.test_request_context('', headers={'Authorization': 'Bearer oink'}) as ctx:
       with self.assertRaises(errors.Unauthorized):
@@ -145,7 +146,7 @@ class TestTokenAuth(RouteBase):
 
     with self.app.test_request_context('', headers={'Authorization': 'Bearer schoko-banane'}) as ctx:
       scoped.authenticate()
-      self.assertEqual(ctx.g.authenticated_user.username, test_user.username)
+      self.assertEqual(g.authenticated_user.username, test_user.username)
     
   def test_scoped_user(self):
     test_user = _create_user()
@@ -163,7 +164,7 @@ class TestTokenAuth(RouteBase):
 
     with self.app.test_request_context('', headers={'Authorization': 'Bearer schoko-banane'}) as ctx:
       scoped.authenticate()
-      self.assertEqual(ctx.g.authenticated_user.username, test_user.username)
+      self.assertEqual(g.authenticated_user.username, test_user.username)
     
   def test_scoped_admin(self):
     test_user = _create_user()
@@ -189,6 +190,6 @@ class TestTokenAuth(RouteBase):
 
     with self.app.test_request_context('', headers={'Authorization': 'Bearer admin-banane'}) as ctx:
       scoped.authenticate()
-      self.assertEqual(ctx.g.authenticated_user.username, admin_user.username)
+      self.assertEqual(g.authenticated_user.username, admin_user.username)
 
 

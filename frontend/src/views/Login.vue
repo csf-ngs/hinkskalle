@@ -14,8 +14,29 @@
                   (use your Forskalle account)
                 </v-card-subtitle>
                 <v-form v-model="localState.canSubmit" @submit.prevent="doLogin()">
-                  <v-text-field outlined id="username" v-model="localState.user.username" :rules="rules" prepend-icon="mdi-account" name="Username" label="Username" required></v-text-field>
-                  <v-text-field outlined id="password" v-model="localState.user.password" :rules="rules" prepend-icon="mdi-lock" name="Password" label="Password" type="password" required></v-text-field>
+                  <v-text-field outlined 
+                    id="username" 
+                    @blur="requestSignin()" 
+                    v-model="localState.user.username" 
+                    :rules="rules" 
+                    prepend-icon="mdi-account" 
+                    name="Username" 
+                    label="Username" 
+                    required></v-text-field>
+                  <v-text-field v-if="localState.passwordAvailable" outlined 
+                    id="password" 
+                    v-model="localState.user.password" 
+                    :rules="rules" 
+                    prepend-icon="mdi-lock" 
+                    name="Password" 
+                    label="Password" 
+                    type="password" 
+                    required></v-text-field>
+                  <v-text-field v-else disabled 
+                    label="Please use your security key"
+                    prepend-icon="mdi-lock"
+                    ></v-text-field>
+                  
                   <v-alert v-if="localState.loginError" type="error" text>
                     {{localState.loginError}}
                   </v-alert>
@@ -122,6 +143,8 @@ interface State {
   password2: string;
   registerSuccess: boolean;
   registerError: string;
+  webauthnAvailable: boolean;
+  passwordAvailable: boolean;
 }
 
 interface Data {
@@ -147,6 +170,8 @@ export default Vue.extend({
       canRegister: false,
       registerSuccess: false,
       registerError: '',
+      webauthnAvailable: false,
+      passwordAvailable: true,
     },
     rules: [
       (v: string): boolean | string => !!v || 'Required!',
@@ -178,6 +203,22 @@ export default Vue.extend({
         .catch((err: AxiosError) => {
           this.localState.loginError = generateMsg(err);
         });
+    },
+    async requestSignin() {
+      if (!this.$store.getters.canWebAuthn || !this.localState.user.username) return;
+      const {options, passwordDisabled} = await this.$store.dispatch('requestSignin', this.localState.user.username)
+      if (options.allowCredentials !== undefined && options.allowCredentials.length > 0) {
+        this.localState.passwordAvailable = !passwordDisabled;
+        this.localState.webauthnAvailable = true;
+        const creds = await navigator.credentials.get({ publicKey: options })
+        this.$store.dispatch('doSignin', creds)
+          .then(() => {
+            this.$router.push('/');
+          })
+          .catch((err: AxiosError) => {
+            this.localState.loginError = generateMsg(err);
+          });
+      }
     }
   },
   computed: {

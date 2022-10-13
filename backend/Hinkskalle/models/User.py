@@ -1,3 +1,4 @@
+from distutils import bcppcompiler
 import typing
 from Hinkskalle import db
 import Hinkskalle.util.name_check
@@ -11,6 +12,7 @@ import enum
 
 from passlib.hash import sha512_crypt
 import secrets
+import base64
 
 from ..util.schema import BaseSchema, LocalDateTime
 
@@ -26,6 +28,16 @@ class GroupRoles(enum.Enum):
   readonly = 'readonly'
   def __str__(self):
     return self.value
+
+class PassKeySchema(Schema):
+  id = fields.String(required=True, dump_only=True, attribute='encoded_id')
+  name = fields.String(required=True)
+  createdAt = fields.DateTime(dump_only=True)
+  last_used = fields.DateTime(dump_only=True)
+  current_sign_count = fields.Integer(dump_only=True)
+  login_count = fields.Integer(dump_only=True)
+  backed_up = fields.Boolean(dump_only=True)
+
 
 class GroupSchema(Schema):
   id = fields.String(required=True, dump_only=True)
@@ -56,6 +68,7 @@ class UserSchema(BaseSchema):
   lastname = fields.String(required=True)
   is_admin = fields.Boolean(data_key='isAdmin')
   is_active = fields.Boolean(data_key='isActive')
+  password_disabled = fields.Boolean(data_key='passwordDisabled')
   source = fields.String()
   quota = fields.Integer()
   used_quota = fields.Integer(dump_only=True)
@@ -107,6 +120,8 @@ class User(db.Model): # type: ignore
   used_quota = db.Column(db.BigInteger, default=0)
 
   source = db.Column(db.String(), default='local', nullable=False)
+  _passkey_id = db.Column('passkey_id', db.LargeBinary(16), default=lambda: secrets.token_bytes(16), unique=True)
+  password_disabled = db.Column(db.Boolean, default=False, nullable=False)
 
   groups = db.relationship('UserGroup', back_populates='user', cascade='all, delete-orphan')
   tokens = db.relationship('Token', back_populates='user', cascade="all, delete-orphan")
@@ -125,6 +140,7 @@ class User(db.Model): # type: ignore
   images_ref = db.relationship('Image', lazy='dynamic', viewonly=True)
   tags = db.relationship('Tag', back_populates='owner')
   uploads = db.relationship('ImageUploadUrl', back_populates='owner', cascade='all, delete-orphan')
+  passkeys = db.relationship('PassKey', back_populates='user', cascade='all, delete-orphan')
 
   @validates('email')
   def convert_lower(self, key, value):
@@ -155,6 +171,10 @@ class User(db.Model): # type: ignore
       current_app.logger.debug(f"User {self.username} hash check failed: {err}")
       return False
     return result
+
+  @property
+  def passkey_id(self) -> str:
+    return base64.b64encode(self._passkey_id).decode('utf-8')
 
   def check_access(self, user) -> bool:
     return True
@@ -207,6 +227,26 @@ class User(db.Model): # type: ignore
     else:
       return False
   
+
+class PassKey(db.Model): # type: ignore
+  id = db.Column(db.LargeBinary(16), primary_key=True)
+  name = db.Column(db.String, nullable=False)
+  user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+  public_key = db.Column(db.LargeBinary)
+  backed_up = db.Column(db.Boolean, default=False)
+  current_sign_count = db.Column(db.Integer, default=0, nullable=False)
+  createdAt = db.Column(db.DateTime, default=datetime.now)
+
+  last_used = db.Column(db.DateTime)
+  login_count = db.Column(db.Integer, default=0)
+
+  user = db.relationship('User', back_populates='passkeys')
+  __table_args__ = (db.UniqueConstraint('user_id', 'name', name='pass_key_name_user_id_idx'), )
+
+  @property
+  def encoded_id(self):
+    return base64.b64encode(self.id).decode('utf-8')
+
 
 class Group(db.Model): # type: ignore
   id = db.Column(db.Integer, primary_key=True)

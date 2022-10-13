@@ -6,7 +6,7 @@ setup(
     packages=['Hinkskalle'],
     include_package_data=True,
     install_requires=[
-        'werkzeug>=2.0.0',
+        'werkzeug==2.1.2', # 2.2.0 does not play nice with the OrasNameConverter!
         'flask>=2.0.0',
         'Flask-SQLAlchemy',
         'Flask-Migrate',
@@ -21,7 +21,9 @@ setup(
         'ldap3',
         'pyjwt',
         'humanize',
-        'python-slugify'
+        'python-slugify',
+        'cryptography',
+        'webauthn',
     ],
     extras_require={
       'dev': ['nose2','fakeredis','psycopg2', 'nose2-html-report', 'nose2[coverage_plugin]'],

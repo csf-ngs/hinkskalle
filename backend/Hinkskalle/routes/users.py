@@ -1,3 +1,5 @@
+from ast import Pass
+import base64
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 
@@ -7,7 +9,7 @@ from sqlalchemy.orm.exc import NoResultFound # type: ignore
 from sqlalchemy.exc import IntegrityError
 from flask import current_app, g
 
-from Hinkskalle.models import UserSchema, User, ContainerSchema, Container, Entity
+from Hinkskalle.models import UserSchema, User, ContainerSchema, Container, Entity, PassKey, PassKeySchema
 
 import datetime
 
@@ -47,6 +49,12 @@ class UserUpdateSchema(UserSchema, RequestSchema):
     super(UserUpdateSchema, self).__init__(partial=partial_arg, **super_kwargs)
 
 class UserDeleteResponseSchema(ResponseSchema):
+  status = fields.String()
+
+class PassKeyListResponseSchema(ResponseSchema):
+  data = fields.Nested(PassKeySchema, many=True)
+
+class PassKeyDeleteResponseSchema(ResponseSchema):
   status = fields.String()
 
 @registry.handles(
@@ -219,7 +227,7 @@ def update_user(username):
     raise errors.Forbidden("Access denied to user")
 
   if user.source != 'local':
-    body = {k:v for k, v in body.items() if k in ['is_admin', 'is_active', 'source', 'quota']}
+    body = {k:v for k, v in body.items() if k in ['is_admin', 'is_active', 'source', 'quota', 'password_disabled']}
 
   if not g.authenticated_user.is_admin:
     body.pop('quota', None)
@@ -245,7 +253,7 @@ def update_user(username):
   if new_password:
     user.set_password(new_password)
   
-  with db.session.no_autoflush:
+  with db.session.no_autoflush: # type: ignore
     if username != user.username:
       try:
         entity = Entity.query.filter(Entity.name==username).one()
@@ -280,3 +288,49 @@ def delete_user(username):
   db.session.commit()
 
   return { 'status': 'ok' }
+
+@registry.handles(
+  rule='/v1/users/<string:username>/passkeys',
+  method='GET',
+  response_body_schema=PassKeyListResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext']
+)
+def list_passkeys(username):
+  try:
+    user = User.query.filter(User.username == username).one()
+  except NoResultFound:
+    raise errors.NotFound(f"user {username} does not exist...")
+  
+  # reuse token access rules here
+  if not user.check_token_access(g.authenticated_user):
+    raise errors.Forbidden("Access denied to tokens.")
+
+  return { 'data': user.passkeys }
+
+@registry.handles(
+  rule='/v1/users/<string:username>/passkeys/<path:passkey_id>',
+  method='DELETE',
+  response_body_schema=PassKeyDeleteResponseSchema(),
+  authenticators=authenticator.with_scope(Scopes.user), # type: ignore
+  tags=['hinkskalle-ext'],
+)
+def delete_passkey(username, passkey_id):
+  try:
+    user = User.query.filter(User.username == username).one()
+  except NoResultFound:
+    raise errors.NotFound(f"user {username} does not exist...")
+  
+  # reuse token access rules here
+  if not user.check_token_access(g.authenticated_user):
+    raise errors.Forbidden("Access denied to tokens.")
+  
+  passkey = PassKey.query.filter(PassKey.id==base64.b64decode(passkey_id), PassKey.user==user).first()
+  if not passkey:
+    raise errors.NotFound(f'Passkey with id {passkey_id} not found')
+  db.session.delete(passkey)
+  if len(user.passkeys) < 2:
+    user.password_disabled = False
+  db.session.commit()
+  return { 'status': 'ok' }
+

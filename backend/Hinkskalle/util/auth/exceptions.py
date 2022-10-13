@@ -13,6 +13,10 @@ class UserDisabled(HinkException):
   def __init__(self):
     self.message="User is disabled"
 
+class PasswordAuthDisabled(HinkException):
+  def __init__(self):
+    self.message="Password authentication is disabled"
+
 class InvalidPassword(HinkException):
   def __init__(self):
     self.message="Invalid password"

@@ -18,15 +18,6 @@ class TestLocalUsers(ModelBase):
   def test_not_found(self):
     with self.assertRaises(UserNotFound):
       check_user = LocalUsers().check_password('someone', 'somesecret')
-  
-  def test_disabled(self):
-    user = _create_user()
-    user.source = 'local'
-    user.is_active = False
-    db.session.commit()
-
-    with self.assertRaises(UserDisabled):
-      check_user = LocalUsers().check_password(user.username, 'somesecret')
     
   def test_invalid_password(self):
     user = _create_user()

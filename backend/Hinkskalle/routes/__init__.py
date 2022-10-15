@@ -1,4 +1,3 @@
-
 import Hinkskalle.routes.base
 import Hinkskalle.routes.auth
 import Hinkskalle.routes.entities

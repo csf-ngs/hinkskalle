@@ -271,7 +271,7 @@ def _get_origin() -> str:
     origin = urlparse(current_app.config['FRONTEND_URL'])
   else:
     origin = urlparse(_get_service_url())
-  return origin.geturl()
+  return origin.scheme+'://'+origin.netloc
   
 def _handle_login(user: User) -> Token:
   try:

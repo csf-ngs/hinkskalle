@@ -450,6 +450,76 @@ class TestWebAuthn(RouteBase):
 
     self.app.config['BACKEND_URL']=old_backend_url
 
+  def test_signin_normalize_url(self):
+    old_backend_url = self.app.config.get('BACKEND_URL')
+    old_frontend_url = self.app.config.get('FRONTEND_URL')
+
+    key_id = base64url_to_bytes('uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw')
+    self.user.passkeys = [
+      PassKey(
+        id=key_id,
+        name='testhase',
+        public_key=base64url_to_bytes('pQECAyYgASFYIC9xK9phz-T0Ls3r5coIy1wPk-TBFuPjKjTHD3ttKKU_Ilggp-l4S1SEgoUVQyyyxNc80iRnJ10YA3A50LoPsawEP18='),
+        current_sign_count=3,
+      )
+    ]
+
+    test_credential = {
+      "authenticatorAttachment": "cross-platform",
+      "clientExtensionResults": {},
+      "id": "uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw",
+      "rawId": "uD77zFgDembepzZtlffgWvHuJJPm_bCBDignwGhBY6vs42IupPXlGAKVyShfkdH-FAXcv8QDiZ_MW2Z5ma4HAw",
+      "response": {
+        "authenticatorData": "SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAABg",
+        "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiNWNCT2FMOHhQUllTSEU2a3cyVllhd2JXRG9tZ2oyeUxwcEJ2ekU3NndCQmNkOGZyeWY1bFF6aHhQaXYxcGJPWDB5QmxmX3VUbGRLLTNLOW11UHkwY0EiLCJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0Ojc2NjAiLCJjcm9zc09yaWdpbiI6ZmFsc2V9",
+        "signature": "MEYCIQDzOkUVKPYLkI1h-aCd9575HJ8t1PMfeWF_dm_cscU8zAIhAOV07U2yHfkB0oQvSXrpPLnynHn79GySRA5Sa350v6RW",
+        "userHandle": "",
+      },
+      "type": "public-key",
+    }
+    self.app.config['FRONTEND_URL']=None
+    self.app.config['BACKEND_URL'] = 'http://localhost:7660/'
+    with self.client.session_transaction() as session:
+      session['expected_challenge'] = base64url_to_bytes('5cBOaL8xPRYSHE6kw2VYawbWDomgj2yLppBvzE76wBBcd8fryf5lQzhxPiv1pbOX0yBlf_uTldK-3K9muPy0cA')
+      session['username'] = self.username
+
+    with self.app.test_client() as c:
+      ret = self.client.post('/v1/webauthn/signin', json=test_credential)
+      self.assertEqual(ret.status_code, 200)
+      self.assertIn('authenticated_user', g)
+      self.assertEqual(g.authenticated_user, self.user)
+
+    # justin case
+    self.app.config['FRONTEND_URL']=None
+    self.app.config['BACKEND_URL'] = 'http://localhost:7660/oink'
+    with self.client.session_transaction() as session:
+      session['expected_challenge'] = base64url_to_bytes('5cBOaL8xPRYSHE6kw2VYawbWDomgj2yLppBvzE76wBBcd8fryf5lQzhxPiv1pbOX0yBlf_uTldK-3K9muPy0cA')
+      session['username'] = self.username
+
+    with self.app.test_client() as c:
+      ret = self.client.post('/v1/webauthn/signin', json=test_credential)
+      self.assertEqual(ret.status_code, 200)
+      self.assertIn('authenticated_user', g)
+      self.assertEqual(g.authenticated_user, self.user)
+
+    # frontend url should beat backend url for origin
+    self.app.config['FRONTEND_URL'] = 'http://localhost:7660/ui'
+    self.app.config['BACKEND_URL']='http://some.where/else'
+    with self.client.session_transaction() as session:
+      session['expected_challenge'] = base64url_to_bytes('5cBOaL8xPRYSHE6kw2VYawbWDomgj2yLppBvzE76wBBcd8fryf5lQzhxPiv1pbOX0yBlf_uTldK-3K9muPy0cA')
+      session['username'] = self.username
+
+    with self.app.test_client() as c:
+      ret = self.client.post('/v1/webauthn/signin', json=test_credential)
+      self.assertEqual(ret.status_code, 200)
+      self.assertIn('authenticated_user', g)
+      self.assertEqual(g.authenticated_user, self.user)
+
+
+
+    self.app.config['FRONTEND_URL']=old_frontend_url
+    self.app.config['BACKEND_URL']=old_backend_url
+
   def test_signin_passkey_not_found(self):
     old_backend_url = self.app.config.get('BACKEND_URL')
     self.app.config['BACKEND_URL'] = 'http://localhost:7660'

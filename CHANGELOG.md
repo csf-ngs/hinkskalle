@@ -1,3 +1,10 @@
+# v4.6.0 (unreleased)
+
+- #46: passwordless login with webauthn/fido2 tokens
+
+Users can configure passwordless login with hardware tokens (YubiKey),
+TouchID etc.
+
 # v4.5.0 (2022-10-14)
 
 - #45: default quota for new users. 

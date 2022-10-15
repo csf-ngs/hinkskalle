@@ -3,7 +3,7 @@ import typing
 from flask import g, session
 from ..route_base import RouteBase
 
-from .._util import _create_user
+from .._util import _create_user, _get_json_data
 from Hinkskalle.models.User import Token, PassKey, User
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle import db
@@ -25,7 +25,7 @@ class TestPasswordAuth(RouteBase):
             self.assertIn("authenticated_user", g)
             self.assertEqual(g.authenticated_user, user)
 
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertIn("id", data)
         self.assertIn("generatedToken", data)
         self.assertIn("expiresAt", data)
@@ -107,9 +107,9 @@ class TestDownloadToken(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.post(f"/v1/get-download-token", json={"type": "manifest", "id": "1"})
         self.assertEqual(ret.status_code, 202)
-        data = ret.get_json()
+        data = typing.cast(dict, ret.get_json())
         location = ret.headers.get("Location", "")
-        self.assertTrue(location.endswith(data["location"]))  # type: ignore
+        self.assertTrue(location.endswith(data["location"]))
         temp_token = re.search(r"(.*)\?temp_token=(.*)", location)
         self.assertIsNotNone(temp_token)
         temp_token = typing.cast(re.Match, temp_token)
@@ -132,7 +132,7 @@ class TestDownloadToken(RouteBase):
             )
         self.assertEqual(ret.status_code, 202)
         location = ret.headers.get("Location", "")
-        self.assertTrue(location.endswith(ret.get_json()["location"]))  # type: ignore
+        self.assertTrue(location.endswith(typing.cast(dict, ret.get_json())["location"]))
         temp_token = re.search(r"(.*)\?temp_token=(.*)", location)
         self.assertIsNotNone(temp_token)
         temp_token = typing.cast(re.Match, temp_token)
@@ -182,8 +182,8 @@ class TestTokenAuth(RouteBase):
             ret = c.get("/v1/token-status", headers={"Authorization": f"bearer {token_text}"})
             self.assertEqual(ret.status_code, 200)
             self.assertEqual(g.authenticated_user, user)
-            self.assertEqual(ret.get_json().get("status"), "welcome")  # type: ignore
-            json_user = ret.get_json().get("data")  # type: ignore
+            self.assertEqual(typing.cast(dict, ret.get_json()).get("status"), "welcome")
+            json_user = _get_json_data(ret)
             self.assertEqual(json_user.get("username"), "test.hase")
 
         with self.app.test_client() as c:
@@ -305,7 +305,7 @@ class TestWebAuthn(RouteBase):
             self.assertIsNotNone(session.get("expected_challenge"))
             self.assertEqual(session.get("username"), self.username)
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type:ignore
+        data = _get_json_data(ret)
         self.assertFalse(data["passwordDisabled"])
         self.assertEqual(data["options"]["rpId"], "localhost")
         self.assertIsNotNone(data["options"]["challenge"])
@@ -320,7 +320,7 @@ class TestWebAuthn(RouteBase):
             self.assertIsNotNone(session.get("expected_challenge"))
             self.assertEqual(session.get("username"), self.username)
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type:ignore
+        data = _get_json_data(ret)
         self.assertTrue(data["passwordDisabled"])
         self.assertEqual(data["options"]["rpId"], "localhost")
         self.assertIsNotNone(data["options"]["challenge"])
@@ -333,7 +333,7 @@ class TestWebAuthn(RouteBase):
 
         ret = self.client.post("/v1/webauthn/signin-request", json={"username": self.username})
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type:ignore
+        data = _get_json_data(ret)
         self.assertListEqual(
             data["options"]["allowCredentials"],
             [{"type": "public-key", "id": base64.urlsafe_b64encode(passkey_id).decode("utf-8").replace("=", "")}],
@@ -345,7 +345,7 @@ class TestWebAuthn(RouteBase):
             self.assertEqual(ret.status_code, 200)
             self.assertIsNone(session.get("expected_challenge"))
             self.assertIsNone(session.get("username"))
-        data = ret.get_json().get("data")  # type:ignore
+        data = _get_json_data(ret)
         self.assertFalse(data["passwordDisabled"])
         self.assertEqual(data["options"]["rpId"], "localhost")
         self.assertListEqual(data["options"]["allowCredentials"], [])
@@ -362,7 +362,7 @@ class TestWebAuthn(RouteBase):
             self.assertIsNone(session.get("expected_challenge"))
             self.assertIsNone(session.get("username"))
 
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
 
         self.assertFalse(data["passwordDisabled"])
         self.assertListEqual(data["options"]["allowCredentials"], [])

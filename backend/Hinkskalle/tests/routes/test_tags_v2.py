@@ -4,7 +4,7 @@ from Hinkskalle.models.Tag import Tag
 from Hinkskalle.models.Image import Image
 
 from ..route_base import RouteBase
-from .._util import _create_image
+from .._util import _create_image, _get_json_data
 
 
 class TestTagsV2(RouteBase):
@@ -22,7 +22,7 @@ class TestTagsV2(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v2/tags/{container.id}")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertDictEqual(data, {})
 
         container = Container.query.get(container_id)
@@ -30,7 +30,7 @@ class TestTagsV2(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v2/tags/{container_id}")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertDictEqual(data, {"c64": {"v1.0": str(image_id)}})
 
         container = Container.query.get(container_id)
@@ -38,7 +38,7 @@ class TestTagsV2(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v2/tags/{container_id}")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertDictEqual(data, {"c64": {"v1.0": str(image_id), "oink": str(image_id)}})
 
     def test_get_user_v2(self):
@@ -89,7 +89,7 @@ class TestTagsV2(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.post(f"/v2/tags/{container.id}", json=arch_tags)
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertDictEqual(data, arch_tags)
         db_container = Container.query.get(container_id)
         self.assertDictEqual(db_container.archImageTags, {"apple": {"red": str(image_id)}})
@@ -100,7 +100,7 @@ class TestTagsV2(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.post(f"/v2/tags/{container.id}", json=arch_tags)
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")
+        data = _get_json_data(ret)
 
         self.assertDictEqual(data, {"apple": {"blue": str(image_id), "red": str(image_id)}})
         db_container = Container.query.get(container_id)

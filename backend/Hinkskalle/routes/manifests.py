@@ -5,7 +5,7 @@ from Hinkskalle.util.auth.token import Scopes
 from flask import g, send_file, current_app
 from flask_rebar import ResponseSchema, errors
 from marshmallow import fields
-from sqlalchemy.orm.exc import NoResultFound  # type: ignore
+from sqlalchemy.exc import NoResultFound
 import jwt
 
 from Hinkskalle.models.Manifest import Manifest, ManifestSchema, ManifestTypes

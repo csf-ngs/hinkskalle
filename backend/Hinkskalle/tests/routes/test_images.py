@@ -8,7 +8,7 @@ from Hinkskalle.models import Collection, Image, Tag, Container, UploadStates
 from Hinkskalle import db
 
 from ..route_base import RouteBase
-from .._util import _create_image, _create_container
+from .._util import _create_image, _create_container, _get_json_data
 
 
 class TestImages(RouteBase):
@@ -25,7 +25,7 @@ class TestImages(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/containers/{entity.name}/{collection.name}/{container.name}/images")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertListEqual([c["id"] for c in json], [str(image1.id), str(image2.id)])
 
     def test_list_hide(self):
@@ -38,7 +38,7 @@ class TestImages(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/containers/{entity.name}/{collection.name}/{container.name}/images")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertListEqual([c["id"] for c in json], [str(image1.id)])
 
     def test_list_user(self):
@@ -53,7 +53,7 @@ class TestImages(RouteBase):
         with self.fake_auth():
             ret = self.client.get(f"/v1/containers/{entity.name}/{collection.name}/{container.name}/images")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertListEqual([c["id"] for c in json], [str(image1.id), str(image2.id)])
 
     def test_list_user_other_own_collection(self):
@@ -86,7 +86,7 @@ class TestImages(RouteBase):
 
         ret = self.client.get(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(image.id))
         self.assertListEqual(data["tags"], ["latest"])
         self.assertFalse(data["canEdit"])
@@ -119,7 +119,7 @@ class TestImages(RouteBase):
 
         ret = self.client.get(f"/v1/images/oInK/OiNk/oiNK")
         self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.get_json().get("data")["id"], str(image.id))  # type: ignore
+        self.assertEqual(_get_json_data(ret)["id"], str(image.id))
 
     def test_get_private(self):
         image, container, _, _ = _create_image()
@@ -154,7 +154,7 @@ class TestImages(RouteBase):
         with self.fake_auth():
             ret = self.client.get(f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}")
             self.assertEqual(ret.status_code, 200)
-        self.assertTrue(ret.get_json().get("data")["canEdit"])  # type: ignore
+        self.assertTrue(_get_json_data(ret)["canEdit"])
 
     def test_get_default_entity(self):
         image, _, _, entity = _create_image()
@@ -172,7 +172,7 @@ class TestImages(RouteBase):
 
         ret = self.client.get(ret.headers.get("Location"))
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(image.id))
 
     def test_get_default_entity_single(self):
@@ -185,7 +185,7 @@ class TestImages(RouteBase):
 
         ret = self.client.get(f"/v1/images/{image.collectionName}/{image.containerName}")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(image.id))
 
     def test_get_default_collection(self):
@@ -205,7 +205,7 @@ class TestImages(RouteBase):
 
         ret = self.client.get(ret.headers.get("Location"))
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(image.id))
 
     def test_get_default_collection_default_entity(self):
@@ -227,7 +227,7 @@ class TestImages(RouteBase):
 
         ret = self.client.get(ret.headers.get("Location"))
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(image.id))
 
         ret = self.client.get(f"/v1/images//{image.containerName}")
@@ -236,12 +236,12 @@ class TestImages(RouteBase):
 
         ret = self.client.get(ret.headers.get("Location"))
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(image.id))
 
         ret = self.client.get(f"/v1/images/{image.containerName}")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(image.id))
 
     def test_get_with_tag(self):
@@ -259,7 +259,7 @@ class TestImages(RouteBase):
             f"/v1/images/{v1_image.entityName}/{v1_image.collectionName}/{v1_image.containerName}:{v1_tag.name}"
         )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(v1_image.id))
         self.assertListEqual(data["tags"], ["v1"])
 
@@ -271,7 +271,7 @@ class TestImages(RouteBase):
             f"/v1/images/{first_image.entityName}/{first_image.collectionName}/{first_image.containerName}:{first_image.hash}"
         )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(first_image.id))
 
     def test_get_hash_not_found(self):
@@ -295,7 +295,7 @@ class TestImages(RouteBase):
             f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}"
         )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["uploadState"], UploadStates.broken.value)
         read_image = Image.query.get(image.id)
         self.assertEqual(read_image.location, "/some/where")
@@ -307,7 +307,7 @@ class TestImages(RouteBase):
             f"/v1/images/{image.entityName}/{image.collectionName}/{image.containerName}:{image.hash}"
         )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["uploadState"], UploadStates.broken.value)
 
     def test_get_arch(self):
@@ -330,7 +330,7 @@ class TestImages(RouteBase):
             f"/v1/images/{image1.entityName}/{image1.collectionName}/{image1.containerName}:{image1_tag.name}?arch=c64"
         )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(image1.id))
         self.assertListEqual(data["tags"], ["v1"])
 
@@ -350,7 +350,7 @@ class TestImages(RouteBase):
         )
 
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(image1.id))
         self.assertListEqual(data["tags"], ["v1"])
 
@@ -369,7 +369,7 @@ class TestImages(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["hash"], "sha256.oink")
         self.assertEqual(data["container"], str(container.id))
         self.assertEqual(data["createdBy"], self.admin_username)
@@ -426,7 +426,7 @@ class TestImages(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["uploadState"], UploadStates.completed.value)
         db_container = Container.query.get(container.id)
         self.assertDictEqual(db_container.imageTags, {"latest": data["id"]})
@@ -474,7 +474,7 @@ class TestImages(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["uploadState"], UploadStates.completed.value)
 
         db_image = Image.query.get(image_id)
@@ -501,7 +501,7 @@ class TestImages(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["uploadState"], UploadStates.initialized.value)
         self.assertIsNone(data["size"])
         self.assertDictEqual(Container.query.get(other_container_id).imageTags, {})
@@ -541,7 +541,7 @@ class TestImages(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        db_image = Image.query.get(ret.get_json().get("data")["id"])  # type: ignore
+        db_image = Image.query.get(_get_json_data(ret)["id"])
         self.assertEqual(db_image.expiresAt, exp)
 
     def test_create_user_other(self):
@@ -573,7 +573,7 @@ class TestImages(RouteBase):
                 json={"tags": ["oink", "grunz"]},
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertDictEqual(data, {"tags": ["oink", "grunz"]})
 
         dbImage = Image.query.get(image.id)
@@ -591,7 +591,7 @@ class TestImages(RouteBase):
                 json={"tags": ["grunz"]},
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertDictEqual(data, {"tags": ["grunz"]})
 
         dbImage = Image.query.get(image.id)
@@ -613,7 +613,7 @@ class TestImages(RouteBase):
                 json={"tags": ["oink"]},
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertDictEqual(data, {"tags": ["oink"]})
 
         dbImage = Image.query.get(image.id)
@@ -659,7 +659,7 @@ class TestImages(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        self.assertTrue(ret.get_json().get("data")["canEdit"])  # type: ignore
+        self.assertTrue(_get_json_data(ret)["canEdit"])
 
         dbImage = Image.query.get(image.id)
         self.assertEqual(dbImage.description, "Mei Huat")

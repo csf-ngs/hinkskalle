@@ -5,7 +5,7 @@ from Hinkskalle.models.Container import Container
 from Hinkskalle import db
 
 from ..route_base import RouteBase
-from .._util import _create_collection, default_entity_name
+from .._util import _create_collection, default_entity_name, _get_json_data
 
 
 class TestCollections(RouteBase):
@@ -20,7 +20,7 @@ class TestCollections(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/collections/{entity.name}")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertIsInstance(json, list)
         self.assertEqual(len(json), 2)
         self.assertListEqual([c["name"] for c in json], [coll1.name, coll2.name])
@@ -40,7 +40,7 @@ class TestCollections(RouteBase):
         with self.fake_auth():
             ret = self.client.get(f"/v1/collections/{entity.name}")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         # coll1 and coll2 lost from session??
         read_coll1 = Collection.query.get(coll1_id)
         read_coll2 = Collection.query.get(coll2_id)
@@ -61,7 +61,7 @@ class TestCollections(RouteBase):
         with self.fake_auth():
             ret = self.client.get(f"/v1/collections/default")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         read_coll1 = Collection.query.get(coll1_id)
         read_coll2 = Collection.query.get(coll2_id)
         self.assertListEqual([c["name"] for c in json], [read_coll1.name, read_coll2.name])
@@ -82,7 +82,7 @@ class TestCollections(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/collections/{coll.entityName}/{coll.name}")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
 
         self.assertEqual(data["id"], str(coll.id))
         self.assertTrue(data["canEdit"])
@@ -92,7 +92,7 @@ class TestCollections(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/collections/Test-Hase/TestHase")
         self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.get_json().get("data").get("id"), str(coll.id))  # type: ignore
+        self.assertEqual(_get_json_data(ret).get("id"), str(coll.id))
 
     def test_get_default(self):
         coll, entity = _create_collection()
@@ -102,7 +102,7 @@ class TestCollections(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/collections/{entity.name}/")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
 
         self.assertEqual(data["id"], str(coll.id))
 
@@ -118,7 +118,7 @@ class TestCollections(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(ret.headers.get("Location"))
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(coll.id))
 
     # @unittest.skip("does not work currently, see https://github.com/pallets/flask/issues/3413")
@@ -132,7 +132,7 @@ class TestCollections(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/collections/")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(coll.id))
 
         with self.fake_admin_auth():
@@ -142,7 +142,7 @@ class TestCollections(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(ret.headers.get("Location"))
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(coll.id))
 
     def test_get_user(self):
@@ -155,7 +155,7 @@ class TestCollections(RouteBase):
         with self.fake_auth():
             ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(coll.id))
         self.assertTrue(data["canEdit"])
 
@@ -167,7 +167,7 @@ class TestCollections(RouteBase):
         with self.fake_auth():
             ret = self.client.get(f"/v1/collections/{entity.name}/{coll.name}")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(coll.id))
         self.assertFalse(data["canEdit"])
 
@@ -214,7 +214,7 @@ class TestCollections(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["entity"], str(entity.id))
         self.assertEqual(data["createdBy"], self.admin_username)
         self.assertTrue(data["canEdit"])
@@ -294,7 +294,7 @@ class TestCollections(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         dbColl = Collection.query.get(data["id"])
         self.assertTrue(dbColl.private)
 
@@ -313,7 +313,7 @@ class TestCollections(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         dbColl = Collection.query.get(data["id"])
         self.assertFalse(dbColl.private)
 
@@ -330,7 +330,7 @@ class TestCollections(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["name"], "default")
 
     def test_create_not_unique(self):
@@ -381,7 +381,7 @@ class TestCollections(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        self.assertTrue(ret.get_json().get("data")["canEdit"])  # type: ignore
+        self.assertTrue(_get_json_data(ret)["canEdit"])
 
     def test_create_user_default_entity(self):
         entity = Entity(name="default")
@@ -410,7 +410,7 @@ class TestCollections(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["name"], "default")
 
         Collection.query.filter(Collection.id == data["id"]).delete()
@@ -468,7 +468,7 @@ class TestCollections(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        self.assertTrue(ret.get_json().get("data")["canEdit"])  # type: ignore
+        self.assertTrue(_get_json_data(ret)["canEdit"])
 
         dbColl = Collection.query.filter(Collection.name == coll.name).one()
         self.assertEqual(dbColl.description, "Mei Huat")
@@ -538,7 +538,7 @@ class TestCollections(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        self.assertTrue(ret.get_json().get("data")["canEdit"])  # type: ignore
+        self.assertTrue(_get_json_data(ret)["canEdit"])
 
         dbColl = Collection.query.filter(Collection.name == coll.name).one()
         self.assertEqual(dbColl.description, "Mei Huat")

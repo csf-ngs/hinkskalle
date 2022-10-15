@@ -18,7 +18,7 @@ def frontend(path):
     orig_path = path
     if path.startswith("v1/") or path.startswith("v2/"):
         raise errors.NotFound
-    if path == "" or not os.path.exists(safe_join(current_app.config.get("FRONTEND_PATH"), path)):  # type: ignore
+    if path == "" or not os.path.exists(safe_join(current_app.config["FRONTEND_PATH"], path)):  # type: ignore
         path = "index.html"
     current_app.logger.debug(f"frontend route to {path} from {orig_path}")
     return send_from_directory(current_app.config.get("FRONTEND_PATH"), path)  # type: ignore
@@ -140,6 +140,7 @@ def before_request_func():
             and not request.path.endswith("/blobs/uploads/")
         )
     ) and (request.method == "POST" or request.method == "PUT"):
+        # need to hardcore fake environ, non-public api
         request.headers.environ.update(CONTENT_TYPE="application/json")  # type: ignore
 
     # redirect double slashes to /default/ (singularity client sends meaningful //)

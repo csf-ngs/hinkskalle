@@ -8,8 +8,7 @@ from .util import _get_service_url
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from flask import current_app, g, session, request
-from sqlalchemy.orm.exc import NoResultFound  # type: ignore
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, NoResultFound
 import jwt
 from calendar import timegm
 from urllib.parse import urlparse
@@ -149,7 +148,7 @@ def get_authn_create_options():
     rp_id = _get_rp_id()
 
     opts = generate_registration_options(
-        rp_id=rp_id,  # type: ignore
+        rp_id=rp_id,
         rp_name="Hinkskalle",
         user_id=g.authenticated_user.passkey_id,
         user_name=g.authenticated_user.username,

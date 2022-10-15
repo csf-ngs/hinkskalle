@@ -8,7 +8,7 @@ from Hinkskalle.models import Container, Image
 from Hinkskalle import db
 
 from ..route_base import RouteBase
-from .._util import _create_container, _create_collection
+from .._util import _create_container, _create_collection, _get_json_data
 
 
 class TestContainers(RouteBase):
@@ -25,7 +25,7 @@ class TestContainers(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertIsInstance(json, list)
         self.assertEqual(len(json), 2)
         self.assertListEqual([c["name"] for c in json], [container1.name, container2.name])
@@ -43,7 +43,7 @@ class TestContainers(RouteBase):
         with self.fake_auth():
             ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertListEqual([c["name"] for c in json], [container1.name, container2.name])
 
     def test_list_user_default(self):
@@ -58,7 +58,7 @@ class TestContainers(RouteBase):
         with self.fake_auth():
             ret = self.client.get(f"/v1/containers/default/{coll.name}")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertListEqual([c["name"] for c in json], [container1.name])
 
     def test_list_user_other(self):
@@ -77,7 +77,7 @@ class TestContainers(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(container.id))
         self.assertTrue(data["canEdit"])
 
@@ -86,7 +86,7 @@ class TestContainers(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/containers/Test-Hase/test-Collection-Container/Test-Container")
         self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.get_json().get("data").get("id"), str(container.id))  # type: ignore
+        self.assertEqual(_get_json_data(ret).get("id"), str(container.id))
 
     def test_get_case_legacy(self):
         container, collection, entity = _create_container()
@@ -96,7 +96,7 @@ class TestContainers(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/containers/TeSthase/TeStHaSe/OiNk")
         self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.get_json().get("data").get("id"), str(container.id))  # type: ignore
+        self.assertEqual(_get_json_data(ret).get("id"), str(container.id))
 
     def test_get_default_entity(self):
         container, coll, entity = _create_container()
@@ -106,12 +106,12 @@ class TestContainers(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/containers//{coll.name}/{container.name}")
         self.assertEqual(ret.status_code, 308)
-        self.assertRegex(ret.headers.get("Location", None), rf"/v1/containers/default/{coll.name}/{container.name}")  # type: ignore
+        self.assertRegex(ret.headers.get("Location", ""), rf"/v1/containers/default/{coll.name}/{container.name}")
 
         with self.fake_admin_auth():
             ret = self.client.get(ret.headers.get("Location"))
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(container.id))
 
     def test_get_default_collection(self):
@@ -122,11 +122,11 @@ class TestContainers(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/containers/{entity.name}//{container.name}")
         self.assertEqual(ret.status_code, 308)
-        self.assertRegex(ret.headers.get("Location", None), rf"/v1/containers/{entity.name}/default/{container.name}$")  # type: ignore
+        self.assertRegex(ret.headers.get("Location", ""), rf"/v1/containers/{entity.name}/default/{container.name}$")
         with self.fake_admin_auth():
             ret = self.client.get(ret.headers.get("Location"))
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(container.id))
 
     def test_get_default_collection_default_entity(self):
@@ -138,16 +138,16 @@ class TestContainers(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/containers///{container.name}")
         self.assertEqual(ret.status_code, 308, "triple slash")
-        self.assertRegex(ret.headers.get("Location", None), rf"/v1/containers/default//{container.name}$")  # type: ignore
+        self.assertRegex(ret.headers.get("Location", ""), rf"/v1/containers/default//{container.name}$")
         with self.fake_admin_auth():
             ret = self.client.get(ret.headers.get("Location"))
         self.assertEqual(ret.status_code, 308, "triple slash")
-        self.assertRegex(ret.headers.get("Location", None), rf"/v1/containers/default/default/{container.name}$")  # type: ignore
+        self.assertRegex(ret.headers.get("Location", ""), rf"/v1/containers/default/default/{container.name}$")
 
         with self.fake_admin_auth():
             ret = self.client.get(ret.headers.get("Location"))
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(container.id))
 
         # double slash expansion gives an ambigous route (collides with list containers)
@@ -166,7 +166,7 @@ class TestContainers(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/containers/{container.name}")
         self.assertEqual(ret.status_code, 200, "single slash")
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(container.id))
 
     def test_get_user(self):
@@ -179,7 +179,7 @@ class TestContainers(RouteBase):
         with self.fake_auth():
             ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(container.id))
         self.assertTrue(data["canEdit"])
 
@@ -193,7 +193,7 @@ class TestContainers(RouteBase):
         with self.fake_auth():
             ret = self.client.get(f"/v1/containers/{entity.name}/{coll.name}/{container.name}")
         self.assertEqual(ret.status_code, 200)
-        self.assertFalse(ret.get_json().get("data")["canEdit"])  # type: ignore
+        self.assertFalse(_get_json_data(ret)["canEdit"])
 
     def test_get_user_other(self):
         container, coll, entity = _create_container()
@@ -217,7 +217,7 @@ class TestContainers(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["collection"], str(coll.id))
         self.assertEqual(data["createdBy"], self.admin_username)
         self.assertTrue(data["canEdit"])
@@ -264,7 +264,7 @@ class TestContainers(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["collection"], str(coll.id))
         self.assertEqual(data["createdBy"], self.username)
 
@@ -296,7 +296,7 @@ class TestContainers(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         dbContainer = Container.query.get(data["id"])
         self.assertTrue(dbContainer.private)
 
@@ -312,7 +312,7 @@ class TestContainers(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         dbContainer = Container.query.get(data["id"])
         self.assertFalse(dbContainer.private)
 
@@ -399,7 +399,7 @@ class TestContainers(RouteBase):
             )
 
         self.assertEqual(ret.status_code, 200)
-        self.assertTrue(ret.get_json().get("data")["canEdit"])  # type: ignore
+        self.assertTrue(_get_json_data(ret)["canEdit"])
 
         dbContainer = Container.query.filter(Container.name == container.name).one()
         self.assertEqual(dbContainer.description, "Mei Huat")

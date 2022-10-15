@@ -1,7 +1,7 @@
 from flask import current_app, request
 from flask_rebar import errors
 from sqlalchemy import func
-from sqlalchemy.orm.exc import NoResultFound  # type: ignore
+from sqlalchemy.exc import NoResultFound
 from flask_rebar import RequestSchema
 from marshmallow import fields
 

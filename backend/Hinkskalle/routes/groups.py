@@ -5,8 +5,7 @@ from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema, EXCLUDE
 from flask import g
-from sqlalchemy.orm.exc import NoResultFound  # type: ignore
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from slugify import slugify
 
 from Hinkskalle.models import GroupSchema, Group, UserGroup, Entity, User

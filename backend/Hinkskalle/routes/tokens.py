@@ -2,7 +2,7 @@ from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields
-from sqlalchemy.orm.exc import NoResultFound  # type: ignore
+from sqlalchemy.exc import NoResultFound
 import datetime
 
 from flask import g

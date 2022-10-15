@@ -4,7 +4,7 @@ from Hinkskalle import db
 from datetime import datetime
 from sqlalchemy.orm import validates
 from sqlalchemy import func, or_
-from sqlalchemy.orm.exc import NoResultFound  # type: ignore
+from sqlalchemy.exc import NoResultFound
 import enum
 
 from Hinkskalle.models.Image import Image, UploadStates

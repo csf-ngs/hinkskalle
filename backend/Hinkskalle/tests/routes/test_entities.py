@@ -1,6 +1,6 @@
 import datetime
 from ..route_base import RouteBase
-from .._util import _create_group, _set_member, default_entity_name
+from .._util import _create_group, _set_member, default_entity_name, _get_json_data
 
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Collection import Collection
@@ -24,7 +24,7 @@ class TestEntities(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get("/v1/entities")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertIsInstance(json, list)
         self.assertEqual(len(json), 3)
         self.assertListEqual([e["name"] for e in json], [default.name, entity1.name, entity2.name])
@@ -41,7 +41,7 @@ class TestEntities(RouteBase):
         with self.fake_auth():
             ret = self.client.get("/v1/entities")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertListEqual([e["name"] for e in json], ["default", "muhkuh"])
 
     def test_list_user_group(self):
@@ -53,7 +53,7 @@ class TestEntities(RouteBase):
         with self.fake_auth():
             ret = self.client.get("/v1/entities")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertListEqual([e["name"] for e in json], [])
 
         _set_member(self.user, group)
@@ -61,7 +61,7 @@ class TestEntities(RouteBase):
         with self.fake_auth():
             ret = self.client.get("/v1/entities")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertListEqual([e["name"] for e in json], ["muhkuh"])
 
     def test_get_noauth(self):
@@ -76,7 +76,7 @@ class TestEntities(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get("/v1/entities/grunz")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         json.pop("createdAt")
         self.assertDictEqual(
             json,
@@ -107,7 +107,7 @@ class TestEntities(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get("/v1/entities/TestHase")
         self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.get_json().get("data")["id"], str(entity.id))  # type: ignore
+        self.assertEqual(_get_json_data(ret)["id"], str(entity.id))
 
     def test_get_default(self):
         entity = Entity(name="default")
@@ -117,7 +117,7 @@ class TestEntities(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get("/v1/entities/")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(entity.id))
 
     def test_get_user(self):
@@ -128,7 +128,7 @@ class TestEntities(RouteBase):
         with self.fake_auth():
             ret = self.client.get("/v1/entities/test.hase")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(entity.id))
         self.assertTrue(data["canEdit"])
 
@@ -140,14 +140,14 @@ class TestEntities(RouteBase):
         with self.fake_auth():
             ret = self.client.get("/v1/entities/")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(entity.id))
         self.assertFalse(data["canEdit"])
 
         with self.fake_auth():
             ret = self.client.get("/v1/entities/default")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(entity.id))
 
     def test_get_user_other(self):
@@ -177,7 +177,7 @@ class TestEntities(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["name"], "grunz")
         self.assertEqual(data["createdBy"], self.admin_username)
 
@@ -225,7 +225,7 @@ class TestEntities(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["name"], "default")
 
     def test_create_behalf(self):
@@ -272,7 +272,7 @@ class TestEntities(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["name"], self.username)
         self.assertTrue(data["canEdit"], True)
 
@@ -379,7 +379,7 @@ class TestEntities(RouteBase):
                 },
             )
         self.assertEqual(ret.status_code, 200)
-        self.assertTrue(ret.get_json().get("data")["canEdit"])  # type: ignore
+        self.assertTrue(_get_json_data(ret)["canEdit"])
 
         dbEntity = Entity.query.filter(Entity.name == "grunz").one()
         self.assertEqual(dbEntity.description, "Oink oink")

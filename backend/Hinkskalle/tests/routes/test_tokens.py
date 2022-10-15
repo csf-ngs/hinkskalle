@@ -1,5 +1,5 @@
 from ..route_base import RouteBase
-from .._util import _create_user
+from .._util import _create_user, _get_json_data
 
 from Hinkskalle.models.User import Token
 from Hinkskalle import db
@@ -34,7 +34,7 @@ class TestTokens(RouteBase):
         with self.fake_auth():
             ret = self.client.get(f"/v1/users/{self.username}/tokens")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertIsInstance(json, list)
         self.assertListEqual([t["id"] for t in json], [str(self.user_token_id)])
 
@@ -44,7 +44,7 @@ class TestTokens(RouteBase):
         with self.fake_auth():
             ret = self.client.get(f"/v1/users/{self.username}/tokens")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertIsInstance(json, list)
         self.assertListEqual([t["id"] for t in json], [])
 
@@ -65,7 +65,7 @@ class TestTokens(RouteBase):
         with self.fake_auth():
             ret = self.client.post(f"/v1/users/{self.username}/tokens", json={})
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertNotIn("token", json)
         self.assertGreater(len(json["generatedToken"]), 32)
         gen_uid = typing.cast(str, json["generatedToken"])[:12]
@@ -81,7 +81,7 @@ class TestTokens(RouteBase):
         with self.fake_auth():
             ret = self.client.post(f"/v1/users/{self.username}/tokens", json=post)
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertEqual(json["comment"], post["comment"])
 
         db_token = Token.query.filter(Token.key_uid == json["key_uid"]).first()
@@ -109,7 +109,7 @@ class TestTokens(RouteBase):
         with self.fake_auth():
             ret = self.client.put(f"/v1/users/{self.username}/tokens/{self.user_token_id}", json=post)
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertEqual(json["comment"], post["comment"])
 
         db_token = Token.query.filter(Token.key_uid == json["key_uid"]).first()

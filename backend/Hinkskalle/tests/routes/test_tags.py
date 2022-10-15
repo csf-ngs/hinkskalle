@@ -8,7 +8,7 @@ from Hinkskalle.models.Tag import Tag
 from Hinkskalle.models.Image import Image, UploadStates
 
 from ..route_base import RouteBase
-from .._util import _create_image
+from .._util import _create_image, _get_json_data
 
 
 class TestTags(RouteBase):
@@ -23,7 +23,7 @@ class TestTags(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/tags/{container.id}")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertDictEqual(data, {})
 
         container = Container.query.get(container_id)
@@ -31,7 +31,7 @@ class TestTags(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/tags/{container_id}")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertDictEqual(data, {"v1.0": str(image_id)})
 
         container = Container.query.get(container_id)
@@ -39,7 +39,7 @@ class TestTags(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/tags/{container_id}")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertDictEqual(data, {"v1.0": str(image_id), "oink": str(image_id)})
 
     def test_get_user(self):
@@ -85,7 +85,7 @@ class TestTags(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.post(f"/v1/tags/{container.id}", json={"v1.0": str(image.id)})
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertDictEqual(data, {"v1.0": str(image_id)})
         db_container = Container.query.get(container_id)
         self.assertDictEqual(db_container.imageTags, {"v1.0": str(image_id)})
@@ -93,7 +93,7 @@ class TestTags(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.post(f"/v1/tags/{container_id}", json={"oink": str(image_id)})
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
 
         self.assertDictEqual(data, {"v1.0": str(image_id), "oink": str(image_id)})
         db_container = Container.query.get(container_id)
@@ -106,7 +106,7 @@ class TestTags(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.post(f"/v1/tags/{container.id}", json={"TestHase": str(image.id)})
         self.assertEqual(ret.status_code, 200)
-        self.assertDictEqual(ret.get_json().get("data"), {"testhase": str(image_id)})  # type: ignore
+        self.assertDictEqual(_get_json_data(ret), {"testhase": str(image_id)})
         db_container = Container.query.get(container_id)
         self.assertDictEqual(db_container.imageTags, {"testhase": str(image_id)})
 
@@ -127,7 +127,7 @@ class TestTags(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.post(f"/v1/tags/{container.id}", json={"oink": None})
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertDictEqual(data, {})
         db_container = Container.query.get(container_id)
         self.assertDictEqual(db_container.imageTags, {})
@@ -157,7 +157,7 @@ class TestTags(RouteBase):
                 f"/v1/tags/{container.id}", json={"v3": str(image.id), "latest": str(image.id), "v2": None}
             )
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertDictEqual(data, {"v3": str(image_id), "latest": str(image_id)})
 
         db_container = Container.query.get(container_id)
@@ -263,7 +263,7 @@ class TestTags(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.post(f"/v1/tags/{container.id}", json={"Tag": "v1", "ImageID": str(image.id)})
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
 
         self.assertDictEqual(data, {"v1": str(image_id)})
 

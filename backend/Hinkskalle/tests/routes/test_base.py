@@ -1,12 +1,13 @@
 import tempfile
 import os.path
+import typing
 
 from Hinkskalle.models.Image import Image
 from Hinkskalle.models.Tag import Tag
 from Hinkskalle import db
 
 from ..route_base import RouteBase
-from .._util import _create_image, _create_container
+from .._util import _create_image, _create_container, _get_json_data
 
 
 class TestBase(RouteBase):
@@ -42,7 +43,7 @@ class TestBase(RouteBase):
     def test_version(self):
         ret = self.client.get("/version")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertIn("apiVersion", json)
         self.assertIn("version", json)
 
@@ -50,7 +51,7 @@ class TestBase(RouteBase):
         self.app.config["KEYSERVER_URL"] = "http://key.serv.er"
         ret = self.client.get("/assets/config/config.prod.json")
         self.assertEqual(ret.status_code, 200)
-        json: dict = ret.get_json()  # type: ignore
+        json = typing.cast(dict, ret.get_json())
         json.pop("params")
         self.assertDictEqual(
             json,
@@ -65,7 +66,7 @@ class TestBase(RouteBase):
         self.app.config["PREFERRED_URL_SCHEME"] = "https"
         ret = self.app.test_client().get("/assets/config/config.prod.json")
         self.assertEqual(ret.status_code, 200)
-        json: dict = ret.get_json()  # type: ignore
+        json = typing.cast(dict, ret.get_json())
         json.pop("params")
         self.assertDictEqual(
             json,
@@ -90,7 +91,7 @@ class TestBase(RouteBase):
 
         ret = self.app.test_client().get("/assets/config/config.prod.json")
         self.assertEqual(ret.status_code, 200)
-        json: dict = ret.get_json()  # type: ignore
+        json = typing.cast(dict, ret.get_json())
         self.assertDictEqual(
             json["params"],
             {
@@ -110,7 +111,7 @@ class TestBase(RouteBase):
 
         ret = self.app.test_client().get("/assets/config/config.prod.json")
         self.assertEqual(ret.status_code, 200)
-        json: dict = ret.get_json()  # type: ignore
+        json = typing.cast(dict, ret.get_json())
         self.assertDictEqual(
             json["params"],
             {
@@ -134,7 +135,7 @@ class TestBase(RouteBase):
         with self.fake_auth():
             ret = self.client.get("/v1/latest")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
 
         image1 = Image.query.get(image1_id)
         self.assertListEqual(
@@ -156,7 +157,7 @@ class TestBase(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get("/v1/latest")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
 
         self.assertListEqual([c["container"]["id"] for c in json], expected)
 
@@ -166,7 +167,7 @@ class TestBase(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get("/v1/latest")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertListEqual([c["container"]["id"] for c in json], [str(container.id)])
 
     def test_latest_collect_images(self):
@@ -184,7 +185,7 @@ class TestBase(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get("/v1/latest")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
 
         self.assertCountEqual(
             [c["container"]["id"] for c in json], [str(container.id) for container in [container1, container3]]
@@ -198,7 +199,7 @@ class TestBase(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get("/v1/latest")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertCountEqual([t["name"] for t in json[0]["tags"]], ["v1.0", "oink"])
 
     def test_latest_user(self):
@@ -208,7 +209,7 @@ class TestBase(RouteBase):
         with self.fake_auth():
             ret = self.client.get("/v1/latest")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertCountEqual([t["name"] for t in json[0]["tags"]], ["oink"])
 
     def test_latest_private(self):
@@ -220,7 +221,7 @@ class TestBase(RouteBase):
         with self.fake_auth():
             ret = self.client.get("/v1/latest")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertCountEqual(json, [])
 
     def test_latest_own_private(self):
@@ -233,7 +234,7 @@ class TestBase(RouteBase):
         with self.fake_auth():
             ret = self.client.get("/v1/latest")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertCountEqual([t["name"] for t in json[0]["tags"]], ["oink"])
 
     def test_latest_admin_private(self):
@@ -245,5 +246,5 @@ class TestBase(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get("/v1/latest")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertCountEqual([t["name"] for t in json[0]["tags"]], ["oink"])

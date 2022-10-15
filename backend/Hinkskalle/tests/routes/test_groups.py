@@ -1,9 +1,10 @@
+import typing
 from ..route_base import RouteBase
 from .._util import _create_group, _set_member, _create_user, _create_collection, _get_json_data
 from Hinkskalle import db
 from Hinkskalle.models.User import Group, GroupRoles, UserGroup, User
 from Hinkskalle.models.Entity import Entity
-from sqlalchemy.orm.exc import NoResultFound  # type: ignore
+from sqlalchemy.exc import NoResultFound
 import datetime
 
 
@@ -36,7 +37,7 @@ class TestGroups(RouteBase):
             ret = self.client.get("/v1/groups")
 
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertIsInstance(json, list)
         self.assertEqual(len(json), 2)
         self.assertListEqual([g["name"] for g in json], [group2.name, group1.name])
@@ -51,7 +52,7 @@ class TestGroups(RouteBase):
             ret = self.client.get("/v1/groups")
 
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertIsInstance(json, list)
         self.assertEqual(len(json), 1)
         self.assertListEqual([g["name"] for g in json], [group1.name])
@@ -64,7 +65,7 @@ class TestGroups(RouteBase):
             ret = self.client.get("/v1/groups?name=hasen")
 
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertIsInstance(json, list)
         self.assertEqual(len(json), 1)
         self.assertListEqual([g["name"] for g in json], [group1.name])
@@ -73,7 +74,7 @@ class TestGroups(RouteBase):
             ret = self.client.get("/v1/groups?name=kasper")
 
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertIsInstance(json, list)
         self.assertEqual(len(json), 1)
         self.assertListEqual([g["name"] for g in json], ["Kasperltheater"])
@@ -85,7 +86,7 @@ class TestGroups(RouteBase):
         with self.fake_auth():
             ret = self.client.get("/v1/groups?name=kasper")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = typing.cast(dict, ret.get_json()).get('data', [])
         self.assertListEqual(json, [])
 
     def test_get(self):
@@ -94,7 +95,7 @@ class TestGroups(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/groups/{group1.name}")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertDictContainsSubset(
             {
                 "id": str(group1.id),
@@ -116,7 +117,7 @@ class TestGroups(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/groups/{group1.name}")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
+        json = _get_json_data(ret)
         self.assertDictContainsSubset(
             {
                 "id": str(group1.id),
@@ -134,8 +135,8 @@ class TestGroups(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.get(f"/v1/groups/{group1.name}")
         self.assertEqual(ret.status_code, 200)
-        json = ret.get_json().get("data")  # type: ignore
-        members = json.get("users")
+        json = _get_json_data(ret)
+        members: list = json.get("users", [])
         self.assertIsNotNone(members)
         self.assertEqual(len(members), 1)
         self.assertDictContainsSubset({"role": str(GroupRoles.contributor)}, members[0])
@@ -147,7 +148,7 @@ class TestGroups(RouteBase):
         with self.fake_auth():
             ret = self.client.get(f"/v1/groups/{group1.name}")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["id"], str(group1.id))
         self.assertFalse(data["canEdit"])
 
@@ -165,7 +166,7 @@ class TestGroups(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.post("/v1/groups", json=group_data)
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["name"], group_data["name"])
         self.assertEqual(data["entityRef"], group_data["name"].lower())
         self.assertTrue(data["canEdit"])
@@ -190,7 +191,7 @@ class TestGroups(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.post("/v1/groups", json=group_data)
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")  # type: ignore
+        data = _get_json_data(ret)
         self.assertEqual(data["entityRef"], "test-h-sen-stall")
         db_entity = Entity.query.filter(Entity.name == data["entityRef"]).one()
 
@@ -225,7 +226,7 @@ class TestGroups(RouteBase):
         with self.fake_auth():
             ret = self.client.post("/v1/groups", json=group_data)
         self.assertEqual(ret.status_code, 200)
-        ret_group = ret.get_json().get("data")  # type: ignore
+        ret_group = _get_json_data(ret)
         self.assertTrue(ret_group["canEdit"])
         db_group = Group.query.get(ret_group["id"])
 
@@ -290,7 +291,7 @@ class TestGroups(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.put(f"/v1/groups/{group.name}", json=update_data)
         self.assertEqual(ret.status_code, 200)
-        self.assertTrue(ret.get_json().get("data")["canEdit"])  # type: ignore
+        self.assertTrue(_get_json_data(ret)["canEdit"])
 
         db_group = Group.query.get(group.id)
         self.assertEqual(db_group.email, update_data["email"])
@@ -351,7 +352,7 @@ class TestGroups(RouteBase):
         with self.fake_auth():
             ret = self.client.put(f"/v1/groups/{group.name}", json=group_data)
         self.assertEqual(ret.status_code, 200)
-        self.assertTrue(ret.get_json().get("data")["canEdit"])  # type: ignore
+        self.assertTrue(_get_json_data(ret)["canEdit"])
         db_group = Group.query.get(group.id)
         self.assertEqual(db_group.email, group_data["email"])
 

@@ -34,7 +34,7 @@ class TestOrasAuth(RouteBase):
         self.assertEqual(ret.status_code, 200)
         token_data = typing.cast(dict, ret.get_json())
         self.assertIn("access_token", token_data)
-        token = token_data["access_token"]  # type: ignore
+        token = token_data["access_token"]
         db_token = Token.query.filter(Token.key_uid == token[:12]).first()
         self.assertIsNotNone(db_token)
 
@@ -49,7 +49,7 @@ class TestOrasAuth(RouteBase):
         self.assertEqual(ret.status_code, 200)
         token_data = typing.cast(dict, ret.get_json())
         self.assertIn("access_token", token_data)
-        token = token_data["access_token"]  # type: ignore
+        token = token_data["access_token"]
         db_token = Token.query.filter(Token.key_uid == token[:12]).first()
         self.assertIsNotNone(db_token)
 
@@ -149,5 +149,5 @@ class TestOrasAuth(RouteBase):
 
         token_data = typing.cast(dict, ret.get_json())
         self.assertIn("access_token", token_data)
-        token = token_data["access_token"]  # type: ignore
+        token = token_data["access_token"]
         self.assertEqual(token, "oinkoinkoinkoink")

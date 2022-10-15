@@ -1,7 +1,7 @@
 from .base import PasswordCheckerBase
 from .exceptions import UserNotFound, InvalidPassword, UserConflict
 
-from sqlalchemy.orm.exc import NoResultFound  # type: ignore
+from sqlalchemy.exc import NoResultFound
 
 from ldap3 import Server, Connection, SUBTREE, SYNC, SCHEMA
 from ldap3.utils.conv import escape_filter_chars

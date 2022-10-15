@@ -6,8 +6,7 @@ from flask_rebar import errors
 from typing import List, Tuple
 from flask_rebar.validation import RequestSchema
 from marshmallow import fields
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm.exc import NoResultFound  # type: ignore
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy import func
 import tempfile
 import os

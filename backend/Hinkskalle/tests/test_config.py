@@ -24,6 +24,7 @@ class TestConfig(unittest.TestCase):
         os.environ.clear()
 
     def tearDown(self):
+        os.environ.clear()
         os.environ.update(self.saved_environ)
 
     def test_file(self):
@@ -44,6 +45,7 @@ class TestConfig(unittest.TestCase):
         json.dump(_test_conf(), cf)
         cf.flush()
 
+        test_app = create_app()
         from Hinkskalle import password_checkers
 
         self.assertEqual(len(password_checkers.checkers), 1)

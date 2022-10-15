@@ -135,7 +135,7 @@ def list_images(entity_id, collection_id, container_id):
     if not container.check_access(g.authenticated_user):
         raise errors.Forbidden("access denied")
 
-    images = Image.query.filter(Image.container_id == container.id, Image.hide is False)
+    images = Image.query.filter(Image.container_id == container.id, Image.hide == False)  # noqa: E712
 
     return {"data": list(images)}
 

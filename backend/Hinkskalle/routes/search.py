@@ -50,7 +50,7 @@ def search():
         "entities": [],
         "collections": [],
         "containers": [],
-        "images": [Image.hide is False],
+        "images": [Image.hide == False],  # noqa: E712
     }
 
     if args.get("value", None):
@@ -68,11 +68,11 @@ def search():
     collections = Collection.query.filter(*search["collections"])
     containers = Container.query.filter(*search["containers"])
     images = Image.query.filter(*search["images"]).union(
-        Image.query.join(Image.container_ref, aliased=True).filter(*search["containers"], Image.hide is False)
+        Image.query.join(Image.container_ref, aliased=True).filter(*search["containers"], Image.hide == False)  # noqa: E712
     )
 
     if args.get("signed", None) == "true":
-        images = images.filter(Image.signed is True)
+        images = images.filter(Image.signed == True)  # noqa: E712
         # querying for signed only makes sense for images
         entities = []
         collections = []

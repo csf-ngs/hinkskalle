@@ -108,7 +108,7 @@ class Container(db.Model):  # type: ignore
     def type(self) -> str:
         media_types = (
             db.session.query(Image.media_type, func.count(Image.media_type))
-            .filter(Image.container_id == self.id, Image.hide is False)
+            .filter(Image.container_id == self.id, Image.hide == False)  # noqa: E712
             .group_by(Image.media_type)
             .all()
         )
@@ -125,7 +125,7 @@ class Container(db.Model):  # type: ignore
     def size(self) -> int:
         if not self.id:
             return 0
-        return self.images_ref.filter(Image.hide is False, Image.uploadState == UploadStates.completed).count()
+        return self.images_ref.filter(Image.hide == False, Image.uploadState == UploadStates.completed).count()  # noqa: E712
 
     @property
     def collection(self) -> int:
@@ -146,7 +146,7 @@ class Container(db.Model):  # type: ignore
     def get_tag(self, tag: str, arch: typing.Optional[str] = None) -> Tag:
         cur_tags = Tag.query.filter(Tag.name == tag, Tag.container_id == self.id)
         if not arch or arch == current_app.config["DEFAULT_ARCH"]:
-            cur_tags = cur_tags.filter(or_(Tag.arch == current_app.config["DEFAULT_ARCH"], Tag.arch is None))
+            cur_tags = cur_tags.filter(or_(Tag.arch == current_app.config["DEFAULT_ARCH"], Tag.arch == None))  # noqa: E711
         else:
             cur_tags = cur_tags.filter(Tag.arch == arch)
 
@@ -184,7 +184,7 @@ class Container(db.Model):  # type: ignore
     def imageTags(self) -> dict:
         tags = {}
         for tag in Tag.query.filter(
-            Tag.container_ref == self, or_(Tag.arch is None, Tag.arch == current_app.config["DEFAULT_ARCH"])
+            Tag.container_ref == self, or_(Tag.arch == None, Tag.arch == current_app.config["DEFAULT_ARCH"])  # noqa: E711
         ).all():
             tags[tag.name] = str(tag.image_id)
         return tags

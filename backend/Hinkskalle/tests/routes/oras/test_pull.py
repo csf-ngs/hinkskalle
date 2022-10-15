@@ -1,3 +1,4 @@
+import typing
 from Hinkskalle.tests.route_base import RouteBase
 from Hinkskalle.tests._util import _fake_img_file, _create_image
 
@@ -23,14 +24,14 @@ class TestOrasPull(RouteBase):
                 f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/manifests/latest"
             )
         self.assertEqual(ret.status_code, 200)
-        digest = ret.headers.get("Docker-Content-Digest")
+        digest = ret.headers.get("Docker-Content-Digest", "")
         self.assertIsNotNone(digest)
 
         manifest = Manifest.query.filter(Manifest.hash == digest.replace("sha256:", "")).first()
         image = Image.query.get(image_id)
         self.assertIsNotNone(manifest)
         self.assertDictEqual(
-            ret.get_json().get("layers")[0],
+            typing.cast(dict, ret.get_json()).get("layers", [])[0],
             {
                 "mediaType": "application/vnd.sylabs.sif.layer.v1.sif",
                 "digest": f"sha256:{image.hash.replace('sha256.', '')}",
@@ -54,9 +55,9 @@ class TestOrasPull(RouteBase):
         with self.fake_auth():
             ret = self.client.get(f"/v2/{image.entityName}/{image.collectionName}/{image.containerName}/manifests/v1")
         self.assertEqual(ret.status_code, 200)
-        manifest = ret.get_json()
+        manifest = typing.cast(dict, ret.get_json())
         image = Image.query.get(image_id)
-        self.assertEqual(manifest.get("layers")[0].get("digest"), image.hash.replace("sha256.", "sha256:"))
+        self.assertEqual(manifest.get("layers", [])[0].get("digest"), image.hash.replace("sha256.", "sha256:"))
 
     def test_manifest_noauth(self):
         image = _create_image()[0]
@@ -300,7 +301,7 @@ class TestOrasPull(RouteBase):
             )
         self.assertEqual(ret.status_code, 200)
 
-        self.assertDictEqual(ret.get_json(), {"oi": "nk"})
+        self.assertDictEqual(typing.cast(dict, ret.get_json()), {"oi": "nk"})
         manifest = Manifest.query.get(manifest_id)
         self.assertEqual(manifest.downloadCount, 1)
         self.assertAlmostEqual(manifest.latestDownload, datetime.now(), delta=timedelta(seconds=2))

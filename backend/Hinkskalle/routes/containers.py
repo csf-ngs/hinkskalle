@@ -1,11 +1,10 @@
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
-from marshmallow import fields, Schema
+from marshmallow import fields
 from sqlalchemy.orm.exc import NoResultFound  # type: ignore
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import func
-from flask import request, current_app, g
+from flask import current_app, g
 import datetime
 
 from Hinkskalle.models import ContainerSchema, Container, Entity, Collection
@@ -111,7 +110,7 @@ def create_container():
     owner = g.authenticated_user
     if g.authenticated_user.is_admin and collection.entity_ref.owner:
         owner = collection.entity_ref.owner
-    with db.session.no_autoflush:
+    with db.session.no_autoflush:  # type: ignore
         new_container = Container(**body)
         new_container.collection_ref = collection
         new_container.owner = owner

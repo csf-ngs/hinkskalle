@@ -1,14 +1,14 @@
-from Hinkskalle import registry, rebar, authenticator, db
+from Hinkskalle import registry, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
-from marshmallow import fields, Schema, ValidationError
+from marshmallow import fields, ValidationError
 from sqlalchemy.orm.exc import NoResultFound  # type: ignore
 from sqlalchemy.exc import IntegrityError
 from flask import request, current_app, g
 import os.path
 import os
 
-from Hinkskalle.models import Tag, Container, Image, UploadStates
+from Hinkskalle.models import Container, Image, UploadStates
 
 
 class TagResponseSchema(ResponseSchema):

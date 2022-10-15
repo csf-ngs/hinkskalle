@@ -8,13 +8,16 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 from flask_migrate import Migrate
 
+from Hinkskalle.util.swagger import register_authenticators
+from Hinkskalle.util.auth.token import TokenAuthenticator
+from Hinkskalle.util.auth import PasswordAuthenticators
+
 import os
 import os.path
 
 from werkzeug.routing import BaseConverter
 
 auth_registry = AuthenticatorConverterRegistry()
-from Hinkskalle.util.swagger import register_authenticators
 
 register_authenticators(auth_registry)
 
@@ -25,10 +28,8 @@ rebar = Rebar()
 registry = rebar.create_handler_registry(swagger_generator=generator, prefix="/")
 registry.set_default_authenticator(None)
 
-from Hinkskalle.util.auth.token import TokenAuthenticator
 
 authenticator = TokenAuthenticator()
-from Hinkskalle.util.auth import PasswordAuthenticators
 
 password_checkers = PasswordAuthenticators()
 
@@ -44,6 +45,7 @@ naming_convention = {
 
 db = SQLAlchemy(metadata=MetaData(naming_convention=naming_convention))
 migrate = Migrate()
+
 
 # regex from https://github.com/opencontainers/distribution-spec/blob/main/spec.md#pull
 class OrasNameConverter(BaseConverter):
@@ -76,7 +78,7 @@ def create_app():
         )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = app.config.get("SQLALCHEMY_TRACK_MODIFICATIONS", False)
 
-    if not "AUTH" in app.config:
+    if "AUTH" not in app.config:
         app.config["AUTH"] = {}
 
     app.config["PREFERRED_URL_SCHEME"] = app.config.get("PREFERRED_URL_SCHEME", "http")
@@ -139,8 +141,8 @@ def create_app():
     generator.register_flask_converter_to_swagger_type("distname", "path")
 
     with app.app_context():
-        import Hinkskalle.routes
-        import Hinkskalle.commands
+        import Hinkskalle.routes  # noqa: F401
+        import Hinkskalle.commands  # noqa: F401
 
         # make sure init_app is called after importing routes??
         rebar.init_app(app)

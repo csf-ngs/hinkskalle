@@ -1,4 +1,3 @@
-from typing import Tuple
 import typing
 import unittest
 from unittest import mock
@@ -13,8 +12,6 @@ from Hinkskalle.models.Container import Container
 from Hinkskalle.models.Image import Image, ImageSchema, UploadStates
 from Hinkskalle.models.Tag import Tag
 from Hinkskalle.models.User import GroupRoles
-
-from Hinkskalle.tests.models.test_Collection import _create_collection
 
 from Hinkskalle import db
 from ..model_base import ModelBase
@@ -67,7 +64,7 @@ class TestImage(ModelBase):
         image.size = 666
         db.session.commit()
 
-        with self.assertRaises(Exception):
+        with self.assertRaisesRegex(Exception, r'non-singularity'):
             image.generate_manifest()
 
     def test_tags(self):

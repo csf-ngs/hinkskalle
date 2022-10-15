@@ -112,7 +112,7 @@ def get_key(key):
 def update_key(key):
     body = rebar.validated_body
 
-    if not key in [k.name for k in AdmKeys]:
+    if key not in [k.name for k in AdmKeys]:
         raise errors.BadRequest(f"Invalid key")
 
     db_key = Adm.query.get(key)
@@ -148,7 +148,7 @@ def ldap_status():
             ret["config"].pop("BIND_PASSWORD", "")
         else:
             ret["status"] = "disabled"
-    except:
+    except Exception:
         ret["status"] = "fail"
 
     return {"data": ret}
@@ -201,7 +201,7 @@ def sync_ldap():
 def start_task(key):
     from Hinkskalle.util.jobs import adm_map
 
-    if not key in adm_map:
+    if key not in adm_map:
         raise errors.NotAcceptable(f"Invalid adm key {key}")
     job = adm_map[key].queue()
     return {"data": _serialize_job(job)}

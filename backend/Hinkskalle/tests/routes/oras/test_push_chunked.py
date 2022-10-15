@@ -21,7 +21,7 @@ class TestOrasPushChunked(RouteBase):
                 headers={"Content-Length": 0},
             )
         self.assertEqual(ret.status_code, 202)
-        upload_id = ret.headers.get("location").split("/")[-1]
+        upload_id = ret.headers.get("location", "").split("/")[-1]
 
         db_upload = ImageUploadUrl.query.get(upload_id)
         self.assertIsNotNone(db_upload)
@@ -289,7 +289,7 @@ def _prepare_chunked_upload(test_data: bytes) -> Tuple[Image, ImageUploadUrl, Im
     )
     db.session.add(upload)
     chunks = []
-    for item in [complete_data[i : i + 5] for i in range(0, len(complete_data), 5)]:
+    for item in [complete_data[i: i + 5] for i in range(0, len(complete_data), 5)]:
         img_data, digest = _prepare_img_data(data=item)
         _, temp_file = tempfile.mkstemp(dir=temp_path)
         with open(temp_file, "wb") as temp_fh:

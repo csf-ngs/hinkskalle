@@ -1,3 +1,4 @@
+import typing
 from Hinkskalle import db
 from Hinkskalle.models.Tag import Tag
 
@@ -16,15 +17,15 @@ class TestShub(RouteBase):
 
         ret = self.client.get(f"/api/container/{image.collectionName}/{image.containerName}:latest")
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json()
+        data = typing.cast(dict, ret.get_json())
         self.assertDictEqual(
             data,
             {
                 "image": f"http://localhost/v1/imagefile/default/{image.collectionName}/{image.containerName}:latest",
                 "name": image.containerName,
                 "tag": latest_tag.name,
-                #'version': None,
-                #'commit': None,
+                # 'version': None,
+                # 'commit': None,
             },
         )
 

@@ -1,14 +1,10 @@
 import typing
-from Hinkskalle.models.Manifest import Manifest
 from datetime import datetime, timedelta
-from typing import Tuple
-from unittest.case import skip
 
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.Container import ContainerTypes
 from Hinkskalle.models import Collection, Container, ContainerSchema, Image, Tag, UploadStates
 from Hinkskalle.models.User import GroupRoles
-from .test_Image import _create_image
 from ..model_base import ModelBase
 from .._util import _create_user, _create_container, _create_image, _create_group, _set_member, default_entity_name
 
@@ -31,7 +27,7 @@ class TestContainer(ModelBase):
 
     def test_container_case(self):
         container, _, _ = _create_container("TestContainer")
-        read_container = Container.query.get(container.id)
+        Container.query.get(container.id)
         self.assertEqual(container.name, "test-testcontainer")
 
     def test_images(self):

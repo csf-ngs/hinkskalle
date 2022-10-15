@@ -3,7 +3,7 @@ from ..model_base import ModelBase
 from .._util import _create_user
 
 from Hinkskalle.util.auth.local import LocalUsers
-from Hinkskalle.util.auth.exceptions import *
+from Hinkskalle.util.auth.exceptions import UserNotFound, InvalidPassword
 
 
 class TestLocalUsers(ModelBase):
@@ -18,7 +18,7 @@ class TestLocalUsers(ModelBase):
 
     def test_not_found(self):
         with self.assertRaises(UserNotFound):
-            check_user = LocalUsers().check_password("someone", "somesecret")
+            LocalUsers().check_password("someone", "somesecret")
 
     def test_invalid_password(self):
         user = _create_user()
@@ -27,7 +27,7 @@ class TestLocalUsers(ModelBase):
         db.session.commit()
 
         with self.assertRaises(InvalidPassword):
-            check_user = LocalUsers().check_password(user.username, "fail")
+            LocalUsers().check_password(user.username, "fail")
 
     def test_none_password(self):
         user = _create_user()
@@ -35,7 +35,7 @@ class TestLocalUsers(ModelBase):
         db.session.commit()
 
         with self.assertRaises(InvalidPassword):
-            check_user = LocalUsers().check_password(user.username, "fail")
+            LocalUsers().check_password(user.username, "fail")
 
     def test_password_not_supplied(self):
         user = _create_user()
@@ -43,13 +43,13 @@ class TestLocalUsers(ModelBase):
         db.session.commit()
 
         with self.assertRaises(InvalidPassword):
-            check_user = LocalUsers().check_password(user.username, None)
+            LocalUsers().check_password(user.username, None)  # type: ignore
 
         user.set_password("supersecret")
         db.session.commit()
 
         with self.assertRaises(InvalidPassword):
-            check_user = LocalUsers().check_password(user.username, None)
+            LocalUsers().check_password(user.username, None)  # type: ignore
 
     def test_not_local(self):
         user = _create_user()
@@ -58,4 +58,4 @@ class TestLocalUsers(ModelBase):
         db.session.commit()
 
         with self.assertRaises(UserNotFound):
-            check_user = LocalUsers().check_password(user.username, "supersecret")
+            LocalUsers().check_password(user.username, "supersecret")

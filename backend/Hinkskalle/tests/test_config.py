@@ -1,3 +1,4 @@
+import typing
 import unittest
 import tempfile
 import json
@@ -20,10 +21,10 @@ def _test_conf():
 class TestConfig(unittest.TestCase):
     def setUp(self):
         self.saved_environ = os.environ
-        os.environ = {}
+        os.environ.clear()
 
     def tearDown(self):
-        os.environ = self.saved_environ
+        os.environ.update(self.saved_environ)
 
     def test_file(self):
         cf = tempfile.NamedTemporaryFile(mode="w")
@@ -42,7 +43,6 @@ class TestConfig(unittest.TestCase):
         os.environ["HINKSKALLE_SETTINGS"] = cf.name
         json.dump(_test_conf(), cf)
         cf.flush()
-        test_app = create_app()
 
         from Hinkskalle import password_checkers
 
@@ -157,7 +157,7 @@ class TestConfig(unittest.TestCase):
 
     def test_ldap(self):
         cf = tempfile.NamedTemporaryFile(mode="w")
-        test_conf = _test_conf()
+        test_conf: dict[str, typing.Any] = _test_conf()
         os.environ["HINKSKALLE_SETTINGS"] = cf.name
         json.dump(test_conf, cf)
         cf.flush()

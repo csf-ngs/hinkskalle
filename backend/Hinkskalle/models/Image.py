@@ -5,7 +5,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from Hinkskalle import db
 from Hinkskalle.models.User import User
 from flask import current_app, g
-from marshmallow import Schema, fields
+from marshmallow import fields
 from datetime import datetime, timedelta
 import json
 import re
@@ -338,7 +338,7 @@ class Image(db.Model):  # type: ignore
         if not proc.returncode == 0:
             stderr = proc.stderr.decode("utf-8")
             sigdata["Passed"] = False
-            ## could be unsigned/unknown signer
+            # could be unsigned/unknown signer
             if re.search(r"signature not found", stderr):
                 sigdata["Reason"] = "Unsigned"
             elif re.search(r"signature made by unknown entity", stderr):

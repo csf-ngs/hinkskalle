@@ -3,7 +3,6 @@ from flask import current_app
 from flask.cli import AppGroup
 from Hinkskalle import db
 from Hinkskalle.models.Entity import Entity
-import click
 import humanize
 
 ldap_cli = AppGroup("ldap", short_help="manage ldap integration")

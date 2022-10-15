@@ -2,9 +2,8 @@ import enum
 from typing import List, Union
 from functools import reduce
 
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound
 from Hinkskalle import db
-from flask import current_app
 from datetime import datetime
 import json
 import hashlib
@@ -76,7 +75,7 @@ class ManifestSchema(BaseSchema):
     images = fields.List(fields.String(), dump_only=True)
 
 
-class Manifest(db.Model):
+class Manifest(db.Model):  # type: ignore
     id = db.Column(db.Integer, primary_key=True)
 
     container_id = db.Column(db.Integer, db.ForeignKey("container.id"), nullable=False)
@@ -172,7 +171,7 @@ class Manifest(db.Model):
         # all other layer types can only be pushed via the OCI API and should not
         # be out of date.
         content = self.content_json
-        if not "layers" in content:
+        if "layers" not in content:
             return False
         for layer in content["layers"]:
             if layer.get("mediaType") != Image.singularity_media_type:
@@ -192,7 +191,7 @@ class Manifest(db.Model):
         return False
 
     @hybrid_property
-    def content(self) -> str:
+    def content(self) -> str:  # type:ignore
         return self._content
 
     @content.setter

@@ -1,17 +1,12 @@
-from flask.helpers import url_for
-from flask_rebar.validation import RequestSchema
-from Hinkskalle.util import auth
 from Hinkskalle import registry, authenticator, rebar, db
 
 from Hinkskalle.util.auth.token import Scopes
 
-from flask import g, send_file, current_app, redirect
+from flask import g, send_file, current_app
 from flask_rebar import ResponseSchema, errors
 from marshmallow import fields
 from sqlalchemy.orm.exc import NoResultFound  # type: ignore
 import jwt
-from datetime import datetime
-from calendar import timegm
 
 from Hinkskalle.models.Manifest import Manifest, ManifestSchema, ManifestTypes
 from Hinkskalle.models.Image import Image, UploadStates

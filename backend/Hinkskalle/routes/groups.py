@@ -1,6 +1,5 @@
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.models.User import GroupRoles
-from Hinkskalle.routes import auth
 from Hinkskalle.util.auth.token import Scopes
 
 from flask_rebar import RequestSchema, ResponseSchema, errors
@@ -157,7 +156,7 @@ def update_group(name: str):
     for key in body:
         setattr(group, key, body[key])
 
-    with db.session.no_autoflush:
+    with db.session.no_autoflush:  # type: ignore
         if name != group.name and group.entity is not None:
             group.entity.name = slugify(group.name)
 

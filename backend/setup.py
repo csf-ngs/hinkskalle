@@ -26,7 +26,7 @@ setup(
         "webauthn",
     ],
     extras_require={
-        "dev": ["nose2", "fakeredis", "psycopg2", "nose2-html-report", "nose2[coverage_plugin]"],
+        "dev": ["nose2", "fakeredis", "psycopg2", "nose2-html-report", "nose2[coverage_plugin]", "black", "flake8"],
         "test": ["nose2", "fakeredis"],
         "postgres": ["psycopg2"],
     },

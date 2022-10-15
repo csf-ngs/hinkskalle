@@ -1,7 +1,6 @@
-from sqlalchemy.orm.exc import NoResultFound  # type: ignore
-from flask import g
+from sqlalchemy.exc import NoResultFound
 
-from .exceptions import UserDisabled, UserNotFound, InvalidPassword
+from .exceptions import UserNotFound, InvalidPassword
 from .base import PasswordCheckerBase
 
 

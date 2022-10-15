@@ -1,4 +1,3 @@
-from distutils import bcppcompiler
 import typing
 from Hinkskalle import db
 import Hinkskalle.util.name_check

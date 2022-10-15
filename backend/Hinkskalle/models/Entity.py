@@ -3,7 +3,7 @@ from Hinkskalle import db
 from marshmallow import fields, validates_schema, ValidationError
 from datetime import datetime
 from sqlalchemy.orm import validates
-from flask import current_app, g
+from flask import g
 from Hinkskalle.models.Image import UploadStates
 from Hinkskalle.util.name_check import validate_name
 from Hinkskalle.models.User import GroupRoles, User

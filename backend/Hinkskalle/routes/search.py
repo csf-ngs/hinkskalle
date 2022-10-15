@@ -2,9 +2,7 @@ from Hinkskalle import registry, rebar, authenticator
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
-from flask import current_app, g, request
-import re
-from sqlalchemy import and_
+from flask import g, request
 
 
 from Hinkskalle.models import (
@@ -52,7 +50,7 @@ def search():
         "entities": [],
         "collections": [],
         "containers": [],
-        "images": [Image.hide == False],
+        "images": [Image.hide is False],
     }
 
     if args.get("value", None):
@@ -70,11 +68,11 @@ def search():
     collections = Collection.query.filter(*search["collections"])
     containers = Container.query.filter(*search["containers"])
     images = Image.query.filter(*search["images"]).union(
-        Image.query.join(Image.container_ref, aliased=True).filter(*search["containers"], Image.hide == False)
+        Image.query.join(Image.container_ref, aliased=True).filter(*search["containers"], Image.hide is False)
     )
 
     if args.get("signed", None) == "true":
-        images = images.filter(Image.signed == True)
+        images = images.filter(Image.signed is True)
         # querying for signed only makes sense for images
         entities = []
         collections = []

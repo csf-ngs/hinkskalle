@@ -1,10 +1,8 @@
-from Hinkskalle import registry, db
+from Hinkskalle import registry
 from flask_rebar import ResponseSchema, errors
-from marshmallow import fields, Schema
-from sqlalchemy.orm.exc import NoResultFound  # type: ignore
-from flask import url_for, current_app
+from marshmallow import fields
+from flask import url_for
 
-from Hinkskalle.models import Entity, Collection, Container, Image
 from Hinkskalle.routes.images import _parse_tag
 
 from .util import _get_container
@@ -32,7 +30,7 @@ def get_manifest(collection_id, tagged_container_id):
         raise errors.Forbidden(f"container {container_id} is private.")
 
     image_tags = container.imageTags
-    if not tag in image_tags:
+    if tag not in image_tags:
         raise errors.NotFound(f"Tag {tag} on container {container.collectionName}/{container.name} does not exist.")
 
     return {

@@ -1,7 +1,4 @@
-from email.mime import image
-from pprint import pprint
 import typing
-import unittest
 
 from ..route_base import RouteBase
 from .._util import _create_image, _create_container
@@ -9,9 +6,8 @@ from .._util import _create_image, _create_container
 from Hinkskalle import db
 from Hinkskalle.models.Entity import EntitySchema
 from Hinkskalle.models.Collection import CollectionSchema
-from Hinkskalle.models.Image import ImageSchema
-from Hinkskalle.models.Container import ContainerSchema, Container
 from Hinkskalle.models.Image import ImageSchema, Image
+from Hinkskalle.models.Container import ContainerSchema, Container
 
 
 class TestSearch(RouteBase):

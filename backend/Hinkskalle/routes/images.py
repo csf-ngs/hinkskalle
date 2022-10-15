@@ -10,14 +10,11 @@ from sqlalchemy.exc import IntegrityError
 
 import os
 import os.path
-import json
 import datetime
-import jwt
 
-from Hinkskalle.models.User import User
 from Hinkskalle.models.Image import Image, UploadStates
 from Hinkskalle.models import ImageSchema, Container
-from .util import _get_container, DownloadQuerySchema
+from .util import _get_container
 
 
 class ImageQuerySchema(RequestSchema):
@@ -104,7 +101,7 @@ def _get_image(
             raise errors.NotFound(f"image with hash {shahash} not found in container {container.name}")
     elif arch:
         arch_tags = container.archImageTags
-        if not arch in arch_tags or not tag in arch_tags[arch]:
+        if arch not in arch_tags or tag not in arch_tags[arch]:
             current_app.logger.debug(
                 f"Tag {tag} for architecture {arch} on container {container.entityName}/{container.collectionName}/{container.name} not found"
             )
@@ -115,7 +112,7 @@ def _get_image(
     else:
         image_tags = container.imageTags
 
-        if not tag in image_tags:
+        if tag not in image_tags:
             current_app.logger.debug(
                 f"tag {tag} on container {container.entityName}/{container.collectionName}/{container.name} not found"
             )
@@ -139,7 +136,7 @@ def list_images(entity_id, collection_id, container_id):
     if not container.check_access(g.authenticated_user):
         raise errors.Forbidden("access denied")
 
-    images = Image.query.filter(Image.container_id == container.id, Image.hide == False)
+    images = Image.query.filter(Image.container_id == container.id, Image.hide is False)
 
     return {"data": list(images)}
 

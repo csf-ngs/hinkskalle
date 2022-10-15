@@ -1,13 +1,11 @@
 import typing
-from Hinkskalle.routes import manifests
 from Hinkskalle.models.User import Token
 from flask import current_app, make_response, send_file, jsonify, g, request
 from flask_rebar import errors
 
 from typing import List, Tuple
-from hashlib import sha256
 from flask_rebar.validation import RequestSchema
-from marshmallow import fields, Schema
+from marshmallow import fields
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound  # type: ignore
 from sqlalchemy import func
@@ -30,11 +28,11 @@ from Hinkskalle.models import Manifest, Container, UploadTypes, UploadStates, Im
 from Hinkskalle import db, registry, authenticator, rebar, password_checkers
 
 from Hinkskalle.util.auth.token import Scopes
-from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword
+from Hinkskalle.util.auth.exceptions import UserNotFound, InvalidPassword
 from .util import _get_container as __get_container, _get_service_url
 from .imagefiles import _move_image, _receive_upload as __receive_upload, _rebuild_chunks
 from .images import _delete_image
-from ..util.schema import BaseSchema, LocalDateTime
+from ..util.schema import LocalDateTime
 
 
 class OrasPushBlobQuerySchema(RequestSchema):
@@ -184,7 +182,7 @@ def authenticate_check():
 
         try:
             user: User = User.query.filter(User.username == username).one()
-        except:
+        except Exception:
             raise OrasUnauthorized()
 
         if not user.is_active:
@@ -274,7 +272,7 @@ def oras_list_tags(name: str):
                 last_idx = cur_tags.index(args.get("last"))
             except ValueError:
                 raise OrasManifestUnknown(f"Tag {args.get('last')} not found")
-            cur_tags = cur_tags[last_idx + 1 :]
+            cur_tags = cur_tags[last_idx + 1:]
         if args.get("n"):
             cur_tags = cur_tags[: args.get("n")]
     else:
@@ -402,14 +400,14 @@ def oras_push_manifest(name, reference):
     # XXX validate with schema
 
     if not tag:
-        if len([l for l in manifest_data.get("layers", []) if Image.valid_media_types.get(l.get("mediaType"))]) == 0:
+        if len([layer for layer in manifest_data.get("layers", []) if Image.valid_media_types.get(layer.get("mediaType"))]) == 0:
             current_app.logger.debug(f"No tag {reference} on container {container.id} and no layers provided")
         tag = Tag(name=reference)
         db.session.add(tag)
 
     with db.session.no_autoflush:  # type: ignore
         for layer in manifest_data.get("layers", []) + [manifest_data.get("config", {})]:
-            if not "digest" in layer or not "mediaType" in layer:
+            if "digest" not in layer or "mediaType" not in layer:
                 continue
             try:
                 image = Image.query.filter(

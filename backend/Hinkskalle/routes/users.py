@@ -1,4 +1,3 @@
-from ast import Pass
 import base64
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
@@ -12,6 +11,7 @@ from flask import current_app, g
 from Hinkskalle.models import UserSchema, User, ContainerSchema, Container, Entity, PassKey, PassKeySchema
 
 import datetime
+
 
 # use Schema here instead of flask_rebar's ResponseSchema
 # ResponseSchema switches on validation on dump, which would

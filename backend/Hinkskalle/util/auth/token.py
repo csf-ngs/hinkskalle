@@ -60,7 +60,7 @@ class TokenAuthenticator(Authenticator):
         from Hinkskalle.models.User import Token
 
         token_uid = token[:12]
-        db_token = Token.query.filter(Token.key_uid == token_uid, Token.deleted == False).first()
+        db_token = Token.query.filter(Token.key_uid == token_uid, Token.deleted is False).first()
         if not db_token:
             current_app.logger.debug("Token not in db")
             raise errors.Unauthorized("Invalid token")

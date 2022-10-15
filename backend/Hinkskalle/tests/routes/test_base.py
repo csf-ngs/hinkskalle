@@ -1,7 +1,6 @@
 import tempfile
 import os.path
 
-from Hinkskalle.tests.route_base import RouteBase
 from Hinkskalle.models.Image import Image
 from Hinkskalle.models.Tag import Tag
 from Hinkskalle import db

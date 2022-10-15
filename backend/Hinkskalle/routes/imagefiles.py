@@ -17,7 +17,7 @@ import hashlib
 import tempfile
 import shutil
 import math
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 class PullQuerySchema(RequestSchema):

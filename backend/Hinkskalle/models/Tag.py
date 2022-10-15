@@ -1,4 +1,3 @@
-from Hinkskalle.models.Image import Image
 from Hinkskalle import db
 from datetime import datetime
 from sqlalchemy.orm import validates

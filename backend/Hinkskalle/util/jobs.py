@@ -9,7 +9,6 @@ from flask_rq2.job import Job
 from datetime import datetime, timezone
 from sqlalchemy import func
 import traceback
-import time
 
 from Hinkskalle.models.Adm import Adm, AdmKeys
 from Hinkskalle.models.Entity import Entity
@@ -25,10 +24,10 @@ rq = RQ()
 
 def setup_cron(app: Flask) -> None:
     for key in app.config.get("CRON", {}):
-        if not key in adm_map:
+        if key not in adm_map:
             raise Exception(f"Invalid adm key {key} in CRON")
         app.logger.debug(f"scheduling {key}...")
-        job: Job = adm_map[key].cron(app.config["CRON"][key], key)
+        adm_map[key].cron(app.config["CRON"][key], key)
 
 
 def get_cron():
@@ -113,7 +112,7 @@ def update_quotas() -> typing.Optional[str]:
     try:
         total = Entity.query.count() + User.query.count()
         for obj in Entity.query.all() + User.query.all():
-            size = obj.calculate_used()
+            obj.calculate_used()
             db.session.commit()
             result["updated"] += 1
             job.meta["progress"] = f"{result['updated']}/{total}"
@@ -157,11 +156,11 @@ def __update_adm(key: AdmKeys, result):
     db.session.commit()
 
 
-def _fail_job(job: Job, result, key: AdmKeys, exc: Exception):
+def _fail_job(job: Job, result, key: AdmKeys, exc: BaseException):
     result["success"] = False
     job.meta["progress"] = "failed"
     result["exception"] = job.exc_info or "".join(
-        traceback.format_exception(value=exc, etype=None, tb=exc.__traceback__)
+        traceback.format_exception(type(exc), value=exc, tb=exc.__traceback__)
     )
     current_app.logger.error(result)
     job.save_meta()

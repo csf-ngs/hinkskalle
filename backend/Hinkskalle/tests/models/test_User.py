@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from pprint import pprint
 import typing
 import base64
 
@@ -53,7 +52,7 @@ class TestUser(ModelBase):
         db.session.add(user)
         db.session.commit()
 
-        read_user = User.query.filter_by(username="test.hase").first()
+        User.query.filter_by(username="test.hase").first()
         self.assertEqual(user.quota, self.app.config["DEFAULT_USER_QUOTA"])
 
         self.app.config["DEFAULT_USER_QUOTA"] = old_default
@@ -79,14 +78,14 @@ class TestUser(ModelBase):
 
         self.assertEqual(user.image_count, 0)
 
-        image1 = _create_image(postfix="1", uploadState=UploadStates.completed, owner=user)[0]
+        _create_image(postfix="1", uploadState=UploadStates.completed, owner=user)[0]
         self.assertEqual(user.image_count, 1)
 
         # only completed counts!
-        image2_broken = _create_image(postfix="2_broken", uploadState=UploadStates.broken, owner=user)[0]
+        _create_image(postfix="2_broken", uploadState=UploadStates.broken, owner=user)[0]
         self.assertEqual(user.image_count, 1)
 
-        image3 = _create_image(postfix="3", uploadState=UploadStates.completed, owner=user)[0]
+        _create_image(postfix="3", uploadState=UploadStates.completed, owner=user)[0]
         self.assertEqual(user.image_count, 2)
 
     def test_used_quota_null(self):
@@ -242,7 +241,7 @@ class TestUser(ModelBase):
     def test_deserialize_username_check(self):
         schema = UserSchema()
         with self.assertRaisesRegex(ValidationError, r"username"):
-            deserialized = schema.load(
+            schema.load(
                 {
                     "username": "t@st.h@ase",
                     "email": "test@ha.se",
@@ -331,7 +330,7 @@ class TestUser(ModelBase):
 
     def test_passkey_schema(self):
         schema = PassKeySchema()
-        user = _create_user()
+        _create_user()
 
         key = PassKey(id=b"oink", name="oink")
         serialized = typing.cast(dict, schema.dump(key))

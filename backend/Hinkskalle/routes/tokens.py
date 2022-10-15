@@ -1,11 +1,11 @@
 from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import RequestSchema, ResponseSchema, errors
-from marshmallow import fields, Schema
+from marshmallow import fields
 from sqlalchemy.orm.exc import NoResultFound  # type: ignore
 import datetime
 
-from flask import current_app, g
+from flask import g
 
 from Hinkskalle.models import User, Token, TokenSchema
 

@@ -9,6 +9,8 @@ from Hinkskalle.models.Container import Container
 from Hinkskalle.models.Image import Image, UploadStates
 from Hinkskalle import db
 
+from werkzeug.test import TestResponse
+
 default_entity_name = "test-hase"
 
 
@@ -37,7 +39,7 @@ def _set_member(user: User, group: Group, role=GroupRoles.contributor) -> UserGr
 def _create_collection(name="test-collection") -> typing.Tuple[Collection, Entity]:
     try:
         entity = Entity.query.filter_by(name=default_entity_name).one()
-    except:
+    except Exception:
         entity = Entity(name=default_entity_name)
         db.session.add(entity)
         db.session.commit()
@@ -66,12 +68,12 @@ def _create_image(
     try:
         coll = Collection.query.filter_by(name=f"test-coll-{postfix}").one()
         entity = coll.entity_ref
-    except:
+    except Exception:
         coll, entity = _create_collection(f"test-coll-{postfix}")
 
     try:
         container = Container.query.filter_by(name=f"test-{postfix}").one()
-    except:
+    except Exception:
         container = Container(name=f"test-{postfix}", collection_ref=coll)
         db.session.add(container)
         db.session.commit()
@@ -98,3 +100,7 @@ def _fake_img_file(image: Image, data=b"Hello Dorian!"):
     image.uploadState = UploadStates.completed
     db.session.commit()
     return tmpf
+
+
+def _get_json_data(ret: TestResponse) -> dict:
+    return typing.cast(dict, ret.get_json()).get('data', {})

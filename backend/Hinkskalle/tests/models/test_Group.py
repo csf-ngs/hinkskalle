@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from pprint import pprint
 import typing
 
 from sqlalchemy.exc import IntegrityError

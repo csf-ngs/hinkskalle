@@ -4,6 +4,8 @@ from marshmallow.utils import is_aware
 from dateutil.tz import tzlocal
 import datetime as dt
 
+local_tz = tzlocal()
+
 
 class BaseSchema(Schema):
     class Meta:
@@ -15,7 +17,7 @@ class LocalDateTime(fields.AwareDateTime):
         self,
         format: str | None = None,
         *,
-        default_timezone: dt.tzinfo | None = tzlocal(),
+        default_timezone: dt.tzinfo | None = local_tz,
         **kwargs,
     ):
         super().__init__(format=format, **kwargs)

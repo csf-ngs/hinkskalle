@@ -1,12 +1,10 @@
-from pprint import pprint
 from ..route_base import RouteBase
-from .._util import _create_group, _set_member, _create_user, _create_collection
+from .._util import _create_group, _set_member, _create_user, _create_collection, _get_json_data
 from Hinkskalle import db
 from Hinkskalle.models.User import Group, GroupRoles, UserGroup, User
 from Hinkskalle.models.Entity import Entity
 from sqlalchemy.orm.exc import NoResultFound  # type: ignore
 import datetime
-import typing
 
 
 class TestGroups(RouteBase):
@@ -249,7 +247,7 @@ class TestGroups(RouteBase):
             ret = self.client.post("/v1/groups", json=group_data)
         self.assertEqual(ret.status_code, 200)
 
-        ret_group = typing.cast(dict, ret.get_json().get("data"))
+        ret_group = _get_json_data(ret)
         self.assertEqual(ret_group["quota"], self.app.config["DEFAULT_GROUP_QUOTA"])
 
         self.app.config["DEFAULT_GROUP_QUOTA"] = old_default
@@ -264,7 +262,7 @@ class TestGroups(RouteBase):
             ret = self.client.post("/v1/groups", json=group_data)
         self.assertEqual(ret.status_code, 200)
 
-        ret_group = typing.cast(dict, ret.get_json().get("data"))
+        ret_group = _get_json_data(ret)
         self.assertEqual(ret_group["quota"], 9876)
 
     def test_create_quota_user(self):
@@ -281,7 +279,7 @@ class TestGroups(RouteBase):
             ret = self.client.post("/v1/groups", json=group_data)
         self.assertEqual(ret.status_code, 200)
 
-        ret_group = typing.cast(dict, ret.get_json().get("data"))
+        ret_group = _get_json_data(ret)
         self.assertEqual(ret_group["quota"], self.app.config["DEFAULT_GROUP_QUOTA"])
 
         self.app.config["DEFAULT_GROUP_QUOTA"] = old_default
@@ -369,7 +367,7 @@ class TestGroups(RouteBase):
         with self.fake_admin_auth():
             ret = self.client.put(f"/v1/groups/{group.name}", json=group_data)
         self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.get_json().get("data")["quota"], 1234)
+        self.assertEqual(_get_json_data(ret)["quota"], 1234)
 
     def test_update_quota_user(self):
         group = _create_group("Updatestall")
@@ -384,7 +382,7 @@ class TestGroups(RouteBase):
         with self.fake_auth():
             ret = self.client.put(f"/v1/groups/{group.name}", json=group_data)
         self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.get_json().get("data")["quota"], 9876)
+        self.assertEqual(_get_json_data(ret)["quota"], 9876)
 
     def test_update_user_denied(self):
         group = _create_group("Updatestall")

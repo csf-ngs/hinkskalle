@@ -8,9 +8,8 @@ from fakeredis import FakeStrictRedis
 
 from Hinkskalle.models import Adm, AdmKeys, User, Entity
 from Hinkskalle.util.auth.ldap import LDAPUsers, LDAPService
-from Hinkskalle.util.auth.exceptions import *
+from Hinkskalle.util.auth.exceptions import UserConflict, UserNotFound, InvalidPassword
 
-import os
 from unittest import mock
 
 
@@ -22,7 +21,6 @@ class MockLDAP:
     def __init__(self, filter=LDAPUsers.default_filter, all_users_filter=LDAPUsers.default_all_users_filter):
         self.svc = LDAPService(
             host="dummy",
-            port=None,
             bind_dn=self.dummy_root_cn,
             bind_password=self.dummy_password,
             base_dn="ou=test",
@@ -229,7 +227,7 @@ class TestLdap(ModelBase):
         db.session.commit()
 
         with self.assertRaises(UserConflict):
-            db_user = auth.sync_user(
+            auth.sync_user(
                 {
                     "attributes": {
                         "cn": f"{user.firstname}oink {user.lastname}oink",
@@ -245,14 +243,14 @@ class TestLdap(ModelBase):
         auth = self.mock.auth
         user = self.mock.create_user()
 
-        check_user = auth.check_password(user.get("uid"), user.get("userPassword"))
+        check_user = auth.check_password(user.get("uid", ""), user.get("userPassword", ""))
         self.assertEqual(check_user.username, user.get("uid"))
 
     def test_check_custom_filter(self):
         mock = MockLDAP(filter="(mail={})")
         user = mock.create_user()
 
-        check_user = mock.auth.check_password(user.get("mail"), user.get("userPassword"))
+        check_user = mock.auth.check_password(user.get("mail", ""), user.get("userPassword", ""))
         self.assertEqual(check_user.username, user.get("uid"))
 
     def test_check_existing(self):
@@ -262,7 +260,7 @@ class TestLdap(ModelBase):
         auth = self.mock.auth
         user = self.mock.create_user(name=db_user.username, password="supersecret")
 
-        check_user = auth.check_password(user.get("uid"), user.get("userPassword"))
+        check_user = auth.check_password(user.get("uid", ""), user.get("userPassword", ""))
         self.assertEqual(check_user.id, db_user.id)
 
     def test_check_twice(self):
@@ -270,45 +268,45 @@ class TestLdap(ModelBase):
         user = self.mock.create_user()
         other_user = self.mock.create_user(name="oink.hase")
 
-        check_user = auth.check_password(user.get("uid"), user.get("userPassword"))
-        check_other_user = auth.check_password(other_user.get("uid"), other_user.get("userPassword"))
+        auth.check_password(user.get("uid", ""), user.get("userPassword", ""))
+        auth.check_password(other_user.get("uid", ""), other_user.get("userPassword", ""))
 
     def test_not_found(self):
         auth = self.mock.auth
-        user = self.mock.create_user()
+        self.mock.create_user()
 
         with self.assertRaises(UserNotFound):
-            check_user = auth.check_password("someone", "somesecret")
+            auth.check_password("someone", "somesecret")
 
     def test_invalid_password(self):
         auth = self.mock.auth
         user = self.mock.create_user()
 
         with self.assertRaises(InvalidPassword):
-            check_user = auth.check_password(user.get("uid"), user.get("userPassword", "") + "oink")
+            auth.check_password(user.get("uid", ""), user.get("userPassword", "") + "oink")
 
     def test_invalid_password_recheck(self):
         auth = self.mock.auth
         user = self.mock.create_user()
 
         with self.assertRaises(InvalidPassword):
-            check_user = auth.check_password(user.get("uid"), user.get("userPassword", "") + "oink")
+            auth.check_password(user.get("uid", ""), user.get("userPassword", "") + "oink")
 
         # should work
-        check_user = auth.check_password(user.get("uid"), user.get("userPassword"))
+        auth.check_password(user.get("uid", ""), user.get("userPassword", ""))
 
     def test_none_password(self):
         auth = self.mock.auth
         user = self.mock.create_user()
 
         with self.assertRaises(InvalidPassword):
-            check_user = auth.check_password(user.get("uid"), None)  # type:ignore
+            auth.check_password(user.get("uid"), None)  # type:ignore
 
         with self.assertRaises(InvalidPassword):
-            check_user = auth.check_password(user.get("uid"), "")
+            auth.check_password(user.get("uid", ""), "")
 
     def test_db_sync(self):
-        auth = self.mock.auth
+        self.mock.auth
         user = self.mock.create_user()
         queue = Queue(is_async=False, connection=FakeStrictRedis())
 

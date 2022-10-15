@@ -1,12 +1,9 @@
-from click import option
 from flask.helpers import make_response
-from itsdangerous import base64_encode
 from Hinkskalle import registry, password_checkers, authenticator, rebar, db
 from Hinkskalle.models.Entity import Entity
 from Hinkskalle.models.User import TokenSchema, User, UserSchema, PassKey, PassKeySchema, Token
 from Hinkskalle.util.auth.token import Scopes
 from Hinkskalle.util.auth.exceptions import UserNotFound, UserDisabled, InvalidPassword, PasswordAuthDisabled
-from Hinkskalle.routes.util import _get_service_url
 from .util import _get_service_url
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
@@ -23,7 +20,6 @@ from webauthn.authentication.verify_authentication_response import verify_authen
 from webauthn.registration.generate_registration_options import generate_registration_options
 from webauthn.registration.verify_registration_response import verify_registration_response
 from webauthn.helpers.options_to_json import options_to_json
-from webauthn.helpers.base64url_to_bytes import base64url_to_bytes
 from webauthn.helpers.structs import PublicKeyCredentialDescriptor, RegistrationCredential, AuthenticationCredential
 
 from datetime import datetime

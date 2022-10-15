@@ -1,4 +1,4 @@
-import typing
+from .._util import _get_json_data
 from ..route_base import RouteBase
 
 from Hinkskalle.models import Adm, AdmKeys
@@ -37,7 +37,7 @@ class TestAdm(RouteBase):
                 ret = self.client.get(f"/v1/adm/{slot.name}")
             self.assertEqual(ret.status_code, 200, msg=f"get {slot.name}")
             self.assertDictEqual(
-                ret.get_json().get("data"), {"key": slot.name, "val": {"oi": "nk", "scheduled": mock.ANY}}
+                _get_json_data(ret), {"key": slot.name, "val": {"oi": "nk", "scheduled": mock.ANY}}
             )
 
     def test_get_invalid(self):
@@ -57,7 +57,7 @@ class TestAdm(RouteBase):
 
             db_key = Adm.query.get(slot)
             self.assertDictEqual(db_key.val, {"gru": "nz"})
-            self.assertDictEqual(ret.get_json().get("data").get("val"), {"gru": "nz"})
+            self.assertDictEqual(_get_json_data(ret).get("val", {}), {"gru": "nz"})
 
     def test_update_new(self):
         for slot in AdmKeys:
@@ -67,7 +67,7 @@ class TestAdm(RouteBase):
 
             db_key = Adm.query.get(slot)
             self.assertDictEqual(db_key.val, {"gru": "nz"})
-            self.assertDictEqual(ret.get_json().get("data").get("val"), {"gru": "nz"})
+            self.assertDictEqual(_get_json_data(ret).get("val", {}), {"gru": "nz"})
 
     def test_update_invalid(self):
         with self.fake_admin_auth():
@@ -79,7 +79,7 @@ class TestAdm(RouteBase):
             ret = self.client.post(f"/v1/ldap/sync")
 
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")
+        data = _get_json_data(ret)
         self.assertDictContainsSubset({"status": "queued", "funcName": "Hinkskalle.util.jobs.sync_ldap"}, data)
 
     def test_ldap_sync_user(self):
@@ -94,7 +94,7 @@ class TestAdm(RouteBase):
             with self.fake_admin_auth():
                 ret = self.client.post(f"/v1/adm/{slot.name}/run")
             self.assertEqual(ret.status_code, 200, msg=f"start job {slot}")
-            data = ret.get_json().get("data")
+            data = _get_json_data(ret)
             self.assertDictContainsSubset(
                 {"status": "queued", "funcName": f"Hinkskalle.util.jobs.{adm_map[slot.name].__name__}"}, data
             )
@@ -128,7 +128,7 @@ class TestAdm(RouteBase):
             {
                 "status": "ok",
             },
-            ret.get_json().get("data"),
+            _get_json_data(ret),
         )
 
     def test_ldap_ping_wrong_password(self):
@@ -143,7 +143,7 @@ class TestAdm(RouteBase):
                 ret = self.client.get(f"/v1/ldap/ping")
 
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")
+        data = _get_json_data(ret)
         self.assertEqual(data["status"], "failed")
         self.assertRegex(data["error"], r"^LDAPInvalidCredentialsResult")
 
@@ -158,7 +158,7 @@ class TestAdm(RouteBase):
             ret = self.client.get(f"/v1/ldap/status")
 
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")
+        data = _get_json_data(ret)
         self.assertEqual(data["status"], "disabled")
 
     def test_ldap_status_enabled(self):
@@ -173,7 +173,7 @@ class TestAdm(RouteBase):
             ret = self.client.get(f"/v1/ldap/status")
 
         self.assertEqual(ret.status_code, 200)
-        data = ret.get_json().get("data")
+        data = _get_json_data(ret)
         self.assertEqual(data["status"], "configured")
         self.assertDictEqual(
             data["config"], {"ENABLED": True, "HOST": "dum.my", "BASE_DN": "ou=test", "BIND_DN": "cn=chef,ou=test"}

@@ -1,12 +1,11 @@
 from .base import PasswordCheckerBase
-from .exceptions import UserNotFound, InvalidPassword, UserDisabled, UserConflict
+from .exceptions import UserNotFound, InvalidPassword, UserConflict
 
 from sqlalchemy.orm.exc import NoResultFound  # type: ignore
 
-from ldap3 import Server, Connection, ObjectDef, Reader, SUBTREE, SYNC, SCHEMA
+from ldap3 import Server, Connection, SUBTREE, SYNC, SCHEMA
 from ldap3.utils.conv import escape_filter_chars
 from ldap3.core.exceptions import (
-    LDAPBindError,
     LDAPInvalidCredentialsResult,
     LDAPPasswordIsMandatoryError,
     LDAPNoSuchObjectResult,
@@ -14,7 +13,8 @@ from ldap3.core.exceptions import (
 
 from slugify import slugify
 
-from flask import g, current_app
+from flask import current_app
+
 
 # mock ldap returns scalar, real ldap (slapd) a list
 # make sure we can deal with both

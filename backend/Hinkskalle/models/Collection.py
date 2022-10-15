@@ -1,5 +1,5 @@
 from Hinkskalle import db
-from marshmallow import Schema, fields, validates_schema, ValidationError
+from marshmallow import fields, validates_schema, ValidationError
 from ..util.schema import BaseSchema, LocalDateTime
 from datetime import datetime
 from sqlalchemy.orm import validates

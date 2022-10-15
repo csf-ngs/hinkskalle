@@ -4,7 +4,7 @@ from unittest import mock
 from Hinkskalle.util.auth import PasswordAuthenticators
 from Hinkskalle.util.auth.ldap import LDAPUsers
 from Hinkskalle.util.auth.local import LocalUsers
-from Hinkskalle.util.auth.exceptions import *
+from Hinkskalle.util.auth.exceptions import InvalidPassword, UserNotFound
 
 
 class TestAuth(ModelBase):
@@ -38,10 +38,6 @@ class TestAuth(ModelBase):
 
         with mock.patch.object(LocalUsers, "check_password", side_effect=UserNotFound) as mock_check:
             with self.assertRaises(UserNotFound):
-                auth.check_password("test.hase", "oink")
-
-        with mock.patch.object(LocalUsers, "check_password", side_effect=UserDisabled) as mock_check:
-            with self.assertRaises(UserDisabled):
                 auth.check_password("test.hase", "oink")
 
         with mock.patch.object(LocalUsers, "check_password", side_effect=InvalidPassword) as mock_check:

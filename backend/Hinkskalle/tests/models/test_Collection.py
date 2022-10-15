@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import typing
 
-from Hinkskalle.models import Entity, Collection, CollectionSchema, Container
+from Hinkskalle.models import Collection, CollectionSchema, Container
 
 from Hinkskalle import db
 from Hinkskalle.models.User import GroupRoles

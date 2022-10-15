@@ -95,7 +95,7 @@ class TestTokenAuth(RouteBase):
         db.session.commit()
 
         token_auth = TokenAuthenticator()
-        with self.app.test_request_context("", headers={"Authorization": "Bearer schoko-banane"}) as ctx:
+        with self.app.test_request_context("", headers={"Authorization": "Bearer schoko-banane"}):
             token_auth.authenticate()
             self.assertEqual(g.authenticated_user.username, test_user.username)
 
@@ -118,15 +118,15 @@ class TestTokenAuth(RouteBase):
         db.session.commit()
 
         scoped = TokenAuthenticator().with_scope(Scopes.optional)
-        with self.app.test_request_context("") as ctx:
+        with self.app.test_request_context(""):
             scoped.authenticate()
             self.assertIsNone(g.authenticated_user)
 
-        with self.app.test_request_context("", headers={"Authorization": "Bearer oink"}) as ctx:
+        with self.app.test_request_context("", headers={"Authorization": "Bearer oink"}):
             with self.assertRaises(errors.Unauthorized):
                 scoped.authenticate()
 
-        with self.app.test_request_context("", headers={"Authorization": "Bearer schoko-banane"}) as ctx:
+        with self.app.test_request_context("", headers={"Authorization": "Bearer schoko-banane"}):
             scoped.authenticate()
             self.assertEqual(g.authenticated_user.username, test_user.username)
 
@@ -136,15 +136,15 @@ class TestTokenAuth(RouteBase):
         db.session.commit()
 
         scoped = TokenAuthenticator().with_scope(Scopes.user)
-        with self.app.test_request_context("") as ctx:
+        with self.app.test_request_context(""):
             with self.assertRaises(errors.Unauthorized):
                 scoped.authenticate()
 
-        with self.app.test_request_context("", headers={"Authorization": "Bearer oink"}) as ctx:
+        with self.app.test_request_context("", headers={"Authorization": "Bearer oink"}):
             with self.assertRaises(errors.Unauthorized):
                 scoped.authenticate()
 
-        with self.app.test_request_context("", headers={"Authorization": "Bearer schoko-banane"}) as ctx:
+        with self.app.test_request_context("", headers={"Authorization": "Bearer schoko-banane"}):
             scoped.authenticate()
             self.assertEqual(g.authenticated_user.username, test_user.username)
 
@@ -158,18 +158,18 @@ class TestTokenAuth(RouteBase):
         db.session.commit()
 
         scoped = TokenAuthenticator().with_scope(Scopes.admin)
-        with self.app.test_request_context("") as ctx:
+        with self.app.test_request_context(""):
             with self.assertRaises(errors.Unauthorized):
                 scoped.authenticate()
 
-        with self.app.test_request_context("", headers={"Authorization": "Bearer oink"}) as ctx:
+        with self.app.test_request_context("", headers={"Authorization": "Bearer oink"}):
             with self.assertRaises(errors.Unauthorized):
                 scoped.authenticate()
 
-        with self.app.test_request_context("", headers={"Authorization": "Bearer schoko-banane"}) as ctx:
+        with self.app.test_request_context("", headers={"Authorization": "Bearer schoko-banane"}):
             with self.assertRaises(errors.Forbidden):
                 scoped.authenticate()
 
-        with self.app.test_request_context("", headers={"Authorization": "Bearer admin-banane"}) as ctx:
+        with self.app.test_request_context("", headers={"Authorization": "Bearer admin-banane"}):
             scoped.authenticate()
             self.assertEqual(g.authenticated_user.username, admin_user.username)

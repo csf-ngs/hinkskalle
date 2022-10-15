@@ -1,10 +1,9 @@
-from Hinkskalle import registry, authenticator, db
+from Hinkskalle import registry, authenticator
 from Hinkskalle.util.auth.token import Scopes
 from flask import current_app, jsonify, make_response, request, redirect, g, send_from_directory
 from werkzeug.security import safe_join
-from flask_rebar import RequestSchema, ResponseSchema, errors
+from flask_rebar import ResponseSchema, errors
 from marshmallow import fields, Schema
-from werkzeug.datastructures import EnvironHeaders
 import os
 import re
 from sqlalchemy import desc
@@ -109,7 +108,7 @@ def latest_container():
     for tag in tags:
         if tag.container_ref.private and not tag.container_ref.check_access(g.authenticated_user):
             continue
-        if not tag.container_ref.id in ret:
+        if tag.container_ref.id not in ret:
             # current_app.logger.debug(f"return image {tag.name}/{tag.image_ref.container_ref.name}")
             ret[tag.container_ref.id] = {
                 "tags": [],
@@ -136,7 +135,7 @@ def before_request_func():
         request.path.startswith("/v1")
         or (
             request.path.startswith("/v2")
-            and not request.path == "/v2/"
+            and request.path != "/v2/"
             and not request.path.startswith("/v2/__uploads")
             and not request.path.endswith("/blobs/uploads/")
         )

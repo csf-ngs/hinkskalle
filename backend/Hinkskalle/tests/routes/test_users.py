@@ -1,4 +1,3 @@
-import base64
 from sqlalchemy.orm.exc import NoResultFound  # type: ignore
 from ..route_base import RouteBase
 from .._util import _create_user, _create_container
@@ -553,24 +552,6 @@ class TestUsers(RouteBase):
         db_user = User.query.filter(User.username == "update.hase").one()
         self.assertEqual(db_user.quota, 9876)
 
-    def test_update_nonlocal_quota(self):
-        user = _create_user("update.hase")
-        user.quota = 1234
-        user.source = "thin air"
-        db.session.commit()
-
-        with self.fake_admin_auth():
-            ret = self.client.put(
-                f"/v1/users/{user.username}",
-                json={
-                    "quota": 9876,
-                },
-            )
-
-        self.assertEqual(ret.status_code, 200)
-        db_user = User.query.filter(User.username == "update.hase").one()
-        self.assertEqual(db_user.quota, 9876)
-
     def test_update_username_change(self):
         user = _create_user("update.hase")
 
@@ -658,23 +639,6 @@ class TestUsers(RouteBase):
         self.assertEqual(db_user.firstname, user_data["firstname"])
         self.assertEqual(db_user.lastname, user_data["lastname"])
         self.assertEqual(db_user.password_disabled, user_data["passwordDisabled"])
-
-    def test_update_user_quota(self):
-        old_quota = self.user.quota
-        self.user.quota = 1234
-        db.session.commit()
-        user_data = {
-            "quota": 9876,
-        }
-        with self.fake_auth():
-            ret = self.client.put(f"/v1/users/{self.username}", json=user_data)
-
-        self.assertEqual(ret.status_code, 200)
-        db_user = User.query.filter(User.username == self.username).one()
-        self.assertEqual(db_user.quota, 1234)
-
-        self.user.quota = old_quota
-        db.session.commit()
 
     def test_update_user_quota(self):
         old_quota = self.user.quota

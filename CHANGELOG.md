@@ -1,4 +1,4 @@
-# v4.6.0 (unreleased)
+# v4.6.0 (2022-10-17)
 
 - #46: passwordless login with webauthn/fido2 tokens
 

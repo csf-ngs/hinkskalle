@@ -32,6 +32,7 @@ steps:
   commands:
   - cd backend
   - pip3 install -e '.[dev]'
+  - flake8 --tee --output-file flake8.txt
   - nose2 --with-coverage
 - name: testhase-front
   image: ghcr.io/csf-ngs/hinkskalle-dev:v2.0.4
@@ -75,6 +76,7 @@ steps:
   commands:
   - mkdir -p /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}
   - test -e backend/test_report.html && cp backend/test_report.html /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/backend-report.html
+  - test -e backend/flake8.txt && cp -r backend/flake8.txt /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/
   - test -e backend/htmlcov && cp -r backend/htmlcov /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/
   - test -e frontend/test-report.html && cp frontend/test-report.html /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/frontend-report.html
   - mkdir -p /srv/${DRONE_REPO}/${DRONE_BUILD_NUMBER}/oci

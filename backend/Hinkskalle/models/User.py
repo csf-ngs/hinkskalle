@@ -212,7 +212,7 @@ class User(db.Model):  # type: ignore
         return self._valid_images().count()
 
     def calculate_used(self) -> int:
-        counted = {}
+        counted: typing.Dict[str, bool] = {}
         total = 0
         for img in self._valid_images():
             if img.size is None:

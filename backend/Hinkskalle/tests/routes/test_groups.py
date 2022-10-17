@@ -4,7 +4,7 @@ from .._util import _create_group, _set_member, _create_user, _create_collection
 from Hinkskalle import db
 from Hinkskalle.models.User import Group, GroupRoles, UserGroup, User
 from Hinkskalle.models.Entity import Entity
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound
 import datetime
 
 

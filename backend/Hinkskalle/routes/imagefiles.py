@@ -3,7 +3,7 @@ from Hinkskalle import registry, rebar, authenticator, db
 from Hinkskalle.util.auth.token import Scopes
 from flask_rebar import errors, RequestSchema, ResponseSchema
 from marshmallow import fields, Schema
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound
 from flask import request, current_app, send_file, g, make_response
 from werkzeug.security import safe_join
 from typing import IO, Tuple

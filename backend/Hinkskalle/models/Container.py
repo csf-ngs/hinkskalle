@@ -4,7 +4,7 @@ from Hinkskalle import db
 from datetime import datetime
 from sqlalchemy.orm import validates
 from sqlalchemy import func, or_
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound
 import enum
 
 from Hinkskalle.models.Image import Image, UploadStates
@@ -191,7 +191,7 @@ class Container(db.Model):  # type: ignore
 
     @property
     def archImageTags(self) -> dict:
-        tags = {}
+        tags: typing.Dict[str, dict] = {}
         for tag in self.tags_ref:
             arch = tag.arch or current_app.config.get("DEFAULT_ARCH")
             if not arch:

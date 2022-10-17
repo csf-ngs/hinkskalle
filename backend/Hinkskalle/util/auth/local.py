@@ -1,4 +1,4 @@
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound
 
 from .exceptions import UserNotFound, InvalidPassword
 from .base import PasswordCheckerBase

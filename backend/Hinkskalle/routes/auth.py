@@ -8,7 +8,8 @@ from .util import _get_service_url
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
 from flask import current_app, g, session, request
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import NoResultFound
 import jwt
 from calendar import timegm
 from urllib.parse import urlparse

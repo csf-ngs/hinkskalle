@@ -311,7 +311,7 @@ class Image(db.Model):  # type: ignore
             ["singularity", "sif", "dump", "1", self.location], stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         if not inspect.returncode == 0:
-            raise Exception(f"{inspect.args} failed: {inspect.stderr}")
+            raise Exception(f"{inspect.args} failed: {inspect.stderr.decode('utf-8')}")
 
         return inspect.stdout.decode("utf-8")
 

@@ -53,7 +53,7 @@ def expire_images() -> typing.Optional[str]:
     current_app.logger.debug(f"starting image expiration...")
     job: typing.Optional[Job] = get_current_job()
     if not job:
-        return
+        return None
     result = {
         "job": job.id,
         "started": datetime.now(tz=timezone.utc).isoformat(),
@@ -100,7 +100,7 @@ def update_quotas() -> typing.Optional[str]:
     current_app.logger.debug(f"starting quota check...")
     job: typing.Optional[Job] = get_current_job()
     if not job:
-        return
+        return None
     result = {
         "job": job.id,
         "started": datetime.now(tz=timezone.utc).isoformat(),
@@ -172,7 +172,7 @@ def sync_ldap() -> typing.Optional[str]:
     current_app.logger.debug(f"starting ldap sync...")
     job: typing.Optional[Job] = get_current_job()
     if not job:
-        return
+        return None
     svc = LDAPUsers(app=current_app)
     result = {
         "job": job.id,

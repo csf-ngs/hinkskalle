@@ -4,7 +4,8 @@ from Hinkskalle.util.auth.token import Scopes
 
 from flask_rebar import RequestSchema, ResponseSchema, errors
 from marshmallow import fields, Schema
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import NoResultFound
 from flask import current_app, g
 
 from Hinkskalle.models import UserSchema, User, ContainerSchema, Container, Entity, PassKey, PassKeySchema

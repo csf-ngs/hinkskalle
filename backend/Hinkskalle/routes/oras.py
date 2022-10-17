@@ -6,7 +6,8 @@ from flask_rebar import errors
 from typing import List, Tuple
 from flask_rebar.validation import RequestSchema
 from marshmallow import fields
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import func
 import tempfile
 import os
@@ -790,8 +791,8 @@ def _handle_chunk(chunk: ImageUploadUrl):
         if not re.match(r"^[0-9]+-[0-9]+$", range):
             current_app.logger.debug(f"Invalid content range {range}")
             raise OrasBlobUploadInvalid(f"Invalid content range")
-        begin, end = range.split("-")
-        begin, end = int(begin), int(end)
+        begin_str, end_str = range.split("-")
+        begin, end = int(begin_str), int(end_str)
         if chunk.partNumber == 1 and begin != 0:
             raise OrasContentRangeInvalid(f"first chunk must start with 0")
 

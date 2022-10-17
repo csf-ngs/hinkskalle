@@ -86,15 +86,15 @@ class Entity(db.Model):  # type: ignore
 
     def calculate_used(self) -> int:
         entity_size = 0
-        counted = {}
+        counted: typing.Dict[str, bool] = {}
         # naive implementation. could be faster if we let
         # the db do the heavy lifiting. let's see.
         for collection in self.collections_ref:
             collection_size = 0
-            collection_counted = {}
+            collection_counted: typing.Dict[str, bool] = {}
             for container in collection.containers_ref:
                 container_size = 0
-                container_counted = {}
+                container_counted: typing.Dict[str, bool] = {}
                 for img in container.images_ref:
                     if img.uploadState != UploadStates.completed or img.size is None:
                         continue

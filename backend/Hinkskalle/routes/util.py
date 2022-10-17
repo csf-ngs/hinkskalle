@@ -1,11 +1,13 @@
 from flask import current_app, request
 from flask_rebar import errors
 from sqlalchemy import func
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound
 from flask_rebar import RequestSchema
 from marshmallow import fields
 
-from Hinkskalle.models import Entity, Collection, Container
+from Hinkskalle.models.Entity import Entity
+from Hinkskalle.models.Collection import Collection
+from Hinkskalle.models.Container import Container
 
 
 class DownloadQuerySchema(RequestSchema):

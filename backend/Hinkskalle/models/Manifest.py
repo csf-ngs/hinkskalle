@@ -2,7 +2,7 @@ import enum
 from typing import List, Union
 from functools import reduce
 
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound
 from Hinkskalle import db
 from datetime import datetime
 import json

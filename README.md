@@ -163,7 +163,7 @@ yarn install
 
 ## Patch Singularity
 
-***Not necessary for singularity v3.9.0 or newer***
+***Not necessary for singularity v3.9.0 or newer, use --insecure and --no-https params instead***
 
 Singularity absolutely required that the library server is reachable via https.
 While you can set this up for your development server, it's much easier to

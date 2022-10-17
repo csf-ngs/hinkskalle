@@ -1,2 +1,8 @@
 [flake8]
-extend-ignore = E501
+extend-ignore = E501,F541,F841,C0111
+exclude = 
+    venv
+    build
+per-file-ignores =
+    Hinkskalle/models/__init__.py:F403,F401
+    Hinkskalle/routes/__init__.py:F403,F401

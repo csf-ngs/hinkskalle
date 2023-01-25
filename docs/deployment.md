@@ -72,6 +72,15 @@ docker-compose run --rm api flask localdb add-user \
   -f User -l Hase
 ```
 
+***Note***
+
+See [Issue #51](https://github.com/csf-ngs/hinkskalle/issues/51): make sure that the `size` column in the tables `image` and `image_upload_url` are type `bigint`. A fresh database install should have this, but if not:
+
+```sql
+alter table image_upload_url alter column size TYPE BIGINT;
+alter table image alter column size TYPE BIGINT;
+```
+
 ### LDAP Setup (optional)
 
 Initial sync all LDAP users:
